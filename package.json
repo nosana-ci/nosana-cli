@@ -27,6 +27,10 @@
     "typescript": "*"
   },
   "dependencies": {
+    "@coral-xyz/anchor": "^0.28.1-beta.1",
+    "@solana/web3.js": "^1.78.0",
+    "axios": "^1.4.0",
+    "bs58": "^5.0.0",
     "node-fetch": "^3.3.1"
   }
 }

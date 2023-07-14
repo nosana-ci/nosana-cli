@@ -1,14 +1,13 @@
-// support fetch in node version <18
-import './utils/fetch-polyfill';
-
-import type { ClientConfig, BlockchainConfig } from './types';
+import type { ClientConfig, SolanaConfig } from './types';
+import { IPFS, SolanaManager } from './services';
+export * from './services';
 
 export class Client {
-  blockchain: BlockchainConfig = {
-    network: process?.env.BLOCKCHAIN_NETWORK || 'devnet',
-  };
+  solana: SolanaManager;
+  ipfs: IPFS;
 
   constructor(config?: Partial<ClientConfig>) {
-    Object.assign(this.blockchain, config?.blockchain);
+    this.solana = new SolanaManager(config?.solana);
+    this.ipfs = new IPFS(config?.ipfs);
   }
 }
