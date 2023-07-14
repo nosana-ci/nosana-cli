@@ -131,7 +131,8 @@ export class SecretManager {
   async get(job: PublicKey | string): Promise<AxiosResponse> {
     if (typeof job === 'string') job = new PublicKey(job);
     await this.login(job.toString());
-    return await this.api.get('/secrets');
+    const response = await this.api.get('/secrets');
+    return response.data;
   }
 
   /**
