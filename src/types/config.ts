@@ -1,4 +1,5 @@
 import type { Wallet } from '@coral-xyz/anchor';
+import type { Keypair } from '@solana/web3.js';
 
 export type SolanaConfig = {
   network: string;
@@ -6,7 +7,12 @@ export type SolanaConfig = {
   nos_address: string;
   market_address: string;
   rewards_address: string;
-  wallet: Wallet;
+  wallet: Wallet | string | Keypair | Iterable<number>;
+};
+
+export type SecretsConfig = {
+  manager: string;
+  wallet: Wallet | string | Keypair | Iterable<number>;
 };
 
 export type IPFSConfig = {
@@ -18,4 +24,5 @@ export type IPFSConfig = {
 export type ClientConfig = {
   solana?: Partial<SolanaConfig>;
   ipfs?: Partial<IPFSConfig>;
+  secrets?: Partial<SecretsConfig>;
 };

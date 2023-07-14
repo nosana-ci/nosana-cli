@@ -20,6 +20,7 @@ import {
 import { bs58, utf8 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
 
 import type { Jobs, SolanaConfig } from '../types';
+import { solanaConfigDefault } from '../config_defaults';
 
 const pda = (
   seeds: Array<Buffer | Uint8Array>,
@@ -32,26 +33,29 @@ const pda = (
  */
 export class SolanaManager {
   provider: AnchorProvider | undefined;
-  program: Program<Jobs> | undefined;
+  jobs: Program<Jobs> | undefined;
   accounts: object | undefined;
-  config: SolanaConfig = {
-    network: process?.env.SOLANA_NETWORK || 'devnet',
-    jobs_address:
-      process?.env.JOBS_ADDRESS ||
-      'nosJTmGQxvwXy23vng5UjkTbfv91Bzf9jEuro78dAGR',
-    nos_address:
-      process?.env.NOS_ADDRESS || 'devr1BGQndEW5k5zfvG5FsLyZv1Ap73vNgAHcQ9sUVP',
-    market_address:
-      process?.env.MARKET_ADDRESS ||
-      '7nxXoihx65yRGZiGzWZsFMz8D7qwxFePNKvDBWZnxc41',
-    rewards_address:
-      process?.env.REWARDS_ADDRESS ||
-      'nosRB8DUV67oLNrL45bo2pFLrmsWPiewe2Lk2DRNYCp',
-    wallet: new Wallet(Keypair.generate()),
-  };
+  config: SolanaConfig = solanaConfigDefault;
   constructor(config?: Partial<SolanaConfig>) {
     Object.assign(this.config, config);
+    if (
+      typeof this.config.wallet === 'string' ||
+      Array.isArray(this.config.wallet)
+    ) {
+      let key = this.config.wallet;
+      if (typeof key === 'string') {
+        key = JSON.parse(key);
+      }
+      this.config.wallet = Keypair.fromSecretKey(
+        new Uint8Array(key as Iterable<number>),
+      );
+    }
+
+    if (this.config.wallet instanceof Keypair) {
+      this.config.wallet = new Wallet(this.config.wallet);
+    }
     if (process?.env.ANCHOR_PROVIDER_URL) {
+      // TODO: figure out if we want to support this or not
       this.provider = AnchorProvider.env();
     } else {
       let node = this.config.network;
@@ -59,7 +63,11 @@ export class SolanaManager {
         node = clusterApiUrl(this.config.network as Cluster);
       }
       const connection = new Connection(node, 'confirmed');
-      this.provider = new AnchorProvider(connection, this.config.wallet, {});
+      this.provider = new AnchorProvider(
+        connection,
+        this.config.wallet as Wallet,
+        {},
+      );
     }
     setProvider(this.provider);
   }
@@ -69,10 +77,10 @@ export class SolanaManager {
    * https://docs.nosana.io/programs/jobs.html
    */
   async loadNosanaJobs() {
-    if (!this.program) {
+    if (!this.jobs) {
       const programId = new PublicKey(this.config.jobs_address);
       const idl = (await Program.fetchIdl(programId.toString())) as Idl;
-      this.program = new Program(idl, programId) as unknown as Program<Jobs>;
+      this.jobs = new Program(idl, programId) as unknown as Program<Jobs>;
     }
   }
 
@@ -88,10 +96,7 @@ export class SolanaManager {
       const market = new PublicKey(this.config.market_address);
       this.accounts = {
         market,
-        vault: pda(
-          [market.toBuffer(), mint.toBuffer()],
-          this.program!.programId,
-        ),
+        vault: pda([market.toBuffer(), mint.toBuffer()], this.jobs!.programId),
         user: await associatedAddress({
           mint,
           owner: this.provider!.wallet.publicKey,
@@ -116,7 +121,7 @@ export class SolanaManager {
     await this.setAccounts();
     const jobKey = Keypair.generate();
     const runKey = Keypair.generate();
-    const tx = await this.program!.methods.list([
+    const tx = await this.jobs!.methods.list([
       ...bs58.decode(ipfsHash).subarray(2),
     ])
       .accounts({
@@ -140,7 +145,7 @@ export class SolanaManager {
   async getJob(job: PublicKey | string) {
     if (typeof job === 'string') job = new PublicKey(job);
     await this.loadNosanaJobs();
-    return await this.program!.account.jobAccount.fetch(job);
+    return await this.jobs!.account.jobAccount.fetch(job);
   }
 
   /**
@@ -150,7 +155,7 @@ export class SolanaManager {
   async getRun(run: PublicKey | string) {
     if (typeof run === 'string') run = new PublicKey(run);
     await this.loadNosanaJobs();
-    return await this.program!.account.runAccount.fetch(run);
+    return await this.jobs!.account.runAccount.fetch(run);
   }
   /**
    * Function to fetch a job from chain
@@ -159,7 +164,7 @@ export class SolanaManager {
   async getRuns(job: PublicKey | string) {
     if (typeof job === 'string') job = new PublicKey(job);
     await this.loadNosanaJobs();
-    return await this.program!.account.runAccount.all([
+    return await this.jobs!.account.runAccount.all([
       { memcmp: { offset: 8, bytes: job.toBase58() } },
     ]);
   }

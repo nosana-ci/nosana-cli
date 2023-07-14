@@ -1,6 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import bs58 from 'bs58';
 import type { IPFSConfig } from '../types/config';
+import { IPFSConfigDefault } from '../config_defaults';
 
 /**
  * Class to interact with Pinata Cloud
@@ -8,10 +9,7 @@ import type { IPFSConfig } from '../types/config';
  */
 export class IPFS {
   private api: AxiosInstance;
-  private config: IPFSConfig = {
-    api: process?.env.IPFS_API || 'https://api.pinata.cloud',
-    gateway: process?.env.IPFS_GATEWAY || 'https://nosana.mypinata.cloud/ipfs/',
-  };
+  private config: IPFSConfig = IPFSConfigDefault;
 
   constructor(config?: Partial<IPFSConfig>) {
     Object.assign(this.config, config);
