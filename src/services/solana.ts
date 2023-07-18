@@ -11,6 +11,7 @@ import {
   SystemProgram,
   clusterApiUrl,
   Connection,
+  SendTransactionError,
 } from '@solana/web3.js';
 import type { Cluster } from '@solana/web3.js';
 import {
@@ -121,6 +122,7 @@ export class SolanaManager {
     await this.setAccounts();
     const jobKey = Keypair.generate();
     const runKey = Keypair.generate();
+    try {
     const tx = await this.jobs!.methods.list([
       ...bs58.decode(ipfsHash).subarray(2),
     ])
@@ -131,11 +133,21 @@ export class SolanaManager {
       })
       .signers([jobKey, runKey])
       .rpc();
-    return {
-      tx,
-      job: jobKey.publicKey.toBase58(),
-      run: runKey.publicKey.toBase58(),
-    };
+      return {
+        tx,
+        job: jobKey.publicKey.toBase58(),
+        run: runKey.publicKey.toBase58(),
+      };
+    } catch (e: any) {
+      if (e instanceof SendTransactionError) {
+        if (e.message.includes('Attempt to debit an account but found no record of a prior credit')) {
+          e.message = 'Not enough SOL to make transaction'
+          throw e;
+        }
+      }
+      throw e;
+    }
+
   }
 
   /**
