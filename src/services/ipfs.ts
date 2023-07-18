@@ -1,4 +1,4 @@
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosHeaders, AxiosInstance } from 'axios';
 import bs58 from 'bs58';
 import type { IPFSConfig } from '../types/config';
 import { IPFSConfigDefault } from '../config_defaults';
@@ -9,15 +9,17 @@ import { IPFSConfigDefault } from '../config_defaults';
  */
 export class IPFS {
   private api: AxiosInstance;
-  private config: IPFSConfig = IPFSConfigDefault;
+  config: IPFSConfig = IPFSConfigDefault;
 
   constructor(config?: Partial<IPFSConfig>) {
     Object.assign(this.config, config);
+    const headers: AxiosHeaders = new AxiosHeaders();
+    if (this.config.jwt) {
+      headers.set('Authorization', `Bearer ${this.config.jwt}`);
+    }
     this.api = axios.create({
       baseURL: this.config.api,
-      headers: {
-        Authorization: `Bearer ${this.config.jwt}`,
-      },
+      headers,
     });
   }
   /**
@@ -26,11 +28,14 @@ export class IPFS {
    * This result is IPFS addressable.
    */
   static solHashToIpfsHash(hashArray: Array<number>): string {
-    hashArray.unshift(18, 32);
+    if (hashArray.length === 32) {
+      hashArray.unshift(18, 32);
+    }
     return bs58.encode(Buffer.from(hashArray));
   }
 
-  async retrieve(hash: string): Promise<any> {
+  async retrieve(hash: string | Array<number>): Promise<any> {
+    if (typeof hash !== 'string') hash = IPFS.solHashToIpfsHash(hash);
     const response = await axios.get(this.config.gateway + hash);
     return response.data;
   }

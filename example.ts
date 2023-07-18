@@ -16,9 +16,25 @@ console.log(
 );
 
 (async () => {
-  const response = await nosana.solana.listJob(
-    'QmadbEjAJdDNdp6PTyyVeWVcSc8RsEgshBXEMqEGTniiRB',
-  );
+  const json_flow = {
+    "ops": [
+      {
+        "op": "container/run",
+        "id": "echo",
+        "args": {
+          "cmds": [
+            {
+              "cmd": "sh -c 'echo '\"'\"'#!/bin/sh\necho '\"'\"'\"'\"'\"'\"'\"'\"'\u001b[1;32m$ echo \"Hello World!\"\u001b[0m'\"'\"'\"'\"'\"'\"'\"'\"'\necho \"Hello World!\" '\"'\"' | sh'"
+            }
+          ],
+          "image": "ubuntu"
+        }
+      }
+    ]
+  }
+  const ipfsHash = await nosana.ipfs.pin(json_flow);
+  console.log('ipfs uploaded!', nosana.ipfs.config.gateway + ipfsHash);
+  const response = await nosana.solana.listJob(ipfsHash);
   console.log('job posted!', response);
   let job;
   while (!job || job.state < 2) {
@@ -27,9 +43,7 @@ console.log(
     await sleep(5);
   }
   console.log('job done!');
-  const result = await nosana.ipfs.retrieve(
-    IPFS.solHashToIpfsHash(job.ipfsResult),
-  );
+  const result = await nosana.ipfs.retrieve(job.ipfsResult);
   console.log(result);
   const secrets = await nosana.secrets.get(response.job);
   console.log(secrets);

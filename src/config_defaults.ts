@@ -26,5 +26,6 @@ export const secretsConfigDefault: SecretsConfig = {
 
 export const IPFSConfigDefault: IPFSConfig = {
   api: process?.env.IPFS_API || 'https://api.pinata.cloud',
+  jwt: process?.env.IPFS_JWT,
   gateway: process?.env.IPFS_GATEWAY || 'https://nosana.mypinata.cloud/ipfs/',
 };
