@@ -1,6 +1,6 @@
 {
   "name": "@nosana/sdk",
-  "version": "0.1.25",
+  "version": "0.1.26",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -12,6 +12,7 @@
     "publish:public": "npm version patch && npm run build && npm publish --access public"
   },
   "keywords": [],
+  "files": ["dist", "LICENSE", "README.md", "package.json"],
   "author": "Laurens Verspeek",
   "license": "ISC",
   "devDependencies": {
