@@ -14,4 +14,4 @@ deploy:
     - yarn
     - git config --global user.email "dev@nosana.io"
     - git config --global user.name "Nosana"
-    - npm run publish      
+    - npm run publish:public
