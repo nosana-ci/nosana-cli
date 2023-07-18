@@ -1,18 +1,25 @@
 {
   "name": "@nosana/sdk",
-  "version": "0.1.28",
+  "version": "0.1.29",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "browser": "dist/index.umd.js",
+  "unpkg": "dist/index.umd.js",
   "type": "module",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && microbundle",
     "test": "echo \"Error: no test specified\" && exit 1",
     "example": "npx ts-node --esm example.ts",
     "publish:public": "npm version patch && npm run build && npm publish --access public"
   },
   "keywords": [],
-  "files": ["dist", "LICENSE", "README.md", "package.json"],
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md",
+    "package.json"
+  ],
   "author": "Laurens Verspeek",
   "license": "ISC",
   "devDependencies": {
@@ -25,6 +32,7 @@
     "eslint-plugin-n": "^15.0.0",
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-promise": "^6.0.0",
+    "microbundle": "^0.15.1",
     "prettier": "^2.8.8",
     "typescript": "*"
   },
