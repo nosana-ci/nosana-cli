@@ -8,7 +8,8 @@
   "scripts": {
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "example": "npx ts-node --esm example.ts"
+    "example": "npx ts-node --esm example.ts",
+    "publish": "npm version patch && npm run build && npm publish --access public"
   },
   "keywords": [],
   "author": "Laurens Verspeek",
