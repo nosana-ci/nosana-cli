@@ -1,6 +1,6 @@
 {
   "name": "@nosana/sdk",
-  "version": "0.1.29",
+  "version": "0.1.30",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -8,10 +8,11 @@
   "unpkg": "dist/index.umd.js",
   "type": "module",
   "scripts": {
-    "build": "tsc && microbundle",
+    "build": "tsc",
+    "build:browser": "microbundle -o umd --no-compress --format umd --name Nosana",
     "test": "echo \"Error: no test specified\" && exit 1",
     "example": "npx ts-node --esm example.ts",
-    "publish:public": "npm version patch && npm run build && npm publish --access public"
+    "publish:public": "npm version patch && npm run build && npm run build:browser && npm publish --access public"
   },
   "keywords": [],
   "files": [
