@@ -1,6 +1,7 @@
 import type { ClientConfig } from './types';
 import { IPFS, SolanaManager, SecretManager } from './services';
 export * from './services';
+export * from './types';
 
 export class Client {
   solana: SolanaManager;
