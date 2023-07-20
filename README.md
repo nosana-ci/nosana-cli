@@ -14,7 +14,7 @@ npm install --save @nosana/sdk
 # or install with yarn
 yarn add @nosana/sdk
 ```
-## Example usage
+## Usage in Node / Client application 
 
 ```ts
 import { Client } from "@nosana/sdk";
@@ -31,6 +31,20 @@ nosana.ipfs...
 nosana.secrets...
 // solana service
 nosana.solana...
+```
+
+## Installing via <script> tag
+
+```html
+<script src="https://unpkg.com/@nosana/sdk"></script>
+
+<script>
+const nosana = new Nosana.Client({
+  solana: {
+    network: 'devnet',
+  },
+});
+</script>
 ```
 
 ## Documentation

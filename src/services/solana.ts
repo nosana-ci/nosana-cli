@@ -1,10 +1,6 @@
-import {
-  AnchorProvider,
-  Idl,
-  Program,
-  setProvider,
-  Wallet,
-} from '@coral-xyz/anchor';
+import { AnchorProvider, Idl, Program, setProvider } from '@coral-xyz/anchor';
+import { Wallet } from '@coral-xyz/anchor/dist/cjs/provider';
+import NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet';
 import {
   Keypair,
   PublicKey,
@@ -53,9 +49,9 @@ export class SolanaManager {
     }
 
     if (this.config.wallet instanceof Keypair) {
-      this.config.wallet = new Wallet(this.config.wallet);
+      this.config.wallet = new NodeWallet(this.config.wallet);
     }
-    if (process?.env.ANCHOR_PROVIDER_URL) {
+    if (typeof process !== 'undefined' && process.env?.ANCHOR_PROVIDER_URL) {
       // TODO: figure out if we want to support this or not
       this.provider = AnchorProvider.env();
     } else {
@@ -123,16 +119,16 @@ export class SolanaManager {
     const jobKey = Keypair.generate();
     const runKey = Keypair.generate();
     try {
-    const tx = await this.jobs!.methods.list([
-      ...bs58.decode(ipfsHash).subarray(2),
-    ])
-      .accounts({
-        ...this.accounts,
-        job: jobKey.publicKey,
-        run: runKey.publicKey,
-      })
-      .signers([jobKey, runKey])
-      .rpc();
+      const tx = await this.jobs!.methods.list([
+        ...bs58.decode(ipfsHash).subarray(2),
+      ])
+        .accounts({
+          ...this.accounts,
+          job: jobKey.publicKey,
+          run: runKey.publicKey,
+        })
+        .signers([jobKey, runKey])
+        .rpc();
       return {
         tx,
         job: jobKey.publicKey.toBase58(),
@@ -140,14 +136,17 @@ export class SolanaManager {
       };
     } catch (e: any) {
       if (e instanceof SendTransactionError) {
-        if (e.message.includes('Attempt to debit an account but found no record of a prior credit')) {
-          e.message = 'Not enough SOL to make transaction'
+        if (
+          e.message.includes(
+            'Attempt to debit an account but found no record of a prior credit',
+          )
+        ) {
+          e.message = 'Not enough SOL to make transaction';
           throw e;
         }
       }
       throw e;
     }
-
   }
 
   /**

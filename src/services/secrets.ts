@@ -1,7 +1,8 @@
 // external imports
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import axiosRetry from 'axios-retry';
-import { Wallet } from '@coral-xyz/anchor';
+import { Wallet } from '@coral-xyz/anchor/dist/cjs/provider';
+import NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet';
 import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
 import nacl from 'tweetnacl';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
@@ -37,7 +38,7 @@ export class SecretManager {
     }
 
     if (this.config.wallet instanceof Keypair) {
-      this.config.wallet = new Wallet(this.config.wallet);
+      this.config.wallet = new NodeWallet(this.config.wallet);
     }
     this.wallet = this.config.wallet as Wallet;
     this.api = axios.create({ baseURL: this.config.manager });
@@ -89,7 +90,7 @@ export class SecretManager {
    */
   async login(job?: string) {
     const timestamp = now();
-    const keyPair = this.wallet.payer;
+    const keyPair = (this.wallet as NodeWallet).payer;
     const response = await this.api.post(
       '/login',
       {
