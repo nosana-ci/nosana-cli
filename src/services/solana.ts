@@ -1,6 +1,6 @@
 import { AnchorProvider, Idl, Program, setProvider } from '@coral-xyz/anchor';
-import { Wallet } from '@coral-xyz/anchor/dist/cjs/provider';
-import NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet';
+import NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet.js';
+
 import {
   Keypair,
   PublicKey,
@@ -18,6 +18,7 @@ import { bs58, utf8 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
 
 import type { Jobs, SolanaConfig } from '../types';
 import { solanaConfigDefault } from '../config_defaults';
+import { Wallet } from '@coral-xyz/anchor/dist/cjs/provider';
 
 const pda = (
   seeds: Array<Buffer | Uint8Array>,
@@ -49,7 +50,8 @@ export class SolanaManager {
     }
 
     if (this.config.wallet instanceof Keypair) {
-      this.config.wallet = new NodeWallet(this.config.wallet);
+      // @ts-ignore
+      this.config.wallet = new NodeWallet.default(this.config.wallet);
     }
     if (typeof process !== 'undefined' && process.env?.ANCHOR_PROVIDER_URL) {
       // TODO: figure out if we want to support this or not

@@ -1,8 +1,7 @@
 // external imports
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import axiosRetry from 'axios-retry';
-import { Wallet } from '@coral-xyz/anchor/dist/cjs/provider';
-import NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet';
+import NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet.js';
 import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
 import nacl from 'tweetnacl';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
@@ -13,6 +12,7 @@ import { Keypair, PublicKey } from '@solana/web3.js';
 
 import type { SecretsConfig } from '../types';
 import { secretsConfigDefault } from '../config_defaults';
+import { Wallet } from '@coral-xyz/anchor/dist/cjs/provider';
 
 /**
  * Class to interact with Nosana Secret Manager
@@ -38,7 +38,8 @@ export class SecretManager {
     }
 
     if (this.config.wallet instanceof Keypair) {
-      this.config.wallet = new NodeWallet(this.config.wallet);
+      //@ts-ignore
+      this.config.wallet = new NodeWallet.default(this.config.wallet);
     }
     this.wallet = this.config.wallet as Wallet;
     this.api = axios.create({ baseURL: this.config.manager });

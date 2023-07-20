@@ -14,4 +14,6 @@ deploy:
     - yarn
     - git config --global user.email "dev@nosana.io"
     - git config --global user.name "Nosana"
+    - npm config set '//registry.npmjs.org/:_authToken' "${NPM_TOKEN}"
     - npm run publish:public
+    - git push

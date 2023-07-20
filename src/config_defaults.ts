@@ -1,9 +1,10 @@
 import type { SolanaConfig, IPFSConfig, SecretsConfig } from './types';
-import NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet';
+import NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet.js';
 import { Keypair } from '@solana/web3.js';
 
 const wallet =
-  process?.env?.SOLANA_WALLET || new NodeWallet(Keypair.generate());
+  //@ts-ignore
+  process?.env?.SOLANA_WALLET || new NodeWallet.default(Keypair.generate());
 
 export const solanaConfigDefault: SolanaConfig = {
   network: process?.env?.SOLANA_NETWORK || 'devnet',
