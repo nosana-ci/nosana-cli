@@ -167,7 +167,26 @@ export class SolanaManager {
    */
   async getJobs() {
     await this.loadNosanaJobs();
-    return await this.jobs!.account.jobAccount.all();
+    const jobAccount = this.jobs!.account.jobAccount;
+    const filter: { offset?: number; bytes?: string; dataSize?: number } =
+      jobAccount.coder.accounts.memcmp(jobAccount.idlAccount.name, undefined);
+    const coderFilters = [];
+    if (filter?.offset != undefined && filter?.bytes != undefined) {
+      coderFilters.push({
+        memcmp: { offset: filter.offset, bytes: filter.bytes },
+      });
+    }
+    if (filter?.dataSize != undefined) {
+      coderFilters.push({ dataSize: filter.dataSize });
+    }
+    const accounts = await jobAccount.provider.connection.getProgramAccounts(
+      jobAccount.programId,
+      {
+        dataSlice: { offset: 0, length: 0 }, // Fetch without any data.
+        filters: [...coderFilters],
+      },
+    );
+    return accounts;
   }
 
   /**
