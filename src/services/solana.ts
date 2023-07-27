@@ -162,6 +162,15 @@ export class SolanaManager {
   }
 
   /**
+   * Function to fetch a job from chain
+   * @param job Publickey address of the job to fetch
+   */
+  async getJobs() {
+    await this.loadNosanaJobs();
+    return await this.jobs!.account.jobAccount.all();
+  }
+
+  /**
    * Function to fetch a run from chain
    * @param run Publickey address of the run to fetch
    */

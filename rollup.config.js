@@ -3,13 +3,13 @@ import typescript from '@rollup/plugin-typescript';
 import commonjs from '@rollup/plugin-commonjs';
 import nodePolyfills from 'rollup-plugin-polyfill-node';
 
-
-
-// import replace from '@rollup/plugin-replace';
-
 export default {
   input: 'src/index.ts',
   output: [
+    {
+      file: 'dist/index.browser.js',
+      format: 'es',
+    },
     {
       file: 'dist/index.umd.js',
       format: 'umd',
@@ -18,7 +18,8 @@ export default {
   ],
   plugins: [
     nodeResolve({
-      browser: true
+      browser: true,
+      preferBuiltins: false
     }),
     commonjs({
       include: /node_modules/,
