@@ -1,4 +1,4 @@
-import type { SolanaConfig, IPFSConfig, SecretsConfig } from './types';
+import type { SolanaConfig, IPFSConfig, SecretsConfig } from './types/index';
 import NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet.js';
 import { Keypair } from '@solana/web3.js';
 
