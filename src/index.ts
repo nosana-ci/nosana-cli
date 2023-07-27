@@ -1,5 +1,5 @@
 import type { ClientConfig } from './types/index';
-import { IPFS, SolanaManager, SecretManager } from './services/index';
+import { IPFS, SolanaManager, SecretManager } from './services';
 export * from './services/index';
 export * from './types/index';
 

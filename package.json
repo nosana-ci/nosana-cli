@@ -1,10 +1,9 @@
 {
   "name": "@nosana/sdk",
-  "version": "0.1.33",
+  "version": "0.1.34",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "browser": "dist/index.umd.js",
   "unpkg": "dist/index.umd.js",
   "type": "module",
   "scripts": {
