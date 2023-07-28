@@ -162,6 +162,17 @@ export class SolanaManager {
   }
 
   /**
+   * Function to fetch multiple jobs from chain
+   * @param jobs array with Publickey addresses of the jobs to fetch
+   */
+  async getMultipleJobs(jobs: Array<PublicKey> | Array<string>) {
+    if (typeof jobs[0] === 'string')
+      jobs = jobs.map((job) => new PublicKey(job));
+    await this.loadNosanaJobs();
+    return await this.jobs!.account.jobAccount.fetchMultiple(jobs);
+  }
+
+  /**
    * Function to fetch a job from chain
    * @param job Publickey address of the job to fetch
    */
