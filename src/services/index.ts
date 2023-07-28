@@ -1,3 +1,3 @@
-export * from './ipfs';
-export * from './solana';
-export * from './secrets';
+export * from './ipfs.js';
+export * from './solana.js';
+export * from './secrets.js';

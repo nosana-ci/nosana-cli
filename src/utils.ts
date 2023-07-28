@@ -5,7 +5,12 @@ import {
   VersionedTransaction,
 } from '@solana/web3.js';
 import { Wallet } from '@coral-xyz/anchor';
-import { isVersionedTransaction } from '@coral-xyz/anchor/dist/esm/utils/common';
+
+const isVersionedTransaction = (
+  tx: Transaction | VersionedTransaction,
+): tx is VersionedTransaction => {
+  return 'version' in tx;
+};
 
 /**
  * Method to pause the process

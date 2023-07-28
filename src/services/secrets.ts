@@ -1,17 +1,17 @@
 // external imports
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import axiosRetry from 'axios-retry';
-import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
+import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes/index.js';
 import nacl from 'tweetnacl';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 
 // local imports
-import { now, KeyWallet } from '../utils';
+import { now, KeyWallet } from '../utils.js';
 import { Keypair, PublicKey } from '@solana/web3.js';
 
-import type { SecretsConfig } from '../types';
-import { secretsConfigDefault } from '../config_defaults';
-import { Wallet } from '@coral-xyz/anchor/dist/cjs/provider';
+import type { SecretsConfig } from '../types/index.js';
+import { secretsConfigDefault } from '../config_defaults.js';
+import { Wallet } from '@coral-xyz/anchor/dist/cjs/provider.js';
 
 /**
  * Class to interact with Nosana Secret Manager

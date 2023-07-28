@@ -12,13 +12,13 @@ import type { Cluster } from '@solana/web3.js';
 import {
   associatedAddress,
   TOKEN_PROGRAM_ID,
-} from '@coral-xyz/anchor/dist/cjs/utils/token';
-import { bs58, utf8 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
+} from '@coral-xyz/anchor/dist/cjs/utils/token.js';
+import { bs58, utf8 } from '@coral-xyz/anchor/dist/cjs/utils/bytes/index.js';
 
-import type { Jobs, SolanaConfig } from '../types';
-import { KeyWallet } from '../utils';
-import { solanaConfigDefault } from '../config_defaults';
-import { Wallet } from '@coral-xyz/anchor/dist/cjs/provider';
+import type { Jobs, SolanaConfig } from '../types/index.js';
+import { KeyWallet } from '../utils.js';
+import { solanaConfigDefault } from '../config_defaults.js';
+import { Wallet } from '@coral-xyz/anchor/dist/cjs/provider.js';
 
 const pda = (
   seeds: Array<Buffer | Uint8Array>,

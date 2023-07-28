@@ -1,7 +1,7 @@
 import axios, { AxiosHeaders, AxiosInstance } from 'axios';
 import bs58 from 'bs58';
-import type { IPFSConfig } from '../types/config';
-import { IPFSConfigDefault } from '../config_defaults';
+import type { IPFSConfig } from '../types/config.js';
+import { IPFSConfigDefault } from '../config_defaults.js';
 
 /**
  * Class to interact with Pinata Cloud

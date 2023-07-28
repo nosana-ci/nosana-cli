@@ -1,4 +1,4 @@
-import type { Wallet } from '@coral-xyz/anchor/dist/cjs/provider';
+import type { Wallet } from '@coral-xyz/anchor/dist/cjs/provider.js';
 import type { Keypair } from '@solana/web3.js';
 
 export type SolanaConfig = {

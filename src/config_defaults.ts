@@ -1,5 +1,5 @@
-import type { SolanaConfig, IPFSConfig, SecretsConfig } from './types/index';
-import { KeyWallet } from './utils';
+import type { SolanaConfig, IPFSConfig, SecretsConfig } from './types/index.js';
+import { KeyWallet } from './utils.js';
 import { Keypair } from '@solana/web3.js';
 
 const wallet =
