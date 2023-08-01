@@ -5,6 +5,13 @@ import {
   VersionedTransaction,
 } from '@solana/web3.js';
 import { Wallet } from '@coral-xyz/anchor';
+import type { Job } from './types/index.js';
+
+const jobStateMapping:any = {
+  0: 'QUEUED',
+  1: 'RUNNING',
+  2: 'COMPLETED'
+}
 
 const isVersionedTransaction = (
   tx: Transaction | VersionedTransaction,
@@ -56,4 +63,11 @@ class KeyWallet implements Wallet {
   }
 }
 
-export { now, sleep, KeyWallet };
+const mapJob = (job:Job) => {
+  job.state = jobStateMapping[job.state];
+  job.timeStart = String(job.timeStart ? parseInt(job.timeStart) : job.timeStart);
+  job.timeEnd = String(job.timeEnd ? parseInt(job.timeEnd) : job.timeEnd);
+  return job;
+};
+
+export { now, sleep, KeyWallet, mapJob };
