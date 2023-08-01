@@ -238,7 +238,15 @@ export class SolanaManager {
         pubkey,
         timeStart: new BN(account.data, 'le'),
     }));
-    const sortedAccounts = accountsWithTimeStart.sort((a, b) => b.timeStart.cmp(a.timeStart));
+
+    // sort by desc timeStart & put 0 on top
+    const sortedAccounts = accountsWithTimeStart.sort((a, b) => {
+      function value(el:any) {
+        var x = parseFloat(el);
+        return x === 0 ? Infinity : x;
+      }
+      return value(b.timeStart) - value(a.timeStart);
+    });
 
     return sortedAccounts;
   }

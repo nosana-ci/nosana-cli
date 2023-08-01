@@ -11,7 +11,8 @@ import { IPFS } from './services/ipfs.js';
 const jobStateMapping:any = {
   0: 'QUEUED',
   1: 'RUNNING',
-  2: 'COMPLETED'
+  2: 'COMPLETED',
+  3: 'STOPPED'
 }
 
 const isVersionedTransaction = (
