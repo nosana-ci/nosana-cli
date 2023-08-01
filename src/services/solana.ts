@@ -15,8 +15,8 @@ import {
 } from '@coral-xyz/anchor/dist/cjs/utils/token.js';
 import { bs58, utf8 } from '@coral-xyz/anchor/dist/cjs/utils/bytes/index.js';
 
-import type { Jobs, SolanaConfig } from '../types/index.js';
-import { KeyWallet } from '../utils.js';
+import type { Jobs, SolanaConfig, Job } from '../types/index.js';
+import { KeyWallet, mapJob } from '../utils.js';
 import { solanaConfigDefault } from '../config_defaults.js';
 import { Wallet } from '@coral-xyz/anchor/dist/cjs/provider.js';
 
@@ -24,6 +24,12 @@ const pda = (
   seeds: Array<Buffer | Uint8Array>,
   programId: PublicKey,
 ): PublicKey => PublicKey.findProgramAddressSync(seeds, programId)[0];
+
+const jobStateMapping:any = {
+  0: 'QUEUED',
+  1: 'RUNNING',
+  2: 'COMPLETED'
+}
 
 /**
  * Class to interact with Nosana Programs on the Solana Blockchain,
@@ -155,25 +161,58 @@ export class SolanaManager {
    * Function to fetch a job from chain
    * @param job Publickey address of the job to fetch
    */
-  async getJob(job: PublicKey | string) {
+  async getJob(job: PublicKey | string) : Promise<Job> {
     if (typeof job === 'string') job = new PublicKey(job);
     await this.loadNosanaJobs();
-    return await this.jobs!.account.jobAccount.fetch(job);
+
+    const jobAccount = await this.jobs!.account.jobAccount.fetch(job)
+    let runAccount;
+    if (jobAccount.state !== 2) {
+      try {
+        runAccount = (await this.getRuns(job))[0]
+        if (runAccount?.account) {
+          jobAccount.state = runAccount.account.state;
+          jobAccount.node = runAccount.account.node.toString();
+        }
+      } catch (error) {
+        console.error('error fetching run account', error);
+      }
+    }
+
+    return mapJob(jobAccount as unknown as Job);
   }
 
   /**
    * Function to fetch multiple jobs from chain
    * @param jobs array with Publickey addresses of the jobs to fetch
    */
-  async getMultipleJobs(jobs: Array<PublicKey> | Array<string>) {
+  async getMultipleJobs(jobs: Array<PublicKey> | Array<string>, fetchRunAccounts:boolean = true) {
     if (typeof jobs[0] === 'string')
       jobs = jobs.map((job) => new PublicKey(job));
     await this.loadNosanaJobs();
-    return await this.jobs!.account.jobAccount.fetchMultiple(jobs);
+    let fetchedJobs = await this.jobs!.account.jobAccount.fetchMultiple(jobs);
+
+    // fetch run account 
+    if (fetchRunAccounts) {
+      for (let i = 0; i < fetchedJobs.length; i++) {
+        if (fetchedJobs[i]!.state !== 2) {
+          try {
+            const runAccount = (await this.getRuns(jobs[i]))[0];
+            if (runAccount?.account && fetchedJobs[i]) {
+              fetchedJobs[i]!.state = jobStateMapping[runAccount.account.state];
+              fetchedJobs[i]!.node = runAccount.account.node.toString();
+            }
+          } catch (error) {
+            console.error('error fetching run account', error);
+          }
+        }
+      }
+    }
+    return fetchedJobs.map(j => mapJob(j as unknown as Job));
   }
 
   /**
-   * Function to fetch a job from chain
+   * Function to fetch job accounts from chain
    * @param job Publickey address of the job to fetch
    */
   async getJobs() {
@@ -210,14 +249,15 @@ export class SolanaManager {
     return await this.jobs!.account.runAccount.fetch(run);
   }
   /**
-   * Function to fetch a job from chain
+   * Function to fetch a run of a job from chain
    * @param job Publickey address of the job to fetch
    */
-  async getRuns(job: PublicKey | string) {
+  async getRuns(job: PublicKey | string): Promise<Array<any>> {
     if (typeof job === 'string') job = new PublicKey(job);
     await this.loadNosanaJobs();
-    return await this.jobs!.account.runAccount.all([
-      { memcmp: { offset: 8, bytes: job.toBase58() } },
+    const runAccounts = await this.jobs!.account.runAccount.all([
+      { memcmp: { offset: 8, bytes: job.toString() } },
     ]);
+    return runAccounts;
   }
 }
