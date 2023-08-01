@@ -48,6 +48,7 @@
     "axios": "^1.4.0",
     "axios-retry": "^3.5.1",
     "bs58": "^5.0.0",
+    "buffer": "^6.0.3",
     "node-fetch": "^3.3.1",
     "tweetnacl": "^1.0.3",
     "util": "^0.12.5"

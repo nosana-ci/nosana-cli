@@ -3,6 +3,12 @@ import { IPFS, SolanaManager, SecretManager } from './services/index.js';
 export * from './services/index.js';
 export * from './types/index.js';
 
+// polyfill buffer for browser
+import * as buffer from 'buffer';
+if (typeof window !== 'undefined') {
+  window.Buffer = buffer.Buffer;
+}
+
 export class Client {
   solana: SolanaManager;
   ipfs: IPFS;
