@@ -1,4 +1,4 @@
-import { AnchorProvider, Idl, Program, setProvider } from '@coral-xyz/anchor';
+import { AnchorProvider, Idl, Program, setProvider, BN } from '@coral-xyz/anchor';
 
 import {
   Keypair,
@@ -229,14 +229,18 @@ export class SolanaManager {
     if (filter?.dataSize != undefined) {
       coderFilters.push({ dataSize: filter.dataSize });
     }
-    const accounts = await jobAccount.provider.connection.getProgramAccounts(
-      jobAccount.programId,
-      {
-        dataSlice: { offset: 0, length: 0 }, // Fetch without any data.
-        filters: [...coderFilters],
-      },
-    );
-    return accounts;
+
+    const accounts = await jobAccount.provider.connection.getProgramAccounts(jobAccount.programId, {
+      dataSlice: { offset: 209, length: 8 }, // Fetch timeStart only.
+      filters: [...coderFilters],
+    })
+    const accountsWithTimeStart = accounts.map(({ pubkey, account }) => ({
+        pubkey,
+        timeStart: new BN(account.data, 'le'),
+    }));
+    const sortedAccounts = accountsWithTimeStart.sort((a, b) => b.timeStart.cmp(a.timeStart));
+
+    return sortedAccounts;
   }
 
   /**
