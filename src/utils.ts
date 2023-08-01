@@ -6,6 +6,7 @@ import {
 } from '@solana/web3.js';
 import { Wallet } from '@coral-xyz/anchor';
 import type { Job } from './types/index.js';
+import { IPFS } from './services/ipfs.js';
 
 const jobStateMapping:any = {
   0: 'QUEUED',
@@ -63,10 +64,13 @@ class KeyWallet implements Wallet {
   }
 }
 
-const mapJob = (job:Job) => {
+const mapJob = (job:any): Job => {
   job.state = jobStateMapping[job.state];
-  job.timeStart = String(job.timeStart ? parseInt(job.timeStart) : job.timeStart);
-  job.timeEnd = String(job.timeEnd ? parseInt(job.timeEnd) : job.timeEnd);
+  job.timeStart = job.timeStart ? parseInt(job.timeStart) : job.timeStart;
+  job.timeEnd = job.timeEnd ? parseInt(job.timeEnd) : job.timeEnd;
+  job.ipfsJob = IPFS.solHashToIpfsHash(job.ipfsJob);
+  job.ipfsResult = IPFS.solHashToIpfsHash(job.ipfsResult);
+
   return job;
 };
 
