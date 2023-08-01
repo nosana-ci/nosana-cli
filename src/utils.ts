@@ -66,7 +66,7 @@ class KeyWallet implements Wallet {
 }
 
 const mapJob = (job:any): Job => {
-  job.state = jobStateMapping[job.state];
+  job.state = Number.isInteger(job.state) ? jobStateMapping[job.state] : job.state;
   job.timeStart = job.timeStart ? parseInt(job.timeStart) : job.timeStart;
   job.timeEnd = job.timeEnd ? parseInt(job.timeEnd) : job.timeEnd;
   job.ipfsJob = IPFS.solHashToIpfsHash(job.ipfsJob);
@@ -75,4 +75,4 @@ const mapJob = (job:any): Job => {
   return job;
 };
 
-export { now, sleep, KeyWallet, mapJob };
+export { now, sleep, KeyWallet, mapJob, jobStateMapping };

@@ -16,7 +16,7 @@ import {
 import { bs58, utf8 } from '@coral-xyz/anchor/dist/cjs/utils/bytes/index.js';
 
 import type { Jobs, SolanaConfig, Job } from '../types/index.js';
-import { KeyWallet, mapJob } from '../utils.js';
+import { KeyWallet, mapJob, jobStateMapping } from '../utils.js';
 import { solanaConfigDefault } from '../config_defaults.js';
 import { Wallet } from '@coral-xyz/anchor/dist/cjs/provider.js';
 
@@ -24,12 +24,6 @@ const pda = (
   seeds: Array<Buffer | Uint8Array>,
   programId: PublicKey,
 ): PublicKey => PublicKey.findProgramAddressSync(seeds, programId)[0];
-
-const jobStateMapping:any = {
-  0: 'QUEUED',
-  1: 'RUNNING',
-  2: 'COMPLETED'
-}
 
 /**
  * Class to interact with Nosana Programs on the Solana Blockchain,
@@ -171,7 +165,7 @@ export class SolanaManager {
       try {
         runAccount = (await this.getRuns(job))[0]
         if (runAccount?.account) {
-          jobAccount.state = runAccount.account.state;
+          jobAccount.state = jobStateMapping[1];
           jobAccount.node = runAccount.account.node.toString();
         }
       } catch (error) {
@@ -195,11 +189,11 @@ export class SolanaManager {
     // fetch run account 
     if (fetchRunAccounts) {
       for (let i = 0; i < fetchedJobs.length; i++) {
-        if (fetchedJobs[i]!.state !== 2) {
+        if (fetchedJobs[i]!.state < 2) {
           try {
             const runAccount = (await this.getRuns(jobs[i]))[0];
             if (runAccount?.account && fetchedJobs[i]) {
-              fetchedJobs[i]!.state = jobStateMapping[runAccount.account.state];
+              fetchedJobs[i]!.state = jobStateMapping[1];
               fetchedJobs[i]!.node = runAccount.account.node.toString();
             }
           } catch (error) {
