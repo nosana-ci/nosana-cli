@@ -6,7 +6,7 @@ export type Job = {
   market: PublicKey;
   node: string;
   payer: PublicKey;
-  price: string;
+  price: number;
   project: PublicKey;
   state: string;
   timeEnd: number;
