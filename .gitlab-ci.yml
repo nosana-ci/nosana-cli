@@ -10,10 +10,12 @@ stages:
 
 deploy:
   stage: deploy
+  only:
+    - main
   script:
     - yarn
     - git config --global user.email "dev@nosana.io"
     - git config --global user.name "Nosana"
     - npm config set '//registry.npmjs.org/:_authToken' "${NPM_TOKEN}"
     - npm run publish:public
-    - git push
+    # - git push # todo: fix, not working
