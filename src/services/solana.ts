@@ -167,6 +167,7 @@ export class SolanaManager {
         if (runAccount?.account) {
           jobAccount.state = jobStateMapping[1];
           jobAccount.node = runAccount.account.node.toString();
+          jobAccount.timeStart = runAccount.account.time;
         }
       } catch (error) {
         console.error('error fetching run account', error);
@@ -195,6 +196,7 @@ export class SolanaManager {
             if (runAccount?.account && fetchedJobs[i]) {
               fetchedJobs[i]!.state = jobStateMapping[1];
               fetchedJobs[i]!.node = runAccount.account.node.toString();
+              fetchedJobs[i]!.timeStart = runAccount.account.time;
             }
           } catch (error) {
             console.error('error fetching run account', error);
