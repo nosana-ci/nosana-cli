@@ -1,4 +1,10 @@
-import { AnchorProvider, Idl, Program, setProvider, BN } from '@coral-xyz/anchor';
+import {
+  AnchorProvider,
+  Idl,
+  Program,
+  setProvider,
+  BN,
+} from '@coral-xyz/anchor';
 
 import {
   Keypair,
@@ -155,15 +161,15 @@ export class SolanaManager {
    * Function to fetch a job from chain
    * @param job Publickey address of the job to fetch
    */
-  async getJob(job: PublicKey | string) : Promise<Job> {
+  async getJob(job: PublicKey | string): Promise<Job> {
     if (typeof job === 'string') job = new PublicKey(job);
     await this.loadNosanaJobs();
 
-    const jobAccount = await this.jobs!.account.jobAccount.fetch(job)
+    const jobAccount = await this.jobs!.account.jobAccount.fetch(job);
     let runAccount;
     if (jobAccount.state !== 2) {
       try {
-        runAccount = (await this.getRuns(job))[0]
+        runAccount = (await this.getRuns(job))[0];
         if (runAccount?.account) {
           jobAccount.state = jobStateMapping[1];
           jobAccount.node = runAccount.account.node.toString();
@@ -181,13 +187,16 @@ export class SolanaManager {
    * Function to fetch multiple jobs from chain
    * @param jobs array with Publickey addresses of the jobs to fetch
    */
-  async getMultipleJobs(jobs: Array<PublicKey> | Array<string>, fetchRunAccounts:boolean = true) {
+  async getMultipleJobs(
+    jobs: Array<PublicKey> | Array<string>,
+    fetchRunAccounts: boolean = true,
+  ) {
     if (typeof jobs[0] === 'string')
       jobs = jobs.map((job) => new PublicKey(job));
     await this.loadNosanaJobs();
     let fetchedJobs = await this.jobs!.account.jobAccount.fetchMultiple(jobs);
 
-    // fetch run account 
+    // fetch run account
     if (fetchRunAccounts) {
       for (let i = 0; i < fetchedJobs.length; i++) {
         if (fetchedJobs[i]!.state < 2) {
@@ -204,7 +213,7 @@ export class SolanaManager {
         }
       }
     }
-    return fetchedJobs.map(j => mapJob(j as unknown as Job));
+    return fetchedJobs.map((j) => mapJob(j as unknown as Job));
   }
 
   /**
@@ -226,22 +235,28 @@ export class SolanaManager {
       coderFilters.push({ dataSize: filter.dataSize });
     }
 
-    const accounts = await jobAccount.provider.connection.getProgramAccounts(jobAccount.programId, {
-      dataSlice: { offset: 209, length: 8 }, // Fetch timeStart only.
-      filters: [...coderFilters],
-    })
+    const accounts = await jobAccount.provider.connection.getProgramAccounts(
+      jobAccount.programId,
+      {
+        dataSlice: { offset: 209, length: 8 }, // Fetch timeStart only.
+        filters: [...coderFilters],
+      },
+    );
     const accountsWithTimeStart = accounts.map(({ pubkey, account }) => ({
-        pubkey,
-        timeStart: new BN(account.data, 'le'),
+      pubkey,
+      timeStart: new BN(account.data, 'le'),
     }));
 
     // sort by desc timeStart & put 0 on top
     const sortedAccounts = accountsWithTimeStart.sort((a, b) => {
-      function value(el:any) {
-        var x = parseFloat(el);
-        return x === 0 ? Infinity : x;
+      const at = parseFloat(a.timeStart);
+      const bt = parseFloat(b.timeStart);
+      if (at === bt) {
+        return a.pubkey.toString().localeCompare(b.pubkey.toString());
       }
-      return value(b.timeStart) - value(a.timeStart);
+      if (at === 0) return -1;
+      if (bt === 0) return 1;
+      return bt - at;
     });
 
     return sortedAccounts;
