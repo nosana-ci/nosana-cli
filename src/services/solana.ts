@@ -1,4 +1,10 @@
-import { AnchorProvider, Idl, Program, setProvider, BN } from '@coral-xyz/anchor';
+import {
+  AnchorProvider,
+  Idl,
+  Program,
+  setProvider,
+  BN,
+} from '@coral-xyz/anchor';
 
 import {
   Keypair,
@@ -80,7 +86,6 @@ export class SolanaManager {
       const programId = new PublicKey(this.config.jobs_address);
       const idl = (await Program.fetchIdl(programId.toString())) as Idl;
       this.jobs = new Program(idl, programId) as unknown as Program<NosanaJobs>;
-      console.log('loadings jobs', this.jobs);
     }
   }
 
@@ -93,7 +98,6 @@ export class SolanaManager {
       const programId = new PublicKey(this.config.nodes_address);
       const idl = (await Program.fetchIdl(programId.toString())) as Idl;
       this.nodes = new Program(idl, programId) as unknown as Program<NosanaNodes>;
-      console.log('loadings nodes', this.nodes);
     }
   }
 
