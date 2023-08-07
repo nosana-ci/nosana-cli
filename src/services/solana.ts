@@ -6,7 +6,6 @@ import {
   SystemProgram,
   clusterApiUrl,
   Connection,
-  SendTransactionError,
 } from '@solana/web3.js';
 import type { Cluster } from '@solana/web3.js';
 import {
@@ -15,8 +14,8 @@ import {
 } from '@coral-xyz/anchor/dist/cjs/utils/token.js';
 import { bs58, utf8 } from '@coral-xyz/anchor/dist/cjs/utils/bytes/index.js';
 
-import type { NosanaJobs, SolanaConfig, Job } from '../types/index.js';
-import { KeyWallet, mapJob, jobStateMapping } from '../utils.js';
+import type { NosanaJobs, SolanaConfig, NosanaNodes } from '../types/index.js';
+import { KeyWallet } from '../utils.js';
 import { solanaConfigDefault } from '../config_defaults.js';
 import { Wallet } from '@coral-xyz/anchor/dist/cjs/provider.js';
 
@@ -32,6 +31,7 @@ const pda = (
 export class SolanaManager {
   provider: AnchorProvider | undefined;
   jobs: Program<NosanaJobs> | undefined;
+  nodes: Program<NosanaNodes> | undefined;
   accounts: object | undefined;
   config: SolanaConfig = solanaConfigDefault;
   constructor(config?: Partial<SolanaConfig>) {
@@ -80,6 +80,20 @@ export class SolanaManager {
       const programId = new PublicKey(this.config.jobs_address);
       const idl = (await Program.fetchIdl(programId.toString())) as Idl;
       this.jobs = new Program(idl, programId) as unknown as Program<NosanaJobs>;
+      console.log('loadings jobs', this.jobs);
+    }
+  }
+
+  /**
+   * Function to load the Nosana Nodes program into JS
+   * https://docs.nosana.io/programs/nodes.html
+   */
+  async loadNosanaNodes() {
+    if (!this.nodes) {
+      const programId = new PublicKey(this.config.nodes_address);
+      const idl = (await Program.fetchIdl(programId.toString())) as Idl;
+      this.nodes = new Program(idl, programId) as unknown as Program<NosanaNodes>;
+      console.log('loadings nodes', this.nodes);
     }
   }
 
@@ -109,27 +123,5 @@ export class SolanaManager {
         tokenProgram: TOKEN_PROGRAM_ID,
       };
     }
-  }
-
-  /**
-   * Function to fetch a run from chain
-   * @param run Publickey address of the run to fetch
-   */
-  async getRun(run: PublicKey | string) {
-    if (typeof run === 'string') run = new PublicKey(run);
-    await this.loadNosanaJobs();
-    return await this.jobs!.account.runAccount.fetch(run);
-  }
-  /**
-   * Function to fetch a run of a job from chain
-   * @param job Publickey address of the job to fetch
-   */
-  async getRuns(job: PublicKey | string): Promise<Array<any>> {
-    if (typeof job === 'string') job = new PublicKey(job);
-    await this.loadNosanaJobs();
-    const runAccounts = await this.jobs!.account.runAccount.all([
-      { memcmp: { offset: 8, bytes: job.toString() } },
-    ]);
-    return runAccounts;
   }
 }

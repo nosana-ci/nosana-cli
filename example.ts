@@ -34,12 +34,12 @@ console.log(
   };
   const ipfsHash = await nosana.ipfs.pin(json_flow);
   console.log('ipfs uploaded!', nosana.ipfs.config.gateway + ipfsHash);
-  const response = await nosana.solana.listJob(ipfsHash);
+  const response = await nosana.jobs.listJob(ipfsHash);
   console.log('job posted!', response);
   let job;
   while (!job || parseInt(job.state) < 2) {
     console.log('checking job state..');
-    job = await nosana.solana.getJob(response.job);
+    job = await nosana.jobs.getJob(response.job);
     await sleep(5);
   }
   console.log('job done!');
