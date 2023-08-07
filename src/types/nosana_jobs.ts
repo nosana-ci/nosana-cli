@@ -1,4 +1,4 @@
-export type Jobs = {
+export type NosanaJobs = {
   version: '0.1.0';
   name: 'nosana_jobs';
   instructions: [
@@ -765,7 +765,7 @@ export type Jobs = {
   ];
 };
 
-export const IDL: Jobs = {
+export const IDL: NosanaJobs = {
   version: '0.1.0',
   name: 'nosana_jobs',
   instructions: [
