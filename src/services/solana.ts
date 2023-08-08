@@ -97,7 +97,10 @@ export class SolanaManager {
     if (!this.nodes) {
       const programId = new PublicKey(this.config.nodes_address);
       const idl = (await Program.fetchIdl(programId.toString())) as Idl;
-      this.nodes = new Program(idl, programId) as unknown as Program<NosanaNodes>;
+      this.nodes = new Program(
+        idl,
+        programId,
+      ) as unknown as Program<NosanaNodes>;
     }
   }
 
