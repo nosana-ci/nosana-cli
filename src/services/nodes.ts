@@ -13,7 +13,8 @@ export class Nodes extends SolanaManager {
   async get(node: PublicKey | string) : Promise<Node> {
     if (typeof node === 'string') node = new PublicKey(node);
     await this.loadNosanaNodes();
-    return await this.nodes!.account.NodeAccount.fetch(node);
+    // @ts-ignore:next-line
+    return await this.nodes!.account.nodeAccount.fetch(node);
   }
 
   /**
@@ -25,6 +26,7 @@ export class Nodes extends SolanaManager {
     // @ts-ignore:next-line
     const nodes = await this.nodes!.account.nodeAccount.all()
     return nodes.map((n: any) => {
+      n.account.address = n.publicKey.toString();
       return n.account;
     });
   }
