@@ -14,7 +14,9 @@ import { BN } from '@coral-xyz/anchor';
  * https://docs.nosana.io/secrets/start.html
  */
 export class Jobs extends SolanaManager {
-  constructor(...args: any){ super(...args); }
+  constructor(...args: any) {
+    super(...args);
+  }
   /**
    * Fiunction to list a Nosana Job in a market
    * @param ipfsHash String of the IPFS hash locating the Nosana Job data.
@@ -117,7 +119,7 @@ export class Jobs extends SolanaManager {
    * Function to fetch job accounts from chain
    * @param job Publickey address of the job to fetch
    */
-  async getAll() {
+  async all(filters?: { [key: string]: any }) {
     await this.loadNosanaJobs();
     const jobAccount = this.jobs!.account.jobAccount;
     const filter: { offset?: number; bytes?: string; dataSize?: number } =
@@ -131,11 +133,45 @@ export class Jobs extends SolanaManager {
     if (filter?.dataSize != undefined) {
       coderFilters.push({ dataSize: filter.dataSize });
     }
+    if (filters) {
+      if (filters.state >= 0) {
+        coderFilters.push({
+          memcmp: {
+            offset: 208,
+            bytes: bs58.encode(Buffer.from([filters.state])),
+          },
+        });
+      }
+      if (filters.project) {
+        coderFilters.push({
+          memcmp: {
+            offset: 176,
+            bytes: filters.project,
+          },
+        });
+      }
+      if (filters.node) {
+        coderFilters.push({
+          memcmp: {
+            offset: 104,
+            bytes: filters.node,
+          },
+        });
+      }
+      if (filters.market) {
+        coderFilters.push({
+          memcmp: {
+            offset: 72,
+            bytes: filters.market,
+          },
+        });
+      }
+    }
 
     const accounts = await jobAccount.provider.connection.getProgramAccounts(
       jobAccount.programId,
       {
-        dataSlice: { offset: 209, length: 8 }, // Fetch timeStart only.
+        dataSlice: { offset: 217, length: 8 }, // Fetch timeStart only.
         filters: [...coderFilters],
       },
     );
