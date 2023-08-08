@@ -18,6 +18,9 @@ export const solanaConfigDefault: SolanaConfig = {
   rewards_address:
     process?.env?.REWARDS_ADDRESS ||
     'nosRB8DUV67oLNrL45bo2pFLrmsWPiewe2Lk2DRNYCp',
+  nodes_address:
+    process?.env?.NODES_ADDRESS ||
+    'nosNeZR64wiEhQc5j251bsP4WqDabT6hmz4PHyoHLGD',
   wallet: wallet,
 };
 

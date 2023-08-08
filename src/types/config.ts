@@ -7,6 +7,7 @@ export type SolanaConfig = {
   nos_address: string;
   market_address: string;
   rewards_address: string;
+  nodes_address: string;
   wallet: Wallet | string | Keypair | Iterable<number>;
 };
 
