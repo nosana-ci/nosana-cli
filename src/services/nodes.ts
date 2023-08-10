@@ -21,7 +21,7 @@ export class Nodes extends SolanaManager {
    * Function to fetch a nodes from chain
    * @param job Publickey address of the node to fetch
    */
-  async getAll() : Promise<Node[]> {
+  async all() : Promise<Node[]> {
     await this.loadNosanaNodes();
     // @ts-ignore:next-line
     const nodes = await this.nodes!.account.nodeAccount.all()
