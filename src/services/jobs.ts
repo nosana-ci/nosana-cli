@@ -5,12 +5,12 @@ import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes/index.js';
 import { jobStateMapping, mapJob } from '../utils.js';
 import { Keypair, PublicKey, SendTransactionError } from '@solana/web3.js';
 
-import type { Job } from '../types/index.js';
+import type { Job, Market } from '../types/index.js';
 import { SolanaManager } from './solana.js';
 import { BN } from '@coral-xyz/anchor';
 
 /**
- * Class to interact with Nosana Secret Manager
+ * Class to interact with the Nosana Jobs Program
  * https://docs.nosana.io/secrets/start.html
  */
 export class Jobs extends SolanaManager {
@@ -159,6 +159,7 @@ export class Jobs extends SolanaManager {
         });
       }
       if (filters.market) {
+        console.log('filter', filters)
         coderFilters.push({
           memcmp: {
             offset: 72,
@@ -215,5 +216,27 @@ export class Jobs extends SolanaManager {
       { memcmp: { offset: 8, bytes: job.toString() } },
     ]);
     return runAccounts;
+  }
+
+  /**
+   * Function to fetch a market from chain
+   * @param market Publickey address of the market to fetch
+   */
+  async getMarket(market: PublicKey | string) {
+    if (typeof market === 'string') market = new PublicKey(market);
+    await this.loadNosanaJobs();
+    return await this.jobs!.account.marketAccount.fetch(market.toString());
+  }
+
+  /**
+   * Function to fetch all markets
+   */
+  async allMarkets(): Promise<Array<any>> {
+    await this.loadNosanaJobs();
+    const marketAccounts = await this.jobs!.account.marketAccount.all();
+    return marketAccounts.map((m: any) => {
+      m.account.address = m.publicKey;
+      return m.account as Market;
+    });
   }
 }
