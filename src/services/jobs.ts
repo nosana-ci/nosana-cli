@@ -159,7 +159,7 @@ export class Jobs extends SolanaManager {
         });
       }
       if (filters.market) {
-        console.log('filter', filters)
+        console.log('filter', filters);
         coderFilters.push({
           memcmp: {
             offset: 72,
@@ -185,12 +185,15 @@ export class Jobs extends SolanaManager {
 
     // sort by desc timeStart & put 0 on top
     const sortedAccounts = accountsWithTimeStart.sort((a, b) => {
-      if (a.timeStart === b.timeStart) {
-        return a.pubkey.toString().localeCompare(b.pubkey.toString());
+      if (a.state === b.state) {
+        if (a.timeStart === b.timeStart) {
+          return a.pubkey.toString().localeCompare(b.pubkey.toString());
+        }
+        if (a.timeStart === 0) return -1;
+        if (b.timeStart === 0) return 1;
+        return b.timeStart - a.timeStart;
       }
-      if (a.timeStart === 0) return -1;
-      if (b.timeStart === 0) return 1;
-      return b.timeStart - a.timeStart;
+      return a.state - b.state;
     });
 
     return sortedAccounts;
