@@ -5,7 +5,7 @@ export type Node = {
   authority: PublicKey;
   audited: boolean;
   architecture: number;
-  country: number;
+  country: number | string | null;
   cpu: number;
   gpu: number;
   memory: number;
@@ -14,4 +14,5 @@ export type Node = {
   icon: string;
   endpoint: string;
   version: string;
+  flag: string;
 };

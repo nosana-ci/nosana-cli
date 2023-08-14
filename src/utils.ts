@@ -8,6 +8,8 @@ import { Wallet } from '@coral-xyz/anchor';
 import type { Job } from './types/index.js';
 import { IPFS } from './services/ipfs.js';
 
+const excludedJobs = ["Af6vBZSM3eLfJHvfMXKUa3CCeP4b8VEFbBaRhMsJHvtb", "DhZJphpRXFVH1sGqYEiiPyeXQr2LEv4FvFnUuCvi3eQF","4vkKcBAs3DuFYK9ZLxzcfmHvwtgaYMJMuv7gnMya8qam","ERgvm546BuSLfHzWegKweGUjecDVtiSui7Pgwnpwo8r3","4pndLabGeRzLtFMdpi34fZCS9u6t9z5jcWT26sf5qbeL", "AFPUhb1yaJyhhQ7yyKraTHb4xYgN3zmN6z9oG7qJZ3qe"];
+
 const jobStateMapping:any = {
   0: 'QUEUED',
   1: 'RUNNING',
@@ -75,4 +77,4 @@ const mapJob = (job:any): Job => {
   return job;
 };
 
-export { now, sleep, KeyWallet, mapJob, jobStateMapping };
+export { now, sleep, KeyWallet, mapJob, jobStateMapping, excludedJobs };

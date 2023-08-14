@@ -2,7 +2,7 @@
 import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes/index.js';
 
 // local imports
-import { jobStateMapping, mapJob } from '../utils.js';
+import { jobStateMapping, mapJob, excludedJobs } from '../utils.js';
 import { Keypair, PublicKey, SendTransactionError } from '@solana/web3.js';
 
 import type { Job, Market } from '../types/index.js';
@@ -176,11 +176,15 @@ export class Jobs extends SolanaManager {
         filters: [...coderFilters],
       },
     );
-    const accountsWithTimeStart = accounts.map(({ pubkey, account }) => ({
-      pubkey,
-      state: account.data[0],
-      timeStart: parseFloat(new BN(account.data.slice(9), 'le')),
-      timeEnd: parseFloat(new BN(account.data.slice(1, 9), 'le')),
+    const filterExcludedJobs = accounts.filter(({ pubkey, account }) => {
+      if (excludedJobs.includes(pubkey.toString())) return false;
+      return true;
+    });
+    const accountsWithTimeStart = filterExcludedJobs.map(({ pubkey, account }) => ({
+        pubkey,
+        state: account.data[0],
+        timeStart: parseFloat(new BN(account.data.slice(9), 'le')),
+        timeEnd: parseFloat(new BN(account.data.slice(1, 9), 'le')),
     }));
 
     // sort by desc timeStart & put 0 on top
