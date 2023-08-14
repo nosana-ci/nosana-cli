@@ -159,7 +159,7 @@ export class Jobs extends SolanaManager {
         });
       }
       if (filters.market) {
-        console.log('filter', filters)
+        console.log('filter', filters);
         coderFilters.push({
           memcmp: {
             offset: 72,
@@ -172,25 +172,28 @@ export class Jobs extends SolanaManager {
     const accounts = await jobAccount.provider.connection.getProgramAccounts(
       jobAccount.programId,
       {
-        dataSlice: { offset: 217, length: 8 }, // Fetch timeStart only.
+        dataSlice: { offset: 208, length: 17 }, // Fetch timeStart only.
         filters: [...coderFilters],
       },
     );
     const accountsWithTimeStart = accounts.map(({ pubkey, account }) => ({
       pubkey,
-      timeStart: new BN(account.data, 'le'),
+      state: account.data[0],
+      timeStart: parseFloat(new BN(account.data.slice(9), 'le')),
+      timeEnd: parseFloat(new BN(account.data.slice(1, 9), 'le')),
     }));
 
     // sort by desc timeStart & put 0 on top
     const sortedAccounts = accountsWithTimeStart.sort((a, b) => {
-      const at = parseFloat(a.timeStart);
-      const bt = parseFloat(b.timeStart);
-      if (at === bt) {
-        return a.pubkey.toString().localeCompare(b.pubkey.toString());
+      if (a.state === b.state) {
+        if (a.timeStart === b.timeStart) {
+          return a.pubkey.toString().localeCompare(b.pubkey.toString());
+        }
+        if (a.timeStart === 0) return -1;
+        if (b.timeStart === 0) return 1;
+        return b.timeStart - a.timeStart;
       }
-      if (at === 0) return -1;
-      if (bt === 0) return 1;
-      return bt - at;
+      return a.state - b.state;
     });
 
     return sortedAccounts;
