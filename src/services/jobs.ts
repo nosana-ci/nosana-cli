@@ -225,7 +225,9 @@ export class Jobs extends SolanaManager {
   async getMarket(market: PublicKey | string) {
     if (typeof market === 'string') market = new PublicKey(market);
     await this.loadNosanaJobs();
-    return await this.jobs!.account.marketAccount.fetch(market.toString());
+    const marketAccount = await this.jobs!.account.marketAccount.fetch(market.toString());
+    //@ts-ignore
+    return {...marketAccount, address: marketAccount.publicKey};
   }
 
   /**
