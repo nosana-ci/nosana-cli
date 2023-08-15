@@ -3,7 +3,6 @@ import {
   Idl,
   Program,
   setProvider,
-  BN,
 } from '@coral-xyz/anchor';
 
 import {
@@ -40,6 +39,7 @@ export class SolanaManager {
   nodes: Program<NosanaNodes> | undefined;
   accounts: object | undefined;
   config: SolanaConfig = solanaConfigDefault;
+  connection: Connection | undefined;
   constructor(config?: Partial<SolanaConfig>) {
     Object.assign(this.config, config);
     if (
@@ -67,14 +67,27 @@ export class SolanaManager {
       if (!this.config.network.includes('http')) {
         node = clusterApiUrl(this.config.network as Cluster);
       }
-      const connection = new Connection(node, 'confirmed');
+      this.connection = new Connection(node, 'confirmed');
       this.provider = new AnchorProvider(
-        connection,
+        this.connection,
         this.config.wallet as Wallet,
         {},
       );
     }
     setProvider(this.provider);
+  }
+
+  async getNosBalance(address: string | PublicKey): Promise<object> {
+    if (typeof address === 'string') address = new PublicKey(address);
+    const mintAccount = new PublicKey(
+      this.config.nos_address
+    );
+    const account = await this.connection!.getTokenAccountsByOwner(address, {mint: mintAccount});
+    const tokenAddress = new PublicKey(account.value[0].pubkey.toString());
+    const tokenBalance = await this.connection!.getTokenAccountBalance(
+      tokenAddress
+    );
+    return tokenBalance.value;
   }
 
   /**
