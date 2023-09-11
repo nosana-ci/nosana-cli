@@ -1,12 +1,14 @@
 #!/usr/bin/env node
+import figlet from 'figlet';
 import { Wallet } from '@coral-xyz/anchor';
-import { Client, IPFS } from './';
+import { Client } from './';
 import type { ClientConfig } from './types';
 import { sleep } from './utils';
 import { Command, Option } from 'commander';
 const program = new Command();
 
 const VERSION = '0.1.0';
+console.log(figlet.textSync('Nosana'));
 
 /**
  * Shell swag colors for logging
