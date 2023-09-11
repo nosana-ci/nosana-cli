@@ -29,6 +29,7 @@
     "@rollup/plugin-node-resolve": "^15.1.0",
     "@rollup/plugin-typescript": "^11.1.2",
     "@types/node": "^20.3.2",
+    "@types/yargs": "^17.0.24",
     "@typescript-eslint/eslint-plugin": "^5.50.0",
     "eslint": "^8.0.1",
     "eslint-config-prettier": "^8.8.0",
@@ -49,8 +50,10 @@
     "axios-retry": "^3.5.1",
     "bs58": "^5.0.0",
     "buffer": "^6.0.3",
+    "commander": "^11.0.0",
     "node-fetch": "^3.3.1",
     "tweetnacl": "^1.0.3",
-    "util": "^0.12.5"
+    "util": "^0.12.5",
+    "yargs": "^17.7.2"
   }
 }
