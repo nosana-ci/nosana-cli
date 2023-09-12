@@ -60,7 +60,7 @@ export async function setSDK(network: string, keyfile: string) {
   if (nosana.solana.config.network.includes('devnet') && solBalance === 0) {
     console.log('\nNo SOL, requesting airdrop');
     if (await nosana.solana.requestAirdrop(1e9)) {
-      console.log('Received airdrop of ${colors.CYAN}1 SOL!${colors.RESET}');
+      console.log(`Received airdrop of ${colors.CYAN}1 SOL!${colors.RESET}`);
     } else {
       console.error('Could not receive airdrop');
     }
