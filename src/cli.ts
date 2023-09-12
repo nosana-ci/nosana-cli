@@ -37,10 +37,7 @@ program
   .addOption(new Option('--f, --file [path]', 'file with the JSON flow'))
   .addOption(new Option('--raw', 'display raw json job and result'))
   .addOption(
-    new Option(
-      '--finish, --completed',
-      'wait for job to be completed and show result',
-    ),
+    new Option('--completed', 'wait for job to be completed and show result'),
   )
   .action(run);
 
@@ -49,6 +46,9 @@ program
   .description('Get a job and display result')
   .argument('<job>', 'job address')
   .addOption(new Option('--raw', 'display raw json job and result'))
+  .addOption(
+    new Option('--completed', 'wait for job to be completed and show result'),
+  )
   .action(get);
 
 async function startCLI() {
