@@ -192,8 +192,7 @@ export async function get(
                 }
               }
             } else {
-              console.log('TODO: print nicely');
-              console.log(steps);
+              console.log(`${colors.RED}${steps}${colors.RESET}`);
             }
           }
         }
