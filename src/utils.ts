@@ -8,14 +8,21 @@ import { Wallet } from '@coral-xyz/anchor';
 import type { Job } from './types/index.js';
 import { IPFS } from './services/ipfs.js';
 
-const excludedJobs = ["Af6vBZSM3eLfJHvfMXKUa3CCeP4b8VEFbBaRhMsJHvtb", "DhZJphpRXFVH1sGqYEiiPyeXQr2LEv4FvFnUuCvi3eQF","4vkKcBAs3DuFYK9ZLxzcfmHvwtgaYMJMuv7gnMya8qam","ERgvm546BuSLfHzWegKweGUjecDVtiSui7Pgwnpwo8r3","4pndLabGeRzLtFMdpi34fZCS9u6t9z5jcWT26sf5qbeL", "AFPUhb1yaJyhhQ7yyKraTHb4xYgN3zmN6z9oG7qJZ3qe"];
+const excludedJobs = [
+  'Af6vBZSM3eLfJHvfMXKUa3CCeP4b8VEFbBaRhMsJHvtb',
+  'DhZJphpRXFVH1sGqYEiiPyeXQr2LEv4FvFnUuCvi3eQF',
+  '4vkKcBAs3DuFYK9ZLxzcfmHvwtgaYMJMuv7gnMya8qam',
+  'ERgvm546BuSLfHzWegKweGUjecDVtiSui7Pgwnpwo8r3',
+  '4pndLabGeRzLtFMdpi34fZCS9u6t9z5jcWT26sf5qbeL',
+  'AFPUhb1yaJyhhQ7yyKraTHb4xYgN3zmN6z9oG7qJZ3qe',
+];
 
-const jobStateMapping:any = {
+const jobStateMapping: any = {
   0: 'QUEUED',
   1: 'RUNNING',
   2: 'COMPLETED',
-  3: 'STOPPED'
-}
+  3: 'STOPPED',
+};
 
 const isVersionedTransaction = (
   tx: Transaction | VersionedTransaction,
@@ -65,10 +72,15 @@ class KeyWallet implements Wallet {
   get publicKey(): PublicKey {
     return this.payer.publicKey;
   }
+  get privateKey(): Uint8Array {
+    return this.payer.secretKey;
+  }
 }
 
-const mapJob = (job:any): Job => {
-  job.state = Number.isInteger(job.state) ? jobStateMapping[job.state] : job.state;
+const mapJob = (job: any): Job => {
+  job.state = Number.isInteger(job.state)
+    ? jobStateMapping[job.state]
+    : job.state;
   job.timeStart = job.timeStart ? parseInt(job.timeStart) : job.timeStart;
   job.timeEnd = job.timeEnd ? parseInt(job.timeEnd) : job.timeEnd;
   job.ipfsJob = IPFS.solHashToIpfsHash(job.ipfsJob);

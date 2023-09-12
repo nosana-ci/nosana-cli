@@ -7,7 +7,8 @@ import { Keypair, PublicKey, SendTransactionError } from '@solana/web3.js';
 
 import type { Job, Market } from '../types/index.js';
 import { SolanaManager } from './solana.js';
-import { BN } from '@coral-xyz/anchor';
+import anchor from '@coral-xyz/anchor';
+const { BN } = anchor;
 
 /**
  * Class to interact with the Nosana Jobs Program
@@ -180,12 +181,14 @@ export class Jobs extends SolanaManager {
       if (excludedJobs.includes(pubkey.toString())) return false;
       return true;
     });
-    const accountsWithTimeStart = filterExcludedJobs.map(({ pubkey, account }) => ({
+    const accountsWithTimeStart = filterExcludedJobs.map(
+      ({ pubkey, account }) => ({
         pubkey,
         state: account.data[0],
         timeStart: parseFloat(new BN(account.data.slice(9), 'le')),
         timeEnd: parseFloat(new BN(account.data.slice(1, 9), 'le')),
-    }));
+      }),
+    );
 
     // sort by desc timeStart & put 0 on top
     const sortedAccounts = accountsWithTimeStart.sort((a, b) => {
@@ -232,9 +235,11 @@ export class Jobs extends SolanaManager {
   async getMarket(market: PublicKey | string) {
     if (typeof market === 'string') market = new PublicKey(market);
     await this.loadNosanaJobs();
-    const marketAccount = await this.jobs!.account.marketAccount.fetch(market.toString());
+    const marketAccount = await this.jobs!.account.marketAccount.fetch(
+      market.toString(),
+    );
     //@ts-ignore
-    return {...marketAccount, address: marketAccount.publicKey};
+    return { ...marketAccount, address: marketAccount.publicKey };
   }
 
   /**

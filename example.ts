@@ -39,7 +39,7 @@ console.log(
   let job;
   while (!job || parseInt(job.state) < 2) {
     console.log('checking job state..');
-    job = await nosana.jobs.getJob(response.job);
+    job = await nosana.jobs.get(response.job);
     await sleep(5);
   }
   console.log('job done!');
