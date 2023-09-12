@@ -21,7 +21,6 @@ export async function setSDK(network: string, keyfile: string) {
       const privateKey = fs.readFileSync(keyfile, 'utf8');
       config.solana!.wallet = privateKey;
     } else {
-      console.log('', keyfile);
       console.log(
         `Creating new keypair and storing it in ${colors.CYAN}${keyfile}${colors.RESET}\n`,
       );

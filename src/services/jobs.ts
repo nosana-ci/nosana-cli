@@ -7,7 +7,7 @@ import { Keypair, PublicKey, SendTransactionError } from '@solana/web3.js';
 
 import type { Job, Market } from '../types/index.js';
 import { SolanaManager } from './solana.js';
-import anchor from '@coral-xyz/anchor';
+import * as anchor from '@coral-xyz/anchor';
 const { BN } = anchor;
 
 /**
