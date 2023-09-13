@@ -1,12 +1,17 @@
 import { Wallet } from '@coral-xyz/anchor';
 import { Client, ClientConfig } from '../index.js';
-import fs from 'node:fs';
+import fs from 'fs';
+import os from 'os';
 import { Keypair, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { colors } from './terminal.js';
 
 let nosana: Client;
 
-export async function setSDK(network: string, keyfile: string) {
+export async function setSDK(
+  network: string,
+  keyfile: string,
+  airdrop: boolean = false,
+) {
   const config: ClientConfig = {
     solana: {
       network: network,
@@ -14,6 +19,9 @@ export async function setSDK(network: string, keyfile: string) {
   };
 
   if (!process?.env?.SOLANA_WALLET) {
+    if (keyfile && keyfile[0] === '~') {
+      keyfile = keyfile.replace('~', os.homedir());
+    }
     if (fs.existsSync(keyfile)) {
       console.log(
         `Reading keypair from ${colors.CYAN}${keyfile}${colors.RESET}\n`,
@@ -57,8 +65,12 @@ export async function setSDK(network: string, keyfile: string) {
       colors.RESET
     }`,
   );
-  if (nosana.solana.config.network.includes('devnet') && solBalance === 0) {
-    console.log('\nNo SOL, requesting airdrop');
+  if (
+    airdrop &&
+    nosana.solana.config.network.includes('devnet') &&
+    solBalance <= 0.1
+  ) {
+    console.log('\nNot enough SOL, requesting airdrop');
     if (await nosana.solana.requestAirdrop(1e9)) {
       console.log(`Received airdrop of ${colors.CYAN}1 SOL!${colors.RESET}`);
     } else {

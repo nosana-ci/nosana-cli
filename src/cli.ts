@@ -14,7 +14,7 @@ program
   .configureHelp({ showGlobalOptions: true })
   .hook('preAction', async (thisCommand, actionCommand) => {
     const opts = actionCommand.optsWithGlobals();
-    await setSDK(opts.network, opts.wallet);
+    await setSDK(opts.network, opts.wallet, actionCommand.opts().airdrop);
   })
   .addOption(
     new Option('-n, --network <network>', 'network to run on').default(
@@ -23,7 +23,7 @@ program
   )
   .addOption(
     new Option('-w, --wallet <wallet>', 'path to wallet private key').default(
-      './nosana_key.json',
+      '~/nosana_key.json',
     ),
   );
 
@@ -31,6 +31,12 @@ program
   .command('run')
   .description('Create a job to run by Nosana Runners')
   .argument('[command...]', 'command to run')
+  .addOption(
+    new Option(
+      '--airdrop',
+      'request an airdrop when low on SOL on devnet',
+    ).default(true),
+  )
   .addOption(
     new Option('-i, --image <image>', 'docker image to use').default('ubuntu'),
   )
