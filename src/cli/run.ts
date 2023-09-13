@@ -69,7 +69,7 @@ export async function run(
       ],
     };
   }
-  return;
+
   if (options.raw) {
     console.log(
       util.inspect(json_flow, { showHidden: false, depth: null, colors: true }),
