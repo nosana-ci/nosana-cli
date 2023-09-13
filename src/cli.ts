@@ -2,6 +2,8 @@
 import figlet from 'figlet';
 import { Command, Option } from 'commander';
 import { run, get, setSDK } from './cli/index.js';
+import inquirer from 'inquirer';
+import { colors } from './cli/terminal.js';
 const program = new Command();
 
 const VERSION = '0.1.0';
@@ -14,6 +16,30 @@ program
   .configureHelp({ showGlobalOptions: true })
   .hook('preAction', async (thisCommand, actionCommand) => {
     const opts = actionCommand.optsWithGlobals();
+    if (actionCommand.name() === 'run') {
+      if (!process.env.IPFS_JWT) {
+        console.log(
+          `${colors.YELLOW}WARNING: IPFS_JWT env variable not set${colors.RESET}`,
+        );
+        process.env.IPFS_JWT = (
+          await inquirer.prompt([
+            {
+              type: 'password',
+              name: 'token',
+              message: 'Paste your IPFS_JWT here:',
+              mask: true,
+            },
+          ])
+        ).token;
+        console.log(`${colors.GREEN}IPFS JWT token set!${colors.RESET}`);
+        console.log(
+          'If you want to save your token for next runs, use the following command:',
+        );
+        console.log(
+          `${colors.CYAN}export IPFS_JWT='<insert-jwt-token-here>'${colors.RESET}\n`,
+        );
+      }
+    }
     await setSDK(opts.network, opts.wallet, actionCommand.opts().airdrop);
   })
   .addOption(

@@ -40,7 +40,9 @@ export async function run(
   },
 ) {
   if (command.length && options.file) {
-    console.error('warning: [command] ignored as file flag is already set');
+    console.error(
+      `${colors.YELLOW}WARNING: [command] ignored as file flag is already set${colors.RESET}`,
+    );
   } else if (!command.length && !options.file) {
     throw new Error(
       'error: either specify a [command] or provide a file with the --file flag',
@@ -67,6 +69,7 @@ export async function run(
       ],
     };
   }
+  return;
   if (options.raw) {
     console.log(
       util.inspect(json_flow, { showHidden: false, depth: null, colors: true }),
