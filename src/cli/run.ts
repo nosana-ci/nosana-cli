@@ -4,6 +4,7 @@ import { getSDK } from './index.js';
 import { get } from './get.js';
 import util from 'util';
 import fs from 'node:fs';
+import { randomUUID } from 'crypto';
 
 const escapeCmd = (cmd: string) => cmd.replace(/'/g, "'\"'\"'");
 const echoAndRun = (cmd: string) => [
@@ -52,16 +53,19 @@ export async function run(
   let json_flow;
   if (options.file) {
     json_flow = JSON.parse(fs.readFileSync(options.file, 'utf8'));
+    json_flow.state['nosana/trigger'] = 'cli';
   } else {
     json_flow = {
       state: {
-        'nosana/job-type': 'github-flow',
+        'nosana/type': 'docker',
+        'nosana/trigger': 'cli',
       },
       ops: [
         {
           op: 'container/run',
           id: 'run-from-cli',
           args: {
+            workdir: '/nosana-ci',
             cmds: runThroughShellFile([command.join(' ')]),
             image: options.image,
           },
@@ -69,6 +73,52 @@ export async function run(
       ],
     };
   }
+  const artifactId = 'artifact-' + randomUUID();
+  if (options.output) {
+    const volumeId = randomUUID() + '-volume';
+    const createVolumeOp = {
+      op: 'container/create-volume',
+      id: volumeId,
+    };
+    for (let i = 0; i < json_flow.ops.length; i++) {
+      json_flow.ops[i].args.volumes = [
+        {
+          name: volumeId,
+          dest: '/nosana-ci',
+        },
+      ];
+      if (!json_flow.ops[i].args.workdir) {
+        json_flow.ops[i].args.workdir = '/nosana-ci';
+      }
+    }
+    json_flow.ops.unshift(createVolumeOp);
+    const cmd = `nosana-node-helper artifact-uploader --job-id ${artifactId} --path ${options.output}`;
+    json_flow.ops.push({
+      op: 'container/run',
+      id: artifactId,
+      args: {
+        image: 'nosana/nosana-node-helper:latest',
+        env: {
+          SECRETS_MANAGER: nosana.secrets.config.manager,
+          SECRETS_TOKEN: ['nosana/secrets-jwt', nosana.secrets.config.manager],
+          PINATA_JWT: ['nosana/pinata-jwt'],
+          RUST_BACKTRACE: '1',
+          RUST_LOG: 'info',
+        },
+        workdir: '/nosana-ci',
+        volumes: [
+          {
+            name: volumeId,
+            dest: '/nosana-ci',
+          },
+        ],
+        cmds: [{ cmd }],
+      },
+    });
+  }
+  console.log(
+    util.inspect(json_flow, { showHidden: false, depth: null, colors: true }),
+  );
 
   if (options.raw) {
     console.log(
@@ -89,7 +139,7 @@ export async function run(
 
   if (!options.completed) {
     console.log(
-      `\nrun ${colors.CYAN}\`nosana get ${response.job}\`${colors.RESET} to retrieve job and result`,
+      `\nrun ${colors.CYAN}nosana get ${response.job}${colors.RESET} to retrieve job and result`,
     );
   }
 }

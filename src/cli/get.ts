@@ -3,18 +3,8 @@ import { Client } from '../';
 import { getSDK } from './index.js';
 import util from 'util';
 import { sleep } from '../utils.js';
-
-/**
- * Shell swag colors for logging
- */
-const colors = {
-  RED: '\u001b[1;31m',
-  GREEN: '\u001b[1;32m',
-  BLUE: '\u001b[1;34m',
-  CYAN: '\u001b[1;36m',
-  WHITE: '\u001b[1;38;5;231m',
-  RESET: '\u001b[0m',
-};
+import { colors } from './terminal.js';
+import { download } from './download.js';
 
 export async function get(
   jobAddress: string,
@@ -132,25 +122,22 @@ export async function get(
       console.log('Logs:');
       const result = ipfsResult?.results;
       if (result) {
+        const jsonFlow = await nosana.ipfs.retrieve(job.ipfsJob);
         let commands = [];
-        if (result['run-from-cli']) {
-          commands.push('run-from-cli');
-        } else {
-          const jsonFlow = await nosana.ipfs.retrieve(job.ipfsJob);
-          if (jsonFlow.ops) {
-            commands = jsonFlow.ops.map((j: any) => j.name || j.id);
-            const type = jsonFlow.state && jsonFlow.state['nosana/job-type'];
-            switch (type) {
-              case 'Github':
-              case 'github-flow':
-                if (!commands.includes('checkout'))
-                  commands.unshift('checkout');
-                break;
-              case 'gitlab':
-                break;
-            }
+
+        if (jsonFlow.ops) {
+          commands = jsonFlow.ops.map((j: any) => j.name || j.id);
+          const type = jsonFlow.state && jsonFlow.state['nosana/job-type'];
+          switch (type) {
+            case 'Github':
+            case 'github-flow':
+              if (!commands.includes('checkout')) commands.unshift('checkout');
+              break;
+            case 'gitlab':
+              break;
           }
         }
+
         for (let i = 0; i < commands.length; i++) {
           const command = commands[i];
           if (result[command] && !command.endsWith('-volume')) {
@@ -193,6 +180,27 @@ export async function get(
               }
             } else {
               console.log(`${colors.RED}${steps}${colors.RESET}`);
+            }
+          }
+        }
+
+        const artifactId = jsonFlow.ops[jsonFlow.ops.length - 1].id;
+        if (artifactId.startsWith('artifact-')) {
+          const steps = result[artifactId][1];
+          if (Array.isArray(steps)) {
+            const logs = steps[steps.length - 1].log;
+            if (logs && logs[logs.length - 2]) {
+              const ipfshash = logs[logs.length - 2][1].slice(-47, -1);
+              if (options.download) {
+                await download(ipfshash, options, undefined, nosana);
+              } else {
+                console.log(
+                  `${colors.YELLOW}This job has external artifacts that can be downloaded with:${colors.RESET}`,
+                );
+                console.log(
+                  `${colors.CYAN}nosana download ${ipfshash}${colors.RESET}`,
+                );
+              }
             }
           }
         }

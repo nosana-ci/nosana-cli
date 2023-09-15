@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import figlet from 'figlet';
 import { Command, Option } from 'commander';
-import { run, get, setSDK } from './cli/index.js';
+import { run, get, setSDK, download } from './cli/index.js';
 import inquirer from 'inquirer';
 import { colors } from './cli/terminal.js';
 const program = new Command();
@@ -64,6 +64,12 @@ program
     ).default(true),
   )
   .addOption(
+    new Option(
+      '-o, --output [path]',
+      'specify which folder inside the container you want to upload',
+    ),
+  )
+  .addOption(
     new Option('-i, --image <image>', 'docker image to use').default('ubuntu'),
   )
   .addOption(new Option('--f, --file [path]', 'file with the JSON flow'))
@@ -71,6 +77,7 @@ program
   .addOption(
     new Option('--completed', 'wait for job to be completed and show result'),
   )
+  .addOption(new Option('--download', 'download external artifacts'))
   .action(run);
 
 program
@@ -81,7 +88,14 @@ program
   .addOption(
     new Option('--completed', 'wait for job to be completed and show result'),
   )
+  .addOption(new Option('--download', 'download external artifacts'))
   .action(get);
+
+program
+  .command('download')
+  .description('Download an external artifact from IPFS')
+  .argument('<ipfs>', 'ipfs hash')
+  .action(download);
 
 async function startCLI() {
   await program.parseAsync(process.argv);
