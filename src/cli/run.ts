@@ -116,9 +116,6 @@ export async function run(
       },
     });
   }
-  console.log(
-    util.inspect(json_flow, { showHidden: false, depth: null, colors: true }),
-  );
 
   if (options.raw) {
     console.log(
