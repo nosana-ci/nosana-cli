@@ -50,7 +50,7 @@ export async function run(
     );
   }
   const nosana: Client = getSDK();
-  let json_flow;
+  let json_flow: { [key: string]: any }; // TODO: add JSON flow type
   if (options.file) {
     json_flow = JSON.parse(fs.readFileSync(options.file, 'utf8'));
     json_flow.state['nosana/trigger'] = 'cli';
@@ -72,6 +72,9 @@ export async function run(
         },
       ],
     };
+    if (options.gpu) {
+      json_flow.ops[0].devices = [{ path: 'nvidia.com/gpu=all' }];
+    }
   }
   const artifactId = 'artifact-' + randomUUID();
   if (options.output) {
@@ -116,6 +119,10 @@ export async function run(
       },
     });
   }
+
+  // if (options.gpu) {
+
+  // }
 
   if (options.raw) {
     console.log(

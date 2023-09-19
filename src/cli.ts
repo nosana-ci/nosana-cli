@@ -69,6 +69,7 @@ program
       'request an airdrop when low on SOL on devnet',
     ).default(true),
   )
+  .addOption(new Option('--gpu', 'enable GPU on node'))
   .addOption(
     new Option(
       '-o, --output <path>',
