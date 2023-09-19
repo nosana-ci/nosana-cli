@@ -192,7 +192,13 @@ export async function get(
             if (logs && logs[logs.length - 2]) {
               const ipfshash = logs[logs.length - 2][1].slice(-47, -1);
               if (options.download) {
-                await download(ipfshash, options, undefined, nosana);
+                await download(
+                  ipfshash,
+                  options.download,
+                  options,
+                  undefined,
+                  nosana,
+                );
               } else {
                 console.log(
                   `${colors.YELLOW}This job has external artifacts that can be downloaded with:${colors.RESET}`,

@@ -65,7 +65,7 @@ program
   )
   .addOption(
     new Option(
-      '-o, --output [path]',
+      '-o, --output <path>',
       'specify which folder inside the container you want to upload',
     ),
   )
@@ -88,13 +88,19 @@ program
   .addOption(
     new Option('--completed', 'wait for job to be completed and show result'),
   )
-  .addOption(new Option('--download', 'download external artifacts'))
+  .addOption(
+    new Option(
+      '--download [path]',
+      'download external artifacts to specified path',
+    ),
+  )
   .action(get);
 
 program
   .command('download')
-  .description('Download an external artifact from IPFS')
+  .description('Download an external artifact from IPFS to specified path')
   .argument('<ipfs>', 'ipfs hash')
+  .argument('[path]', 'local path to store downloaded artifact')
   .action(download);
 
 async function startCLI() {

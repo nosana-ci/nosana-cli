@@ -9,6 +9,7 @@ import { colors } from './terminal.js';
 
 export async function download(
   ipfshash: string,
+  path: string | boolean | undefined,
   options: {
     [key: string]: any;
   },
@@ -26,7 +27,7 @@ export async function download(
   const readable = new Readable();
   readable.push(output);
   readable.push(null);
-  const outputFolder = 'output-' + ipfshash;
+  const outputFolder = typeof path === 'string' ? path : 'output-' + ipfshash;
   if (!fs.existsSync(outputFolder)) {
     fs.mkdirSync(outputFolder);
   }
