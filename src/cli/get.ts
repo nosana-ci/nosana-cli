@@ -191,26 +191,28 @@ export async function get(
 
         const artifactId = jsonFlow.ops[jsonFlow.ops.length - 1].id;
         if (artifactId.startsWith('artifact-')) {
-          const steps = result[artifactId][1];
-          if (Array.isArray(steps)) {
-            const logs = steps[steps.length - 1].log;
-            if (logs && logs[logs.length - 2]) {
-              const ipfshash = logs[logs.length - 2][1].slice(-47, -1);
-              if (options.download) {
-                await download(
-                  ipfshash,
-                  options.download,
-                  options,
-                  undefined,
-                  nosana,
-                );
-              } else {
-                console.log(
-                  `${colors.YELLOW}This job has external artifacts that can be downloaded with:${colors.RESET}`,
-                );
-                console.log(
-                  `${colors.CYAN}nosana download ${ipfshash}${colors.RESET}`,
-                );
+          if (result[artifactId]) {
+            const steps = result[artifactId][1];
+            if (Array.isArray(steps)) {
+              const logs = steps[steps.length - 1].log;
+              if (logs && logs[logs.length - 2]) {
+                const ipfshash = logs[logs.length - 2][1].slice(-47, -1);
+                if (options.download) {
+                  await download(
+                    ipfshash,
+                    options.download,
+                    options,
+                    undefined,
+                    nosana,
+                  );
+                } else {
+                  console.log(
+                    `${colors.YELLOW}This job has external artifacts that can be downloaded with:${colors.RESET}`,
+                  );
+                  console.log(
+                    `${colors.CYAN}nosana download ${ipfshash}${colors.RESET}`,
+                  );
+                }
               }
             }
           }
