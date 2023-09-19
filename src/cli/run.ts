@@ -73,7 +73,7 @@ export async function run(
       ],
     };
     if (options.gpu) {
-      json_flow.ops[0].devices = [{ path: 'nvidia.com/gpu=all' }];
+      json_flow.ops[0].args.devices = [{ path: 'nvidia.com/gpu=all' }];
     }
   }
   const artifactId = 'artifact-' + randomUUID();
