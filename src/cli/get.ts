@@ -73,7 +73,7 @@ export async function get(
             }${colors.RESET}`,
           );
           console.log(
-            `Price:\t\t${colors.CYAN}${job.price} NOS/s${colors.RESET}`,
+            `Price:\t\t${colors.CYAN}${job.price / 1e6} NOS/s${colors.RESET}`,
           );
           if (job.timeStart) {
             console.log(
@@ -84,9 +84,14 @@ export async function get(
           }
           if (job.timeEnd) {
             console.log(
-              `Duration:\t${colors.CYAN}${job.timeEnd - job.timeStart} s${
+              `Duration:\t${colors.CYAN}${job.timeEnd - job.timeStart} seconds${
                 colors.RESET
               }`,
+            );
+            console.log(
+              `Total Costs:\t${colors.CYAN}${
+                ((job.timeEnd - job.timeStart) * job.price) / 1e6
+              } NOS${colors.RESET}`,
             );
           }
           console.log(

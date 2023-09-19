@@ -128,8 +128,22 @@ export async function run(
       colors.RESET
     }`,
   );
+  const market = await nosana.jobs.getMarket(
+    nosana.solana.config.market_address,
+  );
+
+  console.log(
+    `posting job to market ${colors.CYAN}${
+      nosana.solana.config.market_address
+    }${colors.RESET} for price ${colors.YELLOW}${
+      parseInt(market.jobPrice) / 1e6
+    } NOS/s${colors.RESET}`,
+  );
+
   await nosana.jobs.setAccounts();
-  nosana.jobs.accounts!.user = nosana.jobs.accounts!.vault;
+  if (market.jobPrice == 0) {
+    nosana.jobs.accounts!.user = nosana.jobs.accounts!.vault;
+  }
   const response = await nosana.jobs.list(ipfsHash);
   console.log('job posted!', response);
   await get(response.job, options, undefined, nosana);
