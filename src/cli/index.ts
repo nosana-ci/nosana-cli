@@ -9,6 +9,7 @@ let nosana: Client;
 
 export async function setSDK(
   network: string,
+  market: string | undefined,
   keyfile: string,
   airdrop: boolean = false,
 ) {
@@ -17,6 +18,9 @@ export async function setSDK(
       network: network,
     },
   };
+  if (market) {
+    config.solana!.market_address = market;
+  }
 
   if (!process?.env?.SOLANA_WALLET) {
     if (keyfile && keyfile[0] === '~') {

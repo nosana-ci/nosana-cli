@@ -40,13 +40,19 @@ program
         );
       }
     }
-    await setSDK(opts.network, opts.wallet, actionCommand.opts().airdrop);
+    await setSDK(
+      opts.network,
+      opts.market,
+      opts.wallet,
+      actionCommand.opts().airdrop,
+    );
   })
   .addOption(
     new Option('-n, --network <network>', 'network to run on').default(
       'devnet',
     ),
   )
+  .addOption(new Option('-m, --market <market>', 'market to post job to'))
   .addOption(
     new Option('-w, --wallet <wallet>', 'path to wallet private key').default(
       '~/nosana_key.json',
