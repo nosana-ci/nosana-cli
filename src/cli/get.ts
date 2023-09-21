@@ -20,7 +20,9 @@ export async function get(
   let job;
   while (
     !job ||
-    (options.wait && job.state !== 'COMPLETED' && job.state !== 'STOPPED')
+    ((options.wait || options.download) &&
+      job.state !== 'COMPLETED' &&
+      job.state !== 'STOPPED')
   ) {
     console.log('retrieving job...');
     try {
@@ -30,7 +32,7 @@ export async function get(
     }
     if (job) {
       if (
-        !options.wait ||
+        !(options.wait || options.download) ||
         job.state === 'COMPLETED' ||
         job.state === 'STOPPED'
       ) {

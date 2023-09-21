@@ -40,9 +40,19 @@ program
         );
       }
     }
+    let market = opts.market;
+    if (!market) {
+      if (opts.gpu) {
+        if (opts.network.includes('devnet')) {
+          market = '4m2e2nGvem6MorWEzTHqNWsjpweRxWoAfU2u78TdBgGv';
+        } else {
+          throw new Error('GPU nodes only avaible on devnet for now');
+        }
+      }
+    }
     await setSDK(
       opts.network,
-      opts.market,
+      market,
       opts.wallet,
       actionCommand.opts().airdrop,
     );
@@ -82,9 +92,11 @@ program
   .addOption(new Option('--f, --file [path]', 'file with the JSON flow'))
   .addOption(new Option('--raw', 'display raw json job and result'))
   .addOption(
-    new Option('--completed', 'wait for job to be completed and show result'),
+    new Option('--wait', 'wait for job to be completed and show result'),
   )
-  .addOption(new Option('--download', 'download external artifacts'))
+  .addOption(
+    new Option('--download', 'download external artifacts (implies --wait)'),
+  )
   .action(run);
 
 program
@@ -93,12 +105,12 @@ program
   .argument('<job>', 'job address')
   .addOption(new Option('--raw', 'display raw json job and result'))
   .addOption(
-    new Option('--completed', 'wait for job to be completed and show result'),
+    new Option('--wait', 'wait for job to be completed and show result'),
   )
   .addOption(
     new Option(
       '--download [path]',
-      'download external artifacts to specified path',
+      'download external artifacts to specified path (implies --wait)',
     ),
   )
   .action(get);

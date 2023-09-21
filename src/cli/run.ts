@@ -155,7 +155,7 @@ export async function run(
   console.log('job posted!', response);
   await get(response.job, options, undefined, nosana);
 
-  if (!options.wait) {
+  if (!(options.wait || options.download)) {
     console.log(
       `\nrun ${colors.CYAN}nosana get ${response.job}${colors.RESET} to retrieve job and result`,
     );
