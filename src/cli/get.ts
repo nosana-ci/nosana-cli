@@ -20,7 +20,7 @@ export async function get(
   let job;
   while (
     !job ||
-    (options.completed && job.state !== 'COMPLETED' && job.state !== 'STOPPED')
+    (options.wait && job.state !== 'COMPLETED' && job.state !== 'STOPPED')
   ) {
     console.log('retrieving job...');
     try {
@@ -30,7 +30,7 @@ export async function get(
     }
     if (job) {
       if (
-        !options.completed ||
+        !options.wait ||
         job.state === 'COMPLETED' ||
         job.state === 'STOPPED'
       ) {
