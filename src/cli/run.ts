@@ -65,7 +65,6 @@ export async function run(
           op: 'container/run',
           id: 'run-from-cli',
           args: {
-            workdir: '/nosana-ci',
             cmds: runThroughShellFile([command.join(' ')]),
             image: options.image,
           },
@@ -87,12 +86,9 @@ export async function run(
       json_flow.ops[i].args.volumes = [
         {
           name: volumeId,
-          dest: '/nosana-ci',
+          dest: options.output,
         },
       ];
-      if (!json_flow.ops[i].args.workdir) {
-        json_flow.ops[i].args.workdir = '/nosana-ci';
-      }
     }
     json_flow.ops.unshift(createVolumeOp);
     const cmd = `nosana-node-helper artifact-uploader --job-id ${artifactId} --path ${options.output}`;
@@ -108,21 +104,17 @@ export async function run(
           RUST_BACKTRACE: '1',
           RUST_LOG: 'info',
         },
-        workdir: '/nosana-ci',
+        workdir: options.output,
         volumes: [
           {
             name: volumeId,
-            dest: '/nosana-ci',
+            dest: options.output,
           },
         ],
         cmds: [{ cmd }],
       },
     });
   }
-
-  // if (options.gpu) {
-
-  // }
 
   if (options.raw) {
     console.log(
