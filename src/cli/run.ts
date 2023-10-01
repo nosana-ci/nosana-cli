@@ -65,7 +65,7 @@ export async function run(
           op: 'container/run',
           id: 'run-from-cli',
           args: {
-            cmds: runThroughShellFile([command.join(' ')]),
+            cmds: [{ cmd: command.join(' ') }],
             image: options.image,
           },
         },
