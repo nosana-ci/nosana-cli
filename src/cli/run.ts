@@ -135,6 +135,7 @@ export async function run(
     `posting job to market ${colors.CYAN}${
       nosana.solana.config.market_address
     }${colors.RESET} for price ${colors.YELLOW}${
+      // @ts-ignore
       parseInt(market.jobPrice) / 1e6
     } NOS/s${colors.RESET}`,
   );
