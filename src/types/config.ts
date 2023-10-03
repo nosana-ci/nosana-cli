@@ -8,7 +8,8 @@ export type SolanaConfig = {
   market_address: string;
   rewards_address: string;
   nodes_address: string;
-  wallet: Wallet | string | Keypair | Iterable<number>;
+  stake_address: string;
+  wallet: Wallet | string | Keypair | Iterable<number> | null;
 };
 
 export type SecretsConfig = {

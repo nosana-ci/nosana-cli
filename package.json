@@ -51,6 +51,7 @@
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.28.1-beta.1",
+    "@solana/spl-token": "^0.3.8",
     "@solana/web3.js": "^1.78.0",
     "axios": "^1.4.0",
     "axios-retry": "^3.5.1",
