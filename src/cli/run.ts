@@ -2,37 +2,10 @@ import { Client } from '../';
 import { colors } from './terminal.js';
 import { getSDK } from './index.js';
 import { get } from './get.js';
+import { getWAPMUrlForCommandName } from './wapm.js';
 import util from 'util';
 import fs from 'node:fs';
 import { randomUUID } from 'crypto';
-
-const escapeCmd = (cmd: string) => cmd.replace(/'/g, "'\"'\"'");
-const echoAndRun = (cmd: string) => [
-  `echo '${escapeCmd(`${colors.GREEN}$ ${cmd}${colors.RESET}`)}'`,
-  cmd,
-];
-function runThroughShellFile(commands: Array<string>) {
-  // eslint-disable-next-line quotes
-  return [
-    {
-      cmd:
-        "sh -c '" +
-        escapeCmd(
-          `echo '${escapeCmd(
-            [
-              '#!/bin/sh',
-              'if set -o | grep pipefail > /dev/null; then set -o pipefail; fi',
-              'set -o errexit',
-              'set +o noclobber',
-            ]
-              .concat(commands.map((cmd) => echoAndRun(cmd)).flat())
-              .join('\n'),
-          )} '`,
-        ) +
-        " | sh'",
-    },
-  ];
-}
 
 export async function run(
   command: Array<string>,
@@ -55,28 +28,59 @@ export async function run(
     json_flow = JSON.parse(fs.readFileSync(options.file, 'utf8'));
     json_flow.state['nosana/trigger'] = 'cli';
   } else {
-    json_flow = {
-      state: {
-        'nosana/type': 'docker',
-        'nosana/trigger': 'cli',
-      },
-      ops: [
-        {
-          op: 'container/run',
-          id: 'run-from-cli',
-          args: {
-            cmds: [{ cmd: command.join(' ') }],
-            image: options.image,
+    switch (options.type) {
+      case 'docker':
+        json_flow = {
+          state: {
+            'nosana/type': 'docker',
+            'nosana/trigger': 'cli',
           },
-        },
-      ],
-    };
+          ops: [
+            {
+              op: 'container/run',
+              id: 'run-from-cli',
+              args: {
+                cmds: [{ cmd: command.join(' ') }],
+                image: options.image,
+              },
+            },
+          ],
+        };
+        break;
+      case 'wasm':
+        let wasmUrl = options.wasm;
+        if (!wasmUrl) {
+          wasmUrl = await getWAPMUrlForCommandName(command[0]);
+        }
+        json_flow = {
+          state: {
+            'nosana/type': 'wasm',
+            'nosana/trigger': 'cli',
+          },
+          ops: [
+            {
+              op: 'wasm/run',
+              id: 'run-from-cli',
+              args: {
+                cmds: [{ cmd: command.join(' ') }],
+                wasm: wasmUrl,
+              },
+            },
+          ],
+        };
+        break;
+      default:
+        throw new Error(`type ${options.type} not supported yet`);
+    }
     if (options.gpu) {
       json_flow.ops[0].args.devices = [{ path: 'nvidia.com/gpu=all' }];
     }
   }
   const artifactId = 'artifact-' + randomUUID();
   if (options.output) {
+    if (options.type === 'wasm') {
+      throw new Error('artifacts not yet supported for wasm');
+    }
     const volumeId = randomUUID() + '-volume';
     const createVolumeOp = {
       op: 'container/create-volume',
