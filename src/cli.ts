@@ -49,6 +49,11 @@ program
           throw new Error('GPU nodes only avaible on devnet for now');
         }
       }
+      if (opts.type === 'wasm') {
+        if (opts.network.includes('devnet')) {
+          market = '2kNSniTBsLCioSr4dgdZh6S1JKQc8cZQvxrPWkEn1ERj';
+        }
+      }
     }
     await setSDK(
       opts.network,
@@ -86,6 +91,8 @@ program
       'specify which folder inside the container you want to upload',
     ),
   )
+  .addOption(new Option('--wasm <url>', 'wasm url to run'))
+  .addOption(new Option('--type <type>', 'type to run').default('docker'))
   .addOption(
     new Option('-i, --image <image>', 'docker image to use').default('ubuntu'),
   )
