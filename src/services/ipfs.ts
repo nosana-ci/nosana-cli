@@ -1,4 +1,4 @@
-import axios, { AxiosHeaders, AxiosInstance } from 'axios';
+import axios, { AxiosHeaders, AxiosInstance, AxiosRequestConfig } from 'axios';
 import bs58 from 'bs58';
 import type { IPFSConfig } from '../types/config.js';
 import { IPFSConfigDefault } from '../config_defaults.js';
@@ -34,9 +34,12 @@ export class IPFS {
     return bs58.encode(Buffer.from(hashArray));
   }
 
-  async retrieve(hash: string | Array<number>): Promise<any> {
+  async retrieve(
+    hash: string | Array<number>,
+    options: AxiosRequestConfig = {},
+  ): Promise<any> {
     if (typeof hash !== 'string') hash = IPFS.solHashToIpfsHash(hash);
-    const response = await axios.get(this.config.gateway + hash);
+    const response = await axios.get(this.config.gateway + hash, options);
     return response.data;
   }
 

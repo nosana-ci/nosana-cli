@@ -1,9 +1,4 @@
-import {
-  AnchorProvider,
-  Idl,
-  Program,
-  setProvider,
-} from '@coral-xyz/anchor';
+import { AnchorProvider, Idl, Program, setProvider } from '@coral-xyz/anchor';
 
 import {
   Keypair,
@@ -12,7 +7,7 @@ import {
   clusterApiUrl,
   Connection,
 } from '@solana/web3.js';
-import type { Cluster } from '@solana/web3.js';
+import type { Cluster, TokenAmount } from '@solana/web3.js';
 import {
   associatedAddress,
   TOKEN_PROGRAM_ID,
@@ -37,7 +32,7 @@ export class SolanaManager {
   provider: AnchorProvider | undefined;
   jobs: Program<NosanaJobs> | undefined;
   nodes: Program<NosanaNodes> | undefined;
-  accounts: object | undefined;
+  accounts: { [key: string]: PublicKey } | undefined;
   config: SolanaConfig = solanaConfigDefault;
   connection: Connection | undefined;
   constructor(config?: Partial<SolanaConfig>) {
@@ -77,17 +72,47 @@ export class SolanaManager {
     setProvider(this.provider);
   }
 
-  async getNosBalance(address: string | PublicKey): Promise<object> {
+  async requestAirdrop(amount = 1e9): Promise<string | boolean> {
+    try {
+      if (this.connection) {
+        let txhash = await this.connection.requestAirdrop(
+          (this.config.wallet as Wallet).publicKey,
+          amount,
+        );
+        return txhash;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return false;
+  }
+
+  async getNosBalance(
+    address?: string | PublicKey,
+  ): Promise<TokenAmount | undefined> {
+    if (!address) {
+      address = this.provider?.wallet.publicKey;
+    }
     if (typeof address === 'string') address = new PublicKey(address);
-    const mintAccount = new PublicKey(
-      this.config.nos_address
-    );
-    const account = await this.connection!.getTokenAccountsByOwner(address, {mint: mintAccount});
+    const mintAccount = new PublicKey(this.config.nos_address);
+    const account = await this.connection!.getTokenAccountsByOwner(address!, {
+      mint: mintAccount,
+    });
+    if (!account.value[0]) return;
     const tokenAddress = new PublicKey(account.value[0].pubkey.toString());
     const tokenBalance = await this.connection!.getTokenAccountBalance(
-      tokenAddress
+      tokenAddress,
     );
     return tokenBalance.value;
+  }
+
+  async getSolBalance(address?: string | PublicKey): Promise<number> {
+    if (!address) {
+      address = this.provider?.wallet.publicKey;
+    }
+    if (typeof address === 'string') address = new PublicKey(address);
+    const tokenBalance = await this.connection!.getBalance(address!);
+    return tokenBalance;
   }
 
   /**
