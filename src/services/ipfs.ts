@@ -34,6 +34,15 @@ export class IPFS {
     return bs58.encode(Buffer.from(hashArray));
   }
 
+  /**
+   * Converts IPFS hash to byte array needed to submit results
+   * @param hash IPFS hash
+   * @returns Array<number>
+   */
+  IpfsHashToByteArray(hash: string): Array<number> {
+    return [...bs58.decode(hash).subarray(2)]
+  }
+
   async retrieve(
     hash: string | Array<number>,
     options: AxiosRequestConfig = {},
