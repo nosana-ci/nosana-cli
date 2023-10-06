@@ -72,11 +72,11 @@ export class SolanaManager {
     setProvider(this.provider);
   }
 
-  async requestAirdrop(amount = 1e9): Promise<string | boolean> {
+  async requestAirdrop(amount = 1e9, publicKey?: PublicKey): Promise<string | boolean> {
     try {
       if (this.connection) {
         let txhash = await this.connection.requestAirdrop(
-          (this.config.wallet as Wallet).publicKey,
+          publicKey ? publicKey : (this.config.wallet as Wallet).publicKey,
           amount,
         );
         return txhash;

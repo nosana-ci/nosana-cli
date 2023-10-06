@@ -387,22 +387,22 @@ export class Jobs extends SolanaManager {
    * Exit the node queue
    * @returns
    */
-    async stop (market: string | PublicKey) {
-      try {
-        await this.loadNosanaJobs();
-        await this.setAccounts();
-        if (typeof market === 'string') market = new PublicKey(market);
-        const tx = await this.jobs!.methods
-          .stop()
-          .accounts({
-            ...this.accounts,
-            market
-          })
-          .rpc();
-        return tx;
-      } catch (error) {
-        console.error(error);
-        throw error;
-      }
-    };
+  async stop (market: string | PublicKey) {
+    try {
+      await this.loadNosanaJobs();
+      await this.setAccounts();
+      if (typeof market === 'string') market = new PublicKey(market);
+      const tx = await this.jobs!.methods
+        .stop()
+        .accounts({
+          ...this.accounts,
+          market
+        })
+        .rpc();
+      return tx;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  };
 }
