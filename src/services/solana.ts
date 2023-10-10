@@ -1,5 +1,5 @@
 import { AnchorProvider, Idl, Program, setProvider } from '@coral-xyz/anchor';
-
+import { getAssociatedTokenAddress, getAccount, createAssociatedTokenAccount, ASSOCIATED_TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import {
   Keypair,
   PublicKey,
@@ -113,6 +113,35 @@ export class SolanaManager {
     if (typeof address === 'string') address = new PublicKey(address);
     const tokenBalance = await this.connection!.getBalance(address!);
     return tokenBalance;
+  }
+
+  /**
+   * Create a NOS ATA for given address
+   * @param address
+   * @returns ATA public key
+   */
+  async createNosAta(address: string | PublicKey) {
+    if (typeof address === 'string') address = new PublicKey(address);
+    const ata = await getAssociatedTokenAddress(new PublicKey(this.config.nos_address), address);
+    let tx;
+    try {
+      const account = await getAccount(this.connection!, ata);
+    } catch (error) {
+      try {
+        tx = await createAssociatedTokenAccount(
+          this.connection!,
+          (this.provider?.wallet as KeyWallet).payer,
+          new PublicKey(this.config.nos_address),
+          address,
+          {},
+          TOKEN_PROGRAM_ID,
+          ASSOCIATED_TOKEN_PROGRAM_ID
+        );
+      } catch (e) {
+        console.error('createAssociatedTokenAccount', e);
+      }
+    }
+    return tx;
   }
 
   /**
