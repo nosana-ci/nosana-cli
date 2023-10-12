@@ -14,7 +14,7 @@ import {
 } from '@coral-xyz/anchor/dist/cjs/utils/token.js';
 import { bs58, utf8 } from '@coral-xyz/anchor/dist/cjs/utils/bytes/index.js';
 
-import type { NosanaJobs, SolanaConfig, NosanaNodes } from '../types/index.js';
+import type { NosanaJobs, SolanaConfig, NosanaNodes, NosanaStake } from '../types/index.js';
 import { KeyWallet } from '../utils.js';
 import { solanaConfigDefault } from '../config_defaults.js';
 import { Wallet } from '@coral-xyz/anchor/dist/cjs/provider.js';
@@ -32,6 +32,7 @@ export class SolanaManager {
   provider: AnchorProvider | undefined;
   jobs: Program<NosanaJobs> | undefined;
   nodes: Program<NosanaNodes> | undefined;
+  stake: Program<NosanaStake> | undefined;
   accounts: { [key: string]: PublicKey } | undefined;
   config: SolanaConfig = solanaConfigDefault;
   connection: Connection | undefined;
@@ -125,7 +126,7 @@ export class SolanaManager {
     const ata = await getAssociatedTokenAddress(new PublicKey(this.config.nos_address), address);
     let tx;
     try {
-      const account = await getAccount(this.connection!, ata);
+      await getAccount(this.connection!, ata);
     } catch (error) {
       try {
         tx = await createAssociatedTokenAccount(
@@ -142,6 +143,18 @@ export class SolanaManager {
       }
     }
     return tx;
+  }
+
+  /**
+   * get the NOS ATA of an address
+   * @param address
+   * @returns ATA Publickey
+   */
+  async getNosATA(address: string | PublicKey) {
+    if (typeof address === 'string') address = new PublicKey(address);
+    const mint = new PublicKey(this.config.nos_address);
+    const ata = await getAssociatedTokenAddress(mint, address);
+    return ata;
   }
 
   /**
@@ -170,6 +183,21 @@ export class SolanaManager {
       ) as unknown as Program<NosanaNodes>;
     }
   }
+
+    /**
+   * Function to load the Nosana Stake program into JS
+   * https://docs.nosana.io/programs/staking.html
+   */
+    async loadNosanaStake() {
+      if (!this.stake) {
+        const programId = new PublicKey(this.config.stake_address);
+        const idl = (await Program.fetchIdl(programId.toString())) as Idl;
+        this.stake = new Program(
+          idl,
+          programId,
+        ) as unknown as Program<NosanaStake>;
+      }
+    }
 
   /**
    * Function to set and calculate most account addresses needed for instructions

@@ -1,5 +1,5 @@
 import type { ClientConfig } from './types/index.js';
-import { IPFS, SolanaManager, SecretManager, Jobs, Nodes } from './services/index.js';
+import { IPFS, SolanaManager, SecretManager, Jobs, Nodes, Stake } from './services/index.js';
 export * from './services/index.js';
 export * from './types/index.js';
 
@@ -15,6 +15,7 @@ export class Client {
   secrets: SecretManager;
   jobs: Jobs;
   nodes: Nodes;
+  stake: Stake;
 
   constructor(config?: Partial<ClientConfig>) {
     this.solana = new SolanaManager(config?.solana);
@@ -22,5 +23,6 @@ export class Client {
     this.secrets = new SecretManager(config?.secrets);
     this.jobs = new Jobs(config?.solana);
     this.nodes = new Nodes(config?.solana);
+    this.stake = new Stake(config?.solana);
   }
 }

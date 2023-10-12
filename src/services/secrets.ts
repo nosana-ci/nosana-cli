@@ -3,7 +3,6 @@ import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import axiosRetry from 'axios-retry';
 import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes/index.js';
 import nacl from 'tweetnacl';
-import { existsSync, readFileSync, writeFileSync } from 'fs';
 
 // local imports
 import { now, KeyWallet } from '../utils.js';
