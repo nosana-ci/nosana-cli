@@ -249,7 +249,7 @@ export class Jobs extends SolanaManager {
       market.toString(),
     );
     //@ts-ignore
-    return { ...marketAccount, address: marketAccount.publicKey };
+    return { ...marketAccount, address: market };
   }
 
   /**
