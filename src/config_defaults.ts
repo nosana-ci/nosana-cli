@@ -21,7 +21,7 @@ export const solanaConfigDefault: SolanaConfig = {
   nodes_address:
     process?.env?.NODES_ADDRESS ||
     'nosNeZR64wiEhQc5j251bsP4WqDabT6hmz4PHyoHLGD',
-  stake_address: 
+  stake_address:
     process?.env?.NODES_ADDRESS ||
     'nosScmHY2uR24Zh751PmGj9ww9QRNHewh9H59AfrTJE',
   wallet: wallet,
