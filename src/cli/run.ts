@@ -70,11 +70,10 @@ export async function run(
         };
         break;
       case 'whisper':
-        let audioUrl: String = command[0];
+        let audioUrl: string = command[0];
         if (!audioUrl.startsWith('http')) {
           audioUrl =
-            nosana.ipfs.config.gateway +
-            (await nosana.ipfs.pinFile('./jfk.wav'));
+            nosana.ipfs.config.gateway + (await nosana.ipfs.pinFile(audioUrl));
           console.log(
             `audio file uploaded:\t${colors.BLUE}${audioUrl}${colors.RESET}`,
           );
