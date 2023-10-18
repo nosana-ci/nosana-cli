@@ -2,9 +2,7 @@ import axios, { AxiosHeaders, AxiosInstance, AxiosRequestConfig } from 'axios';
 import bs58 from 'bs58';
 import type { IPFSConfig } from '../types/config.js';
 import { IPFSConfigDefault } from '../config_defaults.js';
-import { createReadStream } from 'node:fs';
-import { readFile } from 'node:fs/promises';
-import { lookup } from 'mime-types';
+import fs from 'fs';
 import FormData from 'form-data';
 
 /**
@@ -74,7 +72,7 @@ export class IPFS {
     //   type: lookup(filePath) ? (lookup(filePath) as string) : undefined,
     // });
     // data.set('file', file, filePath.split('/').pop());
-    data.append('file', createReadStream(filePath));
+    data.append('file', fs.createReadStream(filePath));
     const response = await this.api.post('/pinning/pinFileToIPFS', data, {
       headers: {
         'Content-Type': `multipart/form-data; boundary=${data.getBoundary()}`,
