@@ -2,6 +2,8 @@ import axios, { AxiosHeaders, AxiosInstance, AxiosRequestConfig } from 'axios';
 import bs58 from 'bs58';
 import type { IPFSConfig } from '../types/config.js';
 import { IPFSConfigDefault } from '../config_defaults.js';
+import fs from 'fs';
+import FormData from 'form-data';
 
 /**
  * Class to interact with Pinata Cloud
@@ -40,7 +42,7 @@ export class IPFS {
    * @returns Array<number>
    */
   IpfsHashToByteArray(hash: string): Array<number> {
-    return [...bs58.decode(hash).subarray(2)]
+    return [...bs58.decode(hash).subarray(2)];
   }
 
   async retrieve(
@@ -58,6 +60,25 @@ export class IPFS {
    */
   async pin(data: object): Promise<string> {
     const response = await this.api.post('/pinning/pinJSONToIPFS', data);
+    return response.data.IpfsHash;
+  }
+  /**
+   * Function to pin data into Pinata Cloud
+   * @param data Object to pin into IPFS as JSON
+   */
+  async pinFile(filePath: string): Promise<string> {
+    let data = new FormData();
+    // const file = new Blob([await readFile(filePath)], {
+    //   type: lookup(filePath) ? (lookup(filePath) as string) : undefined,
+    // });
+    // data.set('file', file, filePath.split('/').pop());
+    data.append('file', fs.createReadStream(filePath));
+    const response = await this.api.post('/pinning/pinFileToIPFS', data, {
+      headers: {
+        'Content-Type': `multipart/form-data; boundary=${data.getBoundary()}`,
+        Authorization: `Bearer ${this.config.jwt}`,
+      },
+    });
     return response.data.IpfsHash;
   }
 }

@@ -69,6 +69,31 @@ export async function run(
           ],
         };
         break;
+      case 'whisper':
+        let audioUrl: string = command[0];
+        if (!audioUrl.startsWith('http')) {
+          audioUrl =
+            nosana.ipfs.config.gateway + (await nosana.ipfs.pinFile(audioUrl));
+          console.log(
+            `audio file uploaded:\t${colors.BLUE}${audioUrl}${colors.RESET}`,
+          );
+        }
+        json_flow = {
+          state: {
+            'nosana/type': 'whisper',
+            'nosana/trigger': 'cli',
+          },
+          ops: [
+            {
+              op: 'whisper/run',
+              id: 'run-from-cli',
+              args: {
+                audio: audioUrl,
+              },
+            },
+          ],
+        };
+        break;
       default:
         throw new Error(`type ${options.type} not supported yet`);
     }
@@ -78,8 +103,8 @@ export async function run(
   }
   const artifactId = 'artifact-' + randomUUID();
   if (options.output) {
-    if (options.type === 'wasm') {
-      throw new Error('artifacts not yet supported for wasm');
+    if (options.type === 'wasm' || options.type === 'whisper') {
+      throw new Error('artifacts not yet supported for this job type');
     }
     const volumeId = randomUUID() + '-volume';
     const createVolumeOp = {

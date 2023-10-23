@@ -49,7 +49,7 @@ program
           throw new Error('GPU nodes only avaible on devnet for now');
         }
       }
-      if (opts.type === 'wasm') {
+      if (opts.type === 'wasm' || opts.type === 'whisper') {
         if (opts.network.includes('devnet')) {
           market = '2kNSniTBsLCioSr4dgdZh6S1JKQc8cZQvxrPWkEn1ERj';
         }

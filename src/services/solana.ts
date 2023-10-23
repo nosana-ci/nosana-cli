@@ -1,5 +1,10 @@
 import { AnchorProvider, Idl, Program, setProvider } from '@coral-xyz/anchor';
-import { getAssociatedTokenAddress, getAccount, createAssociatedTokenAccount, ASSOCIATED_TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import {
+  getAssociatedTokenAddress,
+  getAccount,
+  createAssociatedTokenAccount,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+} from '@solana/spl-token';
 import {
   Keypair,
   PublicKey,
@@ -14,7 +19,12 @@ import {
 } from '@coral-xyz/anchor/dist/cjs/utils/token.js';
 import { bs58, utf8 } from '@coral-xyz/anchor/dist/cjs/utils/bytes/index.js';
 
-import type { NosanaJobs, SolanaConfig, NosanaNodes, NosanaStake } from '../types/index.js';
+import type {
+  NosanaJobs,
+  SolanaConfig,
+  NosanaNodes,
+  NosanaStake,
+} from '../types/index.js';
 import { KeyWallet } from '../utils.js';
 import { solanaConfigDefault } from '../config_defaults.js';
 import { Wallet } from '@coral-xyz/anchor/dist/cjs/provider.js';
@@ -51,10 +61,12 @@ export class SolanaManager {
       );
     }
 
-    if (this.config.wallet instanceof Keypair) {
-      // @ts-ignore
-      this.config.wallet = new KeyWallet(this.config.wallet);
-    }
+    // if (
+    //   this.config.wallet instanceof Keypair ||
+    // ) {
+    // @ts-ignore
+    this.config.wallet = new KeyWallet(this.config.wallet as Keypair);
+    // }
     if (typeof process !== 'undefined' && process.env?.ANCHOR_PROVIDER_URL) {
       // TODO: figure out if we want to support this or not
       this.provider = AnchorProvider.env();
@@ -73,7 +85,10 @@ export class SolanaManager {
     setProvider(this.provider);
   }
 
-  async requestAirdrop(amount = 1e9, publicKey?: PublicKey): Promise<string | boolean> {
+  async requestAirdrop(
+    amount = 1e9,
+    publicKey?: PublicKey,
+  ): Promise<string | boolean> {
     try {
       if (this.connection) {
         let txhash = await this.connection.requestAirdrop(
@@ -149,7 +164,10 @@ export class SolanaManager {
    */
   async createNosAta(address: string | PublicKey) {
     if (typeof address === 'string') address = new PublicKey(address);
-    const ata = await getAssociatedTokenAddress(new PublicKey(this.config.nos_address), address);
+    const ata = await getAssociatedTokenAddress(
+      new PublicKey(this.config.nos_address),
+      address,
+    );
     let tx;
     try {
       await getAccount(this.connection!, ata);
@@ -162,7 +180,7 @@ export class SolanaManager {
           address,
           {},
           TOKEN_PROGRAM_ID,
-          ASSOCIATED_TOKEN_PROGRAM_ID
+          ASSOCIATED_TOKEN_PROGRAM_ID,
         );
       } catch (e) {
         console.error('createAssociatedTokenAccount', e);
@@ -210,20 +228,20 @@ export class SolanaManager {
     }
   }
 
-    /**
+  /**
    * Function to load the Nosana Stake program into JS
    * https://docs.nosana.io/programs/staking.html
    */
-    async loadNosanaStake() {
-      if (!this.stake) {
-        const programId = new PublicKey(this.config.stake_address);
-        const idl = (await Program.fetchIdl(programId.toString())) as Idl;
-        this.stake = new Program(
-          idl,
-          programId,
-        ) as unknown as Program<NosanaStake>;
-      }
+  async loadNosanaStake() {
+    if (!this.stake) {
+      const programId = new PublicKey(this.config.stake_address);
+      const idl = (await Program.fetchIdl(programId.toString())) as Idl;
+      this.stake = new Program(
+        idl,
+        programId,
+      ) as unknown as Program<NosanaStake>;
     }
+  }
 
   /**
    * Function to set and calculate most account addresses needed for instructions
