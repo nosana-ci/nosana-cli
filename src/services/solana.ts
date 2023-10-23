@@ -88,6 +88,27 @@ export class SolanaManager {
     return false;
   }
 
+  /**
+   * Fetches latest NOS price from coingecko
+   * @returns NOS Price in BTC, ETH and USD
+   */
+  async getNosPrice() {
+    let result = await fetch(
+      'https://api.coingecko.com/api/v3/coins/nosana/tickers'
+    );
+    const data = await result.json();
+    if (data && data.tickers) {
+      return data.tickers[0].converted_last
+    } else {
+      return null;
+    }
+  }
+
+  /**
+   * Get NOS Balance of an address
+   * @param address
+   * @returns
+   */
   async getNosBalance(
     address?: string | PublicKey,
   ): Promise<TokenAmount | undefined> {
@@ -107,6 +128,11 @@ export class SolanaManager {
     return tokenBalance.value;
   }
 
+  /**
+   * Get SOL balance of an address
+   * @param address
+   * @returns
+   */
   async getSolBalance(address?: string | PublicKey): Promise<number> {
     if (!address) {
       address = this.provider?.wallet.publicKey;
