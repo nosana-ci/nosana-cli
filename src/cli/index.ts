@@ -72,14 +72,31 @@ export async function setSDK(
   if (
     airdrop &&
     nosana.solana.config.network.includes('devnet') &&
-    solBalance <= 0.1
+    (solBalance < 0.03 * LAMPORTS_PER_SOL ||
+      !nosBalance ||
+      !nosBalance.uiAmount ||
+      nosBalance.uiAmount < 10)
   ) {
-    console.log('\nNot enough SOL, requesting airdrop');
-    if (await nosana.solana.requestAirdrop(1e9)) {
-      console.log(`Received airdrop of ${colors.CYAN}1 SOL!${colors.RESET}`);
-    } else {
-      console.error('Could not receive airdrop');
+    console.log('\nNot enough SOL or NOS, requesting airdrop');
+    try {
+      const airdropResult = await fetch(
+        `https://backend.k8s.dev.nos.ci/airdrop?address=${(
+          nosana.solana.config.wallet as Wallet
+        ).publicKey.toString()}`,
+      );
+      console.log(
+        `Received airdrop ${colors.CYAN}${JSON.stringify(airdropResult)}${
+          colors.RESET
+        }`,
+      );
+    } catch (error) {
+      throw new Error('Couldnt airdrop tokens to the generated address');
     }
+    // if (await nosana.solana.requestAirdrop(1e9)) {
+    //   console.log(`Received airdrop of ${colors.CYAN}1 SOL!${colors.RESET}`);
+    // } else {
+    //   console.error('Could not receive airdrop');
+    // }
   }
   console.log('---------------------------------');
 }
