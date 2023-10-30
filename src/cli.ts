@@ -17,7 +17,7 @@ program
   .hook('preAction', async (thisCommand, actionCommand) => {
     const opts = actionCommand.optsWithGlobals();
     if (actionCommand.name() === 'run') {
-      if (!process.env.IPFS_JWT) {
+      if (!process.env.IPFS_JWT && false) {
         console.log(
           `${colors.YELLOW}WARNING: IPFS_JWT env variable not set${colors.RESET}`,
         );
