@@ -51,7 +51,7 @@ program
       }
       if (opts.type === 'wasm' || opts.type === 'whisper') {
         if (opts.network.includes('devnet')) {
-          market = '2kNSniTBsLCioSr4dgdZh6S1JKQc8cZQvxrPWkEn1ERj';
+          market = 'Db9gUpeqYC2FCmHJMxiZX1ncoZXVEABjsaCWfbPzDdXi';
         }
       }
     }
