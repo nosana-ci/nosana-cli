@@ -75,7 +75,7 @@ export async function setSDK(
     (solBalance < 0.03 * LAMPORTS_PER_SOL ||
       !nosBalance ||
       !nosBalance.uiAmount ||
-      nosBalance.uiAmount < 10)
+      nosBalance.uiAmount < 1)
   ) {
     console.log('\nNot enough SOL or NOS, requesting airdrop');
     try {
