@@ -20,7 +20,6 @@ const WAPM_GRAPHQL_QUERY = `query shellGetCommandQuery($command: String!) {
 export const getWAPMUrlForCommandName = async (commandName: string) => {
   const fetchResponse = await fetch('https://registry.wasmer.io/graphql', {
     method: 'POST',
-    mode: 'cors',
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
@@ -33,7 +32,7 @@ export const getWAPMUrlForCommandName = async (commandName: string) => {
       },
     }),
   });
-  const response = await fetchResponse.json();
+  const response: any = await fetchResponse.json();
 
   const optionalChaining = (baseObject: any, chain: Array<string>): any => {
     const newObject = baseObject[chain[0]];
