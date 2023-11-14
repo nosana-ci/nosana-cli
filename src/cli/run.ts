@@ -1,4 +1,4 @@
-import { Client } from '../';
+import { Client } from '@nosana/sdk';
 import { colors } from './terminal.js';
 import { getSDK } from './index.js';
 import { get } from './get.js';
@@ -29,7 +29,7 @@ export async function run(
     json_flow.state['nosana/trigger'] = 'cli';
   } else {
     switch (options.type) {
-      case 'docker':
+      case 'container':
         json_flow = {
           state: {
             'nosana/type': 'docker',

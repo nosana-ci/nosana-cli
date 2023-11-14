@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { Client } from '../';
+import { Client } from '@nosana/sdk';
 import { getSDK } from './index.js';
 import zlib from 'zlib';
 import tar from 'tar';

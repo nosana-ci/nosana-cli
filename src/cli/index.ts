@@ -1,5 +1,5 @@
 import { Wallet } from '@coral-xyz/anchor';
-import { Client, ClientConfig } from '../index.js';
+import { Client, ClientConfig } from '@nosana/sdk';
 import fs from 'fs';
 import os from 'os';
 import { Keypair, LAMPORTS_PER_SOL } from '@solana/web3.js';
