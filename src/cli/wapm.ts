@@ -1,3 +1,5 @@
+import fetch from 'node-fetch';
+
 // Fetch Command Function to fetch a command from WAPM
 
 const WAPM_GRAPHQL_QUERY = `query shellGetCommandQuery($command: String!) {
@@ -16,20 +18,20 @@ const WAPM_GRAPHQL_QUERY = `query shellGetCommandQuery($command: String!) {
 }`;
 
 export const getWAPMUrlForCommandName = async (commandName: string) => {
-  const fetchResponse = await fetch("https://registry.wasmer.io/graphql", {
-    method: "POST",
-    mode: "cors",
+  const fetchResponse = await fetch('https://registry.wasmer.io/graphql', {
+    method: 'POST',
+    mode: 'cors',
     headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json"
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      operationName: "shellGetCommandQuery",
+      operationName: 'shellGetCommandQuery',
       query: WAPM_GRAPHQL_QUERY,
       variables: {
-        command: commandName
-      }
-    })
+        command: commandName,
+      },
+    }),
   });
   const response = await fetchResponse.json();
 
@@ -46,12 +48,12 @@ export const getWAPMUrlForCommandName = async (commandName: string) => {
     return false;
   };
 
-  if (optionalChaining(response, ["data", "command", "module", "publicUrl"])) {
+  if (optionalChaining(response, ['data', 'command', 'module', 'publicUrl'])) {
     const wapmModule = response.data.command.module;
 
-    if (wapmModule.abi !== "wasi") {
+    if (wapmModule.abi !== 'wasi') {
       throw new Error(
-        `${commandName} does not use the wasi abi. Currently, only the wasi abi is supported.`
+        `${commandName} does not use the wasi abi. Currently, only the wasi abi is supported.`,
       );
     }
 

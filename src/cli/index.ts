@@ -4,6 +4,7 @@ import fs from 'fs';
 import os from 'os';
 import { Keypair, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { colors } from './terminal.js';
+import fetch from 'node-fetch';
 
 let nosana: Client;
 
