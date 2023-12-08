@@ -125,7 +125,7 @@ export async function run(
       op: 'container/run',
       id: artifactId,
       args: {
-        image: 'nosana/nosana-node-helper:latest',
+        image: 'docker.io/nosana/nosana-node-helper:latest',
         env: {
           SECRETS_MANAGER: nosana.secrets.config.manager,
           SECRETS_TOKEN: ['nosana/secrets-jwt', nosana.secrets.config.manager],
