@@ -14,9 +14,13 @@ export async function setSDK(
   keyfile: string,
   airdrop: boolean = false,
 ) {
+  const nosAddress = network.includes('devnet')
+    ? 'devr1BGQndEW5k5zfvG5FsLyZv1Ap73vNgAHcQ9sUVP'
+    : 'nosXBVoaCTtYdLvKY6Csb4AC8JCdQKKAaWYtx2ZMoo7';
   const config: ClientConfig = {
     solana: {
       network: network,
+      nos_address: nosAddress,
     },
   };
   if (market) {
