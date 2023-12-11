@@ -14,13 +14,20 @@ export async function setSDK(
   keyfile: string,
   airdrop: boolean = false,
 ) {
-  const nosAddress = network.includes('devnet')
-    ? 'devr1BGQndEW5k5zfvG5FsLyZv1Ap73vNgAHcQ9sUVP'
-    : 'nosXBVoaCTtYdLvKY6Csb4AC8JCdQKKAaWYtx2ZMoo7';
   const config: ClientConfig = {
     solana: {
       network: network,
-      nos_address: nosAddress,
+      nos_address: network.includes('devnet')
+        ? 'devr1BGQndEW5k5zfvG5FsLyZv1Ap73vNgAHcQ9sUVP'
+        : 'nosXBVoaCTtYdLvKY6Csb4AC8JCdQKKAaWYtx2ZMoo7',
+      jobs_address: network.includes('devnet')
+        ? 'nosJTmGQxvwXy23vng5UjkTbfv91Bzf9jEuro78dAGR'
+        : 'nosJhNRqr2bc9g1nfGDcXXTXvYUmxD4cVwy2pMWhrYM',
+    },
+    secrets: {
+      manager: network.includes('devnet')
+        ? 'https://secrets.k8s.dev.nos.ci/'
+        : 'https://secrets.k8s.prd.nos.ci/',
     },
   };
   if (market) {
