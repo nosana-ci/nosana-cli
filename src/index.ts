@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import figlet from 'figlet';
 import { Command, Option } from 'commander';
-import { run, get, setSDK, download } from './cli/index.js';
+import { run, get, setSDK, download, upload } from './cli/index.js';
 import inquirer from 'inquirer';
 import { colors } from './cli/terminal.js';
 const program = new Command();
@@ -121,6 +121,12 @@ program
     ),
   )
   .action(get);
+
+program
+  .command('upload')
+  .description('Upload a file to IPFS')
+  .argument('<path>', 'file to upload')
+  .action(upload);
 
 program
   .command('download')
