@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 import figlet from 'figlet';
 import { Command, Option } from 'commander';
-import { run, get, setSDK, download, upload } from './cli/index.js';
-import inquirer from 'inquirer';
-import { colors } from './cli/terminal.js';
+import { setSDK } from './utils/sdk.js';
+import { run, get, download, upload } from './job/index.js';
+import { test } from './node/index.js';
 const program = new Command();
 
-const VERSION = '0.1.0';
+const VERSION = '0.2.0';
 console.log(figlet.textSync('Nosana'));
 
 program
@@ -16,30 +16,6 @@ program
   .configureHelp({ showGlobalOptions: true })
   .hook('preAction', async (thisCommand, actionCommand) => {
     const opts = actionCommand.optsWithGlobals();
-    if (actionCommand.name() === 'run') {
-      if (!process.env.IPFS_JWT && false) {
-        console.log(
-          `${colors.YELLOW}WARNING: IPFS_JWT env variable not set${colors.RESET}`,
-        );
-        process.env.IPFS_JWT = (
-          await inquirer.prompt([
-            {
-              type: 'password',
-              name: 'token',
-              message: 'Paste your IPFS_JWT here:',
-              mask: true,
-            },
-          ])
-        ).token;
-        console.log(`${colors.GREEN}IPFS JWT token set!${colors.RESET}`);
-        console.log(
-          'If you want to save your token for next runs, use the following command:',
-        );
-        console.log(
-          `${colors.CYAN}export IPFS_JWT='<insert-jwt-token-here>'${colors.RESET}\n`,
-        );
-      }
-    }
     let market = opts.market;
     if (!market) {
       if (opts.gpu) {
@@ -67,14 +43,15 @@ program
       'devnet',
     ),
   )
-  .addOption(new Option('-m, --market <market>', 'market to post job to'))
+  .addOption(new Option('-m, --market <market>', 'market to use'))
   .addOption(
     new Option('-w, --wallet <wallet>', 'path to wallet private key').default(
       '~/nosana_key.json',
     ),
   );
 
-program
+const job = program.command('job');
+job
   .command('run')
   .description('Create a job to run by Nosana Runners')
   .argument('[command...]', 'command to run')
@@ -106,7 +83,7 @@ program
   )
   .action(run);
 
-program
+job
   .command('get')
   .description('Get a job and display result')
   .argument('<job>', 'job address')
@@ -122,18 +99,24 @@ program
   )
   .action(get);
 
-program
+job
   .command('upload')
   .description('Upload a file to IPFS')
   .argument('<path>', 'file to upload')
   .action(upload);
 
-program
+job
   .command('download')
   .description('Download an external artifact from IPFS to specified path')
   .argument('<ipfs>', 'ipfs hash')
   .argument('[path]', 'local path to store downloaded artifact')
   .action(download);
+
+const node = program.command('node');
+node
+  .command('test')
+  .description('Test Nosana Node')
+  .action(test);
 
 async function startCLI() {
   await program.parseAsync(process.argv);

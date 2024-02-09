@@ -1,9 +1,9 @@
 import { Command } from 'commander';
 import { Client } from '@nosana/sdk';
-import { getSDK } from './index.js';
+import { getSDK } from '../utils/sdk.js';
 import util from 'util';
 import { sleep } from '../utils.js';
-import { colors } from './terminal.js';
+import { colors } from '../utils/terminal.js';
 import { download } from './download.js';
 
 export async function get(
@@ -42,12 +42,10 @@ export async function get(
           );
         } else {
           console.log(
-            `Job:\t\t${
-              colors.BLUE
-            }https://explorer.nosana.io/jobs/${jobAddress}${
-              nosana.solana.config.network.includes('devnet')
-                ? '?network=devnet'
-                : ''
+            `Job:\t\t${colors.BLUE
+            }https://explorer.nosana.io/jobs/${jobAddress}${nosana.solana.config.network.includes('devnet')
+              ? '?network=devnet'
+              : ''
             }${colors.RESET}`,
           );
           console.log(
@@ -57,21 +55,17 @@ export async function get(
             `Result:\t\t${colors.BLUE}${nosana.ipfs.config.gateway}${job.ipfsResult}${colors.RESET}`,
           );
           console.log(
-            `Node:\t\t${colors.BLUE}https://explorer.nosana.io/nodes/${
-              job.node
-            }${
-              nosana.solana.config.network.includes('devnet')
-                ? '?network=devnet'
-                : ''
+            `Node:\t\t${colors.BLUE}https://explorer.nosana.io/nodes/${job.node
+            }${nosana.solana.config.network.includes('devnet')
+              ? '?network=devnet'
+              : ''
             }${colors.RESET}`,
           );
           console.log(
-            `Market:\t\t${colors.BLUE}https://explorer.nosana.io/markets/${
-              job.market
-            }${
-              nosana.solana.config.network.includes('devnet')
-                ? '?network=devnet'
-                : ''
+            `Market:\t\t${colors.BLUE}https://explorer.nosana.io/markets/${job.market
+            }${nosana.solana.config.network.includes('devnet')
+              ? '?network=devnet'
+              : ''
             }${colors.RESET}`,
           );
           console.log(
@@ -79,33 +73,28 @@ export async function get(
           );
           if (job.timeStart) {
             console.log(
-              `Start Time:\t${colors.CYAN}${new Date(job.timeStart * 1000)}${
-                colors.RESET
+              `Start Time:\t${colors.CYAN}${new Date(job.timeStart * 1000)}${colors.RESET
               }`,
             );
           }
           if (job.timeEnd) {
             console.log(
-              `Duration:\t${colors.CYAN}${job.timeEnd - job.timeStart} seconds${
-                colors.RESET
+              `Duration:\t${colors.CYAN}${job.timeEnd - job.timeStart} seconds${colors.RESET
               }`,
             );
             console.log(
-              `Total Costs:\t${colors.CYAN}${
-                ((job.timeEnd - job.timeStart) * job.price) / 1e6
+              `Total Costs:\t${colors.CYAN}${((job.timeEnd - job.timeStart) * job.price) / 1e6
               } NOS${colors.RESET}`,
             );
           }
           console.log(
-            `Status:\t\t${
-              job.state === 'COMPLETED' ? colors.GREEN : colors.CYAN
+            `Status:\t\t${job.state === 'COMPLETED' ? colors.GREEN : colors.CYAN
             }${job.state}${colors.RESET}`,
           );
         }
       } else {
         console.log(
-          `${job.state === 'COMPLETED' ? colors.GREEN : colors.CYAN}${
-            job.state
+          `${job.state === 'COMPLETED' ? colors.GREEN : colors.CYAN}${job.state
           }${colors.RESET}`,
         );
         await sleep(5);

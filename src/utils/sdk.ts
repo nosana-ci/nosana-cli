@@ -72,13 +72,11 @@ export async function setSDK(
     `Network:\t${colors.GREEN}${nosana.solana.config.network}${colors.RESET}`,
   );
   console.log(
-    `SOL balance:\t${colors.GREEN}${solBalance / LAMPORTS_PER_SOL} SOL${
-      colors.RESET
+    `SOL balance:\t${colors.GREEN}${solBalance / LAMPORTS_PER_SOL} SOL${colors.RESET
     }`,
   );
   console.log(
-    `NOS balance:\t${colors.GREEN}${nosBalance ? nosBalance.uiAmount : 0} NOS${
-      colors.RESET
+    `NOS balance:\t${colors.GREEN}${nosBalance ? nosBalance.uiAmount : 0} NOS${colors.RESET
     }`,
   );
   if (
@@ -97,8 +95,7 @@ export async function setSDK(
         ).publicKey.toString()}`,
       );
       console.log(
-        `Received airdrop ${colors.CYAN}${JSON.stringify(airdropResult)}${
-          colors.RESET
+        `Received airdrop ${colors.CYAN}${JSON.stringify(airdropResult)}${colors.RESET
         }`,
       );
     } catch (error) {
@@ -115,8 +112,3 @@ export async function setSDK(
 export function getSDK() {
   return nosana;
 }
-
-export * from './run.js';
-export * from './get.js';
-export * from './download.js';
-export * from './upload.js';
