@@ -2,8 +2,8 @@
 import figlet from 'figlet';
 import { Command, Option } from 'commander';
 import { setSDK } from './utils/sdk.js';
-import { run, get, download, upload } from './job/index.js';
-import { test } from './node/index.js';
+import { run, getJob, download, upload } from './job/index.js';
+import { view } from './node/index.js';
 const program = new Command();
 
 const VERSION = '0.2.0';
@@ -42,12 +42,6 @@ program
     new Option('-n, --network <network>', 'network to run on').default(
       'devnet',
     ),
-  )
-  .addOption(new Option('-m, --market <market>', 'market to use'))
-  .addOption(
-    new Option('-w, --wallet <wallet>', 'path to wallet private key').default(
-      '~/nosana_key.json',
-    ),
   );
 
 const job = program.command('job');
@@ -66,6 +60,12 @@ job
     new Option(
       '-o, --output <path>',
       'specify which folder inside the container you want to upload',
+    ),
+  )
+  .addOption(new Option('-m, --market <market>', 'market to use'))
+  .addOption(
+    new Option('-w, --wallet <wallet>', 'path to wallet private key').default(
+      '~/nosana_key.json',
     ),
   )
   .addOption(new Option('--wasm <url>', 'wasm url to run'))
@@ -97,7 +97,7 @@ job
       'download external artifacts to specified path (implies --wait)',
     ),
   )
-  .action(get);
+  .action(getJob);
 
 job
   .command('upload')
@@ -114,9 +114,10 @@ job
 
 const node = program.command('node');
 node
-  .command('test')
-  .description('Test Nosana Node')
-  .action(test);
+  .command('view')
+  .argument('<node>', 'node address')
+  .description('View Nosana Node')
+  .action(view);
 
 async function startCLI() {
   await program.parseAsync(process.argv);

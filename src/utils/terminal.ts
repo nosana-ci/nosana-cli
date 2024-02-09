@@ -7,3 +7,8 @@ export const colors = {
   WHITE: '\u001b[1;38;5;231m',
   RESET: '\u001b[0m',
 };
+
+export const clearLine = () => {
+  process.stdout.moveCursor(0, -1) // up one line
+  process.stdout.clearLine(1) // from cursor to end
+}

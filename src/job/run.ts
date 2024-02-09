@@ -1,7 +1,7 @@
 import { Client } from '@nosana/sdk';
 import { colors } from '../utils/terminal.js';
 import { getSDK } from '../utils/sdk.js';
-import { get } from './get.js';
+import { getJob } from './get.js';
 import { getWAPMUrlForCommandName } from './wapm.js';
 import util from 'util';
 import fs from 'node:fs';
@@ -145,11 +145,6 @@ export async function run(
     });
   }
 
-  if (options.raw) {
-    console.log(
-      util.inspect(json_flow, { showHidden: false, depth: null, colors: true }),
-    );
-  }
   const ipfsHash = await nosana.ipfs.pin(json_flow);
   console.log(
     `ipfs uploaded:\t${colors.BLUE}${nosana.ipfs.config.gateway + ipfsHash}${colors.RESET
@@ -173,7 +168,7 @@ export async function run(
   }
   const response = await nosana.jobs.list(ipfsHash);
   console.log('job posted!', response);
-  await get(response.job, options, undefined, nosana);
+  await getJob(response.job, options, undefined, nosana);
 
   if (!(options.wait || options.download)) {
     console.log(
