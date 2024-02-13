@@ -1,3 +1,5 @@
+import { Command } from 'commander';
+
 export async function startNode(
   market: string,
   options: {

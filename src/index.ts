@@ -95,6 +95,7 @@ job
       'download external artifacts to specified path (implies --wait)',
     ),
   )
+  // @ts-ignore
   .action(getJob);
 
 job
