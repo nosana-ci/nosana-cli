@@ -74,7 +74,6 @@ job
     new Option('-i, --image <image>', 'docker image to use').default('ubuntu'),
   )
   .addOption(new Option('-f, --file [path]', 'file with the JSON flow'))
-  .addOption(new Option('--raw', 'display raw json job and result'))
   .addOption(
     new Option('--wait', 'wait for job to be completed and show result'),
   )
@@ -87,7 +86,6 @@ job
   .command('get')
   .description('Get a job and display result')
   .argument('<job>', 'job address')
-  .addOption(new Option('--raw', 'display raw json job and result'))
   .addOption(
     new Option('--wait', 'wait for job to be completed and show result'),
   )

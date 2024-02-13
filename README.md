@@ -66,7 +66,6 @@ All available options for `run`:
 --type <type>            type to run (default: "container")
 -i, --image <image>      docker image to use (default: "ubuntu")
 --f, --file [path]       file with the JSON flow
---raw                    display raw json job and result
 --wait                   wait for job to be completed and show result
 --download               download external artifacts (implies --wait)
 ```
