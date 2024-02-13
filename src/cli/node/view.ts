@@ -1,12 +1,13 @@
 import { Command } from 'commander';
 import { Client } from '@nosana/sdk';
-import { getSDK } from '../utils/sdk.js';
+import { getSDK } from '../../utils/sdk.js';
 import chalk from 'chalk';
 import ora from 'ora';
 import { getJob } from '../job/get.js';
 import type { ClientSubscriptionId, PublicKey } from '@solana/web3.js';
-import { sleep } from '../utils.js';
-import { clearLine } from '../utils/terminal.js';
+import { sleep } from '../../utils.js';
+import { clearLine } from '../../utils/terminal.js';
+import { getRun } from '../../services/nodes.js';
 
 
 export async function view(
@@ -18,21 +19,10 @@ export async function view(
 ) {
   const nosana: Client = getSDK();
 
-  // TODO: check if in view mode (optional node argument)
   let getRunsInterval: NodeJS.Timer, subscriptionId: ClientSubscriptionId;
   const checkAndStartNodeRun = async (run?: any) => {
     if (!run) {
-      const runs = await nosana.jobs.getRuns([
-        {
-          memcmp: {
-            offset: 40,
-            bytes: node,
-          },
-        },
-      ]);
-      if (runs && runs.length > 0) {
-        run = runs[0].account;
-      }
+      run = await getRun(node);
     }
     if (run) {
       if (subscriptionId >= 0) nosana.jobs.connection!.removeProgramAccountChangeListener(subscriptionId);

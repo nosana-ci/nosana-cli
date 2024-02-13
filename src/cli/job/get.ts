@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import { Client, Job } from '@nosana/sdk';
-import { getSDK } from '../utils/sdk.js';
-import { colors, clearLine } from '../utils/terminal.js';
+import { getSDK } from '../../utils/sdk.js';
+import { colors, clearLine } from '../../utils/terminal.js';
 import { download } from './download.js';
 import { ClientSubscriptionId, PublicKey } from '@solana/web3.js';
 
