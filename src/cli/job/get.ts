@@ -59,7 +59,6 @@ export async function getJob(
       );
 
       job = await waitForJobCompletion(new PublicKey(jobAddress));
-      job = await nosana.jobs.get(jobAddress);
       clearLine();
     }
 
