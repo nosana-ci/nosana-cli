@@ -1,12 +1,12 @@
 import { Command } from 'commander';
 import { Client, Run } from '@nosana/sdk';
-import { getSDK } from '../../utils/sdk.js';
+import { getSDK } from '../../services/sdk.js';
 import chalk from 'chalk';
 import ora from 'ora';
 import { getJob } from '../job/get.js';
-import { sleep } from '../../utils.js';
-import { clearLine } from '../../utils/terminal.js';
+import { sleep, clearLine } from '../../generic/utils.js';
 import { getRun, checkQueued, waitForRun } from '../../services/nodes.js';
+import { NotQueuedError } from '../../generic/errors.js';
 
 export async function view(
   node: string,
@@ -25,8 +25,6 @@ export async function view(
 
     if (!selectedMarket) {
       spinner.warn("Currently not running a job and not queued in a market")
-      // TODO: alternatively subscribe to run accounts and markets
-
       for (let timer = 10; timer > 0; timer--) {
         spinner.start(chalk.cyan(`Trying again in ${timer}`));
         await sleep(1);
@@ -37,7 +35,21 @@ export async function view(
       // Currently queued in a market, wait for run
       spinner.color = 'yellow';
       spinner.text = chalk.bgYellow.bold(' QUEUED ') + ` waiting for jobs in market ${chalk.cyan.bold(selectedMarket.address)}`;
-      run = await waitForRun(node); // will only return on a new run account
+      try {
+        run = await waitForRun(node, true); // will only return on a new run account
+      } catch (e) {
+        if (e instanceof NotQueuedError) {
+          spinner.warn("Node left market queue..")
+          for (let timer = 10; timer > 0; timer--) {
+            spinner.start(chalk.cyan(`Checking again in ${timer}`));
+            await sleep(1);
+          }
+          spinner.stop();
+          clearLine();
+        } else {
+          throw e;
+        }
+      }
     }
   }
   if (run) {

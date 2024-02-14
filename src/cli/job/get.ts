@@ -1,10 +1,10 @@
 import { Command } from 'commander';
-import { Client, Job } from '@nosana/sdk';
-import { getSDK } from '../../utils/sdk.js';
-import { colors, clearLine } from '../../utils/terminal.js';
+import { Client } from '@nosana/sdk';
+import { getSDK } from '../../services/sdk.js';
 import { download } from './download.js';
-import { ClientSubscriptionId, PublicKey } from '@solana/web3.js';
+import { PublicKey } from '@solana/web3.js';
 import { waitForJobCompletion } from '../../services/jobs.js';
+import { clearLine, colors } from '../../generic/utils.js';
 
 export async function getJob(
   jobAddress: string,
@@ -58,7 +58,7 @@ export async function getJob(
         `Status:\t\t${job.state === 'COMPLETED' ? colors.GREEN : colors.CYAN}${job.state}${colors.RESET}`,
       );
 
-      await waitForJobCompletion(new PublicKey(jobAddress));
+      job = await waitForJobCompletion(new PublicKey(jobAddress));
       job = await nosana.jobs.get(jobAddress);
       clearLine();
     }
