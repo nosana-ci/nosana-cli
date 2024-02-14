@@ -1,5 +1,5 @@
 import { Client, Job } from "@nosana/sdk";
-import { getSDK } from "../utils/sdk";
+import { getSDK } from "./sdk.js";
 import { ClientSubscriptionId, PublicKey } from "@solana/web3.js";
 
 export const waitForJobCompletion = async (jobAddress: PublicKey): Promise<Job> => {
@@ -14,7 +14,6 @@ export const waitForJobCompletion = async (jobAddress: PublicKey): Promise<Job> 
           nosana.jobs.connection!.removeProgramAccountChangeListener(subscriptionId);
           resolve(jobAccount);
         }
-      }, 'confirmed'
-    );
+      }, 'confirmed');
   });
 }

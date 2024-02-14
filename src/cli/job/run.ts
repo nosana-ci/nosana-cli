@@ -1,11 +1,10 @@
 import { Client } from '@nosana/sdk';
-import { colors } from '../../utils/terminal.js';
-import { getSDK } from '../../utils/sdk.js';
+import { getSDK } from '../../services/sdk.js';
 import { getJob } from './get.js';
 import { getWAPMUrlForCommandName } from './wapm.js';
-import util from 'util';
 import fs from 'node:fs';
 import { randomUUID } from 'crypto';
+import { colors } from '../../generic/utils.js';
 
 export async function run(
   command: Array<string>,

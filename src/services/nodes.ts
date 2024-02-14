@@ -1,6 +1,8 @@
 import { Client, Market, Run } from "@nosana/sdk";
-import { getSDK } from "../utils/sdk";
+import { getSDK } from "./sdk.js";
 import { ClientSubscriptionId, PublicKey } from "@solana/web3.js";
+import { setIntervalImmediately } from "../generic/utils.js";
+import { NotQueuedError } from "../generic/errors.js";
 
 export const getRun = async (node: string): Promise<Run | void> => {
   const nosana: Client = getSDK();
@@ -17,7 +19,7 @@ export const getRun = async (node: string): Promise<Run | void> => {
   }
 }
 
-export const waitForRun = async (node: string): Promise<Run> => {
+export const waitForRun = async (node: string, enableQueueCheck: boolean = false): Promise<Run> => {
   const nosana: Client = getSDK();
   await nosana.jobs.loadNosanaJobs();
   const jobProgram = nosana.jobs.jobs!;
@@ -37,7 +39,18 @@ export const waitForRun = async (node: string): Promise<Run> => {
   }];
   let subscriptionId: ClientSubscriptionId;
   let getRunsInterval: NodeJS.Timer;
-  const onNewRun: Promise<Run> = new Promise<Run>(function (resolve, reject) {
+  let checkQueuedInterval: NodeJS.Timer;
+  return new Promise<Run>(function (resolve, reject) {
+    if (enableQueueCheck) {
+      // check if we are still queued in a market every 2 minutes
+      checkQueuedInterval = setIntervalImmediately(async () => {
+        const selectedMarket = await checkQueued(node);
+        if (!selectedMarket) {
+          reject(new NotQueuedError('Node not queued anymore'));
+        }
+      }, 60000 * 2);
+    }
+
     // As a fallback for the run events, runs every 5 minutes
     getRunsInterval = setInterval(async () => {
       const run: Run | void = await getRun(node);
@@ -57,9 +70,9 @@ export const waitForRun = async (node: string): Promise<Run> => {
   }).then((run) => {
     if (typeof subscriptionId !== "undefined") nosana.jobs.connection!.removeProgramAccountChangeListener(subscriptionId);
     if (getRunsInterval) clearInterval(getRunsInterval);
+    if (checkQueuedInterval) clearInterval(checkQueuedInterval);
     return run;
   });
-  return onNewRun;
 }
 
 export const checkQueued = async (node: string): Promise<Market | void> => {

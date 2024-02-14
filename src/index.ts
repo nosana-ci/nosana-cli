@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import figlet from 'figlet';
 import { Command, Option } from 'commander';
-import { setSDK } from './utils/sdk.js';
+import { setSDK } from './services/sdk.js';
 import { run, getJob, download, upload } from './cli/job/index.js';
 import { view, startNode } from './cli/node/index.js';
 const program = new Command();
