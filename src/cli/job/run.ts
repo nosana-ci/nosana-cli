@@ -1,6 +1,6 @@
 import { Client } from '@nosana/sdk';
-import { colors } from '../utils/terminal.js';
-import { getSDK } from '../utils/sdk.js';
+import { colors } from '../../utils/terminal.js';
+import { getSDK } from '../../utils/sdk.js';
 import { getJob } from './get.js';
 import { getWAPMUrlForCommandName } from './wapm.js';
 import util from 'util';

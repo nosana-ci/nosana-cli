@@ -2,8 +2,8 @@
 import figlet from 'figlet';
 import { Command, Option } from 'commander';
 import { setSDK } from './utils/sdk.js';
-import { run, getJob, download, upload } from './job/index.js';
-import { view, startNode } from './node/index.js';
+import { run, getJob, download, upload } from './cli/job/index.js';
+import { view, startNode } from './cli/node/index.js';
 const program = new Command();
 
 const VERSION = '0.2.0';
