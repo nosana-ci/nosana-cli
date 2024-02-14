@@ -4,6 +4,7 @@ import { getSDK } from '../../utils/sdk.js';
 import { colors, clearLine } from '../../utils/terminal.js';
 import { download } from './download.js';
 import { ClientSubscriptionId, PublicKey } from '@solana/web3.js';
+import { waitForJobCompletion } from '../../services/jobs.js';
 
 export async function getJob(
   jobAddress: string,
@@ -56,29 +57,11 @@ export async function getJob(
       console.log(
         `Status:\t\t${job.state === 'COMPLETED' ? colors.GREEN : colors.CYAN}${job.state}${colors.RESET}`,
       );
-      await nosana.jobs.loadNosanaJobs();
 
-      const waitTillComplete = (address: PublicKey, nosana: Client): Promise<Job> => {
-        return new Promise((resolve, reject) => {
-          const subscriptionId: ClientSubscriptionId = nosana.jobs.connection!.onAccountChange(
-            address,
-            (accountInfo) => {
-              const jobAccount = nosana.jobs.jobs!.coder.accounts.decode(nosana.jobs.jobs!.account.jobAccount.idlAccount.name, accountInfo.data);
-              if (jobAccount.state >= 2) {
-                nosana.jobs.connection!.removeProgramAccountChangeListener(subscriptionId);
-                resolve(jobAccount);
-              }
-            }, 'confirmed'
-          );
-        });
-      }
-      await waitTillComplete(new PublicKey(jobAddress), nosana);
+      await waitForJobCompletion(new PublicKey(jobAddress));
       job = await nosana.jobs.get(jobAddress);
       clearLine();
     }
-
-
-
 
     if (
       job.state === 'COMPLETED' ||
