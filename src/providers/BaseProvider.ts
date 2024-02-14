@@ -15,7 +15,6 @@ export type OperationResult = {
     type: "stdin" | "stdout" | "stderr";
     log: string;
   }>
-  args?: { [key: string]: any };
 }
 
 export type JobDefinition = {
@@ -31,5 +30,5 @@ export type Result = {
 }
 
 export abstract class Provider {
-  abstract run(JobDefinition: JobDefinition): Result;
+  abstract run(JobDefinition: JobDefinition): Promise<Result>;
 }
