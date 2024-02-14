@@ -146,15 +146,15 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
-"@nosana/sdk@^0.2.35":
-  version "0.2.35"
-  resolved "https://registry.yarnpkg.com/@nosana/sdk/-/sdk-0.2.35.tgz#06ef45033e0f8943f7805c3c29830bca46720fad"
-  integrity sha512-rjawkMLlTMyBbduRf+ju64Ks/aqzOQ12+7aCRBbNDLWzTVb0micX8rjx9x7Xas0SfsBfJWsy7Ec7V5ZLgeYhfw==
+"@nosana/sdk@^0.2.39":
+  version "0.2.39"
+  resolved "https://registry.yarnpkg.com/@nosana/sdk/-/sdk-0.2.39.tgz#15b35b01260b14c75d295eeacc834deb502e7fb1"
+  integrity sha512-wVgnuoBEAMsLBvWACS0uL8V8ehvsbiHWn96FQwMfCHwxcR0li5M0Xc8C2BlPLBgpDE2gVb8aLRVH7sxyjtH8xQ==
   dependencies:
     "@coral-xyz/anchor" "^0.28.1-beta.1"
     "@solana/spl-token" "^0.3.8"
     "@solana/web3.js" "^1.78.0"
-    axios "^1.4.0"
+    axios "^1.6.5"
     axios-retry "^3.5.1"
     bs58 "^5.0.0"
     buffer "^6.0.3"
@@ -509,12 +509,12 @@ axios-retry@^3.5.1:
     "@babel/runtime" "^7.15.4"
     is-retry-allowed "^2.2.0"
 
-axios@^1.4.0:
-  version "1.6.1"
-  resolved "https://registry.yarnpkg.com/axios/-/axios-1.6.1.tgz#76550d644bf0a2d469a01f9244db6753208397d7"
-  integrity sha512-vfBmhDpKafglh0EldBEbVuoe7DyAavGSLWhuSm5ZSEKQnHhBf0xAAwybbNH1IkrJNGnS/VG4I5yxig1pCEXE4g==
+axios@^1.6.5:
+  version "1.6.7"
+  resolved "https://registry.yarnpkg.com/axios/-/axios-1.6.7.tgz#7b48c2e27c96f9c68a2f8f31e2ab19f59b06b0a7"
+  integrity sha512-/hDJGff6/c7u0hDkvkGxR/oy6CbCs8ziCsC7SqmhjfozqiJGc8Z11wrv9z9lYfY4K8l+H9TpjcMDX0xOZmx+RA==
   dependencies:
-    follow-redirects "^1.15.0"
+    follow-redirects "^1.15.4"
     form-data "^4.0.0"
     proxy-from-env "^1.1.0"
 
@@ -1233,10 +1233,10 @@ flatted@^3.1.0:
   resolved "https://registry.npmjs.org/flatted/-/flatted-3.2.7.tgz"
   integrity sha512-5nqDSxl8nn5BSNxyR3n4I6eDmbolI6WT+QqR547RwxQapgjQBmtktdP+HTBb/a/zLsbzERTONyUB5pefh5TtjQ==
 
-follow-redirects@^1.15.0:
-  version "1.15.3"
-  resolved "https://registry.yarnpkg.com/follow-redirects/-/follow-redirects-1.15.3.tgz#fe2f3ef2690afce7e82ed0b44db08165b207123a"
-  integrity sha512-1VzOtuEM8pC9SFU1E+8KfTjZyMztRsgEfwQl44z8A25uy13jSzTj6dyK2Df52iV0vgHCfBwLhDWevLn95w5v6Q==
+follow-redirects@^1.15.4:
+  version "1.15.5"
+  resolved "https://registry.yarnpkg.com/follow-redirects/-/follow-redirects-1.15.5.tgz#54d4d6d062c0fa7d9d17feb008461550e3ba8020"
+  integrity sha512-vSFWUON1B+yAw1VN4xMfxgn5fTUiaOzAJCKBwIIgT/+7CuGy9+r+5gITvP62j3RmaD5Ph65UaERdOSRGUzZtgw==
 
 for-each@^0.3.3:
   version "0.3.3"
