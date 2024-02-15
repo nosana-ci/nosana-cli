@@ -6,7 +6,7 @@ import stream from "stream";
 import streamPromises from "stream/promises";
 
 export class DockerProvider implements Provider {
-  docker: typeof Docker;
+  docker: Docker;
   constructor () {
     this.docker = new Docker({
       host: '127.0.0.1',
@@ -59,7 +59,7 @@ export class DockerProvider implements Provider {
    * @param op Operation specs
    * @returns Docker.Container
    */
-  private async setupContainer (op: Operation): Docker.Container {
+  private async setupContainer (op: Operation): Promise<Docker.Container> {
     await new Promise((resolve, reject) => {
       this.docker.pull(op.args?.image, (err:any, stream:any) => {
         if (err) {
