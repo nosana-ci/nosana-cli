@@ -31,4 +31,5 @@ export type Result = {
 
 export abstract class Provider {
   abstract run(JobDefinition: JobDefinition): Promise<Result>;
+  abstract healthy(): Promise<Boolean>;
 }
