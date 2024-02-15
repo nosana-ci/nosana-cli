@@ -83,6 +83,7 @@ export class DockerProvider implements Provider {
           startTime: 0,
           endTime: 10,
           exitCode: 0,
+          status: 'success',
           logs: [{
             type: "stdout",
             log: 'line 1'

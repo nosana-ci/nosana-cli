@@ -10,6 +10,7 @@ export type OperationResult = {
   id: string;
   startTime: number;
   endTime: number;
+  status: string;
   exitCode: number;
   logs: Array<{
     type: "stdin" | "stdout" | "stderr";
