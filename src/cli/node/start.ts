@@ -31,5 +31,9 @@ export async function startNode(
       provider = new DockerProvider();
   }
 
-  await provider.run(jobDefinition);
+  if (await provider.healthy()) {
+    await provider.run(jobDefinition);
+  } else {
+    console.log('abort');
+  }
 }

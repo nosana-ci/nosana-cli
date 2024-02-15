@@ -7,11 +7,13 @@ const Docker = require('dockerode');
 export class DockerProvider implements Provider {
   docker: typeof Docker;
   constructor () {
-    this.docker = new Docker();
+    this.docker = new Docker({
+      host: '127.0.0.1',
+      port: '8080',
+    });
   }
   async run(jobDefinition: JobDefinition): Promise<Result> {
     const spinner = ora(chalk.cyan('Running job')).start();
-
     try {
       await new Promise((resolve, reject) => {
         this.docker.pull(jobDefinition.ops[0].args?.image, (err:any, stream:any) => {
@@ -98,8 +100,14 @@ export class DockerProvider implements Provider {
   }
 
   async healthy(): Promise<Boolean> {
-    // implement
-    return true
+    try {
+      await this.docker.ping()
+      console.log(chalk.green('Podman is running'));
+      return true;
+    } catch (error) {
+      console.log(chalk.red('Cannot connect to Podman: ', error));
+      return false;
+    }
   }
 
   async runCommandInContainer(container: any, command: string[]): Promise<string> {
