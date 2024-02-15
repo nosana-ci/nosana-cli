@@ -1,8 +1,9 @@
 import chalk from "chalk";
-import { sleep } from "../generic/utils";
-import { JobDefinition, Provider, Result } from "./BaseProvider";
+import { JobDefinition, Operation, OperationResult, Provider, Result } from "./BaseProvider";
 import ora from "ora";
-const Docker = require('dockerode');
+import Docker from "dockerode";
+import stream from "stream";
+import streamPromises from "stream/promises";
 
 export class DockerProvider implements Provider {
   docker: typeof Docker;
@@ -13,92 +14,35 @@ export class DockerProvider implements Provider {
     });
   }
   async run(jobDefinition: JobDefinition): Promise<Result> {
-    const spinner = ora(chalk.cyan('Running job')).start();
-    try {
-      await new Promise((resolve, reject) => {
-        this.docker.pull(jobDefinition.ops[0].args?.image, (err:any, stream:any) => {
-          if (err) {
-            return reject(err);
-          }
-          this.docker.modem.followProgress(stream, (err: any, res: any) =>
-            err ? reject(err) : resolve(res),
-          );
-        });
-      });
-      console.log('pulled image');
-  
-      const name = jobDefinition.ops[0].args?.image + '-' + (Math.random() + 1).toString(36).substring(7);
-      const container = await this.docker.createContainer({
-        Image: jobDefinition.ops[0].args?.image,
-        name,
-        AttachStderr: true,
-        AttachStdin: true,
-        AttachStdout: true,
-        OpenStdin: true,
-        StdinOnce: true,
-        Tty: false,
-      });
-      console.log('created: ', name)
-  
-      console.log('start attach stream');
-      const stream = await container.attach({
-        hijack: true,
-        stderr: true,
-        stdin: true,
-        stdout: true,
-        stream: true,
-      });
-      console.log('finish attach stream');
-  
-      // Create a promise that resolves to the container's stdout
-      const stdout = new Promise((resolve) => {
-        stream.on('data', (data: any) => {
-          const response = data && data.slice(8).toString();
-          resolve(response);
-        });
-      });
-  
-      // Start the container
-      await container.start();
-      const output = await this.runCommandInContainer(container, ['/bin/bash', '-c', 'echo Hello World from exec']);
-      console.log('output', output);
-  
-      // const allContainerInfos = await docker.listContainers();
-      // console.log('allContainerInfos', allContainerInfos);
-      stream.end();
-      await container.wait();
-      container.remove();
-      
-      const result = await stdout;
-      console.log('result', result);
-    } catch (error) {
-      console.log(error);
-    }
+    const spinner = ora(chalk.cyan('Running job \n')).start();
+    const result: Result = {
+      status: '',
+      ops: []
+    };
 
+    // run operations
+    for (let i = 0; i < jobDefinition.ops.length; i++) {
+      const op = jobDefinition.ops[i];
+      try {
+        const opResult = await this.runOperation(op);
+        result.ops.push(opResult);
+      } catch (error) {
+        console.log(chalk.red(error));
+        result.status = 'failed';
+      }
+    }
     spinner.stop();
 
-    return {
-      status: 'success',
-      ops: [
-        {
-          id: 'test',
-          startTime: 0,
-          endTime: 10,
-          exitCode: 0,
-          status: 'success',
-          logs: [{
-            type: "stdout",
-            log: 'line 1'
-          },
-          {
-            type: "stdout",
-            log: 'line 2'
-          }]
-        }
-      ]
-    }
+    console.log('Job done');
+    console.log('result:', result);
+
+    return result;
   }
 
+  /**
+   * Check if DockerProvider is healthy by checking if podman is running
+   * @returns boolean
+   */
   async healthy(): Promise<Boolean> {
     try {
       await this.docker.ping()
@@ -109,49 +53,126 @@ export class DockerProvider implements Provider {
       return false;
     }
   }
-
-  async runCommandInContainer(container: any, command: string[]): Promise<string> {
-    const exec = await container.exec({
-      Cmd: command,
-      AttachStdout: true,
-      AttachStderr: true,
-    });
-    const stream = await exec.start({ hijack: true, stdin: true });
-    let output = "";
-    output = await this.readStream(stream);
-    await this.waitForStreamEnd(stream);
-    return output;
-  }  
-  async readStream(stream: any) {
-    let output: string = "";
-    return new Promise<string>((resolve, reject) => {
-      stream.on("data", (chunk: string) => {
-        output += chunk;
-      });
   
-      stream.on("end", () => {
-        resolve(output.trim().split("\n").map(processString).join("\n"));
+  /**
+   * Pull image and create & start container
+   * @param op Operation specs
+   * @returns Docker.Container
+   */
+  private async setupContainer (op: Operation): Docker.Container {
+    await new Promise((resolve, reject) => {
+      this.docker.pull(op.args?.image, (err:any, stream:any) => {
+        if (err) {
+          return reject(err);
+        }
+        this.docker.modem.followProgress(stream, (err: any, res: any) =>
+          err ? reject(err) : resolve(res),
+        );
       });
     });
-    
-    function processString(str: string): string {
-      const out = Buffer.from(str, "binary");
-      if (out.readUInt8(0) === 1) {
-        return out.toString("utf8", 8);
-      } else {
-        return out.toString("utf8", 0);
-      }
-    }
-  };
-  async waitForStreamEnd(stream: NodeJS.ReadableStream): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      try {
-        stream.on('end', async () => {
-          resolve();
-        });
-      } catch (err) {
-        reject(err);
-      }
+    console.log(chalk.green('- Pulled image ', op.args?.image));
+
+    const name = op.args?.image + '-' + (Math.random() + 1).toString(36).substring(7);
+    const container = await this.docker.createContainer({
+      Image: op.args?.image,
+      name,
+      AttachStderr: true,
+      AttachStdin: true,
+      AttachStdout: true,
+      OpenStdin: true,
+      StdinOnce: true,
+      Tty: false,
     });
+    console.log(chalk.green('- Created container ', name));
+
+    await container.start();
+    console.log(chalk.green('- Started container '));
+
+    return container
   }
+
+  /**
+   * Run operation and return results
+   * @param op Operation specs
+   * @returns OperationResult
+   */
+  private async runOperation (op: Operation): Promise<OperationResult> {
+    const startTime = Date.now();
+    const container = await this.setupContainer(op);
+
+    const outputs = []
+    let exitCode = 0;
+    let status;
+
+    // exec commands in op
+    try {
+      const exec = await this.exec(container, op.args?.cmds);
+      status = exec.exitCode > 0 ? 'failed' : 'success';
+      exitCode = status === 'failed' ? exec.exitCode : exitCode;
+
+      let type: "stdin" | "stdout" | "stderr" = status === 'failed' ? 'stderr' : 'stdout';
+      outputs.push({
+        type,
+        log: status === 'failed' ? exec.stderr : exec.stdout
+      });
+    } catch (e) {
+      status = 'failed';
+      console.log(chalk.red(e));
+    }
+
+    await container.stop();
+    container.remove();
+
+    return {
+      id: op.id,
+      startTime,
+      endTime: Date.now(),
+      status: status ? status : 'failed',
+      exitCode,
+      logs: outputs
+    }
+  }
+
+  /**
+   * Execute a command in a running Docker container.
+   *
+   * @param container container to execute the command in
+   * @param cmd command to execute
+   * @param opts options
+   */
+  private async exec(
+    container: Docker.Container,
+    cmd: string[],
+    opts?: Docker.ExecCreateOptions,
+  ): Promise<{exitCode: number,
+      stderr: string | undefined,
+      stdout: string | undefined}> {
+    const dockerExec = await container.exec({
+      ...opts,
+      AttachStderr: true,
+      AttachStdout: true,
+      Cmd: cmd,
+    });
+
+    const dockerExecStream = await dockerExec.start({});
+    const stdoutStream = new stream.PassThrough();
+    const stderrStream = new stream.PassThrough();
+
+    this.docker.modem.demuxStream(dockerExecStream, stdoutStream, stderrStream);
+
+    dockerExecStream.resume();
+
+    await streamPromises.finished(dockerExecStream);
+
+    const stderr = stderrStream.read() as Buffer | undefined;
+    const stdout = stdoutStream.read() as Buffer | undefined;
+
+    const dockerExecInfo = await dockerExec.inspect();
+
+    return {
+      exitCode: dockerExecInfo.ExitCode,
+      stderr: stderr?.toString(),
+      stdout: stdout?.toString(),
+    };
+  } 
 }

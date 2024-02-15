@@ -2,7 +2,7 @@
 export type OperationType = "container/run" | "container/create-volume";
 export type JobType = "docker";
 export type Operation = {
-  op: OperationType;
+  type: OperationType;
   id: string;
   args?: { [key: string]: any };
 }
@@ -14,7 +14,7 @@ export type OperationResult = {
   exitCode: number;
   logs: Array<{
     type: "stdin" | "stdout" | "stderr";
-    log: string;
+    log: string | undefined;
   }>
 }
 
