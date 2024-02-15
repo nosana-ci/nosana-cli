@@ -7,10 +7,10 @@ const jobDefinition: JobDefinition = {
   type: "docker",
   trigger: "cli",
   ops: [{
-    op: 'container/run',
+    type: 'container/run',
     id: 'run-from-cli',
     args: {
-      cmds: [{ cmd: 'echo Hello World!' }],
+      cmds: ['/bin/bash', '-c', 'echo Hello World!'],
       image: 'ubuntu',
     },
   }]
@@ -27,6 +27,7 @@ export async function startNode(
   switch (options.provider) {
     case "docker":
       provider = new DockerProvider();
+      break;
     default:
       provider = new DockerProvider();
   }
