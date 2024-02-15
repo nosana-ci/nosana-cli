@@ -26,10 +26,11 @@ export async function startNode(
   let provider;
   switch (options.provider) {
     case "docker":
-      provider = new DockerProvider();
+      console.log('yessir')
+      provider = new DockerProvider(options.host, options.port);
       break;
     default:
-      provider = new DockerProvider();
+      provider = new DockerProvider(options.host, options.port);
   }
 
   if (await provider.healthy()) {

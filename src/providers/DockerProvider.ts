@@ -7,10 +7,10 @@ import streamPromises from "stream/promises";
 
 export class DockerProvider implements Provider {
   docker: typeof Docker;
-  constructor () {
+  constructor (host: string, port: number) {
     this.docker = new Docker({
-      host: '127.0.0.1',
-      port: '8080',
+      host,
+      port,
     });
   }
   async run(jobDefinition: JobDefinition): Promise<Result> {
