@@ -3,7 +3,7 @@ import {
   JobDefinition,
   Operation,
   OperationResult,
-  Provider,
+  BaseProvider,
   Result,
 } from './BaseProvider';
 import ora from 'ora';
@@ -11,7 +11,7 @@ import Docker from 'dockerode';
 import stream from 'stream';
 import streamPromises from 'stream/promises';
 
-export class DockerProvider implements Provider {
+export class DockerProvider implements BaseProvider {
   docker: Docker;
   constructor(host: string, port: number) {
     this.docker = new Docker({
@@ -30,8 +30,12 @@ export class DockerProvider implements Provider {
     for (let i = 0; i < jobDefinition.ops.length; i++) {
       const op = jobDefinition.ops[i];
       try {
-        const opResult = await this.runOperation(op);
-        result.ops.push(opResult);
+        if (op.type === 'container/run') {
+          const opResult = await this.runOperation(
+            op as Operation<'container/run'>,
+          );
+          result.ops.push(opResult);
+        }
       } catch (error) {
         console.log(chalk.red(error));
         result.status = 'failed';
@@ -65,9 +69,11 @@ export class DockerProvider implements Provider {
    * @param op Operation specs
    * @returns Docker.Container
    */
-  private async setupContainer(op: Operation): Promise<Docker.Container> {
+  private async setupContainer(
+    op: Operation<'container/run'>,
+  ): Promise<Docker.Container> {
     await new Promise((resolve, reject) => {
-      this.docker.pull(op.args?.image, (err: any, stream: any) => {
+      this.docker.pull(op.args.image, (err: any, stream: any) => {
         if (err) {
           return reject(err);
         }
@@ -76,7 +82,7 @@ export class DockerProvider implements Provider {
         );
       });
     });
-    console.log(chalk.green('- Pulled image ', op.args?.image));
+    console.log(chalk.green('- Pulled image ', op.args.image));
 
     const name =
       op.args?.image + '-' + (Math.random() + 1).toString(36).substring(7);
@@ -103,7 +109,9 @@ export class DockerProvider implements Provider {
    * @param op Operation specs
    * @returns OperationResult
    */
-  private async runOperation(op: Operation): Promise<OperationResult> {
+  private async runOperation(
+    op: Operation<'container/run'>,
+  ): Promise<OperationResult> {
     const startTime = Date.now();
     const container = await this.setupContainer(op);
 
