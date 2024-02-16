@@ -47,6 +47,7 @@
     "figlet": "^1.6.0",
     "node-fetch": "^3.3.2",
     "ora": "^8.0.1",
+    "shell-quote": "^1.8.1",
     "stream": "^0.0.2",
     "tar": "^6.2.0",
     "tar-buffer": "^1.3.0",

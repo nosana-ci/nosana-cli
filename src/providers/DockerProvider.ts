@@ -4,6 +4,7 @@ import ora from "ora";
 import Docker from "dockerode";
 import stream from "stream";
 import streamPromises from "stream/promises";
+const parse = require('shell-quote/parse');
 
 export class DockerProvider implements Provider {
   docker: typeof Docker;
@@ -16,7 +17,7 @@ export class DockerProvider implements Provider {
   async run(jobDefinition: JobDefinition): Promise<Result> {
     const spinner = ora(chalk.cyan('Running job \n')).start();
     const result: Result = {
-      status: '',
+      status: 'success',
       ops: []
     };
 
@@ -31,8 +32,12 @@ export class DockerProvider implements Provider {
         result.status = 'failed';
       }
     }
+    const checkStatus = (op: OperationResult) => op.status === 'failed';
+    result.status = result.ops.some(checkStatus) ? 'failed' : result.status;
+
     spinner.stop();
 
+    console.log('----------------------------------')
     console.log('Job done');
     console.log('result:', result);
 
@@ -105,19 +110,25 @@ export class DockerProvider implements Provider {
     let status;
 
     // exec commands in op
-    try {
-      const exec = await this.exec(container, op.args?.cmds);
-      status = exec.exitCode > 0 ? 'failed' : 'success';
-      exitCode = status === 'failed' ? exec.exitCode : exitCode;
+    for (let i = 0; i < op.args?.cmds.length; i++) {
+      try {
+        const cmd = op.args?.cmds[i];
+        const exec = await this.exec(container, cmd);
+        status = exec.exitCode > 0 ? 'failed' : 'success';
+        exitCode = status === 'failed' ? exec.exitCode : exitCode;
 
-      let type: "stdin" | "stdout" | "stderr" = status === 'failed' ? 'stderr' : 'stdout';
-      outputs.push({
-        type,
-        log: status === 'failed' ? exec.stderr : exec.stdout
-      });
-    } catch (e) {
-      status = 'failed';
-      console.log(chalk.red(e));
+        let type: "stdin" | "stdout" | "stderr" = status === 'failed' ? 'stderr' : 'stdout';
+        outputs.push({
+          type,
+          log: status === 'failed' ? exec.stderr : exec.stdout
+        });
+      } catch (e: any) {
+        status = 'failed';
+        outputs.push({
+          type: "stderr" as const,
+          log: e.toString(),
+        });
+      }
     }
 
     await container.stop();
@@ -142,16 +153,18 @@ export class DockerProvider implements Provider {
    */
   private async exec(
     container: Docker.Container,
-    cmd: string[],
+    cmd: string,
     opts?: Docker.ExecCreateOptions,
   ): Promise<{exitCode: number,
       stderr: string | undefined,
       stdout: string | undefined}> {
+
+    const parsedcmd = parse(cmd);
     const dockerExec = await container.exec({
       ...opts,
       AttachStderr: true,
       AttachStdout: true,
-      Cmd: cmd,
+      Cmd: parsedcmd,
     });
 
     const dockerExecStream = await dockerExec.start({});
@@ -164,9 +177,17 @@ export class DockerProvider implements Provider {
 
     await streamPromises.finished(dockerExecStream);
 
+    // TODO: get & log results in real time
     const stderr = stderrStream.read() as Buffer | undefined;
     const stdout = stdoutStream.read() as Buffer | undefined;
 
+    if (stderr) {
+      console.log(chalk.red(stderr.toString()));
+    }
+    if (stdout) {
+      console.log(stdout.toString());
+    }
+  
     const dockerExecInfo = await dockerExec.inspect();
 
     return {
@@ -174,5 +195,5 @@ export class DockerProvider implements Provider {
       stderr: stderr?.toString(),
       stdout: stdout?.toString(),
     };
-  } 
+  }
 }

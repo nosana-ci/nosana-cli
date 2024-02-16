@@ -10,7 +10,7 @@ const jobDefinition: JobDefinition = {
     type: 'container/run',
     id: 'run-from-cli',
     args: {
-      cmds: ['/bin/bash', '-c', 'echo Hello World!'],
+      cmds: ["/bin/bash -c 'echo Hello World!'", "sleep 3", "/bin/bash -c 'echo Bye'"],
       image: 'ubuntu',
     },
   }]
@@ -26,7 +26,6 @@ export async function startNode(
   let provider;
   switch (options.provider) {
     case "docker":
-      console.log('yessir')
       provider = new DockerProvider(options.host, options.port);
       break;
     default:
