@@ -121,6 +121,15 @@ node
 node
   .command('start')
   .argument('<market>', 'market address')
+  .addOption(
+    new Option('--provider <provider>', 'provider used to run the job').choices(['docker'])
+  )
+  .addOption(
+    new Option('--host <host>', 'host ip').default('127.0.0.1')
+  )
+  .addOption(
+    new Option('--port <port>', 'port on which podman is running').default(8080)
+  )
   .description('Start Nosana Node')
   .action(startNode);
 

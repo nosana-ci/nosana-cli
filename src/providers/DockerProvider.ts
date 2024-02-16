@@ -1,23 +1,29 @@
-import chalk from "chalk";
-import { JobDefinition, Operation, OperationResult, Provider, Result } from "./BaseProvider";
-import ora from "ora";
-import Docker from "dockerode";
-import stream from "stream";
-import streamPromises from "stream/promises";
+import chalk from 'chalk';
+import {
+  JobDefinition,
+  Operation,
+  OperationResult,
+  Provider,
+  Result,
+} from './BaseProvider';
+import ora from 'ora';
+import Docker from 'dockerode';
+import stream from 'stream';
+import streamPromises from 'stream/promises';
 
 export class DockerProvider implements Provider {
   docker: Docker;
-  constructor () {
+  constructor(host: string, port: number) {
     this.docker = new Docker({
-      host: '127.0.0.1',
-      port: '8080',
+      host,
+      port,
     });
   }
   async run(jobDefinition: JobDefinition): Promise<Result> {
     const spinner = ora(chalk.cyan('Running job \n')).start();
     const result: Result = {
       status: '',
-      ops: []
+      ops: [],
     };
 
     // run operations
@@ -45,7 +51,7 @@ export class DockerProvider implements Provider {
    */
   async healthy(): Promise<Boolean> {
     try {
-      await this.docker.ping()
+      await this.docker.ping();
       console.log(chalk.green('Podman is running'));
       return true;
     } catch (error) {
@@ -53,15 +59,15 @@ export class DockerProvider implements Provider {
       return false;
     }
   }
-  
+
   /**
    * Pull image and create & start container
    * @param op Operation specs
    * @returns Docker.Container
    */
-  private async setupContainer (op: Operation): Promise<Docker.Container> {
+  private async setupContainer(op: Operation): Promise<Docker.Container> {
     await new Promise((resolve, reject) => {
-      this.docker.pull(op.args?.image, (err:any, stream:any) => {
+      this.docker.pull(op.args?.image, (err: any, stream: any) => {
         if (err) {
           return reject(err);
         }
@@ -72,7 +78,8 @@ export class DockerProvider implements Provider {
     });
     console.log(chalk.green('- Pulled image ', op.args?.image));
 
-    const name = op.args?.image + '-' + (Math.random() + 1).toString(36).substring(7);
+    const name =
+      op.args?.image + '-' + (Math.random() + 1).toString(36).substring(7);
     const container = await this.docker.createContainer({
       Image: op.args?.image,
       name,
@@ -88,7 +95,7 @@ export class DockerProvider implements Provider {
     await container.start();
     console.log(chalk.green('- Started container '));
 
-    return container
+    return container;
   }
 
   /**
@@ -96,24 +103,25 @@ export class DockerProvider implements Provider {
    * @param op Operation specs
    * @returns OperationResult
    */
-  private async runOperation (op: Operation): Promise<OperationResult> {
+  private async runOperation(op: Operation): Promise<OperationResult> {
     const startTime = Date.now();
     const container = await this.setupContainer(op);
 
-    const outputs = []
+    const outputs = [];
     let exitCode = 0;
     let status;
 
     // exec commands in op
     try {
       const exec = await this.exec(container, op.args?.cmds);
-      status = exec.exitCode > 0 ? 'failed' : 'success';
-      exitCode = status === 'failed' ? exec.exitCode : exitCode;
+      exitCode = exec.exitCode ? exec.exitCode : 0;
+      status = exitCode > 0 ? 'failed' : 'success';
 
-      let type: "stdin" | "stdout" | "stderr" = status === 'failed' ? 'stderr' : 'stdout';
+      let type: 'stdin' | 'stdout' | 'stderr' =
+        status === 'failed' ? 'stderr' : 'stdout';
       outputs.push({
         type,
-        log: status === 'failed' ? exec.stderr : exec.stdout
+        log: status === 'failed' ? exec.stderr : exec.stdout,
       });
     } catch (e) {
       status = 'failed';
@@ -127,10 +135,10 @@ export class DockerProvider implements Provider {
       id: op.id,
       startTime,
       endTime: Date.now(),
-      status: status ? status : 'failed',
+      status,
       exitCode,
-      logs: outputs
-    }
+      logs: outputs,
+    };
   }
 
   /**
@@ -144,9 +152,11 @@ export class DockerProvider implements Provider {
     container: Docker.Container,
     cmd: string[],
     opts?: Docker.ExecCreateOptions,
-  ): Promise<{exitCode: number,
-      stderr: string | undefined,
-      stdout: string | undefined}> {
+  ): Promise<{
+    exitCode: number | null;
+    stderr: string | undefined;
+    stdout: string | undefined;
+  }> {
     const dockerExec = await container.exec({
       ...opts,
       AttachStderr: true,
@@ -174,5 +184,5 @@ export class DockerProvider implements Provider {
       stderr: stderr?.toString(),
       stdout: stdout?.toString(),
     };
-  } 
+  }
 }
