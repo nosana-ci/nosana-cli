@@ -100,6 +100,16 @@ export class DockerProvider implements BaseProvider {
       OpenStdin: true,
       StdinOnce: true,
       Tty: false,
+      // --gpus all
+      HostConfig: {
+        DeviceRequests: [
+          {
+            Count: -1,
+            Driver: "nvidia",
+            Capabilities: [["gpu"]],
+          },
+        ],
+      },
     });
     console.log(chalk.green('- Created container ', name));
 
