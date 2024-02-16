@@ -3,10 +3,16 @@ import { Client, Run } from '@nosana/sdk';
 import { getSDK } from '../../services/sdk.js';
 import chalk from 'chalk';
 import ora from 'ora';
-import { getJob } from '../job/get.js';
 import { sleep, clearLine } from '../../generic/utils.js';
-import { getRun, checkQueued, waitForRun } from '../../services/nodes.js';
+import {
+  getRun,
+  checkQueued,
+  waitForRun,
+  NodeStats,
+  getNodeStats,
+} from '../../services/nodes.js';
 import { NotQueuedError } from '../../generic/errors.js';
+import { DockerProvider } from '../../providers/DockerProvider.js';
 
 export async function startNode(
   market: string,
@@ -15,55 +21,66 @@ export async function startNode(
   },
   cmd: Command | undefined,
 ) {
+  /*************
+   * Bootstrap *
+   *************/
   const nosana: Client = getSDK();
   const node = nosana.solana.provider!.wallet.publicKey.toString();
 
-  // TODO: Node Health 
-  // 1: check balance SOL/NOS
-  // 1.1: not enough SOL: show instructions with wallet address and exit
+  let provider;
+  switch (options.provider) {
+    case 'docker':
+    default:
+      provider = new DockerProvider(options.host, options.port);
+      break;
+  }
 
-  // 2: Check stake account
-  // 2.2: If no stake account: create empty stake account
+  /****************
+   * Health Check *
+   ****************/
+  const stats: NodeStats = await getNodeStats(node);
+  if (stats.sol < 0.001) throw new Error('not enough SOL');
+  if (!(await provider.healthy())) throw new Error('Provider not healthy');
+  // TODO Check stake account
+  //      If no stake account: create empty stake account
 
-  // 3: Check NFT that is needed for market
+  // TODO Check NFT that is needed for market
 
-  // 4: Provider check (e.g. is docker/podman api running)
-
-  const spinner = ora(chalk.cyan('Checking node status')).start();
+  const spinner = ora(chalk.cyan('Checking existing runs')).start();
 
   // Check if we already have a run account
   let run: Run | void = await getRun(node);
 
   if (!run) {
+    spinner.text = chalk.cyan('Checking queued status');
     const selectedMarket = await checkQueued(node);
-    // todo: check queue position
+    // TODO: check queue position
 
-    if (!selectedMarket) {
-      spinner.warn("Currently not running a job and not queued in a market")
-      for (let timer = 10; timer > 0; timer--) {
-        spinner.start(chalk.cyan(`Trying again in ${timer}`));
-        await sleep(1);
+    if (!selectedMarket || selectedMarket.address.toString() === market) {
+      if (selectedMarket) {
+        // TODO: We are in the wrong market, leave queue
       }
-      spinner.stop();
-      clearLine();
-    } else {
-      // Currently queued in a market, wait for run
-      spinner.color = 'yellow';
-      spinner.text = chalk.bgYellow.bold(' QUEUED ') + ` waiting for jobs in market ${chalk.cyan.bold(selectedMarket.address)}`;
-      try {
-        run = await waitForRun(node, true); // will only return on a new run account
-      } catch (e) {
-        if (e instanceof NotQueuedError) {
-          spinner.warn("Node left market queue..")
-          for (let timer = 10; timer > 0; timer--) {
-            spinner.start(chalk.cyan(`Checking again in ${timer}`));
-            await sleep(1);
-          }
-          spinner.stop();
-          clearLine();
-        } else {
-          throw e;
+      spinner.text = chalk.cyan('Joining market');
+      // TODO: join market queue
+    }
+    // Currently queued in a market, wait for run
+    spinner.color = 'yellow';
+    spinner.text =
+      chalk.bgYellow.bold(' QUEUED ') +
+      ` waiting for jobs in market ${chalk.cyan.bold(market)}`;
+    try {
+      run = await waitForRun(node, true); // will only return on a new run account
+    } catch (e) {
+      if (e instanceof NotQueuedError) {
+        spinner.warn('Node left market queue..');
+        for (let timer = 10; timer > 0; timer--) {
+          spinner.start(chalk.cyan(`Checking again in ${timer}`));
+          await sleep(1);
         }
+        spinner.stop();
+        clearLine();
+      } else {
+        throw e;
       }
     }
   }
@@ -77,5 +94,5 @@ export async function startNode(
     // TODO: else > run job (and regularly keep checking if job expired)
     // TODO: post results and finish job
   }
-  return startNode(node, options, cmd);
+  // return startNode(node, options, cmd);
 }

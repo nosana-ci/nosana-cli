@@ -1,2 +1,2 @@
 export * from './view.js';
-export * from './start.js';
+export * from './start2.js';

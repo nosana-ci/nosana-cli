@@ -13,7 +13,7 @@ export async function setSDK(
   market: string | undefined,
   keyfile: string,
   airdrop: boolean = false,
-) {
+): Promise<Client> {
   const config: ClientConfig = {
     solana: {
       network: network,
@@ -75,12 +75,14 @@ export async function setSDK(
     );
 
     console.log(
-      `SOL balance:\t${colors.GREEN}${solBalance / LAMPORTS_PER_SOL} SOL${colors.RESET
+      `SOL balance:\t${colors.GREEN}${solBalance / LAMPORTS_PER_SOL} SOL${
+        colors.RESET
       }`,
     );
     console.log(
-      `NOS balance:\t${colors.GREEN}${nosBalance ? nosBalance.uiAmount : 0} NOS${colors.RESET
-      }`,
+      `NOS balance:\t${colors.GREEN}${
+        nosBalance ? nosBalance.uiAmount : 0
+      } NOS${colors.RESET}`,
     );
 
     if (
@@ -99,7 +101,8 @@ export async function setSDK(
           ).publicKey.toString()}`,
         );
         console.log(
-          `Received airdrop ${colors.CYAN}${JSON.stringify(airdropResult)}${colors.RESET
+          `Received airdrop ${colors.CYAN}${JSON.stringify(airdropResult)}${
+            colors.RESET
           }`,
         );
       } catch (error) {
@@ -112,7 +115,7 @@ export async function setSDK(
       // }
     }
   }
-  console.log('---------------------------------');
+  return nosana;
 }
 export function getSDK() {
   return nosana;

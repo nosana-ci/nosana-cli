@@ -59,7 +59,7 @@ export class DockerProvider implements BaseProvider {
       console.log(chalk.green('Podman is running'));
       return true;
     } catch (error) {
-      console.log(chalk.red('Cannot connect to Podman: ', error));
+      console.error(chalk.red('Cannot connect to Podman: ', error));
       return false;
     }
   }

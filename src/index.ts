@@ -17,20 +17,7 @@ program
   .hook('preAction', async (thisCommand, actionCommand) => {
     const opts = actionCommand.optsWithGlobals();
     let market = opts.market;
-    if (!market) {
-      if (opts.gpu) {
-        if (opts.network.includes('devnet')) {
-          market = '4m2e2nGvem6MorWEzTHqNWsjpweRxWoAfU2u78TdBgGv';
-        } else {
-          throw new Error('GPU nodes only avaible on devnet for now');
-        }
-      }
-      if (opts.type === 'wasm' || opts.type === 'whisper') {
-        if (opts.network.includes('devnet')) {
-          market = 'Db9gUpeqYC2FCmHJMxiZX1ncoZXVEABjsaCWfbPzDdXi';
-        }
-      }
-    }
+
     await setSDK(
       opts.network,
       market,
@@ -39,10 +26,11 @@ program
     );
   })
   .addOption(
-    new Option('-n, --network <network>', 'network to run on').default(
-      'devnet',
-    ),
-  );
+    new Option('-n, --network <network>', 'network to run on')
+      .default('devnet')
+      .choices(['devnet', 'mainnet']),
+  )
+  .addOption(new Option('--rpc <url>', 'RPC node to use'));
 
 const job = program.command('job');
 job
@@ -65,7 +53,7 @@ job
   .addOption(new Option('-m, --market <market>', 'market to use'))
   .addOption(
     new Option('-w, --wallet <wallet>', 'path to wallet private key').default(
-      '~/nosana_key.json',
+      '~/.nosana/nosana_key.json',
     ),
   )
   .addOption(new Option('--wasm <url>', 'wasm url to run'))
@@ -122,13 +110,20 @@ node
   .command('start')
   .argument('<market>', 'market address')
   .addOption(
-    new Option('--provider <provider>', 'provider used to run the job').choices(['docker'])
+    new Option('--provider <provider>', 'provider used to run the job')
+      .choices(['docker'])
+      .default('docker'),
   )
   .addOption(
-    new Option('--host <host>', 'host ip').default('127.0.0.1')
+    new Option('-w, --wallet <wallet>', 'path to wallet private key').default(
+      '~/.nosana/nosana_key.json',
+    ),
   )
+  .addOption(new Option('--host <host>', 'host ip').default('127.0.0.1'))
   .addOption(
-    new Option('--port <port>', 'port on which podman is running').default(8080)
+    new Option('--port <port>', 'port on which podman is running').default(
+      8080,
+    ),
   )
   .description('Start Nosana Node')
   .action(startNode);

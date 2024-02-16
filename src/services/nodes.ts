@@ -1,8 +1,31 @@
-import { Client, Market, Run } from "@nosana/sdk";
-import { getSDK } from "./sdk.js";
-import { ClientSubscriptionId, PublicKey } from "@solana/web3.js";
-import { setIntervalImmediately } from "../generic/utils.js";
-import { NotQueuedError } from "../generic/errors.js";
+import { Client, Market, Run } from '@nosana/sdk';
+import { getSDK } from './sdk.js';
+import { ClientSubscriptionId, PublicKey, TokenAmount } from '@solana/web3.js';
+import { setIntervalImmediately } from '../generic/utils.js';
+import { NotQueuedError } from '../generic/errors.js';
+
+export type NodeStats = {
+  sol: number;
+  nos: TokenAmount | undefined;
+  stake: number;
+  nfts: Array<PublicKey>;
+};
+
+export const getNodeStats = async (
+  node: PublicKey | string,
+): Promise<NodeStats> => {
+  const nosana: Client = getSDK();
+
+  const solBalance = await nosana.solana.getSolBalance(node);
+  const nosBalance = await nosana.solana.getNosBalance(node);
+
+  return {
+    sol: solBalance,
+    nos: nosBalance,
+    stake: 0,
+    nfts: [],
+  };
+};
 
 export const getRun = async (node: string): Promise<Run | void> => {
   const nosana: Client = getSDK();
@@ -17,26 +40,34 @@ export const getRun = async (node: string): Promise<Run | void> => {
   if (runs && runs.length > 0) {
     return runs[0];
   }
-}
+};
 
-export const waitForRun = async (node: string, enableQueueCheck: boolean = false): Promise<Run> => {
+export const waitForRun = async (
+  node: string,
+  enableQueueCheck: boolean = false,
+): Promise<Run> => {
   const nosana: Client = getSDK();
   await nosana.jobs.loadNosanaJobs();
   const jobProgram = nosana.jobs.jobs!;
-  const runAccountFilter: { offset: number; bytes: string; } =
-    jobProgram.coder.accounts.memcmp(jobProgram.account.runAccount.idlAccount.name, undefined);
-  const coderFilters = [{
-    memcmp: {
-      offset: runAccountFilter.offset,
-      bytes: runAccountFilter.bytes
+  const runAccountFilter: { offset: number; bytes: string } =
+    jobProgram.coder.accounts.memcmp(
+      jobProgram.account.runAccount.idlAccount.name,
+      undefined,
+    );
+  const coderFilters = [
+    {
+      memcmp: {
+        offset: runAccountFilter.offset,
+        bytes: runAccountFilter.bytes,
+      },
     },
-  },
-  {
-    memcmp: {
-      offset: 40,
-      bytes: node,
+    {
+      memcmp: {
+        offset: 40,
+        bytes: node,
+      },
     },
-  }];
+  ];
   let subscriptionId: ClientSubscriptionId;
   let getRunsInterval: NodeJS.Timer;
   let checkQueuedInterval: NodeJS.Timer;
@@ -60,20 +91,29 @@ export const waitForRun = async (node: string, enableQueueCheck: boolean = false
       jobProgram.programId,
       async (event) => {
         console.log(event);
-        const runAccount = jobProgram.coder.accounts.decode(jobProgram.account.runAccount.idlAccount.name, event.accountInfo.data);
+        const runAccount = jobProgram.coder.accounts.decode(
+          jobProgram.account.runAccount.idlAccount.name,
+          event.accountInfo.data,
+        );
         const run: Run = {
           account: runAccount,
-          publicKey: event.accountId
+          publicKey: event.accountId,
         };
         resolve(run);
-      }, 'confirmed', coderFilters);
+      },
+      'confirmed',
+      coderFilters,
+    );
   }).then((run) => {
-    if (typeof subscriptionId !== "undefined") nosana.jobs.connection!.removeProgramAccountChangeListener(subscriptionId);
+    if (typeof subscriptionId !== 'undefined')
+      nosana.jobs.connection!.removeProgramAccountChangeListener(
+        subscriptionId,
+      );
     if (getRunsInterval) clearInterval(getRunsInterval);
     if (checkQueuedInterval) clearInterval(checkQueuedInterval);
     return run;
   });
-}
+};
 
 export const checkQueued = async (node: string): Promise<Market | void> => {
   const nosana: Client = getSDK();
@@ -81,9 +121,12 @@ export const checkQueued = async (node: string): Promise<Market | void> => {
   // check all markets and see if the node is in the queue
   for (let i = 0; i < markets.length; i++) {
     const market = markets[i];
-    if (market && market.queue &&
-      market.queue.find((e: PublicKey) => e.toString() === node)) {
+    if (
+      market &&
+      market.queue &&
+      market.queue.find((e: PublicKey) => e.toString() === node)
+    ) {
       return market;
     }
   }
-}
+};
