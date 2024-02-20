@@ -200,18 +200,14 @@ export class DockerProvider implements BaseProvider {
 
     dockerExecStream.resume();
 
+    dockerExecStream.on('data', (chunk: any) => {
+      console.log(chunk.toString());
+    });
+
     await streamPromises.finished(dockerExecStream);
 
-    // TODO: get & log results in real time
     const stderr = stderrStream.read() as Buffer | undefined;
     const stdout = stdoutStream.read() as Buffer | undefined;
-
-    if (stderr) {
-      console.log(chalk.red(stderr.toString()));
-    }
-    if (stdout) {
-      console.log(stdout.toString());
-    }
   
     const dockerExecInfo = await dockerExec.inspect();
 
