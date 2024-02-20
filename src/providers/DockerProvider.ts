@@ -5,6 +5,7 @@ import {
   OperationResult,
   BaseProvider,
   Result,
+  RunState,
 } from './BaseProvider';
 import ora from 'ora';
 import Docker from 'dockerode';
@@ -114,6 +115,13 @@ export class DockerProvider implements BaseProvider {
     console.log(chalk.green('- Created container ', name));
 
     await container.start();
+
+    // TODO: how to stop this?
+    this.docker.getEvents({
+      container: [name],
+      event: []
+    }, this.handleDockerEvents);
+
     console.log(chalk.green('- Started container '));
 
     return container;
@@ -216,5 +224,33 @@ export class DockerProvider implements BaseProvider {
       stderr: stderr?.toString(),
       stdout: stdout?.toString(),
     };
+  }
+
+  /**
+   *
+   * @param err
+   * @param stream
+   */
+  private handleDockerEvents(err: any, stream: any) {
+    if (err) {
+      console.log('docker event error: ', err.message);
+    } else {
+      stream.on('data', (chunk: any) => {
+        try {
+          // TODO: sometimes two events come in at the same time, then json.parse doesnt work
+          // find workaround
+          const data = JSON.parse(chunk.toString('utf8'));
+          if (data && data.Actor.Attributes && parseInt(data.Actor.Attributes.containerExitCode)) {
+            console.log('container exited with code: ', data.Actor.Attributes.containerExitCode)
+          }
+        } catch (e) {}
+      });
+      stream.on('end', function(){
+        console.log('STREAM END')
+      });
+      stream.on('close', function(){
+        console.log('STREAM CLOSE')
+      });
+    }
   }
 }
