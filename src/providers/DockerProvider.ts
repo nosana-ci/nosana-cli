@@ -11,7 +11,7 @@ import ora from 'ora';
 import Docker from 'dockerode';
 import stream from 'stream';
 import streamPromises from 'stream/promises';
-const parse = require('shell-quote/parse');
+import { parse } from 'shell-quote';
 
 export class DockerProvider implements BaseProvider {
   docker: Docker;

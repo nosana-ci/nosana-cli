@@ -26,6 +26,7 @@
     "@types/figlet": "^1.5.6",
     "@types/inquirer": "^9.0.3",
     "@types/node": "^20.3.2",
+    "@types/shell-quote": "^1.7.5",
     "@types/tar": "^6.1.6",
     "@typescript-eslint/eslint-plugin": "^5.50.0",
     "eslint": "^8.0.1",
