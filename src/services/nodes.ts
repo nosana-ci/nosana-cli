@@ -90,7 +90,6 @@ export const waitForRun = async (
     subscriptionId = nosana.jobs.connection!.onProgramAccountChange(
       jobProgram.programId,
       async (event) => {
-        console.log(event);
         const runAccount = jobProgram.coder.accounts.decode(
           jobProgram.account.runAccount.idlAccount.name,
           event.accountInfo.data,

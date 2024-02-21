@@ -46,6 +46,9 @@ export async function startNode(
 
   // TODO Check NFT that is needed for market
 
+  /****************
+   *   Job Loop   *
+   ****************/
   const spinner = ora(chalk.cyan('Checking existing runs')).start();
 
   // Check if we already have a run account

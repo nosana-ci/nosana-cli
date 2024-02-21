@@ -26,9 +26,10 @@ program
     );
   })
   .addOption(
-    new Option('-n, --network <network>', 'network to run on')
-      .default('devnet')
-      .choices(['devnet', 'mainnet']),
+    new Option('-n, --network <network>', 'network to run on').default(
+      'devnet',
+    ),
+    // .choices(['devnet', 'mainnet']),
   )
   .addOption(new Option('--rpc <url>', 'RPC node to use'));
 
