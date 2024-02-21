@@ -36,7 +36,7 @@ export async function startNode(
   switch (options.provider) {
     case 'docker':
     default:
-      provider = new DockerProvider(options.host, options.port);
+      provider = new DockerProvider(options.podman);
       break;
   }
 

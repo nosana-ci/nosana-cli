@@ -15,10 +15,24 @@ import { parse } from 'shell-quote';
 
 export class DockerProvider implements BaseProvider {
   docker: Docker;
-  constructor(host: string, port: number) {
+  constructor(podman: string) {
+    const podmanUri = new URL(
+      podman.startsWith('http') || podman.startsWith('ssh')
+        ? podman
+        : `http://${podman}`,
+    );
+    const protocol = podmanUri.protocol;
+    if (
+      !['https', 'http', 'ssh'].includes(protocol) &&
+      typeof protocol !== 'undefined'
+    ) {
+      throw new Error(`Protocol ${protocol} not supported`);
+    }
+
     this.docker = new Docker({
-      host,
-      port,
+      host: podmanUri.hostname,
+      port: podmanUri.port,
+      protocol: protocol as 'https' | 'http' | 'ssh' | undefined,
     });
   }
   async run(jobDefinition: JobDefinition): Promise<Result> {

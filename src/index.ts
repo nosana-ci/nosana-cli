@@ -120,10 +120,9 @@ node
       '~/.nosana/nosana_key.json',
     ),
   )
-  .addOption(new Option('--host <host>', 'host ip').default('127.0.0.1'))
   .addOption(
-    new Option('--port <port>', 'port on which podman is running').default(
-      8080,
+    new Option('--podman <URI>', 'Podman connection URI').default(
+      'http://localhost:8080',
     ),
   )
   .description('Start Nosana Node')
