@@ -10,7 +10,7 @@ const jobDefinition: JobDefinition = {
     type: 'container/run',
     id: 'run-from-cli',
     args: {
-      cmds: ["/bin/bash -c 'echo Hello World!'", "sleep 3", "/bin/bash -c 'echo Bye'"],
+      cmds: ["/bin/bash -c 'for i in {1..10}; do echo $i; sleep 1; done'"],
       image: 'ubuntu',
     },
   }]
