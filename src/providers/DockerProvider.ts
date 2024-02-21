@@ -204,7 +204,7 @@ export class DockerProvider implements BaseProvider {
       ...opts,
       AttachStderr: true,
       AttachStdout: true,
-      Cmd: parsedcmd,
+      Cmd: parsedcmd as string[],
     });
 
     const dockerExecStream = await dockerExec.start({});
