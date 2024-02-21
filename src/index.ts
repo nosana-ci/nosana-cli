@@ -31,7 +31,12 @@ program
     ),
     // .choices(['devnet', 'mainnet']),
   )
-  .addOption(new Option('--rpc <url>', 'RPC node to use'));
+  .addOption(new Option('--rpc <url>', 'RPC node to use'))
+  .addOption(
+    new Option('--log <logLevel>', 'RPC node to use')
+      .default('info')
+      .choices(['info', 'none', 'debug', 'trace']),
+  );
 
 const job = program.command('job');
 job
@@ -129,7 +134,17 @@ node
   .action(startNode);
 
 async function startCLI() {
-  await program.parseAsync(process.argv);
+  try {
+    await program.parseAsync(process.argv);
+  } catch (e: any) {
+    const logLevel = program.getOptionValue('log');
+    if (logLevel === 'debug') {
+      console.error(e.message ? e.message : e);
+    } else if (logLevel === 'trace') {
+      console.error(e);
+    }
+    process.exit(1);
+  }
 }
 
 startCLI();

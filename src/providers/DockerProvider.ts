@@ -73,13 +73,15 @@ export class DockerProvider implements BaseProvider {
    * Check if DockerProvider is healthy by checking if podman is running
    * @returns boolean
    */
-  async healthy(): Promise<Boolean> {
+  async healthy(throwError: Boolean = true): Promise<Boolean> {
     try {
       await this.docker.ping();
-      console.log(chalk.green('Podman is running'));
       return true;
     } catch (error) {
-      console.error(chalk.red('Cannot connect to Podman: ', error));
+      if (throwError) {
+        throw error;
+      }
+      console.error(error);
       return false;
     }
   }

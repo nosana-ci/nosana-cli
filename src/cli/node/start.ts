@@ -32,6 +32,8 @@ export async function startNode(
   const nosana: Client = getSDK();
   const node = nosana.solana.provider!.wallet.publicKey.toString();
 
+  console.log(`Provider:\t${chalk.greenBright.bold(options.provider)}`);
+  console.log('================================');
   let provider: BaseProvider;
   switch (options.provider) {
     case 'docker':
@@ -45,7 +47,21 @@ export async function startNode(
    ****************/
   const stats: NodeStats = await getNodeStats(node);
   if (stats.sol < 0.001) throw new Error('not enough SOL');
-  if (!(await provider.healthy())) throw new Error('Provider not healthy');
+  try {
+    await provider.healthy();
+  } catch (error) {
+    console.log(
+      chalk.red(`${chalk.bold(options.provider)} provider not healthy`),
+    );
+    throw error;
+  }
+  switch (options.provider) {
+    case 'docker':
+    default:
+      console.log(chalk.green(`Podman is running on ${options.podman}`));
+      break;
+  }
+
   // TODO Check stake account
   //      If no stake account: create empty stake account
   // const stake = await nosana.stake.create(
