@@ -25,7 +25,7 @@ export class DockerProvider implements BaseProvider {
     const spinner = ora(chalk.cyan('Running job \n')).start();
     const result: Result = {
       status: 'success',
-      ops: []
+      ops: [],
     };
 
     // run operations
@@ -48,7 +48,7 @@ export class DockerProvider implements BaseProvider {
 
     spinner.stop();
 
-    console.log('----------------------------------')
+    console.log('----------------------------------');
     console.log('Job done');
     console.log('result:', result);
 
@@ -106,8 +106,8 @@ export class DockerProvider implements BaseProvider {
         DeviceRequests: [
           {
             Count: -1,
-            Driver: "nvidia",
-            Capabilities: [["gpu"]],
+            Driver: 'nvidia',
+            Capabilities: [['gpu']],
           },
         ],
       },
@@ -117,10 +117,15 @@ export class DockerProvider implements BaseProvider {
     await container.start();
 
     // TODO: how to stop this?
-    this.docker.getEvents({
-      container: [name],
-      event: []
-    }, this.handleDockerEvents);
+    this.docker.getEvents(
+      {
+        filters: {
+          container: [name],
+          event: [],
+        },
+      },
+      this.handleDockerEvents,
+    );
 
     console.log(chalk.green('- Started container '));
 
@@ -147,18 +152,19 @@ export class DockerProvider implements BaseProvider {
       try {
         const cmd = op.args?.cmds[i];
         const exec = await this.exec(container, cmd);
-        status = exec.exitCode > 0 ? 'failed' : 'success';
-        exitCode = status === 'failed' ? exec.exitCode : exitCode;
+        status = exec.exitCode ? 'failed' : 'success';
+        exitCode = exec.exitCode || exitCode;
 
-        let type: "stdin" | "stdout" | "stderr" = status === 'failed' ? 'stderr' : 'stdout';
+        let type: 'stdin' | 'stdout' | 'stderr' =
+          status === 'failed' ? 'stderr' : 'stdout';
         outputs.push({
           type,
-          log: status === 'failed' ? exec.stderr : exec.stdout
+          log: status === 'failed' ? exec.stderr : exec.stdout,
         });
       } catch (e: any) {
         status = 'failed';
         outputs.push({
-          type: "stderr" as const,
+          type: 'stderr' as const,
           log: e.toString(),
         });
       }
@@ -188,10 +194,11 @@ export class DockerProvider implements BaseProvider {
     container: Docker.Container,
     cmd: string,
     opts?: Docker.ExecCreateOptions,
-  ): Promise<{exitCode: number,
-      stderr: string | undefined,
-      stdout: string | undefined}> {
-
+  ): Promise<{
+    exitCode: number | null;
+    stderr: string | undefined;
+    stdout: string | undefined;
+  }> {
     const parsedcmd = parse(cmd);
     const dockerExec = await container.exec({
       ...opts,
@@ -216,7 +223,7 @@ export class DockerProvider implements BaseProvider {
 
     const stderr = stderrStream.read() as Buffer | undefined;
     const stdout = stdoutStream.read() as Buffer | undefined;
-  
+
     const dockerExecInfo = await dockerExec.inspect();
 
     return {
@@ -240,16 +247,23 @@ export class DockerProvider implements BaseProvider {
           // TODO: sometimes two events come in at the same time, then json.parse doesnt work
           // find workaround
           const data = JSON.parse(chunk.toString('utf8'));
-          if (data && data.Actor.Attributes && parseInt(data.Actor.Attributes.containerExitCode)) {
-            console.log('container exited with code: ', data.Actor.Attributes.containerExitCode)
+          if (
+            data &&
+            data.Actor.Attributes &&
+            parseInt(data.Actor.Attributes.containerExitCode)
+          ) {
+            console.log(
+              'container exited with code: ',
+              data.Actor.Attributes.containerExitCode,
+            );
           }
         } catch (e) {}
       });
-      stream.on('end', function(){
-        console.log('STREAM END')
+      stream.on('end', function () {
+        console.log('STREAM END');
       });
-      stream.on('close', function(){
-        console.log('STREAM CLOSE')
+      stream.on('close', function () {
+        console.log('STREAM CLOSE');
       });
     }
   }
