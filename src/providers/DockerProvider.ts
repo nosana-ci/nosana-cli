@@ -21,7 +21,7 @@ export class DockerProvider implements BaseProvider {
         ? podman
         : `http://${podman}`,
     );
-    const protocol = podmanUri.protocol;
+    const protocol = podmanUri.protocol.replace(':', '');
     if (
       !['https', 'http', 'ssh'].includes(protocol) &&
       typeof protocol !== 'undefined'
