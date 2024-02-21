@@ -59,4 +59,5 @@ export type OpState = {
 export abstract class BaseProvider {
   abstract run(JobDefinition: JobDefinition): Promise<Result>;
   abstract healthy(): Promise<Boolean>;
-  abstract getRunState(): Promise<RunState>;}
+  abstract getRunState?(): Promise<RunState>;
+}

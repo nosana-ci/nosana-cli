@@ -1,7 +1,7 @@
 import { Client, Market, Run } from '@nosana/sdk';
 import { getSDK } from './sdk.js';
 import { ClientSubscriptionId, PublicKey, TokenAmount } from '@solana/web3.js';
-import { setIntervalImmediately } from '../generic/utils.js';
+import { isCallback, setIntervalImmediately } from '../generic/utils.js';
 import { NotQueuedError } from '../generic/errors.js';
 
 export type NodeStats = {
@@ -44,7 +44,8 @@ export const getRun = async (node: string): Promise<Run | void> => {
 
 export const waitForRun = async (
   node: string,
-  enableQueueCheck: boolean = false,
+  market?: PublicKey,
+  enableQueueCheck: Function | boolean = false,
 ): Promise<Run> => {
   const nosana: Client = getSDK();
   await nosana.jobs.loadNosanaJobs();
@@ -73,13 +74,17 @@ export const waitForRun = async (
   let checkQueuedInterval: NodeJS.Timer;
   return new Promise<Run>(function (resolve, reject) {
     if (enableQueueCheck) {
-      // check if we are still queued in a market every 2 minutes
-      checkQueuedInterval = setIntervalImmediately(async () => {
-        const selectedMarket = await checkQueued(node);
+      // check if we are still queued in a market every minute
+      checkQueuedInterval = setInterval(async () => {
+        const selectedMarket = await checkQueued(node, market);
         if (!selectedMarket) {
           reject(new NotQueuedError('Node not queued anymore'));
+        } else {
+          if (enableQueueCheck instanceof Function) {
+            enableQueueCheck(selectedMarket);
+          }
         }
-      }, 60000 * 2);
+      }, 60000);
     }
 
     // As a fallback for the run events, runs every 5 minutes
@@ -114,10 +119,20 @@ export const waitForRun = async (
   });
 };
 
-export const checkQueued = async (node: string): Promise<Market | void> => {
+export const checkQueued = async (
+  node: string,
+  market?: PublicKey,
+): Promise<Market | void> => {
   const nosana: Client = getSDK();
-  const markets = await nosana.jobs.allMarkets();
-  // check all markets and see if the node is in the queue
+  let markets: Array<Market>;
+  if (market) {
+    // Only fetch specified market
+    markets = [await nosana.jobs.getMarket(market)];
+  } else {
+    // Fetch all markets if market is not specified
+    markets = await nosana.jobs.allMarkets();
+  }
+  // check markets and see if the node is in the queue
   for (let i = 0; i < markets.length; i++) {
     const market = markets[i];
     if (

@@ -16,9 +16,9 @@ function setIntervalImmediately(callback: (args: void) => void, ms?: number) {
 }
 
 const clearLine = () => {
-  process.stdout.moveCursor(0, -1) // up one line
-  process.stdout.clearLine(1) // from cursor to end
-}
+  process.stdout.moveCursor(0, -1); // up one line
+  process.stdout.clearLine(1); // from cursor to end
+};
 
 const colors = {
   RED: '\u001b[1;31m',
@@ -30,4 +30,8 @@ const colors = {
   RESET: '\u001b[0m',
 };
 
-export { now, sleep, setIntervalImmediately, clearLine, colors };
+function isCallback<T>(maybeFunc: T | unknown): maybeFunc is T {
+  return maybeFunc instanceof Function;
+}
+
+export { now, sleep, setIntervalImmediately, clearLine, colors, isCallback };
