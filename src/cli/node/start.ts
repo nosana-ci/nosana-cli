@@ -13,11 +13,7 @@ import {
 } from '../../services/nodes.js';
 import { NotQueuedError } from '../../generic/errors.js';
 import { DockerProvider } from '../../providers/DockerProvider.js';
-import {
-  BaseProvider,
-  JobDefinition,
-  Result,
-} from '../../providers/BaseProvider.js';
+import { BaseProvider, JobDefinition } from '../../providers/BaseProvider.js';
 
 export async function startNode(
   market: string,
@@ -150,7 +146,9 @@ export async function startNode(
         // TODO: wait for provider to get healthy
       }
       spinner.text = chalk.cyan('Running job');
-      const result: Result = await provider.run(jobDefinition);
+      const runId: string = await provider.run(jobDefinition);
+      // TODO: retrieve results from runId
+      const result = {};
       spinner.text = chalk.cyan('Uploading results to IPFS');
       const ipfsResult = await nosana.ipfs.pin(result);
       const bytesArray = nosana.ipfs.IpfsHashToByteArray(ipfsResult);
