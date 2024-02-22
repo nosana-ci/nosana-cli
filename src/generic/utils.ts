@@ -10,11 +10,6 @@ const sleep = (seconds: number): Promise<void> =>
  */
 const now = (): number => Math.floor(Date.now() / 1e3);
 
-function setIntervalImmediately(callback: (args: void) => void, ms?: number) {
-  callback();
-  return setInterval(callback, ms);
-}
-
 const clearLine = () => {
   process.stdout.moveCursor(0, -1); // up one line
   process.stdout.clearLine(1); // from cursor to end
@@ -30,8 +25,4 @@ const colors = {
   RESET: '\u001b[0m',
 };
 
-function isCallback<T>(maybeFunc: T | unknown): maybeFunc is T {
-  return maybeFunc instanceof Function;
-}
-
-export { now, sleep, setIntervalImmediately, clearLine, colors, isCallback };
+export { now, sleep, clearLine, colors };

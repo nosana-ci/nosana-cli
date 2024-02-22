@@ -59,9 +59,9 @@ export async function setSDK(
     const nosBalance = await nosana.solana.getNosBalance();
 
     console.log(
-      `Wallet:\t\t${colors.GREEN}${(
-        nosana.solana.config.wallet as Wallet
-      ).publicKey.toString()}${colors.RESET}`,
+      `Wallet:\t\t${colors.GREEN}${nosana.solana.wallet.publicKey.toString()}${
+        colors.RESET
+      }`,
     );
 
     console.log(
@@ -86,9 +86,7 @@ export async function setSDK(
       console.log('\nNot enough SOL or NOS, requesting airdrop');
       try {
         const airdropResult = await fetch(
-          `https://backend.k8s.dev.nos.ci/airdrop?address=${(
-            nosana.solana.config.wallet as Wallet
-          ).publicKey.toString()}`,
+          `https://backend.k8s.dev.nos.ci/airdrop?address=${nosana.solana.wallet.publicKey.toString()}`,
         );
         console.log(
           `Received airdrop ${colors.CYAN}${JSON.stringify(airdropResult)}${
