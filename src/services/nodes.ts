@@ -1,7 +1,6 @@
 import { Client, Market, Run } from '@nosana/sdk';
 import { getSDK } from './sdk.js';
 import { ClientSubscriptionId, PublicKey, TokenAmount } from '@solana/web3.js';
-import { isCallback, setIntervalImmediately } from '../generic/utils.js';
 import { NotQueuedError } from '../generic/errors.js';
 
 export type NodeStats = {
@@ -70,8 +69,8 @@ export const waitForRun = async (
     },
   ];
   let subscriptionId: ClientSubscriptionId;
-  let getRunsInterval: NodeJS.Timer;
-  let checkQueuedInterval: NodeJS.Timer;
+  let getRunsInterval: NodeJS.Timeout;
+  let checkQueuedInterval: NodeJS.Timeout;
   return new Promise<Run>(function (resolve, reject) {
     if (enableQueueCheck) {
       // check if we are still queued in a market every minute
