@@ -10,29 +10,19 @@ let nosana: Client;
 
 export async function setSDK(
   network: string,
+  rpc: string | undefined,
   market: string | undefined,
   keyfile: string,
   airdrop: boolean = false,
 ): Promise<Client> {
   const config: ClientConfig = {
-    solana: {
-      network: network,
-      nos_address: network.includes('devnet')
-        ? 'devr1BGQndEW5k5zfvG5FsLyZv1Ap73vNgAHcQ9sUVP'
-        : 'nosXBVoaCTtYdLvKY6Csb4AC8JCdQKKAaWYtx2ZMoo7',
-      jobs_address: network.includes('devnet')
-        ? 'nosJTmGQxvwXy23vng5UjkTbfv91Bzf9jEuro78dAGR'
-        : 'nosJhNRqr2bc9g1nfGDcXXTXvYUmxD4cVwy2pMWhrYM',
-    },
-    secrets: {
-      manager: network.includes('devnet')
-        ? 'https://secrets.k8s.dev.nos.ci/'
-        : 'https://secrets.k8s.prd.nos.ci/',
-    },
+    solana: {},
   };
-  if (market) {
-    config.solana!.market_address = market;
-  }
+  if (rpc) config.solana!.network = rpc;
+  if (market) config.solana!.market_address = market;
+
+  let wallet: Wallet | string | Keypair | Iterable<number> | undefined =
+    undefined;
   if (keyfile) {
     if (!process?.env?.SOLANA_WALLET) {
       if (keyfile && keyfile[0] === '~') {
@@ -43,7 +33,7 @@ export async function setSDK(
           `Reading keypair from ${colors.CYAN}${keyfile}${colors.RESET}\n`,
         );
         const privateKey = fs.readFileSync(keyfile, 'utf8');
-        config.solana!.wallet = privateKey;
+        wallet = privateKey;
       } else {
         console.log(
           `Creating new keypair and storing it in ${colors.CYAN}${keyfile}${colors.RESET}\n`,
@@ -54,12 +44,12 @@ export async function setSDK(
           keyfile,
           JSON.stringify(Buffer.from(keypair.secretKey).toJSON().data),
         );
-        config.solana!.wallet = keypair;
+        wallet = keypair;
       }
     }
   }
 
-  nosana = new Client(config);
+  nosana = new Client(network, wallet, config);
 
   console.log(
     `Network:\t${colors.GREEN}${nosana.solana.config.network}${colors.RESET}`,
