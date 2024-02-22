@@ -6,6 +6,7 @@ import {
   BaseProvider,
   Result,
   OpState,
+  RunState,
 } from './BaseProvider';
 import ora from 'ora';
 import Docker from 'dockerode';
@@ -15,7 +16,7 @@ import { parse } from 'shell-quote';
 
 export class DockerProvider implements BaseProvider {
   docker: Docker;
-  runState: Array<OpState> = [];
+  runStates: Array<RunState> = [];
 
   constructor(podman: string) {
     const podmanUri = new URL(
@@ -37,8 +38,21 @@ export class DockerProvider implements BaseProvider {
       protocol: protocol as 'https' | 'http' | 'ssh' | undefined,
     });
   }
-  async run(jobDefinition: JobDefinition): Promise<Result> {
+  run(jobDefinition: JobDefinition): string {
+    const id = [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
+    const state: RunState = {
+      id,
+      status: 'running',
+      ops: []
+    }
+    this.runStates.push(state);
+    this.runOps(jobDefinition, id);
+    return id;
+  }
+
+  async runOps(jobDefinition: JobDefinition, runStateId: string): Promise<void> {
     const spinner = ora(chalk.cyan('Running job \n')).start();
+    const runStateIndex = this.runStates.findIndex((o) => o.id === runStateId);
     const result: Result = {
       status: 'success',
       ops: [],
@@ -51,8 +65,11 @@ export class DockerProvider implements BaseProvider {
         if (op.type === 'container/run') {
           const opResult = await this.runOperation(
             op as Operation<'container/run'>,
+            runStateId
           );
           result.ops.push(opResult);
+          const opIndex = this.runStates[runStateIndex].ops.findIndex((o) => op.id === o.result.id);
+          this.runStates[runStateIndex].ops[opIndex].result = opResult;
         }
       } catch (error) {
         console.log(chalk.red(error));
@@ -60,15 +77,13 @@ export class DockerProvider implements BaseProvider {
       }
     }
     const checkStatus = (op: OperationResult) => op.status === 'failed';
-    result.status = result.ops.some(checkStatus) ? 'failed' : result.status;
+    this.runStates[runStateIndex].status = result.ops.some(checkStatus) ? 'failed' : result.status;
 
     spinner.stop();
 
     console.log('----------------------------------');
     console.log('Job done');
-    console.log('result:', result);
-
-    return result;
+    console.log('run states:', this.runStates);
   }
 
   /**
@@ -88,8 +103,8 @@ export class DockerProvider implements BaseProvider {
     }
   }
 
-  getRunState (): Array<OpState> {
-    return this.runState;
+  getRunState (id: string): RunState | undefined {
+    return this.runStates.find((o) => o.id === id);
   }
 
   /**
@@ -151,12 +166,6 @@ export class DockerProvider implements BaseProvider {
 
     console.log(chalk.green('- Started container '));
 
-    this.runState.push({
-      op: op.id,
-      containerId: name,
-      result: [],
-    })
-
     return container;
   }
 
@@ -167,10 +176,10 @@ export class DockerProvider implements BaseProvider {
    */
   private async runOperation(
     op: Operation<'container/run'>,
+    runStateId: string,
   ): Promise<OperationResult> {
     const startTime = Date.now();
     const container = await this.setupContainer(op);
-
     const outputs = [];
     let exitCode = 0;
 
@@ -183,14 +192,19 @@ export class DockerProvider implements BaseProvider {
       logs: [],
     }
 
-    const opIndex = this.runState.findIndex((o) => o.op === op.id);
-    this.runState[opIndex].result = result;
+    const runStateIndex = this.runStates.findIndex((o) => o.id === runStateId);
+    this.runStates[runStateIndex].ops.push({
+      op: op.id,
+      containerId: container.id,
+      result
+    });
+    const opIndex = this.runStates[runStateIndex].ops.findIndex((o) => op.id === o.result.id);
 
     // exec commands in op
     for (let i = 0; i < op.args?.cmds.length; i++) {
       try {
         const cmd = op.args?.cmds[i];
-        const exec = await this.exec(container, cmd, op.id);
+        const exec = await this.exec(container, cmd, op.id, runStateId);
         result.status = exec.exitCode ? 'failed' : 'success';
         result.exitCode = exec.exitCode || result.exitCode;
 
@@ -214,10 +228,9 @@ export class DockerProvider implements BaseProvider {
 
     result.logs = outputs;
     result.endTime = Date.now();
+    this.runStates[runStateIndex].ops[opIndex].result = result;
 
-    this.runState[opIndex].result = result;
-
-    return result;
+    return this.runStates[runStateIndex].ops[opIndex].result;
   }
 
   /**
@@ -231,6 +244,7 @@ export class DockerProvider implements BaseProvider {
     container: Docker.Container,
     cmd: string,
     opId: string,
+    runStateId: string,
     opts?: Docker.ExecCreateOptions,
   ): Promise<{
     exitCode: number | null;
@@ -248,15 +262,16 @@ export class DockerProvider implements BaseProvider {
     const dockerExecStream = await dockerExec.start({});
     const stdoutStream = new stream.PassThrough();
     const stderrStream = new stream.PassThrough();
+    const runStateIndex = this.runStates.findIndex((o) => o.id === runStateId);
+    const opIndex = this.runStates[runStateIndex].ops.findIndex((o) => opId === o.result.id);
 
     this.docker.modem.demuxStream(dockerExecStream, stdoutStream, stderrStream);
 
     dockerExecStream.resume();
 
     dockerExecStream.on('data', (chunk: any) => {
-      console.log(chunk.toString());
-      const opIndex = this.runState.findIndex((o) => o.op === opId);
-      this.runState[opIndex].result.logs.push({
+      // console.log(chunk.toString());
+      this.runStates[runStateIndex].ops[opIndex].result.logs.push({
         type: 'stdout',
         log: chunk.toString(),
       })

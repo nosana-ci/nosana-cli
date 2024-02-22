@@ -25,7 +25,7 @@ export async function startNode(
   },
   cmd: Command | undefined,
 ) {
-  let provider;
+  let provider: DockerProvider;
   switch (options.provider) {
     case 'docker':
       provider = new DockerProvider(options.podman);
@@ -34,8 +34,10 @@ export async function startNode(
       provider = new DockerProvider(options.podman);
   }
 
+  console.log('letsgo');
   if (await provider.healthy()) {
-    await provider.run(jobDefinition);
+    const runId = provider.run(jobDefinition);
+    console.log('runId', runId);
   } else {
     console.log('abort');
   }
