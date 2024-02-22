@@ -20,20 +20,20 @@ program
 
     await setSDK(
       opts.network,
+      opts.rpc,
       market,
       opts.wallet,
       actionCommand.opts().airdrop,
     );
   })
   .addOption(
-    new Option('-n, --network <network>', 'network to run on').default(
-      'devnet',
-    ),
-    // .choices(['devnet', 'mainnet']),
+    new Option('-n, --network <network>', 'network to run on')
+      .default('devnet')
+      .choices(['devnet', 'mainnet']),
   )
   .addOption(new Option('--rpc <url>', 'RPC node to use'))
   .addOption(
-    new Option('--log <logLevel>', 'RPC node to use')
+    new Option('--log <logLevel>', 'Log level')
       .default('info')
       .choices(['info', 'none', 'debug', 'trace']),
   );
