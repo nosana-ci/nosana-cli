@@ -30,15 +30,18 @@ export type OperationType = keyof OperationArgsMap;
 /************************
  *   Job Result Types   *
  ************************/
-export type Result = {
-  status: string;
-  ops: Array<OperationResult>;
-};
-export type OperationResult = {
+export type RunState = {
   id: string;
+  status: string;
+  ops: Array<OpState>;
+}
+
+export type OpState = {
+  id: string;
+  providerRunId: string;
+  status: string;
   startTime: number;
   endTime: number;
-  status: string;
   exitCode: number;
   logs: Array<{
     type: 'stdin' | 'stdout' | 'stderr';
@@ -46,18 +49,8 @@ export type OperationResult = {
   }>;
 };
 
-export type RunState = {
-  ops: Array<OpState>;
-};
-
-export type OpState = {
-  op: string;
-  containerId: string;
-  result: Result;
-};
-
 export abstract class BaseProvider {
-  abstract run(JobDefinition: JobDefinition): Promise<Result>;
+  abstract run(JobDefinition: JobDefinition): string;
   abstract healthy(): Promise<Boolean>;
-  abstract getRunState?(): Promise<RunState>;
+  abstract getRunState?(id: string): RunState | undefined;
 }

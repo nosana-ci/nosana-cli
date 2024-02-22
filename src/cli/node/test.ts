@@ -11,7 +11,7 @@ const jobDefinition: JobDefinition = {
       type: 'container/run',
       id: 'run-from-cli',
       args: {
-        cmds: ["/bin/bash -c 'for i in {1..10}; do echo $i; sleep 1; done'"],
+        cmds: ["/bin/bash -c 'for i in {1..5}; do echo $i; sleep 1; done'"],
         image: 'ubuntu',
       },
     },
@@ -25,7 +25,7 @@ export async function startNode(
   },
   cmd: Command | undefined,
 ) {
-  let provider;
+  let provider: DockerProvider;
   switch (options.provider) {
     case 'docker':
       provider = new DockerProvider(options.podman);
@@ -35,7 +35,8 @@ export async function startNode(
   }
 
   if (await provider.healthy()) {
-    await provider.run(jobDefinition);
+    const runId = provider.run(jobDefinition);
+    console.log('runId', runId);
   } else {
     console.log('abort');
   }
