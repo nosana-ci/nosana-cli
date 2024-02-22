@@ -46,18 +46,14 @@ export type OperationResult = {
   }>;
 };
 
-export type RunState = {
-  ops: Array<OpState>;
-};
-
 export type OpState = {
   op: string;
   containerId: string;
-  result: Result;
+  result: OperationResult;
 };
 
 export abstract class BaseProvider {
   abstract run(JobDefinition: JobDefinition): Promise<Result>;
   abstract healthy(): Promise<Boolean>;
-  abstract getRunState?(): Promise<RunState>;
+  abstract getRunState?(): Array<OpState>;
 }

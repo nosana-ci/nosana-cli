@@ -5,7 +5,7 @@ import {
   OperationResult,
   BaseProvider,
   Result,
-  RunState,
+  OpState,
 } from './BaseProvider';
 import ora from 'ora';
 import Docker from 'dockerode';
@@ -15,6 +15,8 @@ import { parse } from 'shell-quote';
 
 export class DockerProvider implements BaseProvider {
   docker: Docker;
+  runState: Array<OpState> = [];
+
   constructor(podman: string) {
     const podmanUri = new URL(
       podman.startsWith('http') || podman.startsWith('ssh')
@@ -86,6 +88,10 @@ export class DockerProvider implements BaseProvider {
     }
   }
 
+  getRunState (): Array<OpState> {
+    return this.runState;
+  }
+
   /**
    * Pull image and create & start container
    * @param op Operation specs
@@ -145,6 +151,12 @@ export class DockerProvider implements BaseProvider {
 
     console.log(chalk.green('- Started container '));
 
+    this.runState.push({
+      op: op.id,
+      containerId: name,
+      result: [],
+    })
+
     return container;
   }
 
@@ -161,24 +173,35 @@ export class DockerProvider implements BaseProvider {
 
     const outputs = [];
     let exitCode = 0;
-    let status = 'success';
+
+    const result: OperationResult  = {
+      id: op.id,
+      startTime,
+      endTime: 0,
+      status: 'running',
+      exitCode,
+      logs: [],
+    }
+
+    const opIndex = this.runState.findIndex((o) => o.op === op.id);
+    this.runState[opIndex].result = result;
 
     // exec commands in op
     for (let i = 0; i < op.args?.cmds.length; i++) {
       try {
         const cmd = op.args?.cmds[i];
-        const exec = await this.exec(container, cmd);
-        status = exec.exitCode ? 'failed' : 'success';
-        exitCode = exec.exitCode || exitCode;
+        const exec = await this.exec(container, cmd, op.id);
+        result.status = exec.exitCode ? 'failed' : 'success';
+        result.exitCode = exec.exitCode || result.exitCode;
 
         let type: 'stdin' | 'stdout' | 'stderr' =
-          status === 'failed' ? 'stderr' : 'stdout';
+          result.status === 'failed' ? 'stderr' : 'stdout';
         outputs.push({
           type,
-          log: status === 'failed' ? exec.stderr : exec.stdout,
+          log: result.status === 'failed' ? exec.stderr : exec.stdout,
         });
       } catch (e: any) {
-        status = 'failed';
+        result.status = 'failed';
         outputs.push({
           type: 'stderr' as const,
           log: e.toString(),
@@ -189,14 +212,12 @@ export class DockerProvider implements BaseProvider {
     await container.stop();
     container.remove();
 
-    return {
-      id: op.id,
-      startTime,
-      endTime: Date.now(),
-      status,
-      exitCode,
-      logs: outputs,
-    };
+    result.logs = outputs;
+    result.endTime = Date.now();
+
+    this.runState[opIndex].result = result;
+
+    return result;
   }
 
   /**
@@ -209,6 +230,7 @@ export class DockerProvider implements BaseProvider {
   private async exec(
     container: Docker.Container,
     cmd: string,
+    opId: string,
     opts?: Docker.ExecCreateOptions,
   ): Promise<{
     exitCode: number | null;
@@ -233,6 +255,11 @@ export class DockerProvider implements BaseProvider {
 
     dockerExecStream.on('data', (chunk: any) => {
       console.log(chunk.toString());
+      const opIndex = this.runState.findIndex((o) => o.op === opId);
+      this.runState[opIndex].result.logs.push({
+        type: 'stdout',
+        log: chunk.toString(),
+      })
     });
 
     await streamPromises.finished(dockerExecStream);
