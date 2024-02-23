@@ -30,9 +30,11 @@ export type OperationType = keyof OperationArgsMap;
 /************************
  *   Job Result Types   *
  ************************/
-export type RunState = {
+export type FlowState = {
   id: string;
   status: string;
+  startTime: number;
+  endTime: number | null;
   ops: Array<OpState>;
 }
 
@@ -52,5 +54,5 @@ export type OpState = {
 export abstract class BaseProvider {
   abstract run(JobDefinition: JobDefinition): string;
   abstract healthy(): Promise<Boolean>;
-  abstract getRunState?(id: string): RunState | undefined;
+  abstract getFlowState(id: string): FlowState | undefined;
 }
