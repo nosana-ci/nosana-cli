@@ -13,7 +13,7 @@ import streamPromises from 'stream/promises';
 import { parse } from 'shell-quote';
 import EventEmitter from 'events'; 
 
-export class DockerProvider implements BaseProvider {
+export class ContainerProvider implements BaseProvider {
   docker: Docker;
   flowStates: Array<FlowState> = [];
   eventEmitter: EventEmitter = new EventEmitter();
@@ -83,7 +83,7 @@ export class DockerProvider implements BaseProvider {
   }
 
   /**
-   * Check if DockerProvider is healthy by checking if podman is running
+   * Check if ContainerProvider is healthy by checking if podman is running
    * @returns boolean
    */
   async healthy(throwError: Boolean = true): Promise<Boolean> {
