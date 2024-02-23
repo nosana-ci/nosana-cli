@@ -176,7 +176,7 @@ export class DockerProvider implements BaseProvider {
 
     const state = {
       id: op.id,
-      providerRunId: container.id,
+      providerFlowId: container.id,
       startTime,
       endTime: 0,
       status: 'running',

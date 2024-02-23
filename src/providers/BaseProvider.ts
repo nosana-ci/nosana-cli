@@ -40,7 +40,7 @@ export type FlowState = {
 
 export type OpState = {
   id: string;
-  providerRunId: string;
+  providerFlowId: string;
   status: string;
   startTime: number;
   endTime: number;
