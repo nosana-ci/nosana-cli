@@ -12,10 +12,15 @@ import stream from 'stream';
 import streamPromises from 'stream/promises';
 import { parse } from 'shell-quote';
 import EventEmitter from 'events'; 
+import { JSONFileSyncPreset } from 'lowdb/node'
+
+interface FlowStatesDb {
+  flowStates: Array<FlowState>;
+}
 
 export class ContainerProvider implements BaseProvider {
   docker: Docker;
-  flowStates: Array<FlowState> = [];
+  db = JSONFileSyncPreset<FlowStatesDb>('db/flows.json', { flowStates: [] });
   eventEmitter: EventEmitter = new EventEmitter();
 
   constructor(podman: string) {
@@ -40,21 +45,24 @@ export class ContainerProvider implements BaseProvider {
   }
   run(jobDefinition: JobDefinition): string {
     const id = [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
-    const state: FlowState = {
-      id,
-      status: 'running',
-      startTime: Date.now(),
-      endTime: null,
-      ops: []
-    }
-    this.flowStates.push(state);
     this.runOps(jobDefinition, id);
     return id;
   }
 
   async runOps(jobDefinition: JobDefinition, flowStateId: string): Promise<void> {
+    const state: FlowState = {
+      id: flowStateId,
+      status: 'running',
+      startTime: Date.now(),
+      endTime: null,
+      ops: []
+    }
+    this.db.update(({ flowStates }) => flowStates.push(state))
+
+    console.log('Flowstates update', this.db.data.flowStates)
+
     const spinner = ora(chalk.cyan(`Running job ${flowStateId} \n`)).start();
-    const flowStateIndex = this.flowStates.findIndex((o) => o.id === flowStateId);
+    const flowStateIndex = this.db.data.flowStates.findIndex((o) => o.id === flowStateId);
     let status = 'success';
 
     // run operations
@@ -73,8 +81,9 @@ export class ContainerProvider implements BaseProvider {
       }
     }
     const checkStatus = (op: OpState) => op.status === 'failed';
-    this.flowStates[flowStateIndex].status = this.flowStates[flowStateIndex].ops.some(checkStatus) ? 'failed' : status;
-    this.flowStates[flowStateIndex].endTime = Date.now();
+    this.db.data.flowStates[flowStateIndex].status = this.db.data.flowStates[flowStateIndex].ops.some(checkStatus) ? 'failed' : status;
+    this.db.data.flowStates[flowStateIndex].endTime = Date.now();
+    this.db.write()
 
     spinner.stop();
 
@@ -100,7 +109,11 @@ export class ContainerProvider implements BaseProvider {
   }
 
   getFlowState (id: string): FlowState | undefined {
-    return this.flowStates.find((o) => o.id === id);
+    return this.db.data.flowStates.find((o) => o.id === id);
+  }
+
+  getFlowStates() {
+    return this.db.data.flowStates;
   }
 
   /**
@@ -185,9 +198,10 @@ export class ContainerProvider implements BaseProvider {
       logs: [] as OpState["logs"],
     }
 
-    const flowStateIndex = this.flowStates.findIndex((o) => o.id === flowStateId);
-    this.flowStates[flowStateIndex].ops.push(state);
-    const opIndex = this.flowStates[flowStateIndex].ops.findIndex((o) => op.id === o.id);
+    const flowStateIndex = this.db.data.flowStates.findIndex((o) => o.id === flowStateId);
+    this.db.data.flowStates[flowStateIndex].ops.push(state);
+    const opIndex = this.db.data.flowStates[flowStateIndex].ops.findIndex((o) => op.id === o.id);
+    this.db.write()
 
     // exec commands in op
     for (let i = 0; i < op.args?.cmds.length; i++) {
@@ -217,9 +231,10 @@ export class ContainerProvider implements BaseProvider {
 
     state.logs = outputs;
     state.endTime = Date.now();
-    this.flowStates[flowStateIndex].ops[opIndex] = state;
+    this.db.data.flowStates[flowStateIndex].ops[opIndex] = state;
+    this.db.write()
 
-    return this.flowStates[flowStateIndex].ops[opIndex];
+    return this.db.data.flowStates[flowStateIndex].ops[opIndex];
   }
 
   /**
@@ -251,8 +266,8 @@ export class ContainerProvider implements BaseProvider {
     const dockerExecStream = await dockerExec.start({});
     const stdoutStream = new stream.PassThrough();
     const stderrStream = new stream.PassThrough();
-    const flowStateIndex = this.flowStates.findIndex((o) => o.id === flowStateId);
-    const opIndex = this.flowStates[flowStateIndex].ops.findIndex((o) => opId === o.id);
+    const flowStateIndex = this.db.data.flowStates.findIndex((o) => o.id === flowStateId);
+    const opIndex = this.db.data.flowStates[flowStateIndex].ops.findIndex((o) => opId === o.id);
 
     this.docker.modem.demuxStream(dockerExecStream, stdoutStream, stderrStream);
 
@@ -260,10 +275,11 @@ export class ContainerProvider implements BaseProvider {
 
     dockerExecStream.on('data', (chunk: any) => {
       // console.log(chunk.toString());
-      this.flowStates[flowStateIndex].ops[opIndex].logs.push({
+      this.db.data.flowStates[flowStateIndex].ops[opIndex].logs.push({
         type: 'stdout',
         log: chunk.toString(),
       })
+      this.db.write();
     });
 
     await streamPromises.finished(dockerExecStream);
@@ -322,14 +338,14 @@ export class ContainerProvider implements BaseProvider {
    */
   async waitForFlowFinish(id: string): Promise<FlowState | undefined> {
     return await new Promise((resolve, reject) => {
-      const flowStateIndex = this.flowStates.findIndex((o) => o.id === id);
+      const flowStateIndex = this.db.data.flowStates.findIndex((o) => o.id === id);
       if (flowStateIndex === -1) reject('Flow state not found');
-      if(this.flowStates[flowStateIndex].endTime) {
-        resolve(this.flowStates[flowStateIndex])
+      if(this.db.data.flowStates[flowStateIndex].endTime) {
+        resolve(this.db.data.flowStates[flowStateIndex])
       }
       this.eventEmitter.on('flowFinished', (flowId) => { 
         this.eventEmitter.removeAllListeners('flowFinished');
-        resolve(this.flowStates[flowStateIndex])
+        resolve(this.db.data.flowStates[flowStateIndex])
       });
     });
   }
