@@ -59,8 +59,6 @@ export class ContainerProvider implements BaseProvider {
     }
     this.db.update(({ flowStates }) => flowStates.push(state))
 
-    console.log('Flowstates update', this.db.data.flowStates)
-
     const spinner = ora(chalk.cyan(`Running job ${flowStateId} \n`)).start();
     const flowStateIndex = this.db.data.flowStates.findIndex((o) => o.id === flowStateId);
     let status = 'success';
@@ -195,6 +193,7 @@ export class ContainerProvider implements BaseProvider {
       endTime: 0,
       status: 'running',
       exitCode,
+      execs: [] as OpState["execs"],
       logs: [] as OpState["logs"],
     }
 
@@ -272,6 +271,14 @@ export class ContainerProvider implements BaseProvider {
     this.docker.modem.demuxStream(dockerExecStream, stdoutStream, stderrStream);
 
     dockerExecStream.resume();
+
+    // save exec info also in flow state
+    const execInfo = await dockerExec.inspect();
+    this.db.data.flowStates[flowStateIndex].ops[opIndex].execs.push({
+      id: execInfo.ID,
+      cmd: execInfo.ProcessConfig.arguments,
+    })
+    this.db.write();
 
     dockerExecStream.on('data', (chunk: any) => {
       // console.log(chunk.toString());

@@ -45,6 +45,10 @@ export type OpState = {
   startTime: number;
   endTime: number;
   exitCode: number;
+  execs: Array<{
+    id: string;
+    cmd: Array<string>;
+  }>;
   logs: Array<{
     type: 'stdin' | 'stdout' | 'stderr';
     log: string | undefined;
