@@ -146,11 +146,11 @@ export async function startNode(
         // TODO: wait for provider to get healthy
       }
       spinner.text = chalk.cyan('Running job');
-      const runId: string = await provider.run(jobDefinition);
-      // TODO: retrieve results from runId
-      const result = {};
+      const flowId: string = provider.run(jobDefinition);
+      const flowResult = await provider.waitForFlowFinish(flowId);
+      const result = flowResult;
       spinner.text = chalk.cyan('Uploading results to IPFS');
-      const ipfsResult = await nosana.ipfs.pin(result);
+      const ipfsResult = await nosana.ipfs.pin(result as object);
       const bytesArray = nosana.ipfs.IpfsHashToByteArray(ipfsResult);
       spinner.text = chalk.cyan('Finishing job');
       const tx = await nosana.jobs.submitResult(

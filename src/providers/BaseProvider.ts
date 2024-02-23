@@ -55,4 +55,5 @@ export abstract class BaseProvider {
   abstract run(JobDefinition: JobDefinition): string;
   abstract healthy(): Promise<Boolean>;
   abstract getFlowState(id: string): FlowState | undefined;
+  abstract waitForFlowFinish(id: string): Promise<FlowState | undefined>;
 }

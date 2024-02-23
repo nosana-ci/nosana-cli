@@ -11,7 +11,7 @@ const jobDefinition: JobDefinition = {
       type: 'container/run',
       id: 'run-from-cli',
       args: {
-        cmds: ["/bin/bash -c 'for i in {1..5}; do echo $i; sleep 1; done'"],
+        cmds: ["/bin/bash -c 'for i in {1..3}; do echo $i; sleep 1; done'"],
         image: 'ubuntu',
       },
     },
@@ -35,8 +35,10 @@ export async function startNode(
   }
 
   if (await provider.healthy()) {
-    const runId = provider.run(jobDefinition);
-    console.log('runId', runId);
+    const flowId: string = provider.run(jobDefinition);
+    console.log('flowId: ', flowId);
+    const flowResult = await provider.waitForFlowFinish(flowId);
+    console.log('flowResult: ', flowResult);
   } else {
     console.log('abort');
   }

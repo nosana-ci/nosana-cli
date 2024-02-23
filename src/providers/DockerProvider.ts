@@ -11,10 +11,12 @@ import Docker from 'dockerode';
 import stream from 'stream';
 import streamPromises from 'stream/promises';
 import { parse } from 'shell-quote';
+import EventEmitter from 'events'; 
 
 export class DockerProvider implements BaseProvider {
   docker: Docker;
   flowStates: Array<FlowState> = [];
+  eventEmitter: EventEmitter = new EventEmitter();
 
   constructor(podman: string) {
     const podmanUri = new URL(
@@ -76,9 +78,8 @@ export class DockerProvider implements BaseProvider {
 
     spinner.stop();
 
-    console.log('----------------------------------');
-    console.log('Job done');
-    console.log('run states:', this.flowStates);
+    this.eventEmitter.emit('flowFinished', flowStateId);
+    console.log(chalk.green(`Finished flow ${flowStateId} \n`))
   }
 
   /**
@@ -312,5 +313,24 @@ export class DockerProvider implements BaseProvider {
         console.log('STREAM CLOSE');
       });
     }
+  }
+
+  /**
+   * Wait for flow to be finished and return FlowState
+   * @param id Flow id
+   * @returns FlowState 
+   */
+  async waitForFlowFinish(id: string): Promise<FlowState | undefined> {
+    return await new Promise((resolve, reject) => {
+      const flowStateIndex = this.flowStates.findIndex((o) => o.id === id);
+      if (flowStateIndex === -1) reject('Flow state not found');
+      if(this.flowStates[flowStateIndex].endTime) {
+        resolve(this.flowStates[flowStateIndex])
+      }
+      this.eventEmitter.on('flowFinished', (flowId) => { 
+        this.eventEmitter.removeAllListeners('flowFinished');
+        resolve(this.flowStates[flowStateIndex])
+      });
+    });
   }
 }
