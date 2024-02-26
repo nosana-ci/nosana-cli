@@ -286,6 +286,7 @@ export class ContainerProvider implements BaseProvider {
 
     dockerExecStream.on('data', (chunk: any) => {
       // console.log(chunk.toString());
+      this.eventEmitter.emit('newLog', { opIndex, log: chunk.toString() });
       this.db.data.flowStates[flowStateIndex].ops[opIndex].logs.push({
         type: 'stdout',
         log: chunk.toString(),
@@ -345,17 +346,26 @@ export class ContainerProvider implements BaseProvider {
   /**
    * Wait for flow to be finished and return FlowState
    * @param id Flow id
+   * @param logCallback
    * @returns FlowState 
    */
-  async waitForFlowFinish(id: string): Promise<FlowState | undefined> {
+  async waitForFlowFinish(id: string, logCallback?: Function): Promise<FlowState | undefined> {
     return await new Promise((resolve, reject) => {
       const flowStateIndex = this.getFlowStateIndex(id);
       if (flowStateIndex === -1) reject('Flow state not found');
       if(this.db.data.flowStates[flowStateIndex].endTime) {
         resolve(this.db.data.flowStates[flowStateIndex])
       }
+
+      if (logCallback) {
+        this.eventEmitter.on('newLog', (info) => { 
+          logCallback(info)
+        });
+      }
+
       this.eventEmitter.on('flowFinished', (flowId) => { 
         this.eventEmitter.removeAllListeners('flowFinished');
+        this.eventEmitter.removeAllListeners('newLog');
         resolve(this.db.data.flowStates[flowStateIndex])
       });
     });
