@@ -7,7 +7,7 @@ import {
   FlowState,
 } from './BaseProvider';
 import ora from 'ora';
-import Docker from 'dockerode';
+import Docker, { Exec } from 'dockerode';
 import stream from 'stream';
 import streamPromises from 'stream/promises';
 import { parse } from 'shell-quote';
@@ -60,7 +60,7 @@ export class ContainerProvider implements BaseProvider {
     this.db.update(({ flowStates }) => flowStates.push(state))
 
     const spinner = ora(chalk.cyan(`Running job ${flowStateId} \n`)).start();
-    const flowStateIndex = this.db.data.flowStates.findIndex((o) => o.id === flowStateId);
+    const flowStateIndex = this.getFlowStateIndex(flowStateId);
     let status = 'success';
 
     // run operations
@@ -108,6 +108,10 @@ export class ContainerProvider implements BaseProvider {
 
   getFlowState (id: string): FlowState | undefined {
     return this.db.data.flowStates.find((o) => o.id === id);
+  }
+
+  getFlowStateIndex (id: string): number {
+    return this.db.data.flowStates.findIndex((o) => o.id === id)
   }
 
   getFlowStates() {
@@ -197,7 +201,7 @@ export class ContainerProvider implements BaseProvider {
       logs: [] as OpState["logs"],
     }
 
-    const flowStateIndex = this.db.data.flowStates.findIndex((o) => o.id === flowStateId);
+    const flowStateIndex = this.getFlowStateIndex(flowStateId);
     this.db.data.flowStates[flowStateIndex].ops.push(state);
     const opIndex = this.db.data.flowStates[flowStateIndex].ops.findIndex((o) => op.id === o.id);
     this.db.write()
@@ -265,7 +269,7 @@ export class ContainerProvider implements BaseProvider {
     const dockerExecStream = await dockerExec.start({});
     const stdoutStream = new stream.PassThrough();
     const stderrStream = new stream.PassThrough();
-    const flowStateIndex = this.db.data.flowStates.findIndex((o) => o.id === flowStateId);
+    const flowStateIndex = this.getFlowStateIndex(flowStateId);
     const opIndex = this.db.data.flowStates[flowStateIndex].ops.findIndex((o) => opId === o.id);
 
     this.docker.modem.demuxStream(dockerExecStream, stdoutStream, stderrStream);
@@ -345,7 +349,7 @@ export class ContainerProvider implements BaseProvider {
    */
   async waitForFlowFinish(id: string): Promise<FlowState | undefined> {
     return await new Promise((resolve, reject) => {
-      const flowStateIndex = this.db.data.flowStates.findIndex((o) => o.id === id);
+      const flowStateIndex = this.getFlowStateIndex(id);
       if (flowStateIndex === -1) reject('Flow state not found');
       if(this.db.data.flowStates[flowStateIndex].endTime) {
         resolve(this.db.data.flowStates[flowStateIndex])
@@ -356,4 +360,44 @@ export class ContainerProvider implements BaseProvider {
       });
     });
   }
+
+  // TODO
+  async continueFlow(flowId: string): Promise<void> {
+    const flow = this.getFlowState(flowId);
+    if (!flow) throw new Error(`Flow not found: ${flowId}`);
+    if (flow && flow.endTime) throw new Error(`Flow already finished at: ` + flow.endTime.toString());
+
+    for (let i = 0; i < flow.ops.length; i++) {
+      const op = flow.ops[i];
+      const container = this.docker.getContainer(op.providerFlowId);
+      if (!container) throw new Error(`Container not found for op: ${op.id} in flow ${flow.id}`);
+
+      if (!op.endTime) {
+        for (let i = 0; i < op.execs.length; i++) {
+          const exec = new Exec(container.modem, op.execs[i].id);
+          // exec = {
+          //   CanRemove: true,
+          //   ContainerID: "37b1e7cee72c4c843716a5323f13ca3414b6cb1ba0742a016b0446a671d84157",
+          //   DetachKeys: "",
+          //   ExitCode: -1,
+          //   ID: "4e4e6e4453f9aac9117c1d21db8cf74f58c364603410829c23d786c9e14c7678",
+          //   OpenStderr: true,
+          //   OpenStdin: false,
+          //   OpenStdout: true,
+          //   Running: false,
+          //   Pid: 0,
+          //   ProcessConfig: {
+          //     arguments: [ "-c", "for i in {1..200}; do echo $i; sleep 2; done" ],
+          //     entrypoint: "/bin/bash",
+          //     privileged: false,
+          //     tty: false,
+          //     user: "",
+          //   },
+          // }
+          console.log('continueFlow exec', await exec.inspect());
+        }
+      }
+    }
+  }
+
 }
