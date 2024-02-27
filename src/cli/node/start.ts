@@ -86,8 +86,14 @@ export async function startNode(
         throw new Error('Queued in wrong market, please leave market first');
       }
       spinner.text = chalk.cyan('Joining market ');
-      const tx = await nosana.jobs.work(market);
-      console.log(chalk.greenBright(`Joined market tx ${tx}`));
+      try {
+        const tx = await nosana.jobs.work(market);
+        console.log(chalk.greenBright(`Joined market tx ${tx}`));
+      } catch (e) {
+        let error = '';
+        spinner.fail(chalk.red.bold('Could not join market:') + error);
+        throw e;
+      }
     }
     if (selectedMarket) {
       // Currently queued in a market, wait for run
@@ -132,7 +138,8 @@ export async function startNode(
     const jobAddress = run.account.job.toString();
     console.log(chalk.green('Claimed job ') + chalk.green.bold(jobAddress));
     const job: Job = await nosana.jobs.get(jobAddress);
-    if (job.market.toString() !== market) {
+    if (job.market.toString() === market) {
+      throw new Error('TODO: stop job, wrong market');
       // TODO: stop job
     } else {
       spinner = ora(chalk.cyan('Retrieving job definition')).start();
@@ -148,7 +155,7 @@ export async function startNode(
       spinner.text = chalk.cyan('Running job');
       const runId: string = await provider.run(jobDefinition);
       // TODO: retrieve results from runId
-      const result = {};
+      const result = { runId };
       spinner.text = chalk.cyan('Uploading results to IPFS');
       const ipfsResult = await nosana.ipfs.pin(result);
       const bytesArray = nosana.ipfs.IpfsHashToByteArray(ipfsResult);
@@ -166,5 +173,5 @@ export async function startNode(
       spinner.stop();
     }
   }
-  return startNode(node, options, cmd);
+  return startNode(market, options, cmd);
 }
