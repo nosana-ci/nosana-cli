@@ -45,6 +45,10 @@ export type OpState = {
   startTime: number;
   endTime: number;
   exitCode: number;
+  execs: Array<{
+    id: string;
+    cmd: Array<string>;
+  }>;
   logs: Array<{
     type: 'stdin' | 'stdout' | 'stderr';
     log: string | undefined;
@@ -55,4 +59,5 @@ export abstract class BaseProvider {
   abstract run(JobDefinition: JobDefinition): string;
   abstract healthy(): Promise<Boolean>;
   abstract getFlowState(id: string): FlowState | undefined;
+  abstract waitForFlowFinish(id: string): Promise<FlowState | undefined>;
 }

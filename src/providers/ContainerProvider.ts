@@ -7,14 +7,21 @@ import {
   FlowState,
 } from './BaseProvider';
 import ora from 'ora';
-import Docker from 'dockerode';
+import Docker, { Exec } from 'dockerode';
 import stream from 'stream';
 import streamPromises from 'stream/promises';
 import { parse } from 'shell-quote';
+import EventEmitter from 'events'; 
+import { JSONFileSyncPreset } from 'lowdb/node'
 
-export class DockerProvider implements BaseProvider {
+interface FlowStatesDb {
+  flowStates: Array<FlowState>;
+}
+
+export class ContainerProvider implements BaseProvider {
   docker: Docker;
-  flowStates: Array<FlowState> = [];
+  db = JSONFileSyncPreset<FlowStatesDb>('db/flows.json', { flowStates: [] });
+  eventEmitter: EventEmitter = new EventEmitter();
 
   constructor(podman: string) {
     const podmanUri = new URL(
@@ -38,21 +45,22 @@ export class DockerProvider implements BaseProvider {
   }
   run(jobDefinition: JobDefinition): string {
     const id = [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
-    const state: FlowState = {
-      id,
-      status: 'running',
-      startTime: Date.now(),
-      endTime: null,
-      ops: []
-    }
-    this.flowStates.push(state);
     this.runOps(jobDefinition, id);
     return id;
   }
 
   async runOps(jobDefinition: JobDefinition, flowStateId: string): Promise<void> {
+    const state: FlowState = {
+      id: flowStateId,
+      status: 'running',
+      startTime: Date.now(),
+      endTime: null,
+      ops: []
+    }
+    this.db.update(({ flowStates }) => flowStates.push(state))
+
     const spinner = ora(chalk.cyan(`Running job ${flowStateId} \n`)).start();
-    const flowStateIndex = this.flowStates.findIndex((o) => o.id === flowStateId);
+    const flowStateIndex = this.getFlowStateIndex(flowStateId);
     let status = 'success';
 
     // run operations
@@ -71,18 +79,18 @@ export class DockerProvider implements BaseProvider {
       }
     }
     const checkStatus = (op: OpState) => op.status === 'failed';
-    this.flowStates[flowStateIndex].status = this.flowStates[flowStateIndex].ops.some(checkStatus) ? 'failed' : status;
-    this.flowStates[flowStateIndex].endTime = Date.now();
+    this.db.data.flowStates[flowStateIndex].status = this.db.data.flowStates[flowStateIndex].ops.some(checkStatus) ? 'failed' : status;
+    this.db.data.flowStates[flowStateIndex].endTime = Date.now();
+    this.db.write()
 
     spinner.stop();
 
-    console.log('----------------------------------');
-    console.log('Job done');
-    console.log('run states:', this.flowStates);
+    this.eventEmitter.emit('flowFinished', flowStateId);
+    console.log(chalk.green(`Finished flow ${flowStateId} \n`))
   }
 
   /**
-   * Check if DockerProvider is healthy by checking if podman is running
+   * Check if ContainerProvider is healthy by checking if podman is running
    * @returns boolean
    */
   async healthy(throwError: Boolean = true): Promise<Boolean> {
@@ -99,7 +107,15 @@ export class DockerProvider implements BaseProvider {
   }
 
   getFlowState (id: string): FlowState | undefined {
-    return this.flowStates.find((o) => o.id === id);
+    return this.db.data.flowStates.find((o) => o.id === id);
+  }
+
+  getFlowStateIndex (id: string): number {
+    return this.db.data.flowStates.findIndex((o) => o.id === id)
+  }
+
+  getFlowStates() {
+    return this.db.data.flowStates;
   }
 
   /**
@@ -181,12 +197,14 @@ export class DockerProvider implements BaseProvider {
       endTime: 0,
       status: 'running',
       exitCode,
+      execs: [] as OpState["execs"],
       logs: [] as OpState["logs"],
     }
 
-    const flowStateIndex = this.flowStates.findIndex((o) => o.id === flowStateId);
-    this.flowStates[flowStateIndex].ops.push(state);
-    const opIndex = this.flowStates[flowStateIndex].ops.findIndex((o) => op.id === o.id);
+    const flowStateIndex = this.getFlowStateIndex(flowStateId);
+    this.db.data.flowStates[flowStateIndex].ops.push(state);
+    const opIndex = this.db.data.flowStates[flowStateIndex].ops.findIndex((o) => op.id === o.id);
+    this.db.write()
 
     // exec commands in op
     for (let i = 0; i < op.args?.cmds.length; i++) {
@@ -216,9 +234,10 @@ export class DockerProvider implements BaseProvider {
 
     state.logs = outputs;
     state.endTime = Date.now();
-    this.flowStates[flowStateIndex].ops[opIndex] = state;
+    this.db.data.flowStates[flowStateIndex].ops[opIndex] = state;
+    this.db.write()
 
-    return this.flowStates[flowStateIndex].ops[opIndex];
+    return this.db.data.flowStates[flowStateIndex].ops[opIndex];
   }
 
   /**
@@ -250,19 +269,29 @@ export class DockerProvider implements BaseProvider {
     const dockerExecStream = await dockerExec.start({});
     const stdoutStream = new stream.PassThrough();
     const stderrStream = new stream.PassThrough();
-    const flowStateIndex = this.flowStates.findIndex((o) => o.id === flowStateId);
-    const opIndex = this.flowStates[flowStateIndex].ops.findIndex((o) => opId === o.id);
+    const flowStateIndex = this.getFlowStateIndex(flowStateId);
+    const opIndex = this.db.data.flowStates[flowStateIndex].ops.findIndex((o) => opId === o.id);
 
     this.docker.modem.demuxStream(dockerExecStream, stdoutStream, stderrStream);
 
     dockerExecStream.resume();
 
+    // save exec info also in flow state
+    const execInfo = await dockerExec.inspect();
+    this.db.data.flowStates[flowStateIndex].ops[opIndex].execs.push({
+      id: execInfo.ID,
+      cmd: execInfo.ProcessConfig.arguments,
+    })
+    this.db.write();
+
     dockerExecStream.on('data', (chunk: any) => {
       // console.log(chunk.toString());
-      this.flowStates[flowStateIndex].ops[opIndex].logs.push({
+      this.eventEmitter.emit('newLog', { opIndex, log: chunk.toString() });
+      this.db.data.flowStates[flowStateIndex].ops[opIndex].logs.push({
         type: 'stdout',
         log: chunk.toString(),
       })
+      this.db.write();
     });
 
     await streamPromises.finished(dockerExecStream);
@@ -313,4 +342,72 @@ export class DockerProvider implements BaseProvider {
       });
     }
   }
+
+  /**
+   * Wait for flow to be finished and return FlowState
+   * @param id Flow id
+   * @param logCallback
+   * @returns FlowState 
+   */
+  async waitForFlowFinish(id: string, logCallback?: Function): Promise<FlowState | undefined> {
+    return await new Promise((resolve, reject) => {
+      const flowStateIndex = this.getFlowStateIndex(id);
+      if (flowStateIndex === -1) reject('Flow state not found');
+      if(this.db.data.flowStates[flowStateIndex].endTime) {
+        resolve(this.db.data.flowStates[flowStateIndex])
+      }
+
+      if (logCallback) {
+        this.eventEmitter.on('newLog', (info) => { 
+          logCallback(info)
+        });
+      }
+
+      this.eventEmitter.on('flowFinished', (flowId) => { 
+        this.eventEmitter.removeAllListeners('flowFinished');
+        this.eventEmitter.removeAllListeners('newLog');
+        resolve(this.db.data.flowStates[flowStateIndex])
+      });
+    });
+  }
+
+  // TODO
+  async continueFlow(flowId: string): Promise<void> {
+    const flow = this.getFlowState(flowId);
+    if (!flow) throw new Error(`Flow not found: ${flowId}`);
+    if (flow && flow.endTime) throw new Error(`Flow already finished at: ` + flow.endTime.toString());
+
+    for (let i = 0; i < flow.ops.length; i++) {
+      const op = flow.ops[i];
+      const container = this.docker.getContainer(op.providerFlowId);
+      if (!container) throw new Error(`Container not found for op: ${op.id} in flow ${flow.id}`);
+
+      if (!op.endTime) {
+        for (let i = 0; i < op.execs.length; i++) {
+          const exec = new Exec(container.modem, op.execs[i].id);
+          // exec = {
+          //   CanRemove: true,
+          //   ContainerID: "37b1e7cee72c4c843716a5323f13ca3414b6cb1ba0742a016b0446a671d84157",
+          //   DetachKeys: "",
+          //   ExitCode: -1,
+          //   ID: "4e4e6e4453f9aac9117c1d21db8cf74f58c364603410829c23d786c9e14c7678",
+          //   OpenStderr: true,
+          //   OpenStdin: false,
+          //   OpenStdout: true,
+          //   Running: false,
+          //   Pid: 0,
+          //   ProcessConfig: {
+          //     arguments: [ "-c", "for i in {1..200}; do echo $i; sleep 2; done" ],
+          //     entrypoint: "/bin/bash",
+          //     privileged: false,
+          //     tty: false,
+          //     user: "",
+          //   },
+          // }
+          console.log('continueFlow exec', await exec.inspect());
+        }
+      }
+    }
+  }
+
 }

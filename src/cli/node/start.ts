@@ -12,7 +12,7 @@ import {
   getNodeStats,
 } from '../../services/nodes.js';
 import { NotQueuedError } from '../../generic/errors.js';
-import { DockerProvider } from '../../providers/DockerProvider.js';
+import { ContainerProvider } from '../../providers/ContainerProvider.js';
 import { BaseProvider, JobDefinition } from '../../providers/BaseProvider.js';
 
 export async function startNode(
@@ -34,7 +34,7 @@ export async function startNode(
   switch (options.provider) {
     case 'docker':
     default:
-      provider = new DockerProvider(options.podman);
+      provider = new ContainerProvider(options.podman);
       break;
   }
 
@@ -153,11 +153,11 @@ export async function startNode(
         // TODO: wait for provider to get healthy
       }
       spinner.text = chalk.cyan('Running job');
-      const runId: string = await provider.run(jobDefinition);
-      // TODO: retrieve results from runId
-      const result = { runId };
+      const flowId: string = provider.run(jobDefinition);
+      const flowResult = await provider.waitForFlowFinish(flowId);
+      const result = flowResult;
       spinner.text = chalk.cyan('Uploading results to IPFS');
-      const ipfsResult = await nosana.ipfs.pin(result);
+      const ipfsResult = await nosana.ipfs.pin(result as object);
       const bytesArray = nosana.ipfs.IpfsHashToByteArray(ipfsResult);
       spinner.text = chalk.cyan('Finishing job');
       const tx = await nosana.jobs.submitResult(
