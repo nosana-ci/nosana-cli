@@ -15,6 +15,7 @@ import { NotQueuedError } from '../../generic/errors.js';
 import { ContainerProvider } from '../../providers/ContainerProvider.js';
 import { BaseProvider, JobDefinition } from '../../providers/BaseProvider.js';
 import { PublicKey } from '@solana/web3.js';
+import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes/index.js';
 
 export async function startNode(
   market: string,
@@ -38,16 +39,16 @@ export async function startNode(
       provider = new ContainerProvider(options.podman);
       break;
   }
-
   /****************
    * Health Check *
    ****************/
   const stats: NodeStats = await getNodeStats(node);
   if (stats.sol < 0.001) throw new Error('not enough SOL');
+  let spinner = ora(chalk.cyan('Checking provider health')).start();
   try {
     await provider.healthy();
   } catch (error) {
-    console.log(
+    spinner.fail(
       chalk.red(`${chalk.bold(options.provider)} provider not healthy`),
     );
     throw error;
@@ -55,20 +56,62 @@ export async function startNode(
   switch (options.provider) {
     case 'container':
     default:
-      console.log(chalk.green(`Podman is running on ${options.podman}`));
+      spinner.succeed(
+        chalk.green(`Podman is running on ${chalk.bold(options.podman)}`),
+      );
       break;
   }
-
-  // TODO Check stake account
-  // If no stake account: create empty stake account
-  const stake = await nosana.stake.create(new PublicKey(node), 0, 14);
+  let stake;
+  try {
+    spinner = ora(chalk.cyan('Checking stake account')).start();
+    stake = await nosana.stake.get(node);
+  } catch (error: any) {
+    if (error.message && error.message.includes('Account does not exist')) {
+      spinner.text = chalk.cyan('Creating stake account');
+      // If no stake account: create empty stake account
+      await nosana.stake.create(new PublicKey(node), 0, 14);
+      await sleep(2);
+      stake = await nosana.stake.get(node);
+    } else {
+      throw error;
+    }
+  }
+  spinner.succeed(
+    chalk.green(
+      `Stake found with ${chalk.bold(stake.amount / 1e6)} NOS staked`,
+    ),
+  );
+  let nft;
+  try {
+    spinner = ora(chalk.cyan('Retrieving market requirements')).start();
+    const marketAccount = await nosana.jobs.getMarket(market);
+    // TODO: check for open market
+    spinner.text = chalk.cyan('Checking required access key');
+    nft = await nosana.solana.getNftFromCollection(
+      node,
+      marketAccount.nodeAccessKey.toString(),
+    );
+    if (nft) {
+      spinner.succeed(`Found access key ${nft}`);
+    } else {
+      throw new Error(
+        chalk.red(`Could not find access key for market ${chalk.bold(market)}`),
+      );
+    }
+  } catch (e: any) {
+    spinner.fail();
+    if (e.message && e.message.includes('Account does not exist')) {
+      throw new Error(chalk.red(`Market ${chalk.bold(market)} not found`));
+    }
+    throw e;
+  }
 
   // TODO Check NFT that is needed for market
 
   /****************
    *   Job Loop   *
    ****************/
-  let spinner = ora(chalk.cyan('Checking existing runs')).start();
+  spinner = ora(chalk.cyan('Checking existing runs')).start();
 
   // Check if we already have a run account
   let run: Run | void = await getRun(node);
