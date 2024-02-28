@@ -14,6 +14,7 @@ import {
 import { NotQueuedError } from '../../generic/errors.js';
 import { ContainerProvider } from '../../providers/ContainerProvider.js';
 import { BaseProvider, JobDefinition } from '../../providers/BaseProvider.js';
+import { PublicKey } from '@solana/web3.js';
 
 export async function startNode(
   market: string,
@@ -32,7 +33,7 @@ export async function startNode(
   console.log('================================');
   let provider: BaseProvider;
   switch (options.provider) {
-    case 'docker':
+    case 'container':
     default:
       provider = new ContainerProvider(options.podman);
       break;
@@ -52,19 +53,15 @@ export async function startNode(
     throw error;
   }
   switch (options.provider) {
-    case 'docker':
+    case 'container':
     default:
       console.log(chalk.green(`Podman is running on ${options.podman}`));
       break;
   }
 
   // TODO Check stake account
-  //      If no stake account: create empty stake account
-  // const stake = await nosana.stake.create(
-  //   nodeKey,
-  //   0,
-  //   14,
-  // );
+  // If no stake account: create empty stake account
+  const stake = await nosana.stake.create(new PublicKey(node), 0, 14);
 
   // TODO Check NFT that is needed for market
 

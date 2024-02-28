@@ -9,7 +9,7 @@ export type JobDefinition = {
   trigger?: string;
   ops: Array<Operation<OperationType>>;
 };
-export type JobType = 'docker';
+export type JobType = 'container';
 
 export type Operation<T extends OperationType> = {
   type: OperationType;
@@ -36,7 +36,7 @@ export type FlowState = {
   startTime: number;
   endTime: number | null;
   ops: Array<OpState>;
-}
+};
 
 export type OpState = {
   id: string;

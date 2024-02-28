@@ -117,8 +117,8 @@ node
   .argument('<market>', 'market address')
   .addOption(
     new Option('--provider <provider>', 'provider used to run the job')
-      .choices(['docker'])
-      .default('docker'),
+      .choices(['container'])
+      .default('container'),
   )
   .addOption(
     new Option('-w, --wallet <wallet>', 'path to wallet private key').default(

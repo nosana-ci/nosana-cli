@@ -146,7 +146,8 @@ export async function run(
 
   const ipfsHash = await nosana.ipfs.pin(json_flow);
   console.log(
-    `ipfs uploaded:\t${colors.BLUE}${nosana.ipfs.config.gateway + ipfsHash}${colors.RESET
+    `ipfs uploaded:\t${colors.BLUE}${nosana.ipfs.config.gateway + ipfsHash}${
+      colors.RESET
     }`,
   );
   const market = await nosana.jobs.getMarket(
@@ -154,10 +155,11 @@ export async function run(
   );
 
   console.log(
-    `posting job to market ${colors.CYAN}${nosana.solana.config.market_address
+    `posting job to market ${colors.CYAN}${
+      nosana.solana.config.market_address
     }${colors.RESET} for price ${colors.YELLOW}${
-    // @ts-ignore
-    parseInt(market.jobPrice) / 1e6
+      // @ts-ignore
+      parseInt(market.jobPrice) / 1e6
     } NOS/s${colors.RESET}`,
   );
 
