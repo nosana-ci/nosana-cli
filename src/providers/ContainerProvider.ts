@@ -7,12 +7,12 @@ import {
   FlowState,
 } from './BaseProvider';
 import ora from 'ora';
-import Docker, { Exec } from 'dockerode';
+import Docker from 'dockerode';
 import stream from 'stream';
 import streamPromises from 'stream/promises';
 import { parse } from 'shell-quote';
-import EventEmitter from 'events'; 
-import { JSONFileSyncPreset } from 'lowdb/node'
+import EventEmitter from 'events';
+import { JSONFileSyncPreset } from 'lowdb/node';
 
 interface FlowStatesDb {
   flowStates: Array<FlowState>;
@@ -49,15 +49,18 @@ export class ContainerProvider implements BaseProvider {
     return id;
   }
 
-  async runOps(jobDefinition: JobDefinition, flowStateId: string): Promise<void> {
+  async runOps(
+    jobDefinition: JobDefinition,
+    flowStateId: string,
+  ): Promise<void> {
     const state: FlowState = {
       id: flowStateId,
       status: 'running',
       startTime: Date.now(),
       endTime: null,
-      ops: []
-    }
-    this.db.update(({ flowStates }) => flowStates.push(state))
+      ops: [],
+    };
+    this.db.update(({ flowStates }) => flowStates.push(state));
 
     const spinner = ora(chalk.cyan(`Running job ${flowStateId} \n`)).start();
     const flowStateIndex = this.getFlowStateIndex(flowStateId);
@@ -70,7 +73,7 @@ export class ContainerProvider implements BaseProvider {
         if (op.type === 'container/run') {
           await this.runOperation(
             op as Operation<'container/run'>,
-            flowStateId
+            flowStateId,
           );
         }
       } catch (error) {
@@ -79,14 +82,18 @@ export class ContainerProvider implements BaseProvider {
       }
     }
     const checkStatus = (op: OpState) => op.status === 'failed';
-    this.db.data.flowStates[flowStateIndex].status = this.db.data.flowStates[flowStateIndex].ops.some(checkStatus) ? 'failed' : status;
+    this.db.data.flowStates[flowStateIndex].status = this.db.data.flowStates[
+      flowStateIndex
+    ].ops.some(checkStatus)
+      ? 'failed'
+      : status;
     this.db.data.flowStates[flowStateIndex].endTime = Date.now();
-    this.db.write()
+    this.db.write();
 
     spinner.stop();
 
     this.eventEmitter.emit('flowFinished', flowStateId);
-    console.log(chalk.green(`Finished flow ${flowStateId} \n`))
+    console.log(chalk.green(`Finished flow ${flowStateId} \n`));
   }
 
   /**
@@ -106,12 +113,12 @@ export class ContainerProvider implements BaseProvider {
     }
   }
 
-  getFlowState (id: string): FlowState | undefined {
+  getFlowState(id: string): FlowState | undefined {
     return this.db.data.flowStates.find((o) => o.id === id);
   }
 
-  getFlowStateIndex (id: string): number {
-    return this.db.data.flowStates.findIndex((o) => o.id === id)
+  getFlowStateIndex(id: string): number {
+    return this.db.data.flowStates.findIndex((o) => o.id === id);
   }
 
   getFlowStates() {
@@ -187,7 +194,7 @@ export class ContainerProvider implements BaseProvider {
   ): Promise<OpState> {
     const startTime = Date.now();
     const container = await this.setupContainer(op);
-    const outputs: OpState["logs"] = [];
+    const outputs: OpState['logs'] = [];
     let exitCode = 0;
 
     const state = {
@@ -197,14 +204,16 @@ export class ContainerProvider implements BaseProvider {
       endTime: 0,
       status: 'running',
       exitCode,
-      execs: [] as OpState["execs"],
-      logs: [] as OpState["logs"],
-    }
+      execs: [] as OpState['execs'],
+      logs: [] as OpState['logs'],
+    };
 
     const flowStateIndex = this.getFlowStateIndex(flowStateId);
     this.db.data.flowStates[flowStateIndex].ops.push(state);
-    const opIndex = this.db.data.flowStates[flowStateIndex].ops.findIndex((o) => op.id === o.id);
-    this.db.write()
+    const opIndex = this.db.data.flowStates[flowStateIndex].ops.findIndex(
+      (o) => op.id === o.id,
+    );
+    this.db.write();
 
     // exec commands in op
     for (let i = 0; i < op.args?.cmds.length; i++) {
@@ -215,7 +224,7 @@ export class ContainerProvider implements BaseProvider {
         state.exitCode = exec.exitCode || state.exitCode;
 
         let type: 'stdin' | 'stdout' | 'stderr' =
-        state.status === 'failed' ? 'stderr' : 'stdout';
+          state.status === 'failed' ? 'stderr' : 'stdout';
         outputs.push({
           type,
           log: state.status === 'failed' ? exec.stderr : exec.stdout,
@@ -235,7 +244,7 @@ export class ContainerProvider implements BaseProvider {
     state.logs = outputs;
     state.endTime = Date.now();
     this.db.data.flowStates[flowStateIndex].ops[opIndex] = state;
-    this.db.write()
+    this.db.write();
 
     return this.db.data.flowStates[flowStateIndex].ops[opIndex];
   }
@@ -270,7 +279,9 @@ export class ContainerProvider implements BaseProvider {
     const stdoutStream = new stream.PassThrough();
     const stderrStream = new stream.PassThrough();
     const flowStateIndex = this.getFlowStateIndex(flowStateId);
-    const opIndex = this.db.data.flowStates[flowStateIndex].ops.findIndex((o) => opId === o.id);
+    const opIndex = this.db.data.flowStates[flowStateIndex].ops.findIndex(
+      (o) => opId === o.id,
+    );
 
     this.docker.modem.demuxStream(dockerExecStream, stdoutStream, stderrStream);
 
@@ -281,7 +292,7 @@ export class ContainerProvider implements BaseProvider {
     this.db.data.flowStates[flowStateIndex].ops[opIndex].execs.push({
       id: execInfo.ID,
       cmd: execInfo.ProcessConfig.arguments,
-    })
+    });
     this.db.write();
 
     dockerExecStream.on('data', (chunk: any) => {
@@ -290,7 +301,7 @@ export class ContainerProvider implements BaseProvider {
       this.db.data.flowStates[flowStateIndex].ops[opIndex].logs.push({
         type: 'stdout',
         log: chunk.toString(),
-      })
+      });
       this.db.write();
     });
 
@@ -347,26 +358,29 @@ export class ContainerProvider implements BaseProvider {
    * Wait for flow to be finished and return FlowState
    * @param id Flow id
    * @param logCallback
-   * @returns FlowState 
+   * @returns FlowState
    */
-  async waitForFlowFinish(id: string, logCallback?: Function): Promise<FlowState | undefined> {
+  async waitForFlowFinish(
+    id: string,
+    logCallback?: Function,
+  ): Promise<FlowState | undefined> {
     return await new Promise((resolve, reject) => {
       const flowStateIndex = this.getFlowStateIndex(id);
       if (flowStateIndex === -1) reject('Flow state not found');
-      if(this.db.data.flowStates[flowStateIndex].endTime) {
-        resolve(this.db.data.flowStates[flowStateIndex])
+      if (this.db.data.flowStates[flowStateIndex].endTime) {
+        resolve(this.db.data.flowStates[flowStateIndex]);
       }
 
       if (logCallback) {
-        this.eventEmitter.on('newLog', (info) => { 
-          logCallback(info)
+        this.eventEmitter.on('newLog', (info) => {
+          logCallback(info);
         });
       }
 
-      this.eventEmitter.on('flowFinished', (flowId) => { 
+      this.eventEmitter.on('flowFinished', (flowId) => {
         this.eventEmitter.removeAllListeners('flowFinished');
         this.eventEmitter.removeAllListeners('newLog');
-        resolve(this.db.data.flowStates[flowStateIndex])
+        resolve(this.db.data.flowStates[flowStateIndex]);
       });
     });
   }
@@ -375,16 +389,20 @@ export class ContainerProvider implements BaseProvider {
   async continueFlow(flowId: string): Promise<void> {
     const flow = this.getFlowState(flowId);
     if (!flow) throw new Error(`Flow not found: ${flowId}`);
-    if (flow && flow.endTime) throw new Error(`Flow already finished at: ` + flow.endTime.toString());
+    if (flow && flow.endTime)
+      throw new Error(`Flow already finished at: ` + flow.endTime.toString());
 
     for (let i = 0; i < flow.ops.length; i++) {
       const op = flow.ops[i];
       const container = this.docker.getContainer(op.providerFlowId);
-      if (!container) throw new Error(`Container not found for op: ${op.id} in flow ${flow.id}`);
+      if (!container)
+        throw new Error(
+          `Container not found for op: ${op.id} in flow ${flow.id}`,
+        );
 
       if (!op.endTime) {
         for (let i = 0; i < op.execs.length; i++) {
-          const exec = new Exec(container.modem, op.execs[i].id);
+          const exec = new Docker.Exec(container.modem, op.execs[i].id);
           // exec = {
           //   CanRemove: true,
           //   ContainerID: "37b1e7cee72c4c843716a5323f13ca3414b6cb1ba0742a016b0446a671d84157",
@@ -409,5 +427,4 @@ export class ContainerProvider implements BaseProvider {
       }
     }
   }
-
 }
