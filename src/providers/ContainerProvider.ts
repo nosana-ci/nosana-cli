@@ -9,6 +9,7 @@ import {
 import ora from 'ora';
 import Docker from 'dockerode';
 import stream from 'stream';
+import streamPromises from 'stream/promises';
 import { parse } from 'shell-quote';
 import EventEmitter from 'events';
 import { JSONFileSyncPreset } from 'lowdb/node';
@@ -319,7 +320,13 @@ export class ContainerProvider implements BaseProvider {
     });
   }
 
-  // TODO
+  /*
+  TODO:
+  - Go to next op when prev op is done
+  - Add callback for new logs event
+  - improve code, separate log stream? setFlowState method?
+  - When job is running, is it possible to pick up logs from certain moment?
+    */
   async continueFlow(flowId: string): Promise<void> {
     console.log('flowId', flowId);
     const flow = this.getFlowState(flowId);
@@ -334,44 +341,71 @@ export class ContainerProvider implements BaseProvider {
         const c = await this.getContainerByName(op.providerFlowId)
         if (!c) throw new Error(`Container not found ${op.providerFlowId}`);
 
-        const container = this.docker.getContainer(c.Id);
-        const containerInfo = await container.inspect();
-        
-        if (containerInfo.State.Running) {
-          // get stream
-        } else if (containerInfo.State.Status === 'exited') {
-          console.log(containerInfo.State);
-          const log = await container.logs({
-            follow: false,
-            stdout: true,
-            stderr: true,
-          });
+        try {
+          const container = this.docker.getContainer(c.Id);
+          const containerInfo = await container.inspect();
+          
+          if (containerInfo.State.Running) {
+            const stdoutStream = new stream.PassThrough();
+            const stderrStream = new stream.PassThrough(); 
+            this.db.data.flowStates[flowIndex].ops[i].logs = [];
 
-          // parse output
-          const output = this.demuxOutput(log);
-          if (output.stdout !== '') {
-            output.stdout.split('\n').forEach(line => {
+            stdoutStream.on('data', (chunk) => {            
+              this.eventEmitter.emit('newLog', { type: 'stdout', log: chunk.toString() });
               this.db.data.flowStates[flowIndex].ops[i].logs.push({
                 type: 'stdout',
-                log: line
+                log: chunk.toString()
               });
             })
-          }
-          if (output.stderr !== '') {
-            output.stderr.split('\n').forEach(line => {
+
+            const logStream = await container.logs({stdout: true, stderr: true, follow: true });
+            container.modem.demuxStream(logStream, stdoutStream, stderrStream)
+
+            logStream.on('end', async () => {
+              const endInfo = await container.inspect();
+              this.db.data.flowStates[flowIndex].ops[i].exitCode = endInfo.State.ExitCode
+              this.db.data.flowStates[flowIndex].ops[i].status = endInfo.State.ExitCode ? 'failed' : 'success';
+              this.db.data.flowStates[flowIndex].ops[i].endTime = Math.floor(new Date(endInfo.State.FinishedAt).getTime());
+              this.db.write();
+
+              stdoutStream.end();
+              container.remove();
+            });
+          } else if (containerInfo.State.Status === 'exited') {
+
+            // Container is exited so job is finished
+            // Retrieve logs, parse output and update flowState db
+            const log = await container.logs({
+              follow: false,
+              stdout: true,
+              stderr: true,
+            });
+
+            // parse output
+            const output = this.demuxOutput(log);
+            if (output.stdout !== '') {
+              this.db.data.flowStates[flowIndex].ops[i].logs.push({
+                type: 'stdout',
+                log: output.stdout
+              });
+            }
+            if (output.stderr !== '') {
               this.db.data.flowStates[flowIndex].ops[i].logs.push({
                 type: 'stderr',
-                log: line
-              });  
-            })
-          }
+                log: output.stderr
+              });
+            }
 
-          this.db.data.flowStates[flowIndex].ops[i].exitCode = containerInfo.State.ExitCode
-          this.db.data.flowStates[flowIndex].ops[i].status = containerInfo.State.ExitCode ? 'failed' : 'success';
-          this.db.data.flowStates[flowIndex].ops[i].endTime = Math.floor(new Date(containerInfo.State.FinishedAt).getTime());
-          this.db.write();
+            this.db.data.flowStates[flowIndex].ops[i].exitCode = containerInfo.State.ExitCode
+            this.db.data.flowStates[flowIndex].ops[i].status = containerInfo.State.ExitCode ? 'failed' : 'success';
+            this.db.data.flowStates[flowIndex].ops[i].endTime = Math.floor(new Date(containerInfo.State.FinishedAt).getTime());
+            this.db.write();
 
-          console.log('this.db.data.flowStates[flowIndex].ops[i]', this.db.data.flowStates[flowIndex].ops[i])
+            console.log('this.db.data.flowStates[flowIndex].ops[i]', this.db.data.flowStates[flowIndex].ops[i])
+            container.remove();
+          } 
+        } catch (error) {
+          console.log(error);
         }
       }
     }
