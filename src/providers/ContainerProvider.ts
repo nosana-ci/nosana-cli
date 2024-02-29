@@ -10,8 +10,8 @@ import ora from 'ora';
 import Docker from 'dockerode';
 import stream from 'stream';
 import { parse } from 'shell-quote';
-import EventEmitter from 'events'; 
-import { JSONFileSyncPreset } from 'lowdb/node'
+import EventEmitter from 'events';
+import { JSONFileSyncPreset } from 'lowdb/node';
 
 interface FlowStatesDb {
   flowStates: Array<FlowState>;
@@ -59,9 +59,9 @@ export class ContainerProvider implements BaseProvider {
       status: 'running',
       startTime: Date.now(),
       endTime: null,
-      ops: []
-    }
-    this.db.update(({ flowStates }) => flowStates.push(state))
+      ops: [],
+    };
+    this.db.update(({ flowStates }) => flowStates.push(state));
 
     const spinner = ora(chalk.cyan(`Running job ${flowStateId} \n`)).start();
     const flowStateIndex = this.getFlowStateIndex(flowStateId);
@@ -74,7 +74,7 @@ export class ContainerProvider implements BaseProvider {
         if (op.type === 'container/run') {
           await this.runOperation(
             op as Operation<'container/run'>,
-            flowStateId
+            flowStateId,
           );
         }
       } catch (error) {
@@ -83,14 +83,18 @@ export class ContainerProvider implements BaseProvider {
       }
     }
     const checkStatus = (op: OpState) => op.status === 'failed';
-    this.db.data.flowStates[flowStateIndex].status = this.db.data.flowStates[flowStateIndex].ops.some(checkStatus) ? 'failed' : status;
+    this.db.data.flowStates[flowStateIndex].status = this.db.data.flowStates[
+      flowStateIndex
+    ].ops.some(checkStatus)
+      ? 'failed'
+      : status;
     this.db.data.flowStates[flowStateIndex].endTime = Date.now();
-    this.db.write()
+    this.db.write();
 
     spinner.stop();
 
     this.eventEmitter.emit('flowFinished', flowStateId);
-    console.log(chalk.green(`Finished flow ${flowStateId} \n`))
+    console.log(chalk.green(`Finished flow ${flowStateId} \n`));
   }
 
   /**
@@ -110,12 +114,12 @@ export class ContainerProvider implements BaseProvider {
     }
   }
 
-  getFlowState (id: string): FlowState | undefined {
+  getFlowState(id: string): FlowState | undefined {
     return this.db.data.flowStates.find((o) => o.id === id);
   }
 
-  getFlowStateIndex (id: string): number {
-    return this.db.data.flowStates.findIndex((o) => o.id === id)
+  getFlowStateIndex(id: string): number {
+    return this.db.data.flowStates.findIndex((o) => o.id === id);
   }
 
   getFlowStates() {
@@ -166,7 +170,7 @@ export class ContainerProvider implements BaseProvider {
     state.logs = run?.logs;
     state.endTime = Date.now();
     this.db.data.flowStates[flowStateIndex].ops[opIndex] = state;
-    this.db.write()
+    this.db.write();
 
     return this.db.data.flowStates[flowStateIndex].ops[opIndex];
   }
@@ -218,7 +222,7 @@ export class ContainerProvider implements BaseProvider {
       this.db.data.flowStates[flowStateIndex].ops[opIndex].logs.push({
         type: 'stdout',
         log: chunk.toString(),
-      })
+      });
       this.db.write();
     })
 
@@ -302,26 +306,29 @@ export class ContainerProvider implements BaseProvider {
    * Wait for flow to be finished and return FlowState
    * @param id Flow id
    * @param logCallback
-   * @returns FlowState 
+   * @returns FlowState
    */
-  async waitForFlowFinish(id: string, logCallback?: Function): Promise<FlowState | undefined> {
+  async waitForFlowFinish(
+    id: string,
+    logCallback?: Function,
+  ): Promise<FlowState | undefined> {
     return await new Promise((resolve, reject) => {
       const flowStateIndex = this.getFlowStateIndex(id);
       if (flowStateIndex === -1) reject('Flow state not found');
-      if(this.db.data.flowStates[flowStateIndex].endTime) {
-        resolve(this.db.data.flowStates[flowStateIndex])
+      if (this.db.data.flowStates[flowStateIndex].endTime) {
+        resolve(this.db.data.flowStates[flowStateIndex]);
       }
 
       if (logCallback) {
-        this.eventEmitter.on('newLog', (info) => { 
-          logCallback(info)
+        this.eventEmitter.on('newLog', (info) => {
+          logCallback(info);
         });
       }
 
-      this.eventEmitter.on('flowFinished', (flowId) => { 
+      this.eventEmitter.on('flowFinished', (flowId) => {
         this.eventEmitter.removeAllListeners('flowFinished');
         this.eventEmitter.removeAllListeners('newLog');
-        resolve(this.db.data.flowStates[flowStateIndex])
+        resolve(this.db.data.flowStates[flowStateIndex]);
       });
     });
   }

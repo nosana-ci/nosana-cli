@@ -4,7 +4,7 @@ import { JobDefinition } from '../../providers/BaseProvider';
 
 const jobDefinition: JobDefinition = {
   version: '0.1',
-  type: 'docker',
+  type: 'container',
   trigger: 'cli',
   ops: [
     {
@@ -27,7 +27,7 @@ export async function startNode(
 ) {
   let provider: ContainerProvider;
   switch (options.provider) {
-    case 'docker':
+    case 'container':
       provider = new ContainerProvider(options.podman);
       break;
     default:
