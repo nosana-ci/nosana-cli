@@ -19,7 +19,7 @@ export type Operation<T extends OperationType> = {
 export type OperationArgsMap = {
   'container/run': {
     image: string;
-    cmds: Array<string>;
+    cmds: string;
   };
   'container/create-volume': {
     name: string;
@@ -40,15 +40,11 @@ export type FlowState = {
 
 export type OpState = {
   id: string;
-  providerFlowId: string;
+  providerFlowId: string | null;
   status: string;
   startTime: number;
   endTime: number;
   exitCode: number;
-  execs: Array<{
-    id: string;
-    cmd: Array<string>;
-  }>;
   logs: Array<{
     type: 'stdin' | 'stdout' | 'stderr';
     log: string | undefined;

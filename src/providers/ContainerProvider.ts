@@ -7,9 +7,8 @@ import {
   FlowState,
 } from './BaseProvider';
 import ora from 'ora';
-import Docker, { Exec } from 'dockerode';
+import Docker from 'dockerode';
 import stream from 'stream';
-import streamPromises from 'stream/promises';
 import { parse } from 'shell-quote';
 import EventEmitter from 'events'; 
 import { JSONFileSyncPreset } from 'lowdb/node'
@@ -49,6 +48,11 @@ export class ContainerProvider implements BaseProvider {
     return id;
   }
 
+  /**
+   * Run operations form job definition
+   * @param jobDefinition 
+   * @param flowStateId 
+   */
   async runOps(jobDefinition: JobDefinition, flowStateId: string): Promise<void> {
     const state: FlowState = {
       id: flowStateId,
@@ -119,64 +123,6 @@ export class ContainerProvider implements BaseProvider {
   }
 
   /**
-   * Pull image and create & start container
-   * @param op Operation specs
-   * @returns Docker.Container
-   */
-  private async setupContainer(
-    op: Operation<'container/run'>,
-  ): Promise<Docker.Container> {
-    await new Promise((resolve, reject) => {
-      this.docker.pull(op.args.image, (err: any, stream: any) => {
-        if (err) {
-          return reject(err);
-        }
-        this.docker.modem.followProgress(stream, (err: any, res: any) =>
-          err ? reject(err) : resolve(res),
-        );
-      });
-    });
-
-    const name =
-      op.args?.image + '-' + (Math.random() + 1).toString(36).substring(7);
-    const container = await this.docker.createContainer({
-      Image: op.args?.image,
-      name,
-      AttachStderr: true,
-      AttachStdin: true,
-      AttachStdout: true,
-      OpenStdin: true,
-      StdinOnce: true,
-      Tty: false,
-      // --gpus all
-      HostConfig: {
-        DeviceRequests: [
-          {
-            Count: -1,
-            Driver: 'nvidia',
-            Capabilities: [['gpu']],
-          },
-        ],
-      },
-    });
-
-    await container.start();
-
-    // TODO: how to stop this listener?
-    // this.docker.getEvents(
-    //   {
-    //     filters: {
-    //       container: [name],
-    //       event: [],
-    //     },
-    //   },
-    //   this.handleDockerEvents,
-    // );
-
-    return container;
-  }
-
-  /**
    * Run operation and return results
    * @param op Operation specs
    * @returns OpState
@@ -186,53 +132,38 @@ export class ContainerProvider implements BaseProvider {
     flowStateId: string,
   ): Promise<OpState> {
     const startTime = Date.now();
-    const container = await this.setupContainer(op);
-    const outputs: OpState["logs"] = [];
+    let run: { logs: OpState["logs"], exitCode: number } = { logs: [], exitCode: 0 };
     let exitCode = 0;
 
     const state = {
       id: op.id,
-      providerFlowId: container.id,
+      providerFlowId: null,
       startTime,
       endTime: 0,
       status: 'running',
       exitCode,
-      execs: [] as OpState["execs"],
       logs: [] as OpState["logs"],
     }
 
     const flowStateIndex = this.getFlowStateIndex(flowStateId);
     this.db.data.flowStates[flowStateIndex].ops.push(state);
-    const opIndex = this.db.data.flowStates[flowStateIndex].ops.findIndex((o) => op.id === o.id);
     this.db.write()
+    const opIndex = this.db.data.flowStates[flowStateIndex].ops.findIndex((o) => op.id === o.id);
 
-    // exec commands in op
-    for (let i = 0; i < op.args?.cmds.length; i++) {
-      try {
-        const cmd = op.args?.cmds[i];
-        const exec = await this.exec(container, cmd, op.id, flowStateId);
-        state.status = exec.exitCode ? 'failed' : 'success';
-        state.exitCode = exec.exitCode || state.exitCode;
-
-        let type: 'stdin' | 'stdout' | 'stderr' =
-        state.status === 'failed' ? 'stderr' : 'stdout';
-        outputs.push({
-          type,
-          log: state.status === 'failed' ? exec.stderr : exec.stdout,
-        });
-      } catch (e: any) {
-        state.status = 'failed';
-        outputs.push({
-          type: 'stderr' as const,
-          log: e.toString(),
-        });
-      }
+    try {
+      const cmd = op.args?.cmds;
+      run = await this.executeCmd(cmd, op.args.image, flowStateIndex, opIndex);
+      state.status = run.exitCode ? 'failed' : 'success';
+      state.exitCode = run.exitCode || state.exitCode;
+    } catch (e: any) {
+      state.status = 'failed';
+      run.logs.push({
+        type: 'stderr' as const,
+        log: e.toString(),
+      });
     }
 
-    await container.stop();
-    container.remove();
-
-    state.logs = outputs;
+    state.logs = run?.logs;
     state.endTime = Date.now();
     this.db.data.flowStates[flowStateIndex].ops[opIndex] = state;
     this.db.write()
@@ -241,71 +172,95 @@ export class ContainerProvider implements BaseProvider {
   }
 
   /**
-   * Execute a command in a running Docker container.
-   *
-   * @param container container to execute the command in
-   * @param cmd command to execute
-   * @param opts options
+   * Pull docker image
+   * @param image 
+   * @returns 
    */
-  private async exec(
-    container: Docker.Container,
+  private async pullImage(image: string) {
+    return await new Promise((resolve, reject) => {
+      this.docker.pull(image, (err: any, stream: any) => {
+        if (err) {
+          return reject(err);
+        }
+        this.docker.modem.followProgress(stream, (err: any, res: any) =>
+          err ? reject(err) : resolve(res),
+        );
+      });
+    });
+  }
+
+  /**
+   * Perform docker.run for given cmd, return logs
+   * @param cmd 
+   * @param image 
+   * @param flowStateIndex 
+   * @param opIndex 
+   * @returns 
+   */
+  private async executeCmd(
     cmd: string,
-    opId: string,
-    flowStateId: string,
-    opts?: Docker.ExecCreateOptions,
+    image: string,
+    flowStateIndex: number,
+    opIndex: number
   ): Promise<{
-    exitCode: number | null;
-    stderr: string | undefined;
-    stdout: string | undefined;
+    exitCode: number;
+    logs: [];
   }> {
     const parsedcmd = parse(cmd);
-    const dockerExec = await container.exec({
-      ...opts,
-      AttachStderr: true,
-      AttachStdout: true,
-      Cmd: parsedcmd as string[],
-    });
 
-    const dockerExecStream = await dockerExec.start({});
+    await this.pullImage(image);
+    
     const stdoutStream = new stream.PassThrough();
     const stderrStream = new stream.PassThrough();
-    const flowStateIndex = this.getFlowStateIndex(flowStateId);
-    const opIndex = this.db.data.flowStates[flowStateIndex].ops.findIndex((o) => opId === o.id);
 
-    this.docker.modem.demuxStream(dockerExecStream, stdoutStream, stderrStream);
-
-    dockerExecStream.resume();
-
-    // save exec info also in flow state
-    const execInfo = await dockerExec.inspect();
-    this.db.data.flowStates[flowStateIndex].ops[opIndex].execs.push({
-      id: execInfo.ID,
-      cmd: execInfo.ProcessConfig.arguments,
-    })
-    this.db.write();
-
-    dockerExecStream.on('data', (chunk: any) => {
-      // console.log(chunk.toString());
+    stdoutStream.on('data', (chunk) =>{
       this.eventEmitter.emit('newLog', { opIndex, log: chunk.toString() });
       this.db.data.flowStates[flowStateIndex].ops[opIndex].logs.push({
         type: 'stdout',
         log: chunk.toString(),
       })
       this.db.write();
-    });
+    })
 
-    await streamPromises.finished(dockerExecStream);
+    return await this.docker.run(
+      image,
+      parsedcmd as string[],
+      [stdoutStream, stderrStream],
+      {
+        Tty: false,
+        // --gpus all
+        HostConfig: {
+          DeviceRequests: [
+            {
+              Count: -1,
+              Driver: 'nvidia',
+              Capabilities: [['gpu']],
+            },
+          ],
+        }
+      })
+      .then(([res, container]) => {
+        console.log('Docker run finished');
+        const stderr = stderrStream.read() as Buffer | undefined;
+        container.remove();
 
-    const stderr = stderrStream.read() as Buffer | undefined;
-    const stdout = stdoutStream.read() as Buffer | undefined;
+        const logs = this.db.data.flowStates[flowStateIndex].ops[opIndex].logs;
+        if (stderr) {
+          logs.push({
+            type: 'stderr',
+            log: stderr.toString(),
+          })
+        }
 
-    const dockerExecInfo = await dockerExec.inspect();
-
-    return {
-      exitCode: dockerExecInfo.ExitCode,
-      stderr: stderr?.toString(),
-      stdout: stdout?.toString(),
-    };
+        return {
+          exitCode: res.StatusCode,
+          logs,
+        };
+      })
+      .catch(error => {
+        chalk.red(console.log('Docker run failed', {error}));
+        return error;
+      });
   }
 
   /**
@@ -372,42 +327,23 @@ export class ContainerProvider implements BaseProvider {
   }
 
   // TODO
-  async continueFlow(flowId: string): Promise<void> {
-    const flow = this.getFlowState(flowId);
-    if (!flow) throw new Error(`Flow not found: ${flowId}`);
-    if (flow && flow.endTime) throw new Error(`Flow already finished at: ` + flow.endTime.toString());
+  // async continueFlow(flowId: string): Promise<void> {
+  //   const flow = this.getFlowState(flowId);
+  //   if (!flow) throw new Error(`Flow not found: ${flowId}`);
+  //   if (flow && flow.endTime) throw new Error(`Flow already finished at: ` + flow.endTime.toString());
 
-    for (let i = 0; i < flow.ops.length; i++) {
-      const op = flow.ops[i];
-      const container = this.docker.getContainer(op.providerFlowId);
-      if (!container) throw new Error(`Container not found for op: ${op.id} in flow ${flow.id}`);
+  //   for (let i = 0; i < flow.ops.length; i++) {
+  //     const op = flow.ops[i];
+  //     const container = this.docker.getContainer(op.providerFlowId);
+  //     const containerInfo = await container.inspect();
+  //     if (!container) throw new Error(`Container not found for op: ${op.id} in flow ${flow.id}`);
+  //     if (!containerInfo.State.Running) throw new Error(`Container ${containerInfo.Id} is not running anymore`);
 
-      if (!op.endTime) {
-        for (let i = 0; i < op.execs.length; i++) {
-          const exec = new Exec(container.modem, op.execs[i].id);
-          // exec = {
-          //   CanRemove: true,
-          //   ContainerID: "37b1e7cee72c4c843716a5323f13ca3414b6cb1ba0742a016b0446a671d84157",
-          //   DetachKeys: "",
-          //   ExitCode: -1,
-          //   ID: "4e4e6e4453f9aac9117c1d21db8cf74f58c364603410829c23d786c9e14c7678",
-          //   OpenStderr: true,
-          //   OpenStdin: false,
-          //   OpenStdout: true,
-          //   Running: false,
-          //   Pid: 0,
-          //   ProcessConfig: {
-          //     arguments: [ "-c", "for i in {1..200}; do echo $i; sleep 2; done" ],
-          //     entrypoint: "/bin/bash",
-          //     privileged: false,
-          //     tty: false,
-          //     user: "",
-          //   },
-          // }
-          console.log('continueFlow exec', await exec.inspect());
-        }
-      }
-    }
-  }
+  //     console.log('container', containerInfo.State)
+  //     if (!op.endTime) {
+        
+  //     }
+  //   }
+  // }
 
 }
