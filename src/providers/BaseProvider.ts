@@ -41,10 +41,11 @@ export type FlowState = {
 export type OpState = {
   id: string;
   providerFlowId: string | null;
-  status: string;
+  status: string | null;
   startTime: number;
   endTime: number;
   exitCode: number;
+  operation: Operation<OperationType>;
   logs: Array<{
     type: 'stdin' | 'stdout' | 'stderr';
     log: string | undefined;

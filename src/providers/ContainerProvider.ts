@@ -67,6 +67,23 @@ export class ContainerProvider implements BaseProvider {
     const flowStateIndex = this.getFlowStateIndex(flowStateId);
     let status = 'success';
 
+    // add ops to flowstate
+    for (let i = 0; i < jobDefinition.ops.length; i++) {
+      const op = jobDefinition.ops[i];
+      const opState = {
+        id: op.id,
+        providerFlowId: null,
+        startTime: 0,
+        endTime: 0,
+        status: null,
+        exitCode: 0,
+        operation: op,
+        logs: [] as OpState["logs"],
+      }
+      this.db.data.flowStates[flowStateIndex].ops.push(opState);
+      this.db.write()
+    }
+
     // run operations
     for (let i = 0; i < jobDefinition.ops.length; i++) {
       const op = jobDefinition.ops[i];
@@ -150,13 +167,13 @@ export class ContainerProvider implements BaseProvider {
     }
 
     const flowStateIndex = this.getFlowStateIndex(flowStateId);
-    this.db.data.flowStates[flowStateIndex].ops.push(state);
-    this.db.write()
     const opIndex = this.db.data.flowStates[flowStateIndex].ops.findIndex((o) => op.id === o.id);
+    this.db.data.flowStates[flowStateIndex].ops[opIndex] = { ...this.db.data.flowStates[flowStateIndex].ops[opIndex], ...state };
+    this.db.write()
 
     try {
       const cmd = op.args?.cmds;
-      run = await this.executeCmd(cmd, op.args.image, flowStateIndex, opIndex);
+      run = await this.executeCmd(cmd, op.args.image, flowStateIndex, opIndex); 
       state.status = run.exitCode ? 'failed' : 'success';
       state.exitCode = run.exitCode || state.exitCode;
     } catch (e: any) {
@@ -169,7 +186,7 @@ export class ContainerProvider implements BaseProvider {
 
     state.logs = run?.logs;
     state.endTime = Date.now();
-    this.db.data.flowStates[flowStateIndex].ops[opIndex] = state;
+    this.db.data.flowStates[flowStateIndex].ops[opIndex] = { ...this.db.data.flowStates[flowStateIndex].ops[opIndex], ...state };
     this.db.write();
 
     return this.db.data.flowStates[flowStateIndex].ops[opIndex];
@@ -211,6 +228,9 @@ export class ContainerProvider implements BaseProvider {
     logs: [];
   }> {
     const parsedcmd = parse(cmd);
+    const name = image + '-' + [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
+    this.db.data.flowStates[flowStateIndex].ops[opIndex].providerFlowId = name;
+    this.db.write();
 
     await this.pullImage(image);
     
@@ -231,6 +251,7 @@ export class ContainerProvider implements BaseProvider {
       parsedcmd as string[],
       [stdoutStream, stderrStream],
       {
+        name,
         Tty: false,
         // --gpus all
         HostConfig: {
@@ -353,4 +374,21 @@ export class ContainerProvider implements BaseProvider {
   //   }
   // }
 
+
+  private async getContainerByName(name: string) {
+    const opts = {
+      "limit": 1,
+      "filters": `{"name": ["${name}"]}`
+    }
+
+    return new Promise(async (resolve, reject)=>{
+      await this.docker.listContainers(opts, (err, containers) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(containers && containers[0]);
+        }
+      });
+    })
+  }
 }
