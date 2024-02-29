@@ -286,6 +286,112 @@ export class ContainerProvider implements BaseProvider {
         chalk.red(console.log('Docker run failed', {error}));
         return error;
       });
+  } 
+
+  /**
+   * Wait for flow to be finished and return FlowState
+   * @param id Flow id
+   * @param logCallback
+   * @returns FlowState
+   */
+  async waitForFlowFinish(
+    id: string,
+    logCallback?: Function,
+  ): Promise<FlowState | undefined> {
+    return await new Promise((resolve, reject) => {
+      const flowStateIndex = this.getFlowStateIndex(id);
+      if (flowStateIndex === -1) reject('Flow state not found');
+      if (this.db.data.flowStates[flowStateIndex].endTime) {
+        resolve(this.db.data.flowStates[flowStateIndex]);
+      }
+
+      if (logCallback) {
+        this.eventEmitter.on('newLog', (info) => {
+          logCallback(info);
+        });
+      }
+
+      this.eventEmitter.on('flowFinished', (flowId) => {
+        this.eventEmitter.removeAllListeners('flowFinished');
+        this.eventEmitter.removeAllListeners('newLog');
+        resolve(this.db.data.flowStates[flowStateIndex]);
+      });
+    });
+  }
+
+  // TODO
+  async continueFlow(flowId: string): Promise<void> {
+    console.log('flowId', flowId);
+    const flow = this.getFlowState(flowId);
+    const flowIndex = this.getFlowStateIndex(flowId);
+    if (!flow) throw new Error(`Flow not found: ${flowId}`);
+    if (flow && flow.endTime) throw new Error(`Flow already finished at: ` + flow.endTime.toString());
+
+    for (let i = 0; i < flow.ops.length; i++) {
+      const op = flow.ops[i];
+
+      if (op.providerFlowId && !op.endTime) {
+        const c = await this.getContainerByName(op.providerFlowId)
+        if (!c) throw new Error(`Container not found ${op.providerFlowId}`);
+
+        const container = this.docker.getContainer(c.Id);
+        const containerInfo = await container.inspect();
+        
+        if (containerInfo.State.Running) {
+          // get stream
+        } else if (containerInfo.State.Status === 'exited') {
+          console.log(containerInfo.State);
+          const log = await container.logs({
+            follow: false,
+            stdout: true,
+            stderr: true,
+          });
+
+          // parse output
+          const output = this.demuxOutput(log);
+          if (output.stdout !== '') {
+            output.stdout.split('\n').forEach(line => {
+              this.db.data.flowStates[flowIndex].ops[i].logs.push({
+                type: 'stdout',
+                log: line
+              });
+            })
+          }
+          if (output.stderr !== '') {
+            output.stderr.split('\n').forEach(line => {
+              this.db.data.flowStates[flowIndex].ops[i].logs.push({
+                type: 'stderr',
+                log: line
+              });  
+            })
+          }
+
+          this.db.data.flowStates[flowIndex].ops[i].exitCode = containerInfo.State.ExitCode
+          this.db.data.flowStates[flowIndex].ops[i].status = containerInfo.State.ExitCode ? 'failed' : 'success';
+          this.db.data.flowStates[flowIndex].ops[i].endTime = Math.floor(new Date(containerInfo.State.FinishedAt).getTime());
+          this.db.write();
+
+          console.log('this.db.data.flowStates[flowIndex].ops[i]', this.db.data.flowStates[flowIndex].ops[i])
+        }
+      }
+    }
+  }
+
+  private async getContainerByName(name: string): Promise<Docker.ContainerInfo | undefined> {
+    const opts = {
+      "limit": 1,
+      "filters": `{"name": ["${name}"]}`
+    }
+
+    return new Promise(async (resolve, reject)=>{
+      await this.docker.listContainers(opts, (err, containers) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(containers && containers[0]);
+        }
+      });
+    })
   }
 
   /**
@@ -324,71 +430,37 @@ export class ContainerProvider implements BaseProvider {
   }
 
   /**
-   * Wait for flow to be finished and return FlowState
-   * @param id Flow id
-   * @param logCallback
-   * @returns FlowState
+   * input: log Buffer, output stdout & stderr strings
+   * @param buffer 
+   * @returns 
    */
-  async waitForFlowFinish(
-    id: string,
-    logCallback?: Function,
-  ): Promise<FlowState | undefined> {
-    return await new Promise((resolve, reject) => {
-      const flowStateIndex = this.getFlowStateIndex(id);
-      if (flowStateIndex === -1) reject('Flow state not found');
-      if (this.db.data.flowStates[flowStateIndex].endTime) {
-        resolve(this.db.data.flowStates[flowStateIndex]);
-      }
+  private demuxOutput = (buffer: Buffer): { stdout: string, stderr: string } => {
+    const stdouts: Buffer[] = [];
+    const stderrs: Buffer[] = [];
 
-      if (logCallback) {
-        this.eventEmitter.on('newLog', (info) => {
-          logCallback(info);
-        });
-      }
-
-      this.eventEmitter.on('flowFinished', (flowId) => {
-        this.eventEmitter.removeAllListeners('flowFinished');
-        this.eventEmitter.removeAllListeners('newLog');
-        resolve(this.db.data.flowStates[flowStateIndex]);
-      });
-    });
-  }
-
-  // TODO
-  // async continueFlow(flowId: string): Promise<void> {
-  //   const flow = this.getFlowState(flowId);
-  //   if (!flow) throw new Error(`Flow not found: ${flowId}`);
-  //   if (flow && flow.endTime) throw new Error(`Flow already finished at: ` + flow.endTime.toString());
-
-  //   for (let i = 0; i < flow.ops.length; i++) {
-  //     const op = flow.ops[i];
-  //     const container = this.docker.getContainer(op.providerFlowId);
-  //     const containerInfo = await container.inspect();
-  //     if (!container) throw new Error(`Container not found for op: ${op.id} in flow ${flow.id}`);
-  //     if (!containerInfo.State.Running) throw new Error(`Container ${containerInfo.Id} is not running anymore`);
-
-  //     console.log('container', containerInfo.State)
-  //     if (!op.endTime) {
-        
-  //     }
-  //   }
-  // }
-
-
-  private async getContainerByName(name: string) {
-    const opts = {
-      "limit": 1,
-      "filters": `{"name": ["${name}"]}`
+    function bufferSlice(end: number) {
+        const out = buffer.slice(0, end);
+        buffer = Buffer.from(buffer.slice(end, buffer.length));
+        return out;
     }
-
-    return new Promise(async (resolve, reject)=>{
-      await this.docker.listContainers(opts, (err, containers) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(containers && containers[0]);
+    
+    while (buffer.length > 0) {
+        const header = bufferSlice(8);
+        const nextDataType = header.readUInt8(0);
+        const nextDataLength = header.readUInt32BE(4);
+        const content = bufferSlice(nextDataLength);
+        switch (nextDataType) {
+          case 1:
+            stdouts.push(content);
+            break;
+          case 2:
+            stderrs.push(content);
+            break;
+          default:
+            // ignore
         }
-      });
-    })
+    }
+  
+    return { stdout: Buffer.concat(stdouts).toString("utf8"), stderr: Buffer.concat(stderrs).toString("utf8") };
   }
 }
