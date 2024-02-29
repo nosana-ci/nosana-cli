@@ -151,10 +151,10 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
-"@nosana/sdk@^0.3.9":
-  version "0.3.9"
-  resolved "https://registry.yarnpkg.com/@nosana/sdk/-/sdk-0.3.9.tgz#f1ab36d9ea62babee149ecc8e10ce3a598ef545c"
-  integrity sha512-gQg+uvpTO+ky6YxR58Vh1GyuYVCpXM+vlK6dKM99ZlkYKvhw8Kt4Zjuprit8BKsBG99PxEeePVWi8BWLJAKWVA==
+"@nosana/sdk@^0.3.10":
+  version "0.3.10"
+  resolved "https://registry.yarnpkg.com/@nosana/sdk/-/sdk-0.3.10.tgz#eca4b1a532b60d0cec22279521f74c180babd543"
+  integrity sha512-G0QFWJWKoV//UjmCNE/9dAGx9RHcsufW4S+DAP8RqpjuX+j03LS7FZ8a+ZrNX5nA93TWE5NF5h/fXHGYIG7Byg==
   dependencies:
     "@coral-xyz/anchor" "^0.28.1-beta.1"
     "@solana/spl-token" "^0.3.8"
