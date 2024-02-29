@@ -16,6 +16,7 @@ import { ContainerProvider } from '../../providers/ContainerProvider.js';
 import { BaseProvider, JobDefinition } from '../../providers/BaseProvider.js';
 import { PublicKey } from '@solana/web3.js';
 import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes/index.js';
+import { EMPTY_ADDRESS } from '../../services/jobs.js';
 
 export async function startNode(
   market: string,
@@ -85,18 +86,29 @@ export async function startNode(
   try {
     spinner = ora(chalk.cyan('Retrieving market requirements')).start();
     const marketAccount = await nosana.jobs.getMarket(market);
-    // TODO: check for open market
-    spinner.text = chalk.cyan('Checking required access key');
-    nft = await nosana.solana.getNftFromCollection(
-      node,
-      marketAccount.nodeAccessKey.toString(),
-    );
-    if (nft) {
-      spinner.succeed(`Found access key ${nft}`);
+    if (marketAccount.nodeAccessKey.toString() === EMPTY_ADDRESS.toString()) {
+      spinner.succeed(chalk.green(`Open market ${chalk.bold(market)}`));
     } else {
-      throw new Error(
-        chalk.red(`Could not find access key for market ${chalk.bold(market)}`),
+      spinner.text = chalk.cyan('Checking required access key');
+      nft = await nosana.solana.getNftFromCollection(
+        node,
+        marketAccount.nodeAccessKey.toString(),
       );
+      if (nft) {
+        spinner.succeed(
+          chalk.green(
+            `Found access key ${chalk.bold(nft)} for market ${chalk.bold(
+              market,
+            )}`,
+          ),
+        );
+      } else {
+        throw new Error(
+          chalk.red(
+            `Could not find access key for market ${chalk.bold(market)}`,
+          ),
+        );
+      }
     }
   } catch (e: any) {
     spinner.fail();
@@ -120,18 +132,27 @@ export async function startNode(
     spinner.text = chalk.cyan('Checking queued status');
     let selectedMarket: Market | void = await checkQueued(node);
 
-    if (!selectedMarket || selectedMarket.address.toString() === market) {
+    if (!selectedMarket || selectedMarket.address.toString() !== market) {
       if (selectedMarket) {
         // TODO: We are in the wrong market, leave queue
-        throw new Error('Queued in wrong market, please leave market first');
+        spinner.fail(
+          chalk.red(
+            `Queued in wrong market ${chalk.bold(
+              selectedMarket.address.toString(),
+            )}`,
+          ),
+        );
+        throw new Error('TODO: leave market');
       }
       spinner.text = chalk.cyan('Joining market ');
       try {
-        const tx = await nosana.jobs.work(market);
-        console.log(chalk.greenBright(`Joined market tx ${tx}`));
+        const tx = await nosana.jobs.work(market, nft ? nft : undefined);
+        spinner.succeed(chalk.greenBright(`Joined market tx ${tx}`));
+        spinner = ora(chalk.cyan('Checking queued status')).start();
+        await sleep(2);
+        selectedMarket = await checkQueued(node);
       } catch (e) {
-        let error = '';
-        spinner.fail(chalk.red.bold('Could not join market:') + error);
+        spinner.fail(chalk.red.bold('Could not join market'));
         throw e;
       }
     }
