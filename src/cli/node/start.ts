@@ -10,10 +10,15 @@ import {
   waitForRun,
   NodeStats,
   getNodeStats,
+  isRunExpired,
 } from '../../services/nodes.js';
 import { NotQueuedError } from '../../generic/errors.js';
 import { ContainerProvider } from '../../providers/ContainerProvider.js';
-import { BaseProvider, JobDefinition } from '../../providers/BaseProvider.js';
+import {
+  BaseProvider,
+  FlowState,
+  JobDefinition,
+} from '../../providers/BaseProvider.js';
 import { PublicKey } from '@solana/web3.js';
 import { EMPTY_ADDRESS } from '../../services/jobs.js';
 
@@ -119,9 +124,10 @@ export async function startNode(
     ),
   );
   let nft;
+  let marketAccount: Market;
   try {
     spinner = ora(chalk.cyan('Retrieving market requirements')).start();
-    const marketAccount = await nosana.jobs.getMarket(market);
+    marketAccount = await nosana.jobs.getMarket(market);
     if (marketAccount.nodeAccessKey.toString() === EMPTY_ADDRESS.toString()) {
       spinner.succeed(chalk.green(`Open market ${chalk.bold(market)}`));
     } else {
@@ -240,22 +246,54 @@ export async function startNode(
       spinner = ora(chalk.red('Job has the wrong market, quiting job')).start();
       const tx = await nosana.jobs.quit(run);
       spinner.info(`Job successfully quit with tx ${tx}`);
+    } else if (isRunExpired(run, marketAccount.jobTimeout * 1.5)) {
+      // Quit job when timeout * 1.5 is reached.
+      spinner = ora(chalk.red('Job is expired, quiting job')).start();
+      try {
+        const tx = await nosana.jobs.quit(run);
+        spinner.succeed(`Job successfully quit with tx ${tx}`);
+      } catch (e) {
+        spinner.fail(chalk.red('Could not quit job'));
+        throw e;
+      }
     } else {
       spinner = ora(chalk.cyan('Retrieving job definition')).start();
-      // TODO: check job expired
       const jobDefinition: JobDefinition = await nosana.ipfs.retrieve(
         job.ipfsJob,
       );
       spinner.text = chalk.cyan('Checking provider health');
       if (!(await provider.healthy())) {
         throw new Error('provider not healthy');
-        // TODO: wait for provider to get healthy
+        // TODO: wait for provider to get healthy or quit job
       }
       spinner.text = chalk.cyan('Running job');
       const flowId: string = provider.run(jobDefinition);
-      const flowResult = await provider.waitForFlowFinish(flowId);
-      await sleep(2850);
-      const result = flowResult;
+      const result: FlowState = await new Promise<FlowState>(async function (
+        resolve,
+        reject,
+      ) {
+        // check if expired every minute
+        const expireInterval = setInterval(async () => {
+          if (isRunExpired(run!, marketAccount.jobExpiration * 1.5)) {
+            clearInterval(expireInterval);
+            // Quit job when timeout * 1.5 is reached.
+            spinner = ora(chalk.red('Job is expired, quiting job')).start();
+            try {
+              const tx = await nosana.jobs.quit(run!);
+              spinner.succeed(`Job successfully quit with tx ${tx}`);
+            } catch (e) {
+              spinner.fail(chalk.red('Could not quit job'));
+              reject(e);
+            }
+            // TODO: stop flowId
+            reject('Job expired');
+          }
+        }, 1000 * 60);
+        const flowResult = await provider.waitForFlowFinish(flowId);
+        clearInterval(expireInterval);
+        resolve(flowResult);
+      });
+
       spinner.text = chalk.cyan('Uploading results to IPFS');
       const ipfsResult = await nosana.ipfs.pin(result as object);
       const bytesArray = nosana.ipfs.IpfsHashToByteArray(ipfsResult);

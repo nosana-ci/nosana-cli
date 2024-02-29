@@ -363,7 +363,7 @@ export class ContainerProvider implements BaseProvider {
   async waitForFlowFinish(
     id: string,
     logCallback?: Function,
-  ): Promise<FlowState | undefined> {
+  ): Promise<FlowState> {
     return await new Promise((resolve, reject) => {
       const flowStateIndex = this.getFlowStateIndex(id);
       if (flowStateIndex === -1) reject('Flow state not found');
