@@ -9,7 +9,6 @@ import {
 import ora from 'ora';
 import Docker from 'dockerode';
 import stream from 'stream';
-import streamPromises from 'stream/promises';
 import { parse } from 'shell-quote';
 import EventEmitter from 'events';
 import { JSONFileSyncPreset } from 'lowdb/node';
@@ -66,7 +65,6 @@ export class ContainerProvider implements BaseProvider {
 
     const spinner = ora(chalk.cyan(`Running job ${flowStateId} \n`)).start();
     const flowStateIndex = this.getFlowStateIndex(flowStateId);
-    let status = 'success';
 
     // add ops to flowstate
     for (let i = 0; i < jobDefinition.ops.length; i++) {
@@ -100,19 +98,9 @@ export class ContainerProvider implements BaseProvider {
         status = 'failed';
       }
     }
-    const checkStatus = (op: OpState) => op.status === 'failed';
-    this.db.data.flowStates[flowStateIndex].status = this.db.data.flowStates[
-      flowStateIndex
-    ].ops.some(checkStatus)
-      ? 'failed'
-      : status;
-    this.db.data.flowStates[flowStateIndex].endTime = Date.now();
-    this.db.write();
 
+    this.finishFlow(flowStateId);
     spinner.stop();
-
-    this.eventEmitter.emit('flowFinished', flowStateId);
-    console.log(chalk.green(`Finished flow ${flowStateId} \n`));
   }
 
   /**
@@ -322,9 +310,8 @@ export class ContainerProvider implements BaseProvider {
 
   /*
   TODO:
-  - Go to next op when prev op is done
   - Add callback for new logs event
-  - improve code, separate log stream? setFlowState method?
+  - improve code, separate log stream function? setFlowState function?
   - When job is running, is it possible to pick up logs from certain moment?
     */
   async continueFlow(flowId: string): Promise<void> {
@@ -337,11 +324,10 @@ export class ContainerProvider implements BaseProvider {
     for (let i = 0; i < flow.ops.length; i++) {
       const op = flow.ops[i];
 
-      if (op.providerFlowId && !op.endTime) {
-        const c = await this.getContainerByName(op.providerFlowId)
-        if (!c) throw new Error(`Container not found ${op.providerFlowId}`);
-
-        try {
+      if (op.providerFlowId && !op.endTime && op.operation.type === 'container/run') {
+        await new Promise<void>(async (resolve, reject) => {
+          const c = await this.getContainerByName(op.providerFlowId as string)
+          if (!c) throw new Error(`Container not found ${op.providerFlowId}`);
           const container = this.docker.getContainer(c.Id);
           const containerInfo = await container.inspect();
           
@@ -350,7 +336,7 @@ export class ContainerProvider implements BaseProvider {
             const stderrStream = new stream.PassThrough(); 
             this.db.data.flowStates[flowIndex].ops[i].logs = [];
 
-            stdoutStream.on('data', (chunk) => {            
+            stdoutStream.on('data', (chunk) => {      
               this.eventEmitter.emit('newLog', { type: 'stdout', log: chunk.toString() });
               this.db.data.flowStates[flowIndex].ops[i].logs.push({
                 type: 'stdout',
@@ -370,9 +356,9 @@ export class ContainerProvider implements BaseProvider {
 
               stdoutStream.end();
               container.remove();
+              resolve();
             });
           } else if (containerInfo.State.Status === 'exited') {
-
             // Container is exited so job is finished
             // Retrieve logs, parse output and update flowState db
             const log = await container.logs({
@@ -401,14 +387,32 @@ export class ContainerProvider implements BaseProvider {
             this.db.data.flowStates[flowIndex].ops[i].endTime = Math.floor(new Date(containerInfo.State.FinishedAt).getTime());
             this.db.write();
 
-            console.log('this.db.data.flowStates[flowIndex].ops[i]', this.db.data.flowStates[flowIndex].ops[i])
             container.remove();
-          } 
-        } catch (error) {
-          console.log(error);
-        }
+          }
+        });
+      } else if (!op.endTime && op.operation.type === 'container/run') {
+        await this.runOperation(
+          op.operation as Operation<'container/run'>,
+          flowId,
+        );
       }
     }
+    this.finishFlow(flowId);
+  }
+
+  private finishFlow(flowStateId: string) {
+    const flowIndex = this.getFlowStateIndex(flowStateId);
+    const checkStatus = (op: OpState) => op.status === 'failed';
+    this.db.data.flowStates[flowIndex].status = this.db.data.flowStates[
+      flowIndex
+    ].ops.some(checkStatus)
+      ? 'failed'
+      : 'success';
+    this.db.data.flowStates[flowIndex].endTime = Date.now();
+    this.db.write();
+
+    this.eventEmitter.emit('flowFinished', flowIndex);
+    console.log(chalk.green(`Finished flow ${flowStateId} \n`));
   }
 
   private async getContainerByName(name: string): Promise<Docker.ContainerInfo | undefined> {
