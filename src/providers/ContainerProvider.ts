@@ -42,10 +42,9 @@ export class ContainerProvider implements BaseProvider {
       protocol: protocol as 'https' | 'http' | 'ssh' | undefined,
     });
   }
-  run(jobDefinition: JobDefinition): string {
-    const id = [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
-    this.runOps(jobDefinition, id);
-    return id;
+  run(jobDefinition: JobDefinition, jobAddress: string): string {
+    this.runOps(jobDefinition, jobAddress);
+    return jobAddress;
   }
 
   /**
@@ -147,7 +146,6 @@ export class ContainerProvider implements BaseProvider {
 
     const state = {
       id: op.id,
-      providerFlowId: null,
       startTime,
       endTime: 0,
       status: 'running',
@@ -319,7 +317,7 @@ export class ContainerProvider implements BaseProvider {
     const flow = this.getFlowState(flowId);
     const flowIndex = this.getFlowStateIndex(flowId);
     if (!flow) throw new Error(`Flow not found: ${flowId}`);
-    if (flow && flow.endTime) throw new Error(`Flow already finished at: ` + flow.endTime.toString());
+    if (flow && flow.endTime) throw new Error(`Flow already finished at` + flow.endTime.toString());
 
     for (let i = 0; i < flow.ops.length; i++) {
       const op = flow.ops[i];
