@@ -20,7 +20,7 @@ export type Operation<T extends OperationType> = {
 export interface OperationArgsMap {
   'container/run': {
     image: string;
-    cmds: Array<string>;
+    cmds: string;
   };
   'container/create-volume': {
     name: string;
@@ -42,15 +42,12 @@ export type FlowState = {
 
 export type OpState = {
   id: string;
-  providerFlowId: string;
-  status: string;
+  providerFlowId: string | null;
+  status: string | null;
   startTime: number;
   endTime: number;
   exitCode: number;
-  execs: Array<{
-    id: string;
-    cmd: Array<string>;
-  }>;
+  operation: Operation<OperationType>;
   logs: Array<{
     type: 'stdin' | 'stdout' | 'stderr';
     log: string | undefined;
@@ -61,8 +58,11 @@ export const validateJobDefinition =
   typia.createValidateEquals<JobDefinition>();
 
 export abstract class BaseProvider {
-  abstract run(JobDefinition: JobDefinition): string;
+  abstract run(JobDefinition: JobDefinition, jobAddress: string): string;
   abstract healthy(): Promise<Boolean>;
   abstract getFlowState(id: string): FlowState | undefined;
-  abstract waitForFlowFinish(id: string): Promise<FlowState>;
+  abstract waitForFlowFinish(
+    id: string,
+    logCallback?: Function,
+  ): Promise<FlowState>;
 }
