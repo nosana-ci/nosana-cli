@@ -53,51 +53,56 @@ export class ContainerProvider implements BaseProvider {
    * @param flowStateId 
    */
   async runOps(jobDefinition: JobDefinition, flowStateId: string): Promise<void> {
-    const state: FlowState = {
-      id: flowStateId,
-      status: 'running',
-      startTime: Date.now(),
-      endTime: null,
-      ops: [],
-    };
-    this.db.update(({ flowStates }) => flowStates.push(state));
-
     const spinner = ora(chalk.cyan(`Running job ${flowStateId} \n`)).start();
-    const flowStateIndex = this.getFlowStateIndex(flowStateId);
+    try {
+      const state: FlowState = {
+        id: flowStateId,
+        status: 'running',
+        startTime: Date.now(),
+        endTime: null,
+        ops: [],
+      };
+      this.db.update(({ flowStates }) => flowStates.push(state));
+      const flowStateIndex = this.getFlowStateIndex(flowStateId);
 
-    // add ops to flowstate
-    for (let i = 0; i < jobDefinition.ops.length; i++) {
-      const op = jobDefinition.ops[i];
-      const opState = {
-        id: op.id,
-        providerFlowId: null,
-        startTime: 0,
-        endTime: 0,
-        status: null,
-        exitCode: 0,
-        operation: op,
-        logs: [] as OpState["logs"],
-      }
-      this.db.data.flowStates[flowStateIndex].ops.push(opState);
-      this.db.write()
-    }
-
-    // run operations
-    for (let i = 0; i < jobDefinition.ops.length; i++) {
-      const op = jobDefinition.ops[i];
-      try {
-        if (op.type === 'container/run') {
-          await this.runOperation(
-            op as Operation<'container/run'>,
-            flowStateId,
-          );
+      // add ops to flowstate
+      for (let i = 0; i < jobDefinition.ops.length; i++) {
+        const op = jobDefinition.ops[i];
+        const opState = {
+          id: op.id,
+          providerFlowId: null,
+          startTime: 0,
+          endTime: 0,
+          status: null,
+          exitCode: 0,
+          operation: op,
+          logs: [] as OpState["logs"],
         }
-      } catch (error) {
-        console.log(chalk.red(error));
-        status = 'failed';
+        this.db.data.flowStates[flowStateIndex].ops.push(opState);
+        this.db.write()
       }
-    }
 
+      // run operations
+      for (let i = 0; i < jobDefinition.ops.length; i++) {
+        const op = jobDefinition.ops[i];
+        try {
+          if (op.type === 'container/run') {
+            await this.runOperation(
+              op as Operation<'container/run'>,
+              flowStateId,
+            );
+          }
+        } catch (error) {
+          console.log(chalk.red(error));
+          this.db.data.flowStates[flowStateIndex].ops[i].status = 'failed';
+          this.db.write()
+          break;
+        }
+      }
+
+    } catch (error) {
+      console.log(chalk.red(`Couldn\'t start ops for flow ${flowStateId}`))
+    }
     this.finishFlow(flowStateId);
     spinner.stop();
   }
@@ -252,7 +257,6 @@ export class ContainerProvider implements BaseProvider {
         }
       })
       .then(([res, container]) => {
-        console.log('Docker run finished');
         const stderr = stderrStream.read() as Buffer | undefined;
         container.remove();
 
@@ -401,16 +405,15 @@ export class ContainerProvider implements BaseProvider {
   private finishFlow(flowStateId: string) {
     const flowIndex = this.getFlowStateIndex(flowStateId);
     const checkStatus = (op: OpState) => op.status === 'failed';
-    this.db.data.flowStates[flowIndex].status = this.db.data.flowStates[
-      flowIndex
-    ].ops.some(checkStatus)
+    this.db.data.flowStates[flowIndex].status = (this.db.data.flowStates[flowIndex].ops.some(checkStatus) 
+    || this.db.data.flowStates[flowIndex].ops.every((op) => !op.status))
       ? 'failed'
       : 'success';
     this.db.data.flowStates[flowIndex].endTime = Date.now();
     this.db.write();
 
     this.eventEmitter.emit('flowFinished', flowIndex);
-    console.log(chalk.green(`Finished flow ${flowStateId} \n`));
+    console.log(`Finished flow ${flowStateId} \n`);
   }
 
   private async getContainerByName(name: string): Promise<Docker.ContainerInfo | undefined> {
