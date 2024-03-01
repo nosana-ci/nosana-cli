@@ -53,7 +53,7 @@ export type OpState = {
 };
 
 export abstract class BaseProvider {
-  abstract run(JobDefinition: JobDefinition, jobAddress: string): string;
+  abstract run(JobDefinition: JobDefinition, flowStateId?: string): string;
   abstract healthy(): Promise<Boolean>;
   abstract getFlowState(id: string): FlowState | undefined;
   abstract waitForFlowFinish(id: string): Promise<FlowState | undefined>;

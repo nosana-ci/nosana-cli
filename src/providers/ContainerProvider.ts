@@ -9,7 +9,7 @@ import {
 import ora from 'ora';
 import Docker from 'dockerode';
 import stream from 'stream';
-import { parse } from 'shell-quote';
+import { parse, quote } from 'shell-quote';
 import EventEmitter from 'events';
 import { JSONFileSyncPreset } from 'lowdb/node';
 
@@ -42,9 +42,10 @@ export class ContainerProvider implements BaseProvider {
       protocol: protocol as 'https' | 'http' | 'ssh' | undefined,
     });
   }
-  run(jobDefinition: JobDefinition, jobAddress: string): string {
-    this.runOps(jobDefinition, jobAddress);
-    return jobAddress;
+  run(jobDefinition: JobDefinition, flowStateId?: string): string {
+    const id = flowStateId || [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
+    this.runOps(jobDefinition, id);
+    return id;
   }
 
   /**
@@ -85,9 +86,10 @@ export class ContainerProvider implements BaseProvider {
       // run operations
       for (let i = 0; i < jobDefinition.ops.length; i++) {
         const op = jobDefinition.ops[i];
+        let state;
         try {
           if (op.type === 'container/run') {
-            await this.runOperation(
+            state = await this.runOperation(
               op as Operation<'container/run'>,
               flowStateId,
             );
@@ -98,6 +100,7 @@ export class ContainerProvider implements BaseProvider {
           this.db.write()
           break;
         }
+        if (state && state.status === 'failed') break;
       }
 
     } catch (error) {
@@ -217,7 +220,7 @@ export class ContainerProvider implements BaseProvider {
     opIndex: number
   ): Promise<{
     exitCode: number;
-    logs: [];
+    logs: OpState["logs"];
   }> {
     const parsedcmd = parse(cmd);
     const name = image + '-' + [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
@@ -274,8 +277,15 @@ export class ContainerProvider implements BaseProvider {
         };
       })
       .catch(error => {
-        chalk.red(console.log('Docker run failed', {error}));
-        return error;
+        // chalk.red(console.log('Docker run failed', {error}));
+        // TODO: document error codes
+        return {
+          exitCode: 1,
+          logs: [{
+            type: 'stderr',
+            log: error.message.toString(),
+          }] as OpState["logs"],
+        }
       });
   } 
 
@@ -393,12 +403,24 @@ export class ContainerProvider implements BaseProvider {
           }
         });
       } else if (!op.endTime && op.operation.type === 'container/run') {
-        await this.runOperation(
-          op.operation as Operation<'container/run'>,
-          flowId,
-        );
+        let state;
+        try {
+          if (op.providerFlowId && !op.endTime && op.operation.type === 'container/run') {
+            state = await this.runOperation(
+              op.operation as Operation<'container/run'>,
+              flowId,
+            );
+          }
+        } catch (error) {
+          console.log(chalk.red(error));
+          this.db.data.flowStates[flowIndex].ops[i].status = 'failed';
+          this.db.write()
+          break;
+        }
+        if (state && state.status === 'failed') break;
       }
     }
+
     this.finishFlow(flowId);
   }
 
