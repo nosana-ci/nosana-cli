@@ -42,8 +42,9 @@ export const getRun = async (node: string): Promise<Run | void> => {
 };
 
 export const isRunExpired = (run: Run, expireTime: number): Boolean => {
-  const now = Date.now() / 1000;
-  return run.account.time + expireTime > now;
+  //const now = Date.now() / 1000;
+  return false;
+  // return run.account.time + expireTime > now;
 };
 
 export const waitForRun = async (
