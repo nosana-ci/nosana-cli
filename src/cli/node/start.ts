@@ -289,7 +289,10 @@ export async function startNode(
           // TODO: wait for provider to get healthy or quit job
         }
         spinner.text = chalk.cyan('Running job');
-        const flowId: string = provider.run(jobDefinition);
+        const flowId: string = provider.run(
+          jobDefinition,
+          run.publicKey.toString(),
+        );
         result = await new Promise<FlowState>(async function (resolve, reject) {
           // check if expired every minute
           const expireInterval = setInterval(async () => {
