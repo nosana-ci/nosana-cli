@@ -9,7 +9,7 @@ import {
 import ora from 'ora';
 import Docker from 'dockerode';
 import stream from 'stream';
-import { parse, quote } from 'shell-quote';
+import { parse } from 'shell-quote';
 import EventEmitter from 'events';
 import { JSONFileSyncPreset } from 'lowdb/node';
 
@@ -406,10 +406,10 @@ export class ContainerProvider implements BaseProvider {
             this.db.data.flowStates[flowIndex].ops[i].status = containerInfo.State.ExitCode ? 'failed' : 'success';
             this.db.data.flowStates[flowIndex].ops[i].endTime = Math.floor(new Date(containerInfo.State.FinishedAt).getTime());
             this.db.write();
-
             container.remove();
           }
         });
+        if (this.db.data.flowStates[flowIndex].ops[i].status === 'failed') break;
       } else if (!op.endTime && op.operation.type === 'container/run') {
         let state;
         try {
@@ -444,6 +444,34 @@ export class ContainerProvider implements BaseProvider {
 
     this.eventEmitter.emit('flowFinished', flowIndex);
     console.log(`Finished flow ${flowStateId} \n`);
+  }
+
+  async clearFlow (flowStateId: string): Promise<void> {
+    const flowIndex = this.getFlowStateIndex(flowStateId);
+    const flow = this.db.data.flowStates[flowIndex];
+
+    for (let j = 0; j < flow.ops.length; j++) {
+      const op = flow.ops[j];
+      if (op.providerFlowId) {
+        try {
+          const c = await this.getContainerByName(op.providerFlowId);
+          if (c) {
+            const container = this.docker.getContainer(c.Id);
+            const containerInfo = await container.inspect();
+            if (containerInfo.State.Running) {
+              await container.stop();
+            }
+            await container.remove();
+          }
+        } catch (err: any) {
+          throw new Error(`couldnt stop container ${op.providerFlowId} - ${err}`);
+        }
+      }
+    }
+
+    this.db.data.flowStates.splice(flowIndex, 1);
+    this.db.write();
+    console.log('Cleared flow', flowStateId);
   }
 
   private async getContainerByName(name: string): Promise<Docker.ContainerInfo | undefined> {
