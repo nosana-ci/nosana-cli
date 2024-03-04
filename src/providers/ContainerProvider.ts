@@ -43,9 +43,30 @@ export class ContainerProvider implements BaseProvider {
     });
   }
   run(jobDefinition: JobDefinition, flowStateId?: string): string {
-    const id = flowStateId || [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
-    this.runOps(jobDefinition, id);
-    return id;
+    let flow;
+    
+    // first check if there are still unfinished flows
+    const run = this.db.data.flowStates.find((flow) => !flow.endTime);
+    if (run) {
+      console.log('Found running flow, continue', run.id);
+      this.continueFlow(run.id);
+      return run.id;
+    }
+
+    if (flowStateId) {
+      flow = this.getFlowState(flowStateId);
+    }
+
+    if (flow && (flow.status === 'running' || flow.status === null)) {
+      console.log('Continue flow', flow.id);
+      this.continueFlow(flow.id);
+      return flow.id;
+    } else {
+      const id = flowStateId || [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
+      console.log('Start new flow', id);
+      this.runOps(jobDefinition, id);
+      return id;
+    }
   }
 
   /**
@@ -193,16 +214,18 @@ export class ContainerProvider implements BaseProvider {
    * @returns 
    */
   private async pullImage(image: string) {
-    return await new Promise((resolve, reject) => {
-      this.docker.pull(image, (err: any, stream: any) => {
-        if (err) {
-          return reject(err);
+    return await new Promise((resolve, reject): any => this.docker.pull(image, (err: any, stream: any) => {
+      console.log('ERR', err);
+      this.docker.modem.followProgress(stream, onFinished)
+      function onFinished(err: any, output: any) {
+        console.log('onFinished output', output)
+        if (!err) {
+          resolve(true)
+          return
         }
-        this.docker.modem.followProgress(stream, (err: any, res: any) =>
-          err ? reject(err) : resolve(res),
-        );
-      });
-    });
+        reject(err)
+      }
+    }))
   }
 
   /**
@@ -231,11 +254,12 @@ export class ContainerProvider implements BaseProvider {
       }
     }
     const parsedcmd = parse(cmd);
+
+    await this.pullImage(image);
+
     const name = image + '-' + [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
     this.db.data.flowStates[flowStateIndex].ops[opIndex].providerFlowId = name;
     this.db.write();
-
-    await this.pullImage(image);
     
     const stdoutStream = new stream.PassThrough();
     const stderrStream = new stream.PassThrough();
@@ -285,7 +309,7 @@ export class ContainerProvider implements BaseProvider {
         };
       })
       .catch(error => {
-        // chalk.red(console.log('Docker run failed', {error}));
+        chalk.red(console.log('Docker run failed', {error}));
         // TODO: document error codes
         return {
           exitCode: 1,
@@ -335,7 +359,6 @@ export class ContainerProvider implements BaseProvider {
   - When job is running, is it possible to pick up logs from certain moment?
     */
   async continueFlow(flowId: string): Promise<void> {
-    console.log('flowId', flowId);
     const flow = this.getFlowState(flowId);
     const flowIndex = this.getFlowStateIndex(flowId);
     if (!flow) throw new Error(`Flow not found: ${flowId}`);
@@ -343,14 +366,14 @@ export class ContainerProvider implements BaseProvider {
 
     for (let i = 0; i < flow.ops.length; i++) {
       const op = flow.ops[i];
-
       if (op.providerFlowId && !op.endTime && op.operation.type === 'container/run') {
         await new Promise<void>(async (resolve, reject) => {
           const c = await this.getContainerByName(op.providerFlowId as string)
+          // TODO: create new container if not found
           if (!c) throw new Error(`Container not found ${op.providerFlowId}`);
           const container = this.docker.getContainer(c.Id);
           const containerInfo = await container.inspect();
-          
+
           if (containerInfo.State.Running) {
             const stdoutStream = new stream.PassThrough();
             const stderrStream = new stream.PassThrough(); 
@@ -375,7 +398,7 @@ export class ContainerProvider implements BaseProvider {
               this.db.write();
 
               stdoutStream.end();
-              container.remove();
+              // container.remove();
               resolve();
             });
           } else if (containerInfo.State.Status === 'exited') {
@@ -389,6 +412,8 @@ export class ContainerProvider implements BaseProvider {
 
             // parse output
             const output = this.demuxOutput(log);
+            this.db.data.flowStates[flowIndex].ops[i].logs = [];
+
             if (output.stdout !== '') {
               this.db.data.flowStates[flowIndex].ops[i].logs.push({
                 type: 'stdout',
@@ -407,18 +432,17 @@ export class ContainerProvider implements BaseProvider {
             this.db.data.flowStates[flowIndex].ops[i].endTime = Math.floor(new Date(containerInfo.State.FinishedAt).getTime());
             this.db.write();
             container.remove();
+            resolve();
           }
         });
         if (this.db.data.flowStates[flowIndex].ops[i].status === 'failed') break;
       } else if (!op.endTime && op.operation.type === 'container/run') {
         let state;
         try {
-          if (op.providerFlowId && !op.endTime && op.operation.type === 'container/run') {
-            state = await this.runOperation(
-              op.operation as Operation<'container/run'>,
-              flowId,
-            );
-          }
+          state = await this.runOperation(
+            op.operation as Operation<'container/run'>,
+            flowId,
+          );
         } catch (error) {
           console.log(chalk.red(error));
           this.db.data.flowStates[flowIndex].ops[i].status = 'failed';
