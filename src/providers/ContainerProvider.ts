@@ -214,7 +214,7 @@ export class ContainerProvider implements BaseProvider {
    * @returns 
    */
   private async executeCmd(
-    cmd: string,
+    cmds: string[],
     image: string,
     flowStateIndex: number,
     opIndex: number
@@ -222,6 +222,14 @@ export class ContainerProvider implements BaseProvider {
     exitCode: number;
     logs: OpState["logs"];
   }> {
+    let cmd = '';
+    for (let i = 0; i < cmds.length; i++) {
+      if (i === 0) {
+        cmd += cmds[i];
+      } else {
+        cmd += "'" + cmds[i] + "'";
+      }
+    }
     const parsedcmd = parse(cmd);
     const name = image + '-' + [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
     this.db.data.flowStates[flowStateIndex].ops[opIndex].providerFlowId = name;

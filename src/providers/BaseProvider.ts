@@ -19,7 +19,7 @@ export type Operation<T extends OperationType> = {
 export type OperationArgsMap = {
   'container/run': {
     image: string;
-    cmds: string;
+    cmds: string[];
   };
   'container/create-volume': {
     name: string;
