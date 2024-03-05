@@ -12,6 +12,7 @@ import stream from 'stream';
 import { parse } from 'shell-quote';
 import EventEmitter from 'events';
 import { JSONFileSyncPreset } from 'lowdb/node';
+import * as fs from 'fs'
 
 interface FlowStatesDb {
   flowStates: Array<FlowState>;
@@ -23,6 +24,7 @@ export class DockerProvider implements BaseProvider {
   eventEmitter: EventEmitter = new EventEmitter();
 
   constructor(podman: string) {
+    fs.writeFile('db/flows.json', JSON.stringify({ flowStates: [] }), { flag: 'wx' }, () => {});
     const podmanUri = new URL(
       podman.startsWith('http') || podman.startsWith('ssh')
         ? podman
@@ -44,9 +46,9 @@ export class DockerProvider implements BaseProvider {
   }
   /**
    * Main run
-   * @param jobDefinition 
-   * @param flowStateId 
-   * @returns 
+   * @param jobDefinition
+   * @param flowStateId
+   * @returns
    */
   run(jobDefinition: JobDefinition, flowStateId?: string): string {
     const id =
@@ -120,7 +122,10 @@ export class DockerProvider implements BaseProvider {
       this.db.write();
     }
     const flowStateIndex = this.getFlowStateIndex(flowStateId);
-    this.finishFlow(flowStateId, this.db.data.flowStates[flowStateIndex].error ? 'node-error' : undefined);
+    this.finishFlow(
+      flowStateId,
+      this.db.data.flowStates[flowStateIndex].error ? 'node-error' : undefined,
+    );
     spinner.stop();
   }
 
@@ -251,15 +256,15 @@ export class DockerProvider implements BaseProvider {
       await this.pullImage(image);
     } catch (error: any) {
       chalk.red(console.log('Cannot pull image', { error }));
-        return {
-          exitCode: 2,
-          logs: [
-            {
-              type: 'stderr',
-              log: error.message.toString(),
-            },
-          ] as OpState['logs'],
-        };
+      return {
+        exitCode: 2,
+        logs: [
+          {
+            type: 'stderr',
+            log: error.message.toString(),
+          },
+        ] as OpState['logs'],
+      };
     }
 
     const name =
@@ -361,10 +366,12 @@ export class DockerProvider implements BaseProvider {
 
   /*
   TODO:
-  - Add callback for new logs event
   - improve code, separate log stream function? setFlowState function?
-  - When job is running, is it possible to pick up logs from certain moment?
     */
+  /**
+   *
+   * @param flowId
+   */
   async continueFlow(flowId: string): Promise<void> {
     const flow = this.getFlowState(flowId);
     const flowIndex = this.getFlowStateIndex(flowId);
@@ -384,9 +391,8 @@ export class DockerProvider implements BaseProvider {
           if (!c) {
             // when node is shutted down before the container started, it won't find the container
             // run op again in new container
-            let state;
             try {
-              state = await this.runOperation(
+              await this.runOperation(
                 op.operation as Operation<'container/run'>,
                 flowId,
               );
@@ -421,7 +427,11 @@ export class DockerProvider implements BaseProvider {
                 stderr: true,
                 follow: true,
               });
-              container.modem.demuxStream(logStream, stdoutStream, stderrStream);
+              container.modem.demuxStream(
+                logStream,
+                stdoutStream,
+                stderrStream,
+              );
 
               logStream.on('end', async () => {
                 const endInfo = await container.inspect();
@@ -481,7 +491,8 @@ export class DockerProvider implements BaseProvider {
             }
           }
         });
-        if (this.db.data.flowStates[flowIndex].ops[i].status === 'failed') break;
+        if (this.db.data.flowStates[flowIndex].ops[i].status === 'failed')
+          break;
       } else if (!op.endTime && op.operation.type === 'container/run') {
         let state;
         try {
@@ -504,7 +515,7 @@ export class DockerProvider implements BaseProvider {
 
   /**
    * Finish a flow. Set status & emit end event
-   * @param flowStateId 
+   * @param flowStateId
    */
   private finishFlow(flowStateId: string, status?: string) {
     const flowIndex = this.getFlowStateIndex(flowStateId);
@@ -662,5 +673,5 @@ export class DockerProvider implements BaseProvider {
         }
       });
     });
-  };
+  }
 }
