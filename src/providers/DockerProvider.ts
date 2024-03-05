@@ -6,13 +6,12 @@ import {
   OpState,
   FlowState,
 } from './BaseProvider';
-import ora from 'ora';
 import Docker from 'dockerode';
 import stream from 'stream';
 import { parse } from 'shell-quote';
 import EventEmitter from 'events';
 import { JSONFileSyncPreset } from 'lowdb/node';
-import * as fs from 'fs'
+import * as fs from 'fs';
 
 interface FlowStatesDb {
   flowStates: Array<FlowState>;
@@ -24,7 +23,12 @@ export class DockerProvider implements BaseProvider {
   eventEmitter: EventEmitter = new EventEmitter();
 
   constructor(podman: string) {
-    fs.writeFile('db/flows.json', JSON.stringify({ flowStates: [] }), { flag: 'wx' }, () => {});
+    fs.writeFile(
+      'db/flows.json',
+      JSON.stringify({ flowStates: [] }),
+      { flag: 'wx' },
+      () => {},
+    );
     const podmanUri = new URL(
       podman.startsWith('http') || podman.startsWith('ssh')
         ? podman
@@ -67,7 +71,7 @@ export class DockerProvider implements BaseProvider {
     jobDefinition: JobDefinition,
     flowStateId: string,
   ): Promise<void> {
-    const spinner = ora(chalk.cyan(`Running job ${flowStateId} \n`)).start();
+    console.log(chalk.cyan(`Running job ${chalk.bold(flowStateId)}`));
     try {
       const state: FlowState = {
         id: flowStateId,
@@ -126,7 +130,6 @@ export class DockerProvider implements BaseProvider {
       flowStateId,
       this.db.data.flowStates[flowStateIndex].error ? 'node-error' : undefined,
     );
-    spinner.stop();
   }
 
   /**
@@ -539,7 +542,6 @@ export class DockerProvider implements BaseProvider {
   async clearFlow(flowStateId: string): Promise<void> {
     const flowIndex = this.getFlowStateIndex(flowStateId);
     const flow = this.db.data.flowStates[flowIndex];
-
     // for every op in flow, stop & remove container
     for (let j = 0; j < flow.ops.length; j++) {
       const op = flow.ops[j];
@@ -555,9 +557,7 @@ export class DockerProvider implements BaseProvider {
             await container.remove();
           }
         } catch (err: any) {
-          throw new Error(
-            `couldnt stop container ${op.providerFlowId} - ${err}`,
-          );
+          console.error(`couldnt stop container ${op.providerFlowId} - ${err}`);
         }
       }
     }

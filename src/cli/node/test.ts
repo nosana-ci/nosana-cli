@@ -5,8 +5,10 @@ import chalk from 'chalk';
 
 const jobDefinition: JobDefinition = {
   version: '0.1',
-  type: 'docker',
-  trigger: 'cli',
+  type: 'container',
+  meta: {
+    trigger: 'cli',
+  },
   ops: [
     {
       type: 'container/run',

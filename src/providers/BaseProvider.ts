@@ -7,10 +7,12 @@ import typia from 'typia';
 export type JobDefinition = {
   version: string;
   type: JobType;
-  trigger?: string;
+  meta?: {
+    trigger?: string;
+  };
   ops: Array<Operation<OperationType>>;
 };
-export type JobType = 'docker';
+export type JobType = 'container';
 
 export type Operation<T extends OperationType> = {
   type: OperationType;
@@ -34,7 +36,7 @@ export type OperationType = keyof OperationArgsMap;
 export type FlowState = {
   id: string;
   status: string;
-  error?: string; 
+  error?: string;
   provider: string;
   startTime: number;
   endTime: number | null;

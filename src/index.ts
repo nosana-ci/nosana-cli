@@ -3,7 +3,7 @@ import figlet from 'figlet';
 import { Command, Option } from 'commander';
 import { setSDK } from './services/sdk.js';
 import { run, getJob, download, upload } from './cli/job/index.js';
-import { view, startNode, startTestNode } from './cli/node/index.js';
+import { view, startNode, startTestNode, runJob } from './cli/node/index.js';
 const program = new Command();
 
 const VERSION = '0.2.0';
@@ -132,6 +132,24 @@ node
   )
   .description('Start Nosana Node')
   .action(startNode);
+node
+  .command('run')
+  .argument('<job-definition-file>', 'Job Definition File')
+  .addOption(
+    new Option(
+      '--provider <provider>',
+      'provider used to run the job definition',
+    )
+      .choices(['docker'])
+      .default('docker'),
+  )
+  .addOption(
+    new Option('--podman <URI>', 'Podman connection URI').default(
+      'http://localhost:8080',
+    ),
+  )
+  .description('Run Job Definition File')
+  .action(runJob);
 node
   .command('test')
   .argument('<market>', 'market address')
