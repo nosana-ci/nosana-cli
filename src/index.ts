@@ -3,7 +3,7 @@ import figlet from 'figlet';
 import { Command, Option } from 'commander';
 import { setSDK } from './services/sdk.js';
 import { run, getJob, download, upload } from './cli/job/index.js';
-import { view, startNode } from './cli/node/index.js';
+import { view, startNode, startTestNode } from './cli/node/index.js';
 const program = new Command();
 
 const VERSION = '0.2.0';
@@ -63,7 +63,7 @@ job
     ),
   )
   .addOption(new Option('--wasm <url>', 'wasm url to run'))
-  .addOption(new Option('--type <type>', 'type to run').default('container'))
+  .addOption(new Option('--type <type>', 'type to run').default('docker'))
   .addOption(
     new Option('-i, --image <image>', 'docker image to use').default('ubuntu'),
   )
@@ -117,8 +117,8 @@ node
   .argument('<market>', 'market address')
   .addOption(
     new Option('--provider <provider>', 'provider used to run the job')
-      .choices(['container'])
-      .default('container'),
+      .choices(['docker'])
+      .default('docker'),
   )
   .addOption(
     new Option('-w, --wallet <wallet>', 'path to wallet private key').default(
@@ -132,6 +132,26 @@ node
   )
   .description('Start Nosana Node')
   .action(startNode);
+node
+  .command('test')
+  .argument('<market>', 'market address')
+  .addOption(
+    new Option('--provider <provider>', 'provider used to run the job')
+      .choices(['docker'])
+      .default('docker'),
+  )
+  .addOption(
+    new Option('-w, --wallet <wallet>', 'path to wallet private key').default(
+      '~/.nosana/nosana_key.json',
+    ),
+  )
+  .addOption(
+    new Option('--podman <URI>', 'Podman connection URI').default(
+      'http://localhost:8080',
+    ),
+  )
+  .description('Start Nosana Test Node')
+  .action(startTestNode);
 
 async function startCLI() {
   try {

@@ -69,6 +69,7 @@ export class DockerProvider implements BaseProvider {
     try {
       const state: FlowState = {
         id: flowStateId,
+        provider: 'docker',
         status: 'running',
         startTime: Date.now(),
         endTime: null,
@@ -113,10 +114,13 @@ export class DockerProvider implements BaseProvider {
         }
         if (state && state.status === 'failed') break;
       }
-    } catch (error) {
-      console.log(chalk.red(`Couldn\'t start ops for flow ${flowStateId}`));
+    } catch (error: any) {
+      const flowStateIndex = this.getFlowStateIndex(flowStateId);
+      this.db.data.flowStates[flowStateIndex].error = error.toString();
+      this.db.write();
     }
-    this.finishFlow(flowStateId);
+    const flowStateIndex = this.getFlowStateIndex(flowStateId);
+    this.finishFlow(flowStateId, this.db.data.flowStates[flowStateIndex].error ? 'node-error' : undefined);
     spinner.stop();
   }
 
@@ -243,7 +247,20 @@ export class DockerProvider implements BaseProvider {
     }
     const parsedcmd = parse(cmd);
 
-    await this.pullImage(image);
+    try {
+      await this.pullImage(image);
+    } catch (error: any) {
+      chalk.red(console.log('Cannot pull image', { error }));
+        return {
+          exitCode: 2,
+          logs: [
+            {
+              type: 'stderr',
+              log: error.message.toString(),
+            },
+          ] as OpState['logs'],
+        };
+    }
 
     const name =
       image +
@@ -475,14 +492,18 @@ export class DockerProvider implements BaseProvider {
    * Finish a flow. Set status & emit end event
    * @param flowStateId 
    */
-  private finishFlow(flowStateId: string) {
+  private finishFlow(flowStateId: string, status?: string) {
     const flowIndex = this.getFlowStateIndex(flowStateId);
     const checkStatus = (op: OpState) => op.status === 'failed';
-    this.db.data.flowStates[flowIndex].status =
-      this.db.data.flowStates[flowIndex].ops.some(checkStatus) ||
-      this.db.data.flowStates[flowIndex].ops.every((op) => !op.status)
-        ? 'failed'
-        : 'success';
+    if (status) {
+      this.db.data.flowStates[flowIndex].status = status;
+    } else {
+      this.db.data.flowStates[flowIndex].status =
+        this.db.data.flowStates[flowIndex].ops.some(checkStatus) ||
+        this.db.data.flowStates[flowIndex].ops.every((op) => !op.status)
+          ? 'failed'
+          : 'success';
+    }
     this.db.data.flowStates[flowIndex].endTime = Date.now();
     this.db.write();
 
@@ -608,7 +629,7 @@ export class DockerProvider implements BaseProvider {
   }
 
   getFlowStates() {
-    return this.db.data.flowStates;
+    return this.db.data.flowStates.filter((f) => f.provider === 'docker');
   }
   private async getContainerByName(
     name: string,

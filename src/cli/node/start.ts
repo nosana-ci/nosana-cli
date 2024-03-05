@@ -31,7 +31,9 @@ let handlingSigInt: Boolean = false;
 process.on('SIGINT', async () => {
   if (!handlingSigInt) {
     handlingSigInt = true;
-    spinner.stop();
+    if (spinner) {
+      spinner.stop();
+    }
     console.log(chalk.yellow.bold('Shutting down..'));
     const nosana: Client = getSDK();
     if (run) {
@@ -78,7 +80,7 @@ export async function startNode(
   console.log('================================');
   let provider: BaseProvider;
   switch (options.provider) {
-    case 'container':
+    case 'docker':
     default:
       provider = new DockerProvider(options.podman);
       break;
@@ -98,7 +100,7 @@ export async function startNode(
     throw error;
   }
   switch (options.provider) {
-    case 'container':
+    case 'docker':
     default:
       spinner.succeed(
         chalk.green(`Podman is running on ${chalk.bold(options.podman)}`),
@@ -263,19 +265,31 @@ export async function startNode(
         throw e;
       }
     } else {
-      spinner = ora(chalk.cyan('Retrieving job definition')).start();
-      const jobDefinition: JobDefinition = await nosana.ipfs.retrieve(
-        job.ipfsJob,
-      );
+      let jobDefinition: JobDefinition | undefined;
+      let runningId: string | undefined;
+      const flows = provider.getFlowStates();
+      if (flows && flows.length > 0) {
+        const flow = flows.find((flow) => !flow.endTime);
+        if (flow) {
+          runningId = flow.id;
+        }
+      }
 
       let result: FlowState;
-      const validation: IValidation<JobDefinition> =
-        validateJobDefinition(jobDefinition);
-      if (!validation.success) {
+      let validation: IValidation<JobDefinition> | undefined;
+      if (!runningId) {
+        spinner = ora(chalk.cyan('Retrieving job definition')).start();
+        jobDefinition = await nosana.ipfs.retrieve(
+          job.ipfsJob,
+        );
+        validation = validateJobDefinition(jobDefinition);
+      }
+      if (validation && !validation.success) {
         spinner.fail('Job Definition validation failed');
         console.error(validation.errors);
         result = {
           id: run.publicKey.toString(),
+          provider: options.provider,
           startTime: Date.now(),
           endTime: Date.now(),
           ops: [],
@@ -289,10 +303,17 @@ export async function startNode(
           // TODO: wait for provider to get healthy or quit job
         }
         spinner.text = chalk.cyan('Running job');
-        const flowId: string = provider.run(
-          jobDefinition,
-          run.publicKey.toString(),
-        );
+
+        let flowId: string;
+        if (!runningId) {
+          flowId = provider.run(
+            jobDefinition as JobDefinition,
+            run.publicKey.toString(),
+          );
+        } else {
+          provider.continueFlow(runningId);
+          flowId = runningId;
+        }
         result = await new Promise<FlowState>(async function (resolve, reject) {
           // check if expired every minute
           const expireInterval = setInterval(async () => {

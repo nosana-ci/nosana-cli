@@ -28,7 +28,7 @@ export async function run(
     json_flow.state['nosana/trigger'] = 'cli';
   } else {
     switch (options.type) {
-      case 'container':
+      case 'docker':
         json_flow = {
           state: {
             'nosana/type': 'docker',
