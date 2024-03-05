@@ -341,8 +341,6 @@ export async function startNode(
                 spinner.fail(chalk.red('Could not quit job'));
                 reject(e);
               }
-              // TODO: add clearFlow to BaseProvider
-              // @ts-ignore
               provider.clearFlow(flowId);
               reject('Job expired');
             }

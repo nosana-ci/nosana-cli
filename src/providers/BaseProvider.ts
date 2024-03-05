@@ -65,6 +65,7 @@ export abstract class BaseProvider {
   abstract getFlowState(id: string): FlowState | undefined;
   abstract getFlowStates(): FlowState[] | undefined;
   abstract continueFlow(flowId: string): void;
+  abstract clearFlow(flowId: string): Promise<void>;
   abstract waitForFlowFinish(
     id: string,
     logCallback?: Function,
