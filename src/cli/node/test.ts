@@ -60,8 +60,6 @@ export async function startNode(
       flowId = id;
     }
 
-    console.log('flow id', flowId);
-
     const flowResult = await provider.waitForFlowFinish(
       flowId,
       (log: { log: string; opIndex: number }) => {
