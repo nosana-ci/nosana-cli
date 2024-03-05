@@ -1,10 +1,11 @@
 import { Command } from 'commander';
 import { DockerProvider } from '../../providers/DockerProvider';
 import { JobDefinition } from '../../providers/BaseProvider';
+import chalk from 'chalk';
 
 const jobDefinition: JobDefinition = {
   version: '0.1',
-  type: 'container',
+  type: 'docker',
   trigger: 'cli',
   ops: [
     {
@@ -44,25 +45,31 @@ export async function startNode(
 
   if (await provider.healthy()) {
     // first check if there are still unfinished flows
-    const flow = provider.getFlowStates().find((flow) => !flow.endTime);
-    let flowId;
-    if (flow) {
-      console.log('Found running flow, continue', flow.id);
-      provider.continueFlow(flow.id);
-      flowId = flow.id;
-    } else {
+    const flows = provider.getFlowStates();
+    let flowId: string | undefined;
+    if (flows && flows.length > 0) {
+      const flow = flows.find((f) => !f.endTime);
+      if (flow) {
+        console.log('Found running flow, continue', flow.id);
+        provider.continueFlow(flow.id);
+        flowId = flow.id;
+      }
+    }
+    if (!flowId) {
       const id: string = provider.run(jobDefinition);
       flowId = id;
     }
 
+    console.log('flow id', flowId);
+
     const flowResult = await provider.waitForFlowFinish(
       flowId,
       (log: { log: string; opIndex: number }) => {
-        console.log('new log', log);
+        // console.log('new log', log);
       },
     );
     console.log('flowResult: ', flowResult);
   } else {
-    console.log('abort');
+    console.log(chalk.red('provider not healthy'));
   }
 }

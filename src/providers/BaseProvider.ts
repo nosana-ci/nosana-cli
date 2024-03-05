@@ -10,7 +10,7 @@ export type JobDefinition = {
   trigger?: string;
   ops: Array<Operation<OperationType>>;
 };
-export type JobType = 'container';
+export type JobType = 'docker';
 
 export type Operation<T extends OperationType> = {
   type: OperationType;
@@ -34,6 +34,8 @@ export type OperationType = keyof OperationArgsMap;
 export type FlowState = {
   id: string;
   status: string;
+  error?: string; 
+  provider: string;
   startTime: number;
   endTime: number | null;
   errors?: Array<any>; // todo: error type based on status?
@@ -61,6 +63,8 @@ export abstract class BaseProvider {
   abstract run(JobDefinition: JobDefinition, flowStateId?: string): string;
   abstract healthy(): Promise<Boolean>;
   abstract getFlowState(id: string): FlowState | undefined;
+  abstract getFlowStates(): FlowState[] | undefined;
+  abstract continueFlow(flowId: string): void;
   abstract waitForFlowFinish(
     id: string,
     logCallback?: Function,
