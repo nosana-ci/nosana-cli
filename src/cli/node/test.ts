@@ -11,7 +11,7 @@ const jobDefinition: JobDefinition = {
       type: 'container/run',
       id: 'run-from-cli',
       args: {
-        cmds: "/bin/bash -c 'for i in {1..10}; do echo $i; sleep 1; done;'",
+        cmds: ["/bin/bash -c ", "for i in {1..10}; do echo $i; sleep 1; done;"],
         image: 'ubuntu',
       },
     },
@@ -19,8 +19,8 @@ const jobDefinition: JobDefinition = {
       type: 'container/run',
       id: 'run-from-cli-2',
       args: {
-        cmds: "/bin/bash -c 'echo Hello World'",
-        image: 'ubuntu',
+        cmds: ["/bin/bash -c ", "sleep 1;", "ls;", "sleep 1;"],
+        image: 'debian',
       },
     },
   ],
@@ -42,9 +42,19 @@ export async function startNode(
       provider = new ContainerProvider(options.podman);
   }
 
-  if (await provider.healthy()) { 
-    const flowId: string = provider.run(jobDefinition);
-    console.log('flowId: ', flowId);
+  if (await provider.healthy()) {
+    // first check if there are still unfinished flows
+    const flow = provider.getFlowStates().find((flow) => !flow.endTime);
+    let flowId;
+    if (flow) {
+      console.log('Found running flow, continue', flow.id);
+      provider.continueFlow(flow.id);
+      flowId = flow.id;
+    } else {
+      const id: string = provider.run(jobDefinition);
+      flowId = id;
+    }
+
     const flowResult = await provider.waitForFlowFinish(flowId, (log: {
       log: string;
       opIndex: number;
@@ -52,7 +62,6 @@ export async function startNode(
       console.log('new log', log);
     });
     console.log('flowResult: ', flowResult);
-    // await provider.continueFlow('lq0340nbudsm0wnk0i9qi4q8pw2hzsyr')
   } else {
     console.log('abort');
   }

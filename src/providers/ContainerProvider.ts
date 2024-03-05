@@ -43,30 +43,9 @@ export class ContainerProvider implements BaseProvider {
     });
   }
   run(jobDefinition: JobDefinition, flowStateId?: string): string {
-    let flow;
-    
-    // first check if there are still unfinished flows
-    const run = this.db.data.flowStates.find((flow) => !flow.endTime);
-    if (run) {
-      console.log('Found running flow, continue', run.id);
-      this.continueFlow(run.id);
-      return run.id;
-    }
-
-    if (flowStateId) {
-      flow = this.getFlowState(flowStateId);
-    }
-
-    if (flow && (flow.status === 'running' || flow.status === null)) {
-      console.log('Continue flow', flow.id);
-      this.continueFlow(flow.id);
-      return flow.id;
-    } else {
-      const id = flowStateId || [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
-      console.log('Start new flow', id);
-      this.runOps(jobDefinition, id);
-      return id;
-    }
+    const id = flowStateId || [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
+    this.runOps(jobDefinition, id);
+    return id;
   }
 
   /**
@@ -215,10 +194,8 @@ export class ContainerProvider implements BaseProvider {
    */
   private async pullImage(image: string) {
     return await new Promise((resolve, reject): any => this.docker.pull(image, (err: any, stream: any) => {
-      console.log('ERR', err);
       this.docker.modem.followProgress(stream, onFinished)
       function onFinished(err: any, output: any) {
-        console.log('onFinished output', output)
         if (!err) {
           resolve(true)
           return
@@ -474,6 +451,7 @@ export class ContainerProvider implements BaseProvider {
     const flowIndex = this.getFlowStateIndex(flowStateId);
     const flow = this.db.data.flowStates[flowIndex];
 
+    // for every op in flow, stop & remove container
     for (let j = 0; j < flow.ops.length; j++) {
       const op = flow.ops[j];
       if (op.providerFlowId) {
