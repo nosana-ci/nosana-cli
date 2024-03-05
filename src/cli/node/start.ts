@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import { Client, Job, Market, Run } from '@nosana/sdk';
 import { getSDK } from '../../services/sdk.js';
 import chalk from 'chalk';
-import ora from 'ora';
+import ora, { Ora, spinners } from 'ora';
 import { sleep, clearLine } from '../../generic/utils.js';
 import {
   getRun,
@@ -10,12 +10,54 @@ import {
   waitForRun,
   NodeStats,
   getNodeStats,
+  isRunExpired,
 } from '../../services/nodes.js';
 import { NotQueuedError } from '../../generic/errors.js';
 import { ContainerProvider } from '../../providers/ContainerProvider.js';
-import { BaseProvider, JobDefinition } from '../../providers/BaseProvider.js';
+import {
+  BaseProvider,
+  FlowState,
+  JobDefinition,
+  validateJobDefinition,
+} from '../../providers/BaseProvider.js';
 import { PublicKey } from '@solana/web3.js';
-import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes/index.js';
+import { EMPTY_ADDRESS } from '../../services/jobs.js';
+import { IValidation } from 'typia';
+
+let run: Run | void;
+let selectedMarket: Market | void;
+let spinner: Ora;
+let handlingSigInt: Boolean = false;
+process.on('SIGINT', async () => {
+  if (!handlingSigInt) {
+    handlingSigInt = true;
+    spinner.stop();
+    console.log(chalk.yellow.bold('Shutting down..'));
+    const nosana: Client = getSDK();
+    if (run) {
+      spinner = ora(chalk.cyan('Quiting running job')).start();
+      try {
+        const tx = await nosana.jobs.quit(run);
+        spinner.succeed(`Job successfully quit with tx ${tx}`);
+      } catch (e) {
+        spinner.fail(chalk.red('Could not quit job'));
+        throw e;
+      }
+    } else if (selectedMarket) {
+      spinner = ora(chalk.cyan('Quiting market queue')).start();
+      try {
+        // @ts-ignore
+        const tx = await nosana.jobs.stop(selectedMarket.address);
+        spinner.succeed(`Market queue successfully quit with tx ${tx}`);
+      } catch (e) {
+        spinner.fail(chalk.red('Could not quit market queue'));
+        throw e;
+      }
+    }
+    handlingSigInt = false;
+    process.exit();
+  }
+});
 
 export async function startNode(
   market: string,
@@ -27,6 +69,8 @@ export async function startNode(
   /*************
    * Bootstrap *
    *************/
+  run = undefined;
+  selectedMarket = undefined;
   const nosana: Client = getSDK();
   const node = nosana.solana.provider!.wallet.publicKey.toString();
 
@@ -44,7 +88,7 @@ export async function startNode(
    ****************/
   const stats: NodeStats = await getNodeStats(node);
   if (stats.sol < 0.001) throw new Error('not enough SOL');
-  let spinner = ora(chalk.cyan('Checking provider health')).start();
+  spinner = ora(chalk.cyan('Checking provider health')).start();
   try {
     await provider.healthy();
   } catch (error) {
@@ -82,21 +126,33 @@ export async function startNode(
     ),
   );
   let nft;
+  let marketAccount: Market;
   try {
     spinner = ora(chalk.cyan('Retrieving market requirements')).start();
-    const marketAccount = await nosana.jobs.getMarket(market);
-    // TODO: check for open market
-    spinner.text = chalk.cyan('Checking required access key');
-    nft = await nosana.solana.getNftFromCollection(
-      node,
-      marketAccount.nodeAccessKey.toString(),
-    );
-    if (nft) {
-      spinner.succeed(`Found access key ${nft}`);
+    marketAccount = await nosana.jobs.getMarket(market);
+    if (marketAccount.nodeAccessKey.toString() === EMPTY_ADDRESS.toString()) {
+      spinner.succeed(chalk.green(`Open market ${chalk.bold(market)}`));
     } else {
-      throw new Error(
-        chalk.red(`Could not find access key for market ${chalk.bold(market)}`),
+      spinner.text = chalk.cyan('Checking required access key');
+      nft = await nosana.solana.getNftFromCollection(
+        node,
+        marketAccount.nodeAccessKey.toString(),
       );
+      if (nft) {
+        spinner.succeed(
+          chalk.green(
+            `Found access key ${chalk.bold(nft)} for market ${chalk.bold(
+              market,
+            )}`,
+          ),
+        );
+      } else {
+        throw new Error(
+          chalk.red(
+            `Could not find access key for market ${chalk.bold(market)}`,
+          ),
+        );
+      }
     }
   } catch (e: any) {
     spinner.fail();
@@ -114,24 +170,34 @@ export async function startNode(
   spinner = ora(chalk.cyan('Checking existing runs')).start();
 
   // Check if we already have a run account
-  let run: Run | void = await getRun(node);
+  run = await getRun(node);
 
   if (!run) {
     spinner.text = chalk.cyan('Checking queued status');
-    let selectedMarket: Market | void = await checkQueued(node);
+    selectedMarket = await checkQueued(node);
 
-    if (!selectedMarket || selectedMarket.address.toString() === market) {
+    if (!selectedMarket || selectedMarket.address.toString() !== market) {
       if (selectedMarket) {
         // TODO: We are in the wrong market, leave queue
-        throw new Error('Queued in wrong market, please leave market first');
+        spinner.fail(
+          chalk.red(
+            `Queued in wrong market ${chalk.bold(
+              selectedMarket.address.toString(),
+            )}`,
+          ),
+        );
+        spinner = ora(chalk.cyan('Leaving market queue')).start();
+        const tx = await nosana.jobs.stop(selectedMarket.address);
       }
-      spinner.text = chalk.cyan('Joining market ');
+      spinner.text = chalk.cyan(`Joining market ${chalk.bold(market)}`);
       try {
-        const tx = await nosana.jobs.work(market);
-        console.log(chalk.greenBright(`Joined market tx ${tx}`));
+        const tx = await nosana.jobs.work(market, nft ? nft : undefined);
+        spinner.succeed(chalk.greenBright(`Joined market tx ${tx}`));
+        spinner = ora(chalk.cyan('Checking queued status')).start();
+        await sleep(2);
+        selectedMarket = await checkQueued(node);
       } catch (e) {
-        let error = '';
-        spinner.fail(chalk.red.bold('Could not join market:') + error);
+        spinner.fail(chalk.red.bold('Could not join market'));
         throw e;
       }
     }
@@ -178,24 +244,81 @@ export async function startNode(
     const jobAddress = run.account.job.toString();
     console.log(chalk.green('Claimed job ') + chalk.green.bold(jobAddress));
     const job: Job = await nosana.jobs.get(jobAddress);
-    if (job.market.toString() === market) {
-      throw new Error('TODO: stop job, wrong market');
-      // TODO: stop job
+    if (job.market.toString() !== market) {
+      console.log(1);
+      spinner = ora(chalk.red('Job has the wrong market, quiting job')).start();
+      const tx = await nosana.jobs.quit(run);
+      run = undefined;
+      spinner.info(`Job successfully quit with tx ${tx}`);
+    } else if (isRunExpired(run, marketAccount.jobTimeout * 1.5)) {
+      // Quit job when timeout * 1.5 is reached.
+      spinner = ora(chalk.red('Job is expired, quiting job')).start();
+      console.log(3);
+      try {
+        const tx = await nosana.jobs.quit(run);
+        run = undefined;
+        spinner.succeed(`Job successfully quit with tx ${tx}`);
+      } catch (e) {
+        spinner.fail(chalk.red('Could not quit job'));
+        throw e;
+      }
     } else {
       spinner = ora(chalk.cyan('Retrieving job definition')).start();
-      // TODO: check job expired
       const jobDefinition: JobDefinition = await nosana.ipfs.retrieve(
         job.ipfsJob,
       );
-      spinner.text = chalk.cyan('Checking provider health');
-      if (!(await provider.healthy())) {
-        throw new Error('provider not healthy');
-        // TODO: wait for provider to get healthy
+
+      let result: FlowState;
+      const validation: IValidation<JobDefinition> =
+        validateJobDefinition(jobDefinition);
+      if (!validation.success) {
+        spinner.fail('Job Definition validation failed');
+        console.error(validation.errors);
+        result = {
+          id: run.publicKey.toString(),
+          startTime: Date.now(),
+          endTime: Date.now(),
+          ops: [],
+          status: 'validation-error',
+          errors: validation.errors,
+        };
+      } else {
+        spinner.text = chalk.cyan('Checking provider health');
+        if (!(await provider.healthy())) {
+          throw new Error('provider not healthy');
+          // TODO: wait for provider to get healthy or quit job
+        }
+        spinner.text = chalk.cyan('Running job');
+        const flowId: string = provider.run(
+          jobDefinition,
+          run.publicKey.toString(),
+        );
+        result = await new Promise<FlowState>(async function (resolve, reject) {
+          // check if expired every minute
+          const expireInterval = setInterval(async () => {
+            if (isRunExpired(run!, marketAccount.jobExpiration * 1.5)) {
+              clearInterval(expireInterval);
+              // Quit job when timeout * 1.5 is reached.
+              spinner = ora(chalk.red('Job is expired, quiting job')).start();
+              try {
+                console.log(4);
+                const tx = await nosana.jobs.quit(run!);
+                spinner.succeed(`Job successfully quit with tx ${tx}`);
+                run = undefined;
+              } catch (e) {
+                spinner.fail(chalk.red('Could not quit job'));
+                reject(e);
+              }
+              // TODO: stop flowId
+              reject('Job expired');
+            }
+          }, 1000 * 60);
+          const flowResult = await provider.waitForFlowFinish(flowId);
+          clearInterval(expireInterval);
+          resolve(flowResult);
+        });
       }
-      spinner.text = chalk.cyan('Running job');
-      const flowId: string = provider.run(jobDefinition);
-      const flowResult = await provider.waitForFlowFinish(flowId);
-      const result = flowResult;
+
       spinner.text = chalk.cyan('Uploading results to IPFS');
       const ipfsResult = await nosana.ipfs.pin(result as object);
       const bytesArray = nosana.ipfs.IpfsHashToByteArray(ipfsResult);
@@ -205,13 +328,16 @@ export async function startNode(
         run.publicKey,
         job.market.toString(),
       );
+      run = undefined;
+      selectedMarket = undefined;
       spinner.succeed(chalk.green('Job finished ') + chalk.green.bold(tx));
-      for (let timer = 30; timer > 0; timer--) {
-        spinner.start(chalk.cyan(`Starting again in ${timer}`));
-        await sleep(1);
-      }
-      spinner.stop();
     }
   }
+  spinner.stop();
+  for (let timer = 30; timer > 0; timer--) {
+    spinner.start(chalk.cyan(`Starting again in ${timer}`));
+    await sleep(1);
+  }
+  spinner.stop();
   return startNode(market, options, cmd);
 }
