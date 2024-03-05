@@ -13,7 +13,7 @@ import {
   isRunExpired,
 } from '../../services/nodes.js';
 import { NotQueuedError } from '../../generic/errors.js';
-import { ContainerProvider } from '../../providers/ContainerProvider.js';
+import { DockerProvider } from '../../providers/DockerProvider.js';
 import {
   BaseProvider,
   FlowState,
@@ -80,7 +80,7 @@ export async function startNode(
   switch (options.provider) {
     case 'container':
     default:
-      provider = new ContainerProvider(options.podman);
+      provider = new DockerProvider(options.podman);
       break;
   }
   /****************

@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { ContainerProvider } from '../../providers/ContainerProvider';
+import { DockerProvider } from '../../providers/DockerProvider';
 import { JobDefinition } from '../../providers/BaseProvider';
 
 const jobDefinition: JobDefinition = {
@@ -33,13 +33,13 @@ export async function startNode(
   },
   cmd: Command | undefined,
 ) {
-  let provider: ContainerProvider;
+  let provider: DockerProvider;
   switch (options.provider) {
     case 'container':
-      provider = new ContainerProvider(options.podman);
+      provider = new DockerProvider(options.podman);
       break;
     default:
-      provider = new ContainerProvider(options.podman);
+      provider = new DockerProvider(options.podman);
   }
 
   if (await provider.healthy()) {

@@ -17,7 +17,7 @@ interface FlowStatesDb {
   flowStates: Array<FlowState>;
 }
 
-export class ContainerProvider implements BaseProvider {
+export class DockerProvider implements BaseProvider {
   docker: Docker;
   db = JSONFileSyncPreset<FlowStatesDb>('db/flows.json', { flowStates: [] });
   eventEmitter: EventEmitter = new EventEmitter();
@@ -115,7 +115,7 @@ export class ContainerProvider implements BaseProvider {
   }
 
   /**
-   * Check if ContainerProvider is healthy by checking if podman is running
+   * Check if DockerProvider is healthy by checking if podman is running
    * @returns boolean
    */
   async healthy(throwError: Boolean = true): Promise<Boolean> {
