@@ -11,7 +11,7 @@ const jobDefinition: JobDefinition = {
       type: 'container/run',
       id: 'run-from-cli',
       args: {
-        cmds: ["/bin/bash -c ", "for i in {1..10}; do echo $i; sleep 1; done;"],
+        cmds: ['/bin/bash -c ', 'for i in {1..10}; do echo $i; sleep 1; done;'],
         image: 'ubuntu',
       },
     },
@@ -19,7 +19,7 @@ const jobDefinition: JobDefinition = {
       type: 'container/run',
       id: 'run-from-cli-2',
       args: {
-        cmds: ["/bin/bash -c ", "sleep 1;", "ls;", "sleep 1;"],
+        cmds: ['/bin/bash -c ', 'sleep 1;', 'ls;', 'sleep 1;'],
         image: 'debian',
       },
     },
@@ -35,7 +35,7 @@ export async function startNode(
 ) {
   let provider: DockerProvider;
   switch (options.provider) {
-    case 'container':
+    case 'docker':
       provider = new DockerProvider(options.podman);
       break;
     default:
@@ -55,12 +55,12 @@ export async function startNode(
       flowId = id;
     }
 
-    const flowResult = await provider.waitForFlowFinish(flowId, (log: {
-      log: string;
-      opIndex: number;
-    }) => {
-      console.log('new log', log);
-    });
+    const flowResult = await provider.waitForFlowFinish(
+      flowId,
+      (log: { log: string; opIndex: number }) => {
+        console.log('new log', log);
+      },
+    );
     console.log('flowResult: ', flowResult);
   } else {
     console.log('abort');

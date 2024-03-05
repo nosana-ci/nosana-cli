@@ -78,7 +78,7 @@ export async function startNode(
   console.log('================================');
   let provider: BaseProvider;
   switch (options.provider) {
-    case 'container':
+    case 'docker':
     default:
       provider = new DockerProvider(options.podman);
       break;
@@ -98,7 +98,7 @@ export async function startNode(
     throw error;
   }
   switch (options.provider) {
-    case 'container':
+    case 'docker':
     default:
       spinner.succeed(
         chalk.green(`Podman is running on ${chalk.bold(options.podman)}`),
