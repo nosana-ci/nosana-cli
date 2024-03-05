@@ -12,6 +12,7 @@ import stream from 'stream';
 import { parse } from 'shell-quote';
 import EventEmitter from 'events';
 import { JSONFileSyncPreset } from 'lowdb/node';
+import * as fs from 'fs'
 
 interface FlowStatesDb {
   flowStates: Array<FlowState>;
@@ -23,6 +24,7 @@ export class DockerProvider implements BaseProvider {
   eventEmitter: EventEmitter = new EventEmitter();
 
   constructor(podman: string) {
+    fs.writeFile('db/flows.json', JSON.stringify({ flowStates: [] }), { flag: 'wx' }, () => {});
     const podmanUri = new URL(
       podman.startsWith('http') || podman.startsWith('ssh')
         ? podman
@@ -44,9 +46,9 @@ export class DockerProvider implements BaseProvider {
   }
   /**
    * Main run
-   * @param jobDefinition 
-   * @param flowStateId 
-   * @returns 
+   * @param jobDefinition
+   * @param flowStateId
+   * @returns
    */
   run(jobDefinition: JobDefinition, flowStateId?: string): string {
     const id =
@@ -120,7 +122,10 @@ export class DockerProvider implements BaseProvider {
       this.db.write();
     }
     const flowStateIndex = this.getFlowStateIndex(flowStateId);
-    this.finishFlow(flowStateId, this.db.data.flowStates[flowStateIndex].error ? 'node-error' : undefined);
+    this.finishFlow(
+      flowStateId,
+      this.db.data.flowStates[flowStateIndex].error ? 'node-error' : undefined,
+    );
     spinner.stop();
   }
 
@@ -251,15 +256,15 @@ export class DockerProvider implements BaseProvider {
       await this.pullImage(image);
     } catch (error: any) {
       chalk.red(console.log('Cannot pull image', { error }));
-        return {
-          exitCode: 2,
-          logs: [
-            {
-              type: 'stderr',
-              log: error.message.toString(),
-            },
-          ] as OpState['logs'],
-        };
+      return {
+        exitCode: 2,
+        logs: [
+          {
+            type: 'stderr',
+            log: error.message.toString(),
+          },
+        ] as OpState['logs'],
+      };
     }
 
     const name =
@@ -361,10 +366,12 @@ export class DockerProvider implements BaseProvider {
 
   /*
   TODO:
-  - Add callback for new logs event
   - improve code, separate log stream function? setFlowState function?
-  - When job is running, is it possible to pick up logs from certain moment?
     */
+  /**
+   *
+   * @param flowId
+   */
   async continueFlow(flowId: string): Promise<void> {
     const flow = this.getFlowState(flowId);
     const flowIndex = this.getFlowStateIndex(flowId);
@@ -381,89 +388,107 @@ export class DockerProvider implements BaseProvider {
       ) {
         await new Promise<void>(async (resolve, reject) => {
           const c = await this.getContainerByName(op.providerFlowId as string);
-          // TODO: create new container if not found
-          if (!c) throw new Error(`Container not found ${op.providerFlowId}`);
-          const container = this.docker.getContainer(c.Id);
-          const containerInfo = await container.inspect();
+          if (!c) {
+            // when node is shutted down before the container started, it won't find the container
+            // run op again in new container
+            try {
+              await this.runOperation(
+                op.operation as Operation<'container/run'>,
+                flowId,
+              );
+            } catch (error) {
+              console.log(chalk.red(error));
+              this.db.data.flowStates[flowIndex].ops[i].status = 'failed';
+              this.db.write();
+            }
+            resolve();
+          } else {
+            const container = this.docker.getContainer(c.Id);
+            const containerInfo = await container.inspect();
 
-          if (containerInfo.State.Running) {
-            const stdoutStream = new stream.PassThrough();
-            const stderrStream = new stream.PassThrough();
-            this.db.data.flowStates[flowIndex].ops[i].logs = [];
+            if (containerInfo.State.Running) {
+              const stdoutStream = new stream.PassThrough();
+              const stderrStream = new stream.PassThrough();
+              this.db.data.flowStates[flowIndex].ops[i].logs = [];
 
-            stdoutStream.on('data', (chunk) => {
-              this.eventEmitter.emit('newLog', {
-                type: 'stdout',
-                log: chunk.toString(),
+              stdoutStream.on('data', (chunk) => {
+                this.eventEmitter.emit('newLog', {
+                  type: 'stdout',
+                  log: chunk.toString(),
+                });
+                this.db.data.flowStates[flowIndex].ops[i].logs.push({
+                  type: 'stdout',
+                  log: chunk.toString(),
+                });
               });
-              this.db.data.flowStates[flowIndex].ops[i].logs.push({
-                type: 'stdout',
-                log: chunk.toString(),
+
+              const logStream = await container.logs({
+                stdout: true,
+                stderr: true,
+                follow: true,
               });
-            });
+              container.modem.demuxStream(
+                logStream,
+                stdoutStream,
+                stderrStream,
+              );
 
-            const logStream = await container.logs({
-              stdout: true,
-              stderr: true,
-              follow: true,
-            });
-            container.modem.demuxStream(logStream, stdoutStream, stderrStream);
+              logStream.on('end', async () => {
+                const endInfo = await container.inspect();
+                this.db.data.flowStates[flowIndex].ops[i].exitCode =
+                  endInfo.State.ExitCode;
+                this.db.data.flowStates[flowIndex].ops[i].status = endInfo.State
+                  .ExitCode
+                  ? 'failed'
+                  : 'success';
+                this.db.data.flowStates[flowIndex].ops[i].endTime = Math.floor(
+                  new Date(endInfo.State.FinishedAt).getTime(),
+                );
+                this.db.write();
 
-            logStream.on('end', async () => {
-              const endInfo = await container.inspect();
+                stdoutStream.end();
+                // container.remove();
+                resolve();
+              });
+            } else if (containerInfo.State.Status === 'exited') {
+              // Container is exited so job is finished
+              // Retrieve logs, parse output and update flowState db
+              const log = await container.logs({
+                follow: false,
+                stdout: true,
+                stderr: true,
+              });
+
+              // parse output
+              const output = this.demuxOutput(log);
+              this.db.data.flowStates[flowIndex].ops[i].logs = [];
+
+              if (output.stdout !== '') {
+                this.db.data.flowStates[flowIndex].ops[i].logs.push({
+                  type: 'stdout',
+                  log: output.stdout,
+                });
+              }
+              if (output.stderr !== '') {
+                this.db.data.flowStates[flowIndex].ops[i].logs.push({
+                  type: 'stderr',
+                  log: output.stderr,
+                });
+              }
+
               this.db.data.flowStates[flowIndex].ops[i].exitCode =
-                endInfo.State.ExitCode;
-              this.db.data.flowStates[flowIndex].ops[i].status = endInfo.State
-                .ExitCode
+                containerInfo.State.ExitCode;
+              this.db.data.flowStates[flowIndex].ops[i].status = containerInfo
+                .State.ExitCode
                 ? 'failed'
                 : 'success';
               this.db.data.flowStates[flowIndex].ops[i].endTime = Math.floor(
-                new Date(endInfo.State.FinishedAt).getTime(),
+                new Date(containerInfo.State.FinishedAt).getTime(),
               );
               this.db.write();
-
-              stdoutStream.end();
-              // container.remove();
+              container.remove();
               resolve();
-            });
-          } else if (containerInfo.State.Status === 'exited') {
-            // Container is exited so job is finished
-            // Retrieve logs, parse output and update flowState db
-            const log = await container.logs({
-              follow: false,
-              stdout: true,
-              stderr: true,
-            });
-
-            // parse output
-            const output = this.demuxOutput(log);
-            this.db.data.flowStates[flowIndex].ops[i].logs = [];
-
-            if (output.stdout !== '') {
-              this.db.data.flowStates[flowIndex].ops[i].logs.push({
-                type: 'stdout',
-                log: output.stdout,
-              });
             }
-            if (output.stderr !== '') {
-              this.db.data.flowStates[flowIndex].ops[i].logs.push({
-                type: 'stderr',
-                log: output.stderr,
-              });
-            }
-
-            this.db.data.flowStates[flowIndex].ops[i].exitCode =
-              containerInfo.State.ExitCode;
-            this.db.data.flowStates[flowIndex].ops[i].status = containerInfo
-              .State.ExitCode
-              ? 'failed'
-              : 'success';
-            this.db.data.flowStates[flowIndex].ops[i].endTime = Math.floor(
-              new Date(containerInfo.State.FinishedAt).getTime(),
-            );
-            this.db.write();
-            container.remove();
-            resolve();
           }
         });
         if (this.db.data.flowStates[flowIndex].ops[i].status === 'failed')
@@ -490,7 +515,7 @@ export class DockerProvider implements BaseProvider {
 
   /**
    * Finish a flow. Set status & emit end event
-   * @param flowStateId 
+   * @param flowStateId
    */
   private finishFlow(flowStateId: string, status?: string) {
     const flowIndex = this.getFlowStateIndex(flowStateId);
@@ -648,5 +673,5 @@ export class DockerProvider implements BaseProvider {
         }
       });
     });
-  };
+  }
 }
