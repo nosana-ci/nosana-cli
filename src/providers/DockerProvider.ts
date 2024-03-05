@@ -42,6 +42,12 @@ export class DockerProvider implements BaseProvider {
       protocol: protocol as 'https' | 'http' | 'ssh' | undefined,
     });
   }
+  /**
+   * Main run
+   * @param jobDefinition 
+   * @param flowStateId 
+   * @returns 
+   */
   run(jobDefinition: JobDefinition, flowStateId?: string): string {
     const id =
       flowStateId ||
@@ -129,18 +135,6 @@ export class DockerProvider implements BaseProvider {
       console.error(error);
       return false;
     }
-  }
-
-  getFlowState(id: string): FlowState | undefined {
-    return this.db.data.flowStates.find((o) => o.id === id);
-  }
-
-  getFlowStateIndex(id: string): number {
-    return this.db.data.flowStates.findIndex((o) => o.id === id);
-  }
-
-  getFlowStates() {
-    return this.db.data.flowStates;
   }
 
   /**
@@ -477,6 +471,10 @@ export class DockerProvider implements BaseProvider {
     this.finishFlow(flowId);
   }
 
+  /**
+   * Finish a flow. Set status & emit end event
+   * @param flowStateId 
+   */
   private finishFlow(flowStateId: string) {
     const flowIndex = this.getFlowStateIndex(flowStateId);
     const checkStatus = (op: OpState) => op.status === 'failed';
@@ -521,25 +519,6 @@ export class DockerProvider implements BaseProvider {
     this.db.data.flowStates.splice(flowIndex, 1);
     this.db.write();
     console.log('Cleared flow', flowStateId);
-  }
-
-  private async getContainerByName(
-    name: string,
-  ): Promise<Docker.ContainerInfo | undefined> {
-    const opts = {
-      limit: 1,
-      filters: `{"name": ["${name}"]}`,
-    };
-
-    return new Promise(async (resolve, reject) => {
-      await this.docker.listContainers(opts, (err, containers) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(containers && containers[0]);
-        }
-      });
-    });
   }
 
   /**
@@ -615,5 +594,38 @@ export class DockerProvider implements BaseProvider {
       stdout: Buffer.concat(stdouts).toString('utf8'),
       stderr: Buffer.concat(stderrs).toString('utf8'),
     };
+  };
+
+  /****************
+   *   Getters   *
+   ****************/
+  getFlowState(id: string): FlowState | undefined {
+    return this.db.data.flowStates.find((o) => o.id === id);
+  }
+
+  getFlowStateIndex(id: string): number {
+    return this.db.data.flowStates.findIndex((o) => o.id === id);
+  }
+
+  getFlowStates() {
+    return this.db.data.flowStates;
+  }
+  private async getContainerByName(
+    name: string,
+  ): Promise<Docker.ContainerInfo | undefined> {
+    const opts = {
+      limit: 1,
+      filters: `{"name": ["${name}"]}`,
+    };
+
+    return new Promise(async (resolve, reject) => {
+      await this.docker.listContainers(opts, (err, containers) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(containers && containers[0]);
+        }
+      });
+    });
   };
 }
