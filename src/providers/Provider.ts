@@ -60,11 +60,11 @@ export type OpState = {
 export const validateJobDefinition =
   typia.createValidateEquals<JobDefinition>();
 
-export abstract class BaseProvider {
+export abstract class Provider {
   abstract run(JobDefinition: JobDefinition, flowStateId?: string): Flow;
   abstract healthy(): Promise<Boolean>;
   abstract getFlow(id: string): Flow | undefined;
-  abstract continueFlow(flowId: string): void;
+  abstract continueFlow(flowId: string): Flow;
   abstract clearFlow(flowId: string): Promise<void>;
   abstract waitForFlowFinish(id: string, logCallback?: Function): Promise<Flow>;
 }

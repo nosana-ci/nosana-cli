@@ -1,6 +1,6 @@
 import { Command } from 'commander';
 import { DockerProvider } from '../../providers/DockerProvider';
-import { Flow, JobDefinition } from '../../providers/BaseProvider';
+import { Flow, JobDefinition } from '../../providers/Provider';
 import chalk from 'chalk';
 
 const jobDefinition: JobDefinition = {

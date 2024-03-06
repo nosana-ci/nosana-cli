@@ -1,18 +1,18 @@
 import { Command } from 'commander';
 import { DockerProvider } from '../../providers/DockerProvider';
 import {
-  BaseProvider,
+  Provider,
   Flow,
   JobDefinition,
   validateJobDefinition,
-} from '../../providers/BaseProvider';
+} from '../../providers/Provider';
 import chalk from 'chalk';
 import ora from 'ora';
 import fs from 'node:fs';
 import { IValidation } from 'typia';
 
 let flow: Flow | undefined;
-let provider: BaseProvider;
+let provider: Provider;
 
 export async function runJob(
   jobDefinitionFile: string,

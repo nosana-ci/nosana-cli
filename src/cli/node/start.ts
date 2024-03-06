@@ -15,16 +15,16 @@ import {
 import { NotQueuedError } from '../../generic/errors.js';
 import { DockerProvider } from '../../providers/DockerProvider.js';
 import {
-  BaseProvider,
+  Provider,
   Flow,
   JobDefinition,
   validateJobDefinition,
-} from '../../providers/BaseProvider.js';
+} from '../../providers/Provider.js';
 import { PublicKey } from '@solana/web3.js';
 import { EMPTY_ADDRESS } from '../../services/jobs.js';
 import { IValidation } from 'typia';
 
-let provider: BaseProvider;
+let provider: Provider;
 let run: Run | void;
 let selectedMarket: Market | void;
 let spinner: Ora;
