@@ -18,9 +18,11 @@ interface FlowStatesDb {
 }
 
 export class DockerProvider implements BaseProvider {
-  docker: Docker;
-  db = JSONFileSyncPreset<FlowStatesDb>('db/flows.json', { flowStates: [] });
-  eventEmitter: EventEmitter = new EventEmitter();
+  private docker: Docker;
+  private db = JSONFileSyncPreset<FlowStatesDb>('db/flows.json', {
+    flowStates: [],
+  });
+  private eventEmitter: EventEmitter = new EventEmitter();
 
   constructor(podman: string) {
     fs.writeFile(
@@ -54,7 +56,7 @@ export class DockerProvider implements BaseProvider {
    * @param flowStateId
    * @returns
    */
-  run(jobDefinition: JobDefinition, flowStateId?: string): string {
+  public run(jobDefinition: JobDefinition, flowStateId?: string): string {
     const id =
       flowStateId ||
       [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
@@ -67,7 +69,7 @@ export class DockerProvider implements BaseProvider {
    * @param jobDefinition
    * @param flowStateId
    */
-  async runOps(
+  private async runOps(
     jobDefinition: JobDefinition,
     flowStateId: string,
   ): Promise<void> {
@@ -136,7 +138,7 @@ export class DockerProvider implements BaseProvider {
    * Check if DockerProvider is healthy by checking if podman is running
    * @returns boolean
    */
-  async healthy(throwError: Boolean = true): Promise<Boolean> {
+  public async healthy(throwError: Boolean = true): Promise<Boolean> {
     try {
       await this.docker.ping();
       return true;
@@ -342,7 +344,7 @@ export class DockerProvider implements BaseProvider {
    * @param logCallback
    * @returns FlowState
    */
-  async waitForFlowFinish(
+  public async waitForFlowFinish(
     id: string,
     logCallback?: Function,
   ): Promise<FlowState> {
@@ -375,7 +377,7 @@ export class DockerProvider implements BaseProvider {
    *
    * @param flowId
    */
-  async continueFlow(flowId: string): Promise<void> {
+  public async continueFlow(flowId: string): Promise<void> {
     const flow = this.getFlowState(flowId);
     const flowIndex = this.getFlowStateIndex(flowId);
     if (!flow) throw new Error(`Flow not found: ${flowId}`);
@@ -539,7 +541,7 @@ export class DockerProvider implements BaseProvider {
     console.log(`Finished flow ${flowStateId} \n`);
   }
 
-  async clearFlow(flowStateId: string): Promise<void> {
+  public async clearFlow(flowStateId: string): Promise<void> {
     const flowIndex = this.getFlowStateIndex(flowStateId);
     const flow = this.db.data.flowStates[flowIndex];
     // for every op in flow, stop & remove container
@@ -645,15 +647,15 @@ export class DockerProvider implements BaseProvider {
   /****************
    *   Getters   *
    ****************/
-  getFlowState(id: string): FlowState | undefined {
+  public getFlowState(id: string): FlowState | undefined {
     return this.db.data.flowStates.find((o) => o.id === id);
   }
 
-  getFlowStateIndex(id: string): number {
+  private getFlowStateIndex(id: string): number {
     return this.db.data.flowStates.findIndex((o) => o.id === id);
   }
 
-  getFlowStates() {
+  public getFlowStates() {
     return this.db.data.flowStates.filter((f) => f.provider === 'docker');
   }
   private async getContainerByName(
