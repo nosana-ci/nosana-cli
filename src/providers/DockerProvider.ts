@@ -258,10 +258,6 @@ export class DockerProvider extends BasicProvider implements Provider {
   /****************
    *   Getters   *
    ****************/
-  public getFlow(id: string): Flow | undefined {
-    return this.db.data.flows[id];
-  }
-
   private async getContainerByName(
     name: string,
   ): Promise<Docker.ContainerInfo | undefined> {
