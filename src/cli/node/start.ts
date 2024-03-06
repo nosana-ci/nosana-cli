@@ -16,7 +16,7 @@ import { NotQueuedError } from '../../generic/errors.js';
 import { DockerProvider } from '../../providers/DockerProvider.js';
 import {
   BaseProvider,
-  FlowState,
+  Flow,
   JobDefinition,
   validateJobDefinition,
 } from '../../providers/BaseProvider.js';
@@ -327,8 +327,8 @@ export async function startNode(
           }
 
           let flowId = run.publicKey.toString();
-          let result: FlowState | undefined;
-          const existingFlow = provider.getFlowState(flowId);
+          let result: Partial<Flow> | undefined;
+          const existingFlow = provider.getFlow(flowId);
           if (!existingFlow) {
             spinner.text = chalk.cyan('Retrieving job definition');
             const jobDefinition: JobDefinition = await nosana.ipfs.retrieve(
@@ -340,17 +340,12 @@ export async function startNode(
               spinner.fail(chalk.red.bold('Job Definition validation failed'));
               console.error(validation.errors);
               result = {
-                id: run.publicKey.toString(),
-                provider: options.provider,
-                startTime: Date.now(),
-                endTime: Date.now(),
-                ops: [],
                 status: 'validation-error',
                 errors: validation.errors,
               };
             } else {
               // Create new flow
-              flowId = provider.run(jobDefinition, flowId);
+              flowId = provider.run(jobDefinition, flowId).id;
             }
           } else {
             provider.continueFlow(flowId);
@@ -360,10 +355,7 @@ export async function startNode(
             console.log('Running job');
             spinner.text = chalk.cyan('Running job');
             // TODO: move to node service (e.g. waitForResult)?
-            result = await new Promise<FlowState>(async function (
-              resolve,
-              reject,
-            ) {
+            result = await new Promise<Flow>(async function (resolve, reject) {
               // check if expired every minute
               const expireInterval = setInterval(async () => {
                 if (isRunExpired(run!, marketAccount.jobExpiration * 1.5)) {

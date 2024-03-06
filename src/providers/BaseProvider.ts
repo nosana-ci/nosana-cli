@@ -33,24 +33,23 @@ export type OperationType = keyof OperationArgsMap;
 /************************
  *   Job Result Types   *
  ************************/
-export type FlowState = {
+export type Flow = {
   id: string;
   status: string;
   error?: string;
-  provider: string;
   startTime: number;
   endTime: number | null;
+  jobDefinition: JobDefinition;
   errors?: Array<any>; // todo: error type based on status?
-  ops: Array<OpState>;
+  state: Array<OpState>;
 };
 
 export type OpState = {
-  id: string;
-  providerFlowId: string | null;
+  id: string | null;
   status: string | null;
-  startTime: number;
-  endTime: number;
-  exitCode: number;
+  startTime: number | null;
+  endTime: number | null;
+  exitCode: number | null;
   operation: Operation<OperationType>;
   logs: Array<{
     type: 'stdin' | 'stdout' | 'stderr';
@@ -62,14 +61,10 @@ export const validateJobDefinition =
   typia.createValidateEquals<JobDefinition>();
 
 export abstract class BaseProvider {
-  abstract run(JobDefinition: JobDefinition, flowStateId?: string): string;
+  abstract run(JobDefinition: JobDefinition, flowStateId?: string): Flow;
   abstract healthy(): Promise<Boolean>;
-  abstract getFlowState(id: string): FlowState | undefined;
-  abstract getFlowStates(): FlowState[] | undefined;
+  abstract getFlow(id: string): Flow | undefined;
   abstract continueFlow(flowId: string): void;
   abstract clearFlow(flowId: string): Promise<void>;
-  abstract waitForFlowFinish(
-    id: string,
-    logCallback?: Function,
-  ): Promise<FlowState>;
+  abstract waitForFlowFinish(id: string, logCallback?: Function): Promise<Flow>;
 }

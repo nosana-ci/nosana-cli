@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import { DockerProvider } from '../../providers/DockerProvider';
 import {
   BaseProvider,
-  FlowState,
+  Flow,
   JobDefinition,
   validateJobDefinition,
 } from '../../providers/BaseProvider';
@@ -11,7 +11,7 @@ import ora from 'ora';
 import fs from 'node:fs';
 import { IValidation } from 'typia';
 
-let flowId: string | undefined;
+let flow: Flow | undefined;
 let provider: BaseProvider;
 
 export async function runJob(
@@ -26,10 +26,10 @@ export async function runJob(
     if (!handlingSigInt) {
       handlingSigInt = true;
       console.log(chalk.yellow.bold('Shutting down..'));
-      if (flowId) {
-        const spinner = ora(chalk.cyan(`Stopping flow ${flowId}`)).start();
+      if (flow) {
+        const spinner = ora(chalk.cyan(`Stopping flow ${flow.id}`)).start();
         try {
-          await provider.clearFlow(flowId);
+          await provider.clearFlow(flow.id);
 
           spinner.succeed(chalk.green(`Flow succesfully stopped`));
         } catch (e) {
@@ -67,7 +67,7 @@ export async function runJob(
   const jobDefinition: JobDefinition = JSON.parse(
     fs.readFileSync(jobDefinitionFile, 'utf8'),
   );
-  let result: FlowState;
+  let result: Partial<Flow>;
 
   const validation: IValidation<JobDefinition> =
     validateJobDefinition(jobDefinition);
@@ -75,19 +75,14 @@ export async function runJob(
     spinner.fail(chalk.red.bold('Job Definition validation failed'));
     console.error(validation.errors);
     result = {
-      id: '',
-      provider: options.provider,
-      startTime: Date.now(),
-      endTime: Date.now(),
-      ops: [],
       status: 'validation-error',
       errors: validation.errors,
     };
   } else {
     // Create new flow
-    flowId = provider.run(jobDefinition);
+    flow = provider.run(jobDefinition);
     result = await provider.waitForFlowFinish(
-      flowId,
+      flow.id,
       (log: { log: string; opIndex: number }) => {
         console.log(log);
       },

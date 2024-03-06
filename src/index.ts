@@ -34,7 +34,7 @@ program
   .addOption(new Option('--rpc <url>', 'RPC node to use'))
   .addOption(
     new Option('--log <logLevel>', 'Log level')
-      .default('info')
+      .default('debug')
       .choices(['info', 'none', 'debug', 'trace']),
   );
 

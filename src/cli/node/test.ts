@@ -1,6 +1,6 @@
 import { Command } from 'commander';
 import { DockerProvider } from '../../providers/DockerProvider';
-import { JobDefinition } from '../../providers/BaseProvider';
+import { Flow, JobDefinition } from '../../providers/BaseProvider';
 import chalk from 'chalk';
 
 const jobDefinition: JobDefinition = {
@@ -46,21 +46,8 @@ export async function startNode(
   }
 
   if (await provider.healthy()) {
-    // first check if there are still unfinished flows
-    const flows = provider.getFlowStates();
-    let flowId: string | undefined;
-    if (flows && flows.length > 0) {
-      const flow = flows.find((f) => !f.endTime);
-      if (flow) {
-        console.log('Found running flow, continue', flow.id);
-        provider.continueFlow(flow.id);
-        flowId = flow.id;
-      }
-    }
-    if (!flowId) {
-      const id: string = provider.run(jobDefinition);
-      flowId = id;
-    }
+    const flow: Flow = provider.run(jobDefinition);
+    const flowId = flow.id;
 
     const flowResult = await provider.waitForFlowFinish(
       flowId,

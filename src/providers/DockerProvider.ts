@@ -4,33 +4,28 @@ import {
   Operation,
   BaseProvider,
   OpState,
-  FlowState,
+  Flow,
 } from './BaseProvider';
 import Docker from 'dockerode';
 import stream from 'stream';
 import { parse } from 'shell-quote';
 import EventEmitter from 'events';
 import { JSONFileSyncPreset } from 'lowdb/node';
-import * as fs from 'fs';
+import { LowSync } from 'lowdb/lib';
 
-interface FlowStatesDb {
-  flowStates: Array<FlowState>;
-}
+type FlowsDb = {
+  flows: { [key: string]: Flow };
+};
 
 export class DockerProvider implements BaseProvider {
   private docker: Docker;
-  private db = JSONFileSyncPreset<FlowStatesDb>('db/flows.json', {
-    flowStates: [],
-  });
+  private db: LowSync<FlowsDb>;
   private eventEmitter: EventEmitter = new EventEmitter();
 
   constructor(podman: string) {
-    fs.writeFile(
-      'db/flows.json',
-      JSON.stringify({ flowStates: [] }),
-      { flag: 'wx' },
-      () => {},
-    );
+    this.db = JSONFileSyncPreset<FlowsDb>('db/flows.json', {
+      flows: {},
+    });
     const podmanUri = new URL(
       podman.startsWith('http') || podman.startsWith('ssh')
         ? podman
@@ -56,12 +51,44 @@ export class DockerProvider implements BaseProvider {
    * @param flowStateId
    * @returns
    */
-  public run(jobDefinition: JobDefinition, flowStateId?: string): string {
+  public run(jobDefinition: JobDefinition, flowId?: string): Flow {
     const id =
-      flowStateId ||
+      flowId ||
       [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
-    this.runOps(jobDefinition, id);
-    return id;
+    if (this.db.data.flows[id]) {
+      throw new Error(
+        `flow ${flowId} already exists, please continue that flow`,
+      );
+    }
+
+    // Create a new flow
+    const flow: Flow = {
+      id,
+      status: 'running',
+      jobDefinition,
+      startTime: Date.now(),
+      endTime: null,
+      state: [],
+    };
+    // Add ops from job definition to flow
+    for (let i = 0; i < jobDefinition.ops.length; i++) {
+      const op = jobDefinition.ops[i];
+      const opState: OpState = {
+        id: null,
+        startTime: null,
+        endTime: null,
+        status: 'pending',
+        exitCode: null,
+        operation: op,
+        logs: [],
+      };
+      flow.state.push(opState);
+    }
+    this.db.update(({ flows }) => (flows[id] = flow));
+
+    // Start running this flow
+    this.runFlow(id);
+    return flow;
   }
 
   /**
@@ -69,69 +96,41 @@ export class DockerProvider implements BaseProvider {
    * @param jobDefinition
    * @param flowStateId
    */
-  private async runOps(
-    jobDefinition: JobDefinition,
-    flowStateId: string,
-  ): Promise<void> {
-    console.log(chalk.cyan(`Running job ${chalk.bold(flowStateId)}`));
+  private async runFlow(flowId: string): Promise<void> {
+    console.log(chalk.cyan(`Running flow ${chalk.bold(flowId)}`));
+    const flow = this.db.data.flows[flowId];
     try {
-      const state: FlowState = {
-        id: flowStateId,
-        provider: 'docker',
-        status: 'running',
-        startTime: Date.now(),
-        endTime: null,
-        ops: [],
-      };
-      this.db.update(({ flowStates }) => flowStates.push(state));
-      const flowStateIndex = this.getFlowStateIndex(flowStateId);
-
-      // add ops to flowstate
-      for (let i = 0; i < jobDefinition.ops.length; i++) {
-        const op = jobDefinition.ops[i];
-        const opState = {
-          id: op.id,
-          providerFlowId: null,
-          startTime: 0,
-          endTime: 0,
-          status: null,
-          exitCode: 0,
-          operation: op,
-          logs: [] as OpState['logs'],
-        };
-        this.db.data.flowStates[flowStateIndex].ops.push(opState);
-        this.db.write();
-      }
-
       // run operations
-      for (let i = 0; i < jobDefinition.ops.length; i++) {
-        const op = jobDefinition.ops[i];
-        let state;
+      for (let i = 0; i < flow.jobDefinition.ops.length; i++) {
+        const op = flow.jobDefinition.ops[i];
+        let opState: OpState;
         try {
-          if (op.type === 'container/run') {
-            state = await this.runOperation(
-              op as Operation<'container/run'>,
-              flowStateId,
-            );
+          switch (op.type) {
+            case 'container/run':
+              opState = await this.runOperation(
+                op as Operation<'container/run'>,
+                flowId,
+              );
+              break;
+
+            default:
+              throw new Error(`no support for operation type ${op.type}`);
           }
         } catch (error) {
-          console.log(chalk.red(error));
-          this.db.data.flowStates[flowStateIndex].ops[i].status = 'failed';
+          console.error(chalk.red(error));
+          this.db.data.flows[flowId].state.find(
+            (opState) => opState.id === op.id,
+          )!.status = 'failed';
           this.db.write();
           break;
         }
-        if (state && state.status === 'failed') break;
+        if (opState && opState.status === 'failed') break;
       }
     } catch (error: any) {
-      const flowStateIndex = this.getFlowStateIndex(flowStateId);
-      this.db.data.flowStates[flowStateIndex].error = error.toString();
+      this.db.data.flows[flowId].error = error.toString();
       this.db.write();
     }
-    const flowStateIndex = this.getFlowStateIndex(flowStateId);
-    this.finishFlow(
-      flowStateId,
-      this.db.data.flowStates[flowStateIndex].error ? 'node-error' : undefined,
-    );
+    this.finishFlow(flowId, flow.error ? 'node-error' : undefined);
   }
 
   /**
@@ -158,56 +157,51 @@ export class DockerProvider implements BaseProvider {
    */
   private async runOperation(
     op: Operation<'container/run'>,
-    flowStateId: string,
+    flowId: string,
   ): Promise<OpState> {
     const startTime = Date.now();
     let run: { logs: OpState['logs']; exitCode: number } = {
       logs: [],
       exitCode: 0,
     };
-    let exitCode = 0;
 
-    const state = {
-      id: op.id,
+    const updateOpState: Partial<OpState> = {
       startTime,
-      endTime: 0,
+      endTime: null,
       status: 'running',
-      exitCode,
-      logs: [] as OpState['logs'],
     };
 
-    const flowStateIndex = this.getFlowStateIndex(flowStateId);
-    const opIndex = this.db.data.flowStates[flowStateIndex].ops.findIndex(
-      (o) => op.id === o.id,
+    const opStateIndex = this.db.data.flows[flowId].state.findIndex(
+      (opState) => op.id === opState.operation.id,
     );
-    this.db.data.flowStates[flowStateIndex].ops[opIndex] = {
-      ...this.db.data.flowStates[flowStateIndex].ops[opIndex],
-      ...state,
+    this.db.data.flows[flowId].state[opStateIndex] = {
+      ...this.db.data.flows[flowId].state[opStateIndex],
+      ...updateOpState,
     };
     this.db.write();
 
     try {
       const cmd = op.args?.cmds;
-      run = await this.executeCmd(cmd, op.args.image, flowStateIndex, opIndex);
-      state.status = run.exitCode ? 'failed' : 'success';
-      state.exitCode = run.exitCode || state.exitCode;
+      run = await this.executeCmd(cmd, op.args.image, flowId, opStateIndex);
+      updateOpState.status = run.exitCode ? 'failed' : 'success';
+      updateOpState.exitCode = run.exitCode;
     } catch (e: any) {
-      state.status = 'failed';
+      updateOpState.status = 'failed';
       run.logs.push({
         type: 'stderr' as const,
         log: e.toString(),
       });
     }
 
-    state.logs = run?.logs;
-    state.endTime = Date.now();
-    this.db.data.flowStates[flowStateIndex].ops[opIndex] = {
-      ...this.db.data.flowStates[flowStateIndex].ops[opIndex],
-      ...state,
+    updateOpState.logs = run?.logs;
+    updateOpState.endTime = Date.now();
+    this.db.data.flows[flowId].state[opStateIndex] = {
+      ...this.db.data.flows[flowId].state[opStateIndex],
+      ...updateOpState,
     };
     this.db.write();
 
-    return this.db.data.flowStates[flowStateIndex].ops[opIndex];
+    return this.db.data.flows[flowId].state[opStateIndex];
   }
 
   /**
@@ -241,8 +235,8 @@ export class DockerProvider implements BaseProvider {
   private async executeCmd(
     cmds: string[],
     image: string,
-    flowStateIndex: number,
-    opIndex: number,
+    flowId: string,
+    opStateIndex: number,
   ): Promise<{
     exitCode: number;
     logs: OpState['logs'];
@@ -276,15 +270,15 @@ export class DockerProvider implements BaseProvider {
       image +
       '-' +
       [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
-    this.db.data.flowStates[flowStateIndex].ops[opIndex].providerFlowId = name;
+    this.db.data.flows[flowId].state[opStateIndex].id = name;
     this.db.write();
 
     const stdoutStream = new stream.PassThrough();
     const stderrStream = new stream.PassThrough();
 
     stdoutStream.on('data', (chunk) => {
-      this.eventEmitter.emit('newLog', { opIndex, log: chunk.toString() });
-      this.db.data.flowStates[flowStateIndex].ops[opIndex].logs.push({
+      this.eventEmitter.emit('newLog', { opStateIndex, log: chunk.toString() });
+      this.db.data.flows[flowId].state[opStateIndex].logs.push({
         type: 'stdout',
         log: chunk.toString(),
       });
@@ -310,7 +304,7 @@ export class DockerProvider implements BaseProvider {
         const stderr = stderrStream.read() as Buffer | undefined;
         container.remove();
 
-        const logs = this.db.data.flowStates[flowStateIndex].ops[opIndex].logs;
+        const logs = this.db.data.flows[flowId].state[opStateIndex].logs;
         if (stderr) {
           logs.push({
             type: 'stderr',
@@ -345,14 +339,14 @@ export class DockerProvider implements BaseProvider {
    * @returns FlowState
    */
   public async waitForFlowFinish(
-    id: string,
+    flowId: string,
     logCallback?: Function,
-  ): Promise<FlowState> {
+  ): Promise<Flow> {
     return await new Promise((resolve, reject) => {
-      const flowStateIndex = this.getFlowStateIndex(id);
-      if (flowStateIndex === -1) reject('Flow state not found');
-      if (this.db.data.flowStates[flowStateIndex].endTime) {
-        resolve(this.db.data.flowStates[flowStateIndex]);
+      const flow = this.db.data.flows[flowId];
+      if (!flow) reject('Flow not found');
+      if (this.db.data.flows[flowId].endTime) {
+        resolve(this.db.data.flows[flowId]);
       }
 
       if (logCallback) {
@@ -364,7 +358,7 @@ export class DockerProvider implements BaseProvider {
       this.eventEmitter.on('flowFinished', (flowId) => {
         this.eventEmitter.removeAllListeners('flowFinished');
         this.eventEmitter.removeAllListeners('newLog');
-        resolve(this.db.data.flowStates[flowStateIndex]);
+        resolve(this.db.data.flows[flowId]);
       });
     });
   }
@@ -378,32 +372,31 @@ export class DockerProvider implements BaseProvider {
    * @param flowId
    */
   public async continueFlow(flowId: string): Promise<void> {
-    const flow = this.getFlowState(flowId);
-    const flowIndex = this.getFlowStateIndex(flowId);
+    const flow = this.db.data.flows[flowId];
     if (!flow) throw new Error(`Flow not found: ${flowId}`);
     if (flow && flow.endTime)
       throw new Error(`Flow already finished at` + flow.endTime.toString());
 
-    for (let i = 0; i < flow.ops.length; i++) {
-      const op = flow.ops[i];
+    for (let i = 0; i < flow.state.length; i++) {
+      const opState = flow.state[i];
       if (
-        op.providerFlowId &&
-        !op.endTime &&
-        op.operation.type === 'container/run'
+        opState.id &&
+        !opState.endTime &&
+        opState.operation.type === 'container/run'
       ) {
         await new Promise<void>(async (resolve, reject) => {
-          const c = await this.getContainerByName(op.providerFlowId as string);
+          const c = await this.getContainerByName(opState.id as string);
           if (!c) {
             // when node is shutted down before the container started, it won't find the container
             // run op again in new container
             try {
               await this.runOperation(
-                op.operation as Operation<'container/run'>,
+                opState.operation as Operation<'container/run'>,
                 flowId,
               );
             } catch (error) {
               console.log(chalk.red(error));
-              this.db.data.flowStates[flowIndex].ops[i].status = 'failed';
+              this.db.data.flows[flowId].state[i].status = 'failed';
               this.db.write();
             }
             resolve();
@@ -414,14 +407,14 @@ export class DockerProvider implements BaseProvider {
             if (containerInfo.State.Running) {
               const stdoutStream = new stream.PassThrough();
               const stderrStream = new stream.PassThrough();
-              this.db.data.flowStates[flowIndex].ops[i].logs = [];
+              this.db.data.flows[flowId].state[i].logs = [];
 
               stdoutStream.on('data', (chunk) => {
                 this.eventEmitter.emit('newLog', {
                   type: 'stdout',
                   log: chunk.toString(),
                 });
-                this.db.data.flowStates[flowIndex].ops[i].logs.push({
+                this.db.data.flows[flowId].state[i].logs.push({
                   type: 'stdout',
                   log: chunk.toString(),
                 });
@@ -440,13 +433,13 @@ export class DockerProvider implements BaseProvider {
 
               logStream.on('end', async () => {
                 const endInfo = await container.inspect();
-                this.db.data.flowStates[flowIndex].ops[i].exitCode =
+                this.db.data.flows[flowId].state[i].exitCode =
                   endInfo.State.ExitCode;
-                this.db.data.flowStates[flowIndex].ops[i].status = endInfo.State
+                this.db.data.flows[flowId].state[i].status = endInfo.State
                   .ExitCode
                   ? 'failed'
                   : 'success';
-                this.db.data.flowStates[flowIndex].ops[i].endTime = Math.floor(
+                this.db.data.flows[flowId].state[i].endTime = Math.floor(
                   new Date(endInfo.State.FinishedAt).getTime(),
                 );
                 this.db.write();
@@ -466,28 +459,28 @@ export class DockerProvider implements BaseProvider {
 
               // parse output
               const output = this.demuxOutput(log);
-              this.db.data.flowStates[flowIndex].ops[i].logs = [];
+              this.db.data.flows[flowId].state[i].logs = [];
 
               if (output.stdout !== '') {
-                this.db.data.flowStates[flowIndex].ops[i].logs.push({
+                this.db.data.flows[flowId].state[i].logs.push({
                   type: 'stdout',
                   log: output.stdout,
                 });
               }
               if (output.stderr !== '') {
-                this.db.data.flowStates[flowIndex].ops[i].logs.push({
+                this.db.data.flows[flowId].state[i].logs.push({
                   type: 'stderr',
                   log: output.stderr,
                 });
               }
 
-              this.db.data.flowStates[flowIndex].ops[i].exitCode =
+              this.db.data.flows[flowId].state[i].exitCode =
                 containerInfo.State.ExitCode;
-              this.db.data.flowStates[flowIndex].ops[i].status = containerInfo
-                .State.ExitCode
+              this.db.data.flows[flowId].state[i].status = containerInfo.State
+                .ExitCode
                 ? 'failed'
                 : 'success';
-              this.db.data.flowStates[flowIndex].ops[i].endTime = Math.floor(
+              this.db.data.flows[flowId].state[i].endTime = Math.floor(
                 new Date(containerInfo.State.FinishedAt).getTime(),
               );
               this.db.write();
@@ -496,18 +489,20 @@ export class DockerProvider implements BaseProvider {
             }
           }
         });
-        if (this.db.data.flowStates[flowIndex].ops[i].status === 'failed')
-          break;
-      } else if (!op.endTime && op.operation.type === 'container/run') {
+        if (this.db.data.flows[flowId].state[i].status === 'failed') break;
+      } else if (
+        !opState.endTime &&
+        opState.operation.type === 'container/run'
+      ) {
         let state;
         try {
           state = await this.runOperation(
-            op.operation as Operation<'container/run'>,
+            opState.operation as Operation<'container/run'>,
             flowId,
           );
         } catch (error) {
           console.log(chalk.red(error));
-          this.db.data.flowStates[flowIndex].ops[i].status = 'failed';
+          this.db.data.flows[flowId].state[i].status = 'failed';
           this.db.write();
           break;
         }
@@ -522,34 +517,32 @@ export class DockerProvider implements BaseProvider {
    * Finish a flow. Set status & emit end event
    * @param flowStateId
    */
-  private finishFlow(flowStateId: string, status?: string) {
-    const flowIndex = this.getFlowStateIndex(flowStateId);
+  private finishFlow(flowId: string, status?: string) {
     const checkStatus = (op: OpState) => op.status === 'failed';
     if (status) {
-      this.db.data.flowStates[flowIndex].status = status;
+      this.db.data.flows[flowId].status = status;
     } else {
-      this.db.data.flowStates[flowIndex].status =
-        this.db.data.flowStates[flowIndex].ops.some(checkStatus) ||
-        this.db.data.flowStates[flowIndex].ops.every((op) => !op.status)
+      this.db.data.flows[flowId].status =
+        this.db.data.flows[flowId].state.some(checkStatus) ||
+        this.db.data.flows[flowId].state.every((opState) => !opState.status)
           ? 'failed'
           : 'success';
     }
-    this.db.data.flowStates[flowIndex].endTime = Date.now();
+    this.db.data.flows[flowId].endTime = Date.now();
     this.db.write();
 
-    this.eventEmitter.emit('flowFinished', flowIndex);
-    console.log(`Finished flow ${flowStateId} \n`);
+    this.eventEmitter.emit('flowFinished', flowId);
+    console.log(`Finished flow ${flowId} \n`);
   }
 
-  public async clearFlow(flowStateId: string): Promise<void> {
-    const flowIndex = this.getFlowStateIndex(flowStateId);
-    const flow = this.db.data.flowStates[flowIndex];
+  public async clearFlow(flowId: string): Promise<void> {
+    const flow = this.db.data.flows[flowId];
     // for every op in flow, stop & remove container
-    for (let j = 0; j < flow.ops.length; j++) {
-      const op = flow.ops[j];
-      if (op.providerFlowId) {
+    for (let j = 0; j < flow.state.length; j++) {
+      const op = flow.state[j];
+      if (op.id) {
         try {
-          const c = await this.getContainerByName(op.providerFlowId);
+          const c = await this.getContainerByName(op.id);
           if (c) {
             const container = this.docker.getContainer(c.Id);
             const containerInfo = await container.inspect();
@@ -559,14 +552,14 @@ export class DockerProvider implements BaseProvider {
             await container.remove();
           }
         } catch (err: any) {
-          console.error(`couldnt stop container ${op.providerFlowId} - ${err}`);
+          console.error(`couldnt stop container ${op.id} - ${err}`);
         }
       }
     }
 
-    this.db.data.flowStates.splice(flowIndex, 1);
+    delete this.db.data.flows[flowId];
     this.db.write();
-    console.log('Cleared flow', flowStateId);
+    console.log('Cleared flow', flowId);
   }
 
   /**
@@ -647,17 +640,10 @@ export class DockerProvider implements BaseProvider {
   /****************
    *   Getters   *
    ****************/
-  public getFlowState(id: string): FlowState | undefined {
-    return this.db.data.flowStates.find((o) => o.id === id);
+  public getFlow(id: string): Flow | undefined {
+    return this.db.data.flows[id];
   }
 
-  private getFlowStateIndex(id: string): number {
-    return this.db.data.flowStates.findIndex((o) => o.id === id);
-  }
-
-  public getFlowStates() {
-    return this.db.data.flowStates.filter((f) => f.provider === 'docker');
-  }
   private async getContainerByName(
     name: string,
   ): Promise<Docker.ContainerInfo | undefined> {
