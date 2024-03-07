@@ -66,11 +66,11 @@ export class BasicProvider implements Provider {
   public continueFlow(flowId: string): Flow {
     const flow: Flow = this.db.data.flows[flowId];
 
-    if (flow) {
-      console.log('Flow ${flowId} already exists, continuing that flow');
+    if (!flow) {
+      throw new Error(`Flow ${flowId} does not exist`);
     }
     // Start running this flow
-    this.runFlow(flowId);
+    this.runFlow(flow.id);
     return flow;
   }
 
