@@ -41,7 +41,7 @@ export class BasicProvider implements Provider {
           status: 'running',
           startTime: Date.now(),
           endTime: null,
-          opStates: []
+          opStates: [],
         },
       };
       // Add ops from job definition to flow
@@ -65,9 +65,8 @@ export class BasicProvider implements Provider {
     return flow;
   }
 
-  public continueFlow(flowId: string): Flow {
-    const flow: Flow = this.db.data.flows[flowId];
-
+  public async continueFlow(flowId: string): Promise<Flow> {
+    const flow: Flow | undefined = this.getFlow(flowId);
     if (!flow) {
       throw new Error(`Flow ${flowId} does not exist`);
     }
@@ -113,7 +112,12 @@ export class BasicProvider implements Provider {
       this.db.data.flows[flowId].state.errors?.push(error.toString());
       this.db.write();
     }
-    this.finishFlow(flowId, (flow.state.errors && flow.state.errors.length > 0) ? 'node-error' : undefined);
+    this.finishFlow(
+      flowId,
+      flow.state.errors && flow.state.errors.length > 0
+        ? 'node-error'
+        : undefined,
+    );
   }
 
   /**
@@ -166,7 +170,9 @@ export class BasicProvider implements Provider {
     } else {
       this.db.data.flows[flowId].state.status =
         this.db.data.flows[flowId].state.opStates.some(checkStatus) ||
-        this.db.data.flows[flowId].state.opStates.every((opState) => !opState.status)
+        this.db.data.flows[flowId].state.opStates.every(
+          (opState) => !opState.status,
+        )
           ? 'failed'
           : 'success';
     }

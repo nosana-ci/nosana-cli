@@ -201,8 +201,6 @@ export class DockerProvider extends BasicProvider implements Provider {
       })
       .then(([res, container]) => {
         const stderr = stderrStream.read() as Buffer | undefined;
-        container.remove();
-
         const logs = this.db.data.flows[flowId].state.opStates[opStateIndex].logs;
         if (stderr) {
           logs.push({
@@ -255,6 +253,151 @@ export class DockerProvider extends BasicProvider implements Provider {
     super.clearFlow(flowId);
   }
 
+  public async continueFlow(flowId: string): Promise<Flow> {
+    const flow: Flow | undefined = this.getFlow(flowId);
+    if (!flow) throw new Error(`Flow ${flowId} does not exist`);
+    if (flow.state.endTime)
+      throw new Error(`Flow already finished at ${flow.state.endTime}`);
+
+    for (let i = 0; i < flow.jobDefinition.ops.length; i++) {
+      const op = flow.jobDefinition.ops[i];
+      const opState = flow.state.opStates.find((o) => o.operationId === op.id);
+      if (opState) {
+        if (
+          opState.providerId &&
+          !opState.endTime &&
+          op.type === 'container/run'
+        ) {
+          await new Promise<void>(async (resolve, reject) => {
+            const c = await this.getContainerByName(
+              opState.providerId as string,
+            );
+
+            // when node is shutted down before the container started, it won't find the container
+            // run op again in new container
+            if (!c) {
+              try {
+                await this.runOperation(
+                  op as Operation<'container/run'>,
+                  flowId,
+                );
+              } catch (error) {
+                flow.state.opStates[i].status = 'failed';
+                this.db.write();
+              }
+              resolve();
+            } else {
+              const container = this.docker.getContainer(c.Id);
+              const containerInfo = await container.inspect();
+
+              // Create streams and wait for it to finish
+              if (containerInfo.State.Running) {
+                const stdoutStream = new stream.PassThrough();
+                const stderrStream = new stream.PassThrough();
+                flow.state.opStates[i].logs = [];
+
+                stdoutStream.on('data', (chunk) => {
+                  this.eventEmitter.emit('newLog', {
+                    type: 'stdout',
+                    log: chunk.toString(),
+                  });
+                  flow.state.opStates[i].logs.push({
+                    type: 'stdout',
+                    log: chunk.toString(),
+                  });
+                });
+
+                const logStream = await container.logs({
+                  stdout: true,
+                  stderr: true,
+                  follow: true,
+                });
+                container.modem.demuxStream(
+                  logStream,
+                  stdoutStream,
+                  stderrStream,
+                );
+
+                logStream.on('end', async () => {
+                  const endInfo = await container.inspect();
+                  flow.state.opStates[i].exitCode = endInfo.State.ExitCode;
+                  flow.state.opStates[i].status = endInfo.State.ExitCode
+                    ? 'failed'
+                    : 'success';
+                  flow.state.opStates[i].endTime = Math.floor(
+                    new Date(endInfo.State.FinishedAt).getTime(),
+                  );
+                  this.db.write();
+
+                  stdoutStream.end();
+                  resolve();
+                });
+              } else if (containerInfo.State.Status === 'exited') {
+                // op is done, get logs from container and save them in the flow
+                const log = await container.logs({
+                  follow: false,
+                  stdout: true,
+                  stderr: true,
+                });
+
+                // parse output
+                const output = this.demuxOutput(log);
+                flow.state.opStates[i].logs = [];
+                this.db.write();
+
+                if (output.stdout !== '') {
+                  flow.state.opStates[i].logs.push({
+                    type: 'stdout',
+                    log: output.stdout,
+                  });
+                }
+                if (output.stderr !== '') {
+                  flow.state.opStates[i].logs.push({
+                    type: 'stderr',
+                    log: output.stderr,
+                  });
+                }
+
+                flow.state.opStates[i].exitCode = containerInfo.State.ExitCode;
+                flow.state.opStates[i].status = containerInfo.State.ExitCode
+                  ? 'failed'
+                  : 'success';
+                flow.state.opStates[i].endTime = Math.floor(
+                  new Date(containerInfo.State.FinishedAt).getTime(),
+                );
+                this.db.write();
+                resolve();
+              }
+            }
+          });
+        } else if (!opState.endTime && op.type === 'container/run') {
+          let state;
+          try {
+            state = await this.runOperation(
+              op as Operation<'container/run'>,
+              flowId,
+            );
+          } catch (error) {
+            console.log(chalk.red(error));
+            flow.state.opStates[i].status = 'failed';
+            this.db.write();
+            break;
+          }
+          if (state && state.status === 'failed') break;
+        }
+      } else {
+        // op not found
+        if (!flow.state.errors) {
+          flow.state.errors = [];
+        }
+        flow.state.errors.push(`Cannot find state of op ${op.id}`);
+      }
+    }
+
+    this.finishFlow(flowId);
+    return flow;
+  }
+
   /****************
    *   Getters   *
    ****************/
@@ -276,4 +419,47 @@ export class DockerProvider extends BasicProvider implements Provider {
       });
     });
   }
+
+  /****************
+   *   Helpers   *
+   ****************/
+  /**
+   * input: log Buffer, output stdout & stderr strings
+   * @param buffer
+   * @returns
+   */
+  private demuxOutput = (
+    buffer: Buffer,
+  ): { stdout: string; stderr: string } => {
+    const stdouts: Buffer[] = [];
+    const stderrs: Buffer[] = [];
+
+    function bufferSlice(end: number) {
+      const out = buffer.slice(0, end);
+      buffer = Buffer.from(buffer.slice(end, buffer.length));
+      return out;
+    }
+
+    while (buffer.length > 0) {
+      const header = bufferSlice(8);
+      const nextDataType = header.readUInt8(0);
+      const nextDataLength = header.readUInt32BE(4);
+      const content = bufferSlice(nextDataLength);
+      switch (nextDataType) {
+        case 1:
+          stdouts.push(content);
+          break;
+        case 2:
+          stderrs.push(content);
+          break;
+        default:
+        // ignore
+      }
+    }
+
+    return {
+      stdout: Buffer.concat(stdouts).toString('utf8'),
+      stderr: Buffer.concat(stderrs).toString('utf8'),
+    };
+  };
 }

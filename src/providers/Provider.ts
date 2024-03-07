@@ -37,9 +37,9 @@ export type FlowState = {
   status: string;
   startTime: number;
   endTime: number | null;
-  errors?: Array<any>; 
+  errors?: Array<any>;
   opStates: Array<OpState>;
-}
+};
 export type Flow = {
   id: string;
   jobDefinition: JobDefinition;
@@ -66,7 +66,10 @@ export abstract class Provider {
   abstract run(JobDefinition: JobDefinition, flowStateId?: string): Flow;
   abstract healthy(): Promise<Boolean>;
   abstract getFlow(id: string): Flow | undefined;
-  abstract continueFlow(flowId: string): Flow;
+  abstract continueFlow(flowId: string): Flow | Promise<Flow>;
   abstract clearFlow(flowId: string): Promise<void>;
-  abstract waitForFlowFinish(id: string, logCallback?: Function): Promise<FlowState>;
+  abstract waitForFlowFinish(
+    id: string,
+    logCallback?: Function,
+  ): Promise<FlowState>;
 }
