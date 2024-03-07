@@ -70,11 +70,11 @@ export class DockerProvider extends BasicProvider implements Provider {
       endTime: null,
       status: 'running',
     };
-    const opStateIndex = this.db.data.flows[flowId].state.findIndex(
-      (opState) => op.id === opState.operation.id,
+    const opStateIndex = this.db.data.flows[flowId].state.opStates.findIndex(
+      (opState) => op.id === opState.operationId,
     );
-    this.db.data.flows[flowId].state[opStateIndex] = {
-      ...this.db.data.flows[flowId].state[opStateIndex],
+    this.db.data.flows[flowId].state.opStates[opStateIndex] = {
+      ...this.db.data.flows[flowId].state.opStates[opStateIndex],
       ...updateOpState,
     };
     this.db.write();
@@ -94,13 +94,13 @@ export class DockerProvider extends BasicProvider implements Provider {
 
     updateOpState.logs = run?.logs;
     updateOpState.endTime = Date.now();
-    this.db.data.flows[flowId].state[opStateIndex] = {
-      ...this.db.data.flows[flowId].state[opStateIndex],
+    this.db.data.flows[flowId].state.opStates[opStateIndex] = {
+      ...this.db.data.flows[flowId].state.opStates[opStateIndex],
       ...updateOpState,
     };
     this.db.write();
 
-    return this.db.data.flows[flowId].state[opStateIndex];
+    return this.db.data.flows[flowId].state.opStates[opStateIndex];
   }
 
   /**
@@ -169,7 +169,7 @@ export class DockerProvider extends BasicProvider implements Provider {
       image +
       '-' +
       [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
-    this.db.data.flows[flowId].state[opStateIndex].id = name;
+    this.db.data.flows[flowId].state.opStates[opStateIndex].providerId = name;
     this.db.write();
 
     const stdoutStream = new stream.PassThrough();
@@ -177,7 +177,7 @@ export class DockerProvider extends BasicProvider implements Provider {
 
     stdoutStream.on('data', (chunk) => {
       this.eventEmitter.emit('newLog', { opStateIndex, log: chunk.toString() });
-      this.db.data.flows[flowId].state[opStateIndex].logs.push({
+      this.db.data.flows[flowId].state.opStates[opStateIndex].logs.push({
         type: 'stdout',
         log: chunk.toString(),
       });
@@ -203,7 +203,7 @@ export class DockerProvider extends BasicProvider implements Provider {
         const stderr = stderrStream.read() as Buffer | undefined;
         container.remove();
 
-        const logs = this.db.data.flows[flowId].state[opStateIndex].logs;
+        const logs = this.db.data.flows[flowId].state.opStates[opStateIndex].logs;
         if (stderr) {
           logs.push({
             type: 'stderr',
@@ -234,11 +234,11 @@ export class DockerProvider extends BasicProvider implements Provider {
   public async clearFlow(flowId: string): Promise<void> {
     const flow = this.db.data.flows[flowId];
     // for every op in flow, stop & remove container
-    for (let j = 0; j < flow.state.length; j++) {
-      const op = flow.state[j];
-      if (op.id) {
+    for (let j = 0; j < flow.state.opStates.length; j++) {
+      const op = flow.state.opStates[j];
+      if (op.providerId) {
         try {
-          const c = await this.getContainerByName(op.id);
+          const c = await this.getContainerByName(op.providerId);
           if (c) {
             const container = this.docker.getContainer(c.Id);
             const containerInfo = await container.inspect();
@@ -248,7 +248,7 @@ export class DockerProvider extends BasicProvider implements Provider {
             await container.remove();
           }
         } catch (err: any) {
-          console.error(`couldnt stop container ${op.id} - ${err}`);
+          console.error(`couldnt stop container ${op.providerId} - ${err}`);
         }
       }
     }

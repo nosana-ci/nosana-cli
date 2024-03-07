@@ -5,6 +5,7 @@ import {
   Flow,
   JobDefinition,
   validateJobDefinition,
+  FlowState,
 } from '../../providers/Provider';
 import chalk from 'chalk';
 import ora from 'ora';
@@ -67,7 +68,7 @@ export async function runJob(
   const jobDefinition: JobDefinition = JSON.parse(
     fs.readFileSync(jobDefinitionFile, 'utf8'),
   );
-  let result: Partial<Flow>;
+  let result: Partial<FlowState>;
 
   const validation: IValidation<JobDefinition> =
     validateJobDefinition(jobDefinition);

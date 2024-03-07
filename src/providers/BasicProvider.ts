@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { JobDefinition, Provider, OpState, Flow } from './Provider';
+import { JobDefinition, Provider, OpState, Flow, FlowState } from './Provider';
 import { JSONFileSyncPreset } from 'lowdb/node';
 import { LowSync } from 'lowdb/lib';
 import EventEmitter from 'events';
@@ -36,25 +36,27 @@ export class BasicProvider implements Provider {
       // Create a new flow
       flow = {
         id,
-        status: 'running',
         jobDefinition,
-        startTime: Date.now(),
-        endTime: null,
-        state: [],
+        state: {
+          status: 'running',
+          startTime: Date.now(),
+          endTime: null,
+          opStates: []
+        },
       };
       // Add ops from job definition to flow
       for (let i = 0; i < jobDefinition.ops.length; i++) {
         const op = jobDefinition.ops[i];
         const opState: OpState = {
-          id: null,
+          operationId: op.id,
+          providerId: null,
+          status: 'pending',
           startTime: null,
           endTime: null,
-          status: 'pending',
           exitCode: null,
-          operation: op,
           logs: [],
         };
-        flow.state.push(opState);
+        flow.state.opStates.push(opState);
       }
       this.db.update(({ flows }) => (flows[id] = flow));
     }
@@ -96,8 +98,8 @@ export class BasicProvider implements Provider {
           opState = await this[operationTypeFunction](op, flowId);
         } catch (error) {
           console.error(chalk.red(error));
-          this.db.data.flows[flowId].state.find(
-            (opState) => opState.id === op.id,
+          this.db.data.flows[flowId].state.opStates.find(
+            (opState) => opState.operationId === op.id,
           )!.status = 'failed';
           this.db.write();
           break;
@@ -105,10 +107,13 @@ export class BasicProvider implements Provider {
         if (opState && opState.status === 'failed') break;
       }
     } catch (error: any) {
-      this.db.data.flows[flowId].error = error.toString();
+      if (!this.db.data.flows[flowId].state.errors) {
+        this.db.data.flows[flowId].state.errors = [];
+      }
+      this.db.data.flows[flowId].state.errors?.push(error.toString());
       this.db.write();
     }
-    this.finishFlow(flowId, flow.error ? 'node-error' : undefined);
+    this.finishFlow(flowId, (flow.state.errors && flow.state.errors.length > 0) ? 'node-error' : undefined);
   }
 
   /**
@@ -128,12 +133,12 @@ export class BasicProvider implements Provider {
   public async waitForFlowFinish(
     flowId: string,
     logCallback?: Function,
-  ): Promise<Flow> {
+  ): Promise<FlowState> {
     return await new Promise((resolve, reject) => {
       const flow = this.db.data.flows[flowId];
       if (!flow) reject('Flow not found');
-      if (this.db.data.flows[flowId].endTime) {
-        resolve(this.db.data.flows[flowId]);
+      if (this.db.data.flows[flowId].state.endTime) {
+        resolve(this.db.data.flows[flowId].state);
       }
 
       if (logCallback) {
@@ -145,7 +150,7 @@ export class BasicProvider implements Provider {
       this.eventEmitter.on('flowFinished', (flowId) => {
         this.eventEmitter.removeAllListeners('flowFinished');
         this.eventEmitter.removeAllListeners('newLog');
-        resolve(this.db.data.flows[flowId]);
+        resolve(this.db.data.flows[flowId].state);
       });
     });
   }
@@ -157,15 +162,15 @@ export class BasicProvider implements Provider {
   protected finishFlow(flowId: string, status?: string) {
     const checkStatus = (op: OpState) => op.status === 'failed';
     if (status) {
-      this.db.data.flows[flowId].status = status;
+      this.db.data.flows[flowId].state.status = status;
     } else {
-      this.db.data.flows[flowId].status =
-        this.db.data.flows[flowId].state.some(checkStatus) ||
-        this.db.data.flows[flowId].state.every((opState) => !opState.status)
+      this.db.data.flows[flowId].state.status =
+        this.db.data.flows[flowId].state.opStates.some(checkStatus) ||
+        this.db.data.flows[flowId].state.opStates.every((opState) => !opState.status)
           ? 'failed'
           : 'success';
     }
-    this.db.data.flows[flowId].endTime = Date.now();
+    this.db.data.flows[flowId].state.endTime = Date.now();
     this.db.write();
 
     this.eventEmitter.emit('flowFinished', flowId);

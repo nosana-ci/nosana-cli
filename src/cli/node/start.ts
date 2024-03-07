@@ -19,6 +19,7 @@ import {
   Flow,
   JobDefinition,
   validateJobDefinition,
+  FlowState,
 } from '../../providers/Provider.js';
 import { PublicKey } from '@solana/web3.js';
 import { EMPTY_ADDRESS } from '../../services/jobs.js';
@@ -327,7 +328,7 @@ export async function startNode(
           }
 
           let flowId = run.publicKey.toString();
-          let result: Partial<Flow> | undefined;
+          let result: Partial<FlowState> | undefined;
           const existingFlow = provider.getFlow(flowId);
           if (!existingFlow) {
             spinner.text = chalk.cyan('Retrieving job definition');
@@ -355,7 +356,7 @@ export async function startNode(
             console.log('Running job');
             spinner.text = chalk.cyan('Running job');
             // TODO: move to node service (e.g. waitForResult)?
-            result = await new Promise<Flow>(async function (resolve, reject) {
+            result = await new Promise<FlowState>(async function (resolve, reject) {
               // check if expired every minute
               const expireInterval = setInterval(async () => {
                 if (isRunExpired(run!, marketAccount.jobExpiration * 1.5)) {

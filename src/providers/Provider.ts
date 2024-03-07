@@ -33,24 +33,26 @@ export type OperationType = keyof OperationArgsMap;
 /************************
  *   Job Result Types   *
  ************************/
-export type Flow = {
-  id: string;
+export type FlowState = {
   status: string;
-  error?: string;
   startTime: number;
   endTime: number | null;
+  errors?: Array<any>; 
+  opStates: Array<OpState>;
+}
+export type Flow = {
+  id: string;
   jobDefinition: JobDefinition;
-  errors?: Array<any>; // todo: error type based on status?
-  state: Array<OpState>;
+  state: FlowState;
 };
 
 export type OpState = {
-  id: string | null;
+  providerId: string | null;
+  operationId: string | null;
   status: string | null;
   startTime: number | null;
   endTime: number | null;
   exitCode: number | null;
-  operation: Operation<OperationType>;
   logs: Array<{
     type: 'stdin' | 'stdout' | 'stderr';
     log: string | undefined;
@@ -66,5 +68,5 @@ export abstract class Provider {
   abstract getFlow(id: string): Flow | undefined;
   abstract continueFlow(flowId: string): Flow;
   abstract clearFlow(flowId: string): Promise<void>;
-  abstract waitForFlowFinish(id: string, logCallback?: Function): Promise<Flow>;
+  abstract waitForFlowFinish(id: string, logCallback?: Function): Promise<FlowState>;
 }
