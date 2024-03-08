@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 import { Operation, Provider, OpState, Flow } from './Provider';
-import Docker from 'dockerode';
+import Docker, { Container } from 'dockerode';
 import stream from 'stream';
 import { parse } from 'shell-quote';
 import { BasicProvider } from './BasicProvider';
@@ -66,7 +66,7 @@ export class DockerProvider extends BasicProvider implements Provider {
     );
     const opState = flow.state.opStates[opStateIndex];
 
-    if (opState.providerId && !opState.endTime) {
+    if (opState.providerId) {
       await new Promise<void>(async (resolve, reject) => {
         const c = await this.getContainerByName(opState.providerId as string);
 
@@ -87,21 +87,31 @@ export class DockerProvider extends BasicProvider implements Provider {
             opState.logs = [];
 
             // wait for log streams to finish, handle new logs with callback
-            await this.handleLogStreams(
-              container,
-              stdoutStream,
-              stderrStream,
-              (data: { log: string; type: 'stdin' | 'stdout' | 'stderr' }) => {
-                this.eventEmitter.emit('newLog', {
-                  type: data.type,
-                  log: data.log,
-                });
-                opState.logs.push({
-                  type: data.type,
-                  log: data.log,
-                });
-              },
-            );
+            try {
+              await this.handleLogStreams(
+                container,
+                stdoutStream,
+                stderrStream,
+                (data: {
+                  log: string;
+                  type: 'stdin' | 'stdout' | 'stderr';
+                }) => {
+                  this.eventEmitter.emit('newLog', {
+                    type: data.type,
+                    log: data.log,
+                  });
+                  opState.logs.push({
+                    type: data.type,
+                    log: data.log,
+                  });
+                },
+              );
+            } catch (e) {
+              console.log(
+                chalk.red(`Error handling log streams for ${c.Id}`, e),
+              );
+            }
+
             await this.finishOpContainerRun(container, opState, containerInfo);
             stdoutStream.end();
             stderrStream.end();
@@ -114,7 +124,7 @@ export class DockerProvider extends BasicProvider implements Provider {
       });
     }
 
-    if (!opState.endTime) {
+    if (!opState.providerId) {
       flow.state.opStates[opStateIndex] = {
         ...flow.state.opStates[opStateIndex],
         startTime: Date.now(),
@@ -208,7 +218,6 @@ export class DockerProvider extends BasicProvider implements Provider {
     const stdoutStream = new stream.PassThrough();
     const stderrStream = new stream.PassThrough();
 
-    // wait for log streams to finish, handle new logs with callback
     this.handleLogStreams(
       name,
       stdoutStream,
@@ -224,7 +233,10 @@ export class DockerProvider extends BasicProvider implements Provider {
         });
         this.db.write();
       },
-    );
+      3,
+    ).catch((e) => {
+      console.log(chalk.red(`Error handling log streams for ${name}`, e));
+    });
 
     return await this.docker
       .run(image, parsedcmd as string[], [stdoutStream, stderrStream], {
@@ -274,7 +286,7 @@ export class DockerProvider extends BasicProvider implements Provider {
    * @param opState
    * @param containerInfo optional
    */
-  async finishOpContainerRun(
+  private async finishOpContainerRun(
     container: Docker.Container,
     opState: OpState,
     containerInfo?: Docker.ContainerInspectInfo,
@@ -295,7 +307,7 @@ export class DockerProvider extends BasicProvider implements Provider {
 
     for (let i = 0; i < output.length; i++) {
       opState.logs.push({
-        type: output[i].type as "stderr" | "stdin" | "stdout",
+        type: output[i].type as 'stderr' | 'stdin' | 'stdout',
         log: output[i].log,
       });
     }
@@ -308,55 +320,65 @@ export class DockerProvider extends BasicProvider implements Provider {
     this.db.write();
   }
 
-  async handleLogStreams(
+  private async handleLogStreams(
     container: Docker.Container | string,
-    stdoutStream: any,
-    stderrStream: any,
+    stdoutStream: stream.PassThrough,
+    stderrStream: stream.PassThrough,
     callback: Function,
+    retries?: number,
   ) {
-    console.log('handleLogStreams');
     await new Promise<void>(async (resolve, reject) => {
-      // TODO: FIX THIS:
-      await sleep(1);
-      if (typeof container === 'string') {
-        console.log('container', container);
+      // Find container
+      // TODO: now made with retries, check if there's a better solution..
+      if (!this.isDockerContainer(container)) {
         const c = await this.getContainerByName(container);
         if (c) {
           container = this.docker.getContainer(c.Id);
         } else {
-          console.log(
-            chalk.red(
-              `Couldn't find container ${container} to handle log streams`,
-            ),
-          );
-          return;
+          if (retries && retries > 0) {
+            await sleep(1);
+            await this.handleLogStreams(
+              container,
+              stdoutStream,
+              stderrStream,
+              callback,
+              retries - 1,
+            );
+          } else {
+            reject();
+          }
         }
       }
-      stderrStream.on('data', (chunk: Buffer) => {
-        callback({
-          type: 'stderr',
-          log: chunk.toString(),
+
+      if (this.isDockerContainer(container)) {
+        stderrStream.on('data', (chunk: Buffer) => {
+          callback({
+            type: 'stderr',
+            log: chunk.toString(),
+          });
         });
-      });
 
-      stdoutStream.on('data', (chunk: Buffer) => {
-        console.log('new chunk');
-        callback({
-          type: 'stdout',
-          log: chunk.toString(),
+        stdoutStream.on('data', (chunk: Buffer) => {
+          console.log('new chunk');
+          callback({
+            type: 'stdout',
+            log: chunk.toString(),
+          });
         });
-      });
 
-      const logStream = await container.logs({
-        stdout: true,
-        stderr: true,
-        follow: true,
-      });
-      container.modem.demuxStream(logStream, stdoutStream, stderrStream);
+        const logStream = await container.logs({
+          stdout: true,
+          stderr: true,
+          follow: true,
+        });
+        container.modem.demuxStream(logStream, stdoutStream, stderrStream);
 
-      logStream.on('end', async () => {
-        resolve();
-      });
+        logStream.on('end', async () => {
+          stdoutStream.end();
+          stderrStream.end();
+          resolve();
+        });
+      }
     });
   }
 
@@ -415,8 +437,6 @@ export class DockerProvider extends BasicProvider implements Provider {
    * @returns
    */
   private demuxOutput = (buffer: Buffer): { type: string; log: string }[] => {
-    const stdouts: Buffer[] = [];
-    const stderrs: Buffer[] = [];
     const output = [];
 
     function bufferSlice(end: number) {
@@ -436,14 +456,12 @@ export class DockerProvider extends BasicProvider implements Provider {
             type: 'stdout',
             log: Buffer.concat([content]).toString('utf8'),
           });
-          // stdouts.push(content);
           break;
         case 2:
           output.push({
             type: 'stderr',
             log: Buffer.concat([content]).toString('utf8'),
           });
-          // stderrs.push(content);
           break;
         default:
         // ignore
@@ -452,4 +470,8 @@ export class DockerProvider extends BasicProvider implements Provider {
 
     return output;
   };
+
+  private isDockerContainer(obj: any): obj is Docker.Container {
+    return obj.modem !== undefined;
+  }
 }
