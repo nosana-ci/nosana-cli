@@ -31,7 +31,7 @@ export class BasicProvider implements Provider {
       [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
     let flow: Flow = this.db.data.flows[id];
     if (flow) {
-      console.log('Flow ${flowId} already exists, continuing that flow');
+      console.log(`Flow ${flowId} already exists, continuing that flow`);
     } else {
       // Create a new flow
       flow = {
