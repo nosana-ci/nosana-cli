@@ -167,13 +167,12 @@ export class DockerProvider extends BasicProvider implements Provider {
         endTime: null,
         status: 'running',
       };
-      try {
-        flow.state.opStates[opStateIndex] = {
-          ...flow.state.opStates[opStateIndex],
-          ...updateOpState,
-        };
-        this.db.write();
-    
+      flow.state.opStates[opStateIndex] = {
+        ...flow.state.opStates[opStateIndex],
+        ...updateOpState,
+      };
+      this.db.write();
+      try {    
         const cmd = op.args?.cmds;
         run = await this.executeCmd(cmd, op.args.image, flowId, opStateIndex);
         updateOpState.status = run.exitCode ? 'failed' : 'success';
