@@ -22,11 +22,9 @@
       "args": {
         "cmds": [
           "/bin/bash -c ",
-          "sleep 1;",
-          "ls;",
-          "sleep 1;"
+          "for i in {1..10}; do echo $i; sleep 1; done;"
         ],
-        "image": "debian"
+        "image": "ubuntu"
       }
     }
   ]
