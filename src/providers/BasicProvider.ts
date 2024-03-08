@@ -87,21 +87,23 @@ export class BasicProvider implements Provider {
       // run operations
       for (let i = 0; i < flow.jobDefinition.ops.length; i++) {
         const op = flow.jobDefinition.ops[i];
-        let opState: OpState;
-        try {
-          const operationTypeFunction = this.supportedOps[op.type];
-          if (!operationTypeFunction) {
-            throw new Error(`no support for operation type ${op.type}`);
+        let opState: OpState = flow.state.opStates[i];
+        if (!opState.endTime) {
+          try {
+            const operationTypeFunction = this.supportedOps[op.type];
+            if (!operationTypeFunction) {
+              throw new Error(`no support for operation type ${op.type}`);
+            }
+            // @ts-ignore
+            opState = await this[operationTypeFunction](op, flowId);
+          } catch (error) {
+            console.error(chalk.red(error));
+            this.db.data.flows[flowId].state.opStates.find(
+              (opState) => opState.operationId === op.id,
+            )!.status = 'failed';
+            this.db.write();
+            break;
           }
-          // @ts-ignore
-          opState = await this[operationTypeFunction](op, flowId);
-        } catch (error) {
-          console.error(chalk.red(error));
-          this.db.data.flows[flowId].state.opStates.find(
-            (opState) => opState.operationId === op.id,
-          )!.status = 'failed';
-          this.db.write();
-          break;
         }
         if (opState && opState.status === 'failed') break;
       }
