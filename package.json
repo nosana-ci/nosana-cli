@@ -8,7 +8,7 @@
   "type": "module",
   "scripts": {
     "dev": "ts-node src/index.ts",
-    "build": "tsc",
+    "build": "npm run prepare && tsc",
     "test": "echo \"Error: no test specified\" && exit 1",
     "publish:public": "npm version patch && npm run build && npm publish --access public",
     "prepare": "ts-patch install && typia patch"
