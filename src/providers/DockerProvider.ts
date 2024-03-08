@@ -66,20 +66,9 @@ export class DockerProvider extends BasicProvider implements Provider {
     };
 
     const flow = this.getFlow(flowId) as Flow;
-    const updateOpState: Partial<OpState> = {
-      startTime,
-      endTime: null,
-      status: 'running',
-    };
     const opStateIndex = flow.state.opStates.findIndex(
       (opState) => op.id === opState.operationId,
     );
-    flow.state.opStates[opStateIndex] = {
-      ...flow.state.opStates[opStateIndex],
-      ...updateOpState,
-    };
-    this.db.write();
-
     const opState = flow.state.opStates[opStateIndex];
 
     if (opState.providerId && !opState.endTime) {
@@ -173,7 +162,18 @@ export class DockerProvider extends BasicProvider implements Provider {
     }
 
     if (!opState.endTime) {
+      const updateOpState: Partial<OpState> = {
+        startTime,
+        endTime: null,
+        status: 'running',
+      };
       try {
+        flow.state.opStates[opStateIndex] = {
+          ...flow.state.opStates[opStateIndex],
+          ...updateOpState,
+        };
+        this.db.write();
+    
         const cmd = op.args?.cmds;
         run = await this.executeCmd(cmd, op.args.image, flowId, opStateIndex);
         updateOpState.status = run.exitCode ? 'failed' : 'success';
