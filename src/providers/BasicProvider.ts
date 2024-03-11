@@ -186,6 +186,7 @@ export class BasicProvider implements Provider {
   }
 
   public async clearFlow(flowId: string): Promise<void> {
+    this.eventEmitter.emit('startClearFlow', flowId);
     delete this.db.data.flows[flowId];
     this.db.write();
     console.log('Cleared flow', flowId);

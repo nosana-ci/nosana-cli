@@ -180,6 +180,7 @@ export class DockerProvider extends BasicProvider implements Provider {
     flowId: string,
     opStateIndex: number,
   ): Promise<OpState> {
+    return await new Promise<OpState>(async (resolve, reject) => {
     let cmd = '';
     for (let i = 0; i < cmds.length; i++) {
       if (i === 0) {
@@ -205,8 +206,16 @@ export class DockerProvider extends BasicProvider implements Provider {
         },
       ];
       this.db.write();
-      return flow.state.opStates[opStateIndex];
+      resolve(flow.state.opStates[opStateIndex]);
     }
+
+    // when flow is being cleared, resolve promise
+    this.eventEmitter.on('startClearFlow', (id) => {
+      if(id === flowId) {
+        this.eventEmitter.removeAllListeners('startClearFlow');
+        resolve(flow.state.opStates[opStateIndex]);
+      }
+    });
 
     const name =
       image +
@@ -261,7 +270,8 @@ export class DockerProvider extends BasicProvider implements Provider {
 
         stdoutStream.end();
         stderrStream.end();
-        return flow.state.opStates[opStateIndex];
+        this.eventEmitter.removeAllListeners('startClearFlow');
+        resolve(flow.state.opStates[opStateIndex]);
       })
       .catch((error) => {
         chalk.red(console.log('Docker run failed', { error }));
@@ -276,8 +286,10 @@ export class DockerProvider extends BasicProvider implements Provider {
           },
         ];
         this.db.write();
-        return flow.state.opStates[opStateIndex];
+        this.eventEmitter.removeAllListeners('startClearFlow');
+        resolve(flow.state.opStates[opStateIndex]);
       });
+    });
   }
 
   /**
