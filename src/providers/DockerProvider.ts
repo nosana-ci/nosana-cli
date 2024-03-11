@@ -266,8 +266,11 @@ export class DockerProvider extends BasicProvider implements Provider {
         console.log(chalk.red(`Error handling log streams for ${name}`, e));
       });
 
+      // pass stream, but we are not using it, as we are using handleLogStreams
+      const emptyStream = new stream.PassThrough();
+
       return await this.docker
-        .run(image, parsedcmd as string[], [stdoutStream, stderrStream], {
+        .run(image, parsedcmd as string[], emptyStream, {
           name,
           Tty: false,
           // --gpus all
@@ -283,9 +286,7 @@ export class DockerProvider extends BasicProvider implements Provider {
         })
         .then(async ([res, container]) => {
           await this.finishOpContainerRun(container, updateOpState);
-
-          stdoutStream.end();
-          stderrStream.end();
+          emptyStream.end();
           this.eventEmitter.removeAllListeners('startClearFlow');
           resolve(flow.state.opStates[opStateIndex]);
         })
@@ -357,7 +358,6 @@ export class DockerProvider extends BasicProvider implements Provider {
     retries?: number,
   ) {
     await new Promise<void>(async (resolve, reject) => {
-      // Find container
       // TODO: now made with retries, check if there's a better solution..
       if (!this.isDockerContainer(container)) {
         const c = await this.getContainerByName(container);
@@ -388,7 +388,6 @@ export class DockerProvider extends BasicProvider implements Provider {
         });
 
         stdoutStream.on('data', (chunk: Buffer) => {
-          console.log('new chunk');
           callback({
             type: 'stdout',
             log: chunk.toString(),
