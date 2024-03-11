@@ -31,7 +31,7 @@ export class BasicProvider implements Provider {
       [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
     let flow: Flow = this.db.data.flows[id];
     if (flow) {
-      console.log('Flow ${flowId} already exists, continuing that flow');
+      console.log(`Flow ${flowId} already exists, continuing that flow`);
     } else {
       // Create a new flow
       flow = {
@@ -95,7 +95,17 @@ export class BasicProvider implements Provider {
               throw new Error(`no support for operation type ${op.type}`);
             }
             // @ts-ignore
-            opState = await this[operationTypeFunction](op, flowId);
+            opState = await this[operationTypeFunction](
+              op,
+              flowId,
+              (newOpStateData: object) => {
+                flow.state.opStates[i] = {
+                  ...flow.state.opStates[i],
+                  ...newOpStateData,
+                };
+                this.db.write();
+              },
+            );
           } catch (error) {
             console.error(chalk.red(error));
             this.db.data.flows[flowId].state.opStates.find(
