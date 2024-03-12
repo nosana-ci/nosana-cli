@@ -23,6 +23,10 @@ export interface OperationArgsMap {
   'container/run': {
     image: string;
     cmds: string[];
+    volumes?: [{
+      name: string,
+      dest: string
+    }]
   };
   'container/create-volume': {
     name: string;

@@ -1,6 +1,12 @@
 import chalk from 'chalk';
-import { Operation, Provider, OpState, Flow } from './Provider';
-import Docker, { Container } from 'dockerode';
+import {
+  Operation,
+  Provider,
+  OpState,
+  Flow,
+  OperationArgsMap,
+} from './Provider';
+import Docker, { Container, MountType } from 'dockerode';
 import stream from 'stream';
 import { parse } from 'shell-quote';
 import { BasicProvider } from './BasicProvider';
@@ -10,6 +16,7 @@ export class DockerProvider extends BasicProvider implements Provider {
   private docker: Docker;
   protected supportedOps: { [key: string]: string } = {
     'container/run': this.opContainerRun.name,
+    'container/create-volume': this.opCreateVolume.name,
   };
 
   constructor(podman: string) {
@@ -82,7 +89,6 @@ export class DockerProvider extends BasicProvider implements Provider {
 
           // Create streams and wait for it to finish
           if (containerInfo.State.Running) {
-
             // wait for log streams to finish, handle new logs with callback
             try {
               const logs: OpState['logs'] = [];
@@ -133,14 +139,7 @@ export class DockerProvider extends BasicProvider implements Provider {
         status: 'running',
       });
       try {
-        const cmd = op.args?.cmds;
-        await this.executeCmd(
-          cmd,
-          op.args.image,
-          flowId,
-          opStateIndex,
-          updateOpState,
-        );
+        await this.executeCmd(op.args, flowId, opStateIndex, updateOpState);
       } catch (e: any) {
         updateOpState({
           logs: [
@@ -155,6 +154,50 @@ export class DockerProvider extends BasicProvider implements Provider {
       }
     }
     return flow.state.opStates[opStateIndex];
+  }
+
+  /**
+   * Create volume
+   * @param op Operation specs
+   */
+  private async opCreateVolume(
+    op: Operation<'container/run'>,
+    flowId: string,
+    updateOpState: Function,
+  ): Promise<string> {
+    updateOpState({
+      startTime: Date.now(),
+      status: 'running',
+    });
+
+    return await new Promise(async (resolve, reject): Promise<any> => {
+      this.docker.createVolume(
+        {
+          Name: op.id,
+        },
+        (err, volume) => {
+          if (err) {
+            console.log(err);
+            updateOpState({
+              endTime: Date.now(),
+              status: 'failed',
+              logs: [
+                {
+                  type: 'stderr',
+                  log: err.message,
+                },
+              ],
+            });
+            reject(err);
+          }
+          updateOpState({
+            endTime: Date.now(),
+            status: 'success',
+          });
+          resolve(op.id);
+        },
+      );
+    });
   }
 
   /**
@@ -179,33 +222,31 @@ export class DockerProvider extends BasicProvider implements Provider {
 
   /**
    * Perform docker.run for given cmd, return logs
-   * @param cmd
-   * @param image
+   * @param opArgs
    * @param flowId
    * @param opStateIndex
    * @returns
    */
   private async executeCmd(
-    cmds: string[],
-    image: string,
+    opArgs: OperationArgsMap['container/run'],
     flowId: string,
     opStateIndex: number,
     updateOpState: Function,
   ): Promise<OpState> {
     return await new Promise<OpState>(async (resolve, reject) => {
       let cmd = '';
-      for (let i = 0; i < cmds.length; i++) {
+      for (let i = 0; i < opArgs.cmds.length; i++) {
         if (i === 0) {
-          cmd += cmds[i];
+          cmd += opArgs.cmds[i];
         } else {
-          cmd += "'" + cmds[i] + "'";
+          cmd += "'" + opArgs.cmds[i] + "'";
         }
       }
       const flow = this.getFlow(flowId) as Flow;
       const parsedcmd = parse(cmd);
 
       try {
-        await this.pullImage(image);
+        await this.pullImage(opArgs.image);
       } catch (error: any) {
         console.log(chalk.red('Cannot pull image', { error }));
         updateOpState({
@@ -231,7 +272,7 @@ export class DockerProvider extends BasicProvider implements Provider {
       });
 
       const name =
-        image +
+        opArgs.image +
         '-' +
         [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
       updateOpState({ providerId: name });
@@ -256,15 +297,29 @@ export class DockerProvider extends BasicProvider implements Provider {
         console.log(chalk.red(`Error handling log streams for ${name}`, e));
       });
 
+      // create volume mount array
+      const volumes = [];
+      if (opArgs.volumes && opArgs.volumes.length > 0) {
+        for (let i = 0; i < opArgs.volumes.length; i++) {
+          const volume = opArgs.volumes[i];
+          volumes.push({
+            Target: volume.dest,
+            Source: volume.name,
+            Type: 'volume' as MountType,
+            ReadOnly: false,
+          });
+        }
+      }
+
       // pass stream, but we are not using it, as we are using handleLogStreams
       const emptyStream = new stream.PassThrough();
-
       return await this.docker
-        .run(image, parsedcmd as string[], emptyStream, {
+        .run(opArgs.image, parsedcmd as string[], emptyStream, {
           name,
           Tty: false,
-          // --gpus all
           HostConfig: {
+            Mounts: volumes,
+            // --gpus all
             DeviceRequests: [
               {
                 Count: -1,
@@ -354,11 +409,7 @@ export class DockerProvider extends BasicProvider implements Provider {
         } else {
           if (retries && retries > 0) {
             await sleep(1);
-            await this.handleLogStreams(
-              container,
-              callback,
-              retries - 1,
-            );
+            await this.handleLogStreams(container, callback, retries - 1);
           } else {
             reject();
           }
