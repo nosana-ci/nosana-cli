@@ -82,16 +82,12 @@ export class DockerProvider extends BasicProvider implements Provider {
 
           // Create streams and wait for it to finish
           if (containerInfo.State.Running) {
-            const stdoutStream = new stream.PassThrough();
-            const stderrStream = new stream.PassThrough();
 
             // wait for log streams to finish, handle new logs with callback
             try {
               const logs: OpState['logs'] = [];
               await this.handleLogStreams(
                 container,
-                stdoutStream,
-                stderrStream,
                 (data: {
                   log: string;
                   type: 'stdin' | 'stdout' | 'stderr';
@@ -118,8 +114,6 @@ export class DockerProvider extends BasicProvider implements Provider {
               updateOpState,
               containerInfo,
             );
-            stdoutStream.end();
-            stderrStream.end();
             resolve();
           } else if (containerInfo.State.Status === 'exited') {
             await this.finishOpContainerRun(
@@ -242,14 +236,10 @@ export class DockerProvider extends BasicProvider implements Provider {
         [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
       updateOpState({ providerId: name });
 
-      const stdoutStream = new stream.PassThrough();
-      const stderrStream = new stream.PassThrough();
       const logs: OpState['logs'] = [];
 
       this.handleLogStreams(
         name,
-        stdoutStream,
-        stderrStream,
         (data: { log: string; type: 'stdin' | 'stdout' | 'stderr' }) => {
           this.eventEmitter.emit('newLog', {
             type: data.type,
@@ -352,8 +342,6 @@ export class DockerProvider extends BasicProvider implements Provider {
 
   private async handleLogStreams(
     container: Docker.Container | string,
-    stdoutStream: stream.PassThrough,
-    stderrStream: stream.PassThrough,
     callback: Function,
     retries?: number,
   ) {
@@ -368,8 +356,6 @@ export class DockerProvider extends BasicProvider implements Provider {
             await sleep(1);
             await this.handleLogStreams(
               container,
-              stdoutStream,
-              stderrStream,
               callback,
               retries - 1,
             );
@@ -380,6 +366,9 @@ export class DockerProvider extends BasicProvider implements Provider {
       }
 
       if (this.isDockerContainer(container)) {
+        const stdoutStream = new stream.PassThrough();
+        const stderrStream = new stream.PassThrough();
+
         stderrStream.on('data', (chunk: Buffer) => {
           callback({
             type: 'stderr',
