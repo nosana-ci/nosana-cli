@@ -221,6 +221,18 @@ export class DockerProvider extends BasicProvider implements Provider {
   }
 
   /**
+   * Prune volumes that are not being used by containers
+   * @returns 
+   */
+  private async pruneVolumes() {
+    return await new Promise<void>((resolve, reject): any =>
+      this.docker.pruneVolumes({}, (result) => {
+        resolve();
+      }),
+    );
+  }
+
+  /**
    * Perform docker.run for given cmd, return logs
    * @param opArgs
    * @param flowId
@@ -472,6 +484,11 @@ export class DockerProvider extends BasicProvider implements Provider {
       }
     }
     super.clearFlow(flowId);
+  }
+
+  public async finishFlow(flowId: string, status?: string | undefined): Promise<void> {
+    super.finishFlow(flowId, status);
+    await this.pruneVolumes();
   }
 
   /****************

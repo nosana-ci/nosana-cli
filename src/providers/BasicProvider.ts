@@ -175,7 +175,7 @@ export class BasicProvider implements Provider {
    * Finish a flow. Set status & emit end event
    * @param flowStateId
    */
-  protected finishFlow(flowId: string, status?: string) {
+  public finishFlow(flowId: string, status?: string) {
     const checkStatus = (op: OpState) => op.status === 'failed';
     if (status) {
       this.db.data.flows[flowId].state.status = status;
