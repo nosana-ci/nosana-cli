@@ -1,9 +1,10 @@
 import chalk from 'chalk';
 import { Operation, Provider, OpState, Flow } from './Provider';
-import Docker from 'dockerode';
+import Docker, { Container } from 'dockerode';
 import stream from 'stream';
 import { parse } from 'shell-quote';
 import { BasicProvider } from './BasicProvider';
+import { sleep } from '../generic/utils.js';
 
 export class DockerProvider extends BasicProvider implements Provider {
   private docker: Docker;
@@ -58,28 +59,22 @@ export class DockerProvider extends BasicProvider implements Provider {
   private async opContainerRun(
     op: Operation<'container/run'>,
     flowId: string,
+    updateOpState: Function,
   ): Promise<OpState> {
-    const startTime = Date.now();
-    let run: { logs: OpState['logs']; exitCode: number } = {
-      logs: [],
-      exitCode: 0,
-    };
-
     const flow = this.getFlow(flowId) as Flow;
     const opStateIndex = flow.state.opStates.findIndex(
       (opState) => op.id === opState.operationId,
     );
     const opState = flow.state.opStates[opStateIndex];
 
-    if (opState.providerId && !opState.endTime) {
+    if (opState.providerId) {
       await new Promise<void>(async (resolve, reject) => {
         const c = await this.getContainerByName(opState.providerId as string);
 
         // when node is shutted down before the container started, it won't find the container
         // clear providerId so that it will be ran again
         if (!c) {
-          opState.providerId = null;
-          this.db.write();
+          updateOpState({ providerId: null });
           resolve();
         } else {
           const container = this.docker.getContainer(c.Id);
@@ -89,111 +84,83 @@ export class DockerProvider extends BasicProvider implements Provider {
           if (containerInfo.State.Running) {
             const stdoutStream = new stream.PassThrough();
             const stderrStream = new stream.PassThrough();
-            opState.logs = [];
 
-            stdoutStream.on('data', (chunk) => {
-              this.eventEmitter.emit('newLog', {
-                type: 'stdout',
-                log: chunk.toString(),
-              });
-              opState.logs.push({
-                type: 'stdout',
-                log: chunk.toString(),
-              });
-            });
-
-            const logStream = await container.logs({
-              stdout: true,
-              stderr: true,
-              follow: true,
-            });
-            container.modem.demuxStream(logStream, stdoutStream, stderrStream);
-
-            logStream.on('end', async () => {
-              const endInfo = await container.inspect();
-              opState.exitCode = endInfo.State.ExitCode;
-              opState.status = endInfo.State.ExitCode ? 'failed' : 'success';
-              opState.endTime = Math.floor(
-                new Date(endInfo.State.FinishedAt).getTime(),
+            // wait for log streams to finish, handle new logs with callback
+            try {
+              const logs: OpState['logs'] = [];
+              await this.handleLogStreams(
+                container,
+                stdoutStream,
+                stderrStream,
+                (data: {
+                  log: string;
+                  type: 'stdin' | 'stdout' | 'stderr';
+                }) => {
+                  this.eventEmitter.emit('newLog', {
+                    type: data.type,
+                    log: data.log,
+                  });
+                  logs.push({
+                    type: data.type,
+                    log: data.log,
+                  });
+                  updateOpState({ logs });
+                },
               );
-              this.db.write();
-
-              stdoutStream.end();
-              resolve();
-            });
-          } else if (containerInfo.State.Status === 'exited') {
-            // op is done, get logs from container and save them in the flow
-            const log = await container.logs({
-              follow: false,
-              stdout: true,
-              stderr: true,
-            });
-
-            // parse output
-            const output = this.demuxOutput(log);
-            opState.logs = [];
-            this.db.write();
-
-            if (output.stdout !== '') {
-              opState.logs.push({
-                type: 'stdout',
-                log: output.stdout,
-              });
-            }
-            if (output.stderr !== '') {
-              opState.logs.push({
-                type: 'stderr',
-                log: output.stderr,
-              });
+            } catch (e) {
+              console.log(
+                chalk.red(`Error handling log streams for ${c.Id}`, e),
+              );
             }
 
-            opState.exitCode = containerInfo.State.ExitCode;
-            opState.status = containerInfo.State.ExitCode
-              ? 'failed'
-              : 'success';
-            opState.endTime = Math.floor(
-              new Date(containerInfo.State.FinishedAt).getTime(),
+            await this.finishOpContainerRun(
+              container,
+              updateOpState,
+              containerInfo,
             );
-            this.db.write();
+            stdoutStream.end();
+            stderrStream.end();
+            resolve();
+          } else if (containerInfo.State.Status === 'exited') {
+            await this.finishOpContainerRun(
+              container,
+              updateOpState,
+              containerInfo,
+            );
             resolve();
           }
         }
       });
     }
 
-    if (!opState.endTime) {
-      const updateOpState: Partial<OpState> = {
-        startTime,
-        endTime: null,
+    if (!opState.providerId) {
+      updateOpState({
+        startTime: Date.now(),
         status: 'running',
-      };
-      flow.state.opStates[opStateIndex] = {
-        ...flow.state.opStates[opStateIndex],
-        ...updateOpState,
-      };
-      this.db.write();
-      try {    
+      });
+      try {
         const cmd = op.args?.cmds;
-        run = await this.executeCmd(cmd, op.args.image, flowId, opStateIndex);
-        updateOpState.status = run.exitCode ? 'failed' : 'success';
-        updateOpState.exitCode = run.exitCode;
+        await this.executeCmd(
+          cmd,
+          op.args.image,
+          flowId,
+          opStateIndex,
+          updateOpState,
+        );
       } catch (e: any) {
-        updateOpState.status = 'failed';
-        run.logs.push({
-          type: 'stderr' as const,
-          log: e.toString(),
+        updateOpState({
+          logs: [
+            {
+              type: 'stderr' as const,
+              log: e.toString(),
+            },
+          ],
+          status: 'failed',
         });
+        throw new Error(e);
       }
-
-      updateOpState.logs = run?.logs;
-      updateOpState.endTime = Date.now();
-      this.db.data.flows[flowId].state.opStates[opStateIndex] = {
-        ...this.db.data.flows[flowId].state.opStates[opStateIndex],
-        ...updateOpState,
-      };
-      this.db.write();
     }
-    return opState;
+    return flow.state.opStates[opStateIndex];
   }
 
   /**
@@ -220,8 +187,8 @@ export class DockerProvider extends BasicProvider implements Provider {
    * Perform docker.run for given cmd, return logs
    * @param cmd
    * @param image
-   * @param flowStateIndex
-   * @param opIndex
+   * @param flowId
+   * @param opStateIndex
    * @returns
    */
   private async executeCmd(
@@ -229,98 +196,218 @@ export class DockerProvider extends BasicProvider implements Provider {
     image: string,
     flowId: string,
     opStateIndex: number,
-  ): Promise<{
-    exitCode: number;
-    logs: OpState['logs'];
-  }> {
-    let cmd = '';
-    for (let i = 0; i < cmds.length; i++) {
-      if (i === 0) {
-        cmd += cmds[i];
-      } else {
-        cmd += "'" + cmds[i] + "'";
-      }
-    }
-    const flow = this.getFlow(flowId) as Flow;
-    const parsedcmd = parse(cmd);
-
-    try {
-      await this.pullImage(image);
-    } catch (error: any) {
-      chalk.red(console.log('Cannot pull image', { error }));
-      return {
-        exitCode: 2,
-        logs: [
-          {
-            type: 'stderr',
-            log: error.message.toString(),
-          },
-        ] as OpState['logs'],
-      };
-    }
-
-    const name =
-      image +
-      '-' +
-      [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
-    flow.state.opStates[opStateIndex].providerId = name;
-    this.db.write();
-
-    const stdoutStream = new stream.PassThrough();
-    const stderrStream = new stream.PassThrough();
-
-    stdoutStream.on('data', (chunk) => {
-      this.eventEmitter.emit('newLog', { opStateIndex, log: chunk.toString() });
-      flow.state.opStates[opStateIndex].logs.push({
-        type: 'stdout',
-        log: chunk.toString(),
-      });
-      this.db.write();
-    });
-
-    return await this.docker
-      .run(image, parsedcmd as string[], [stdoutStream, stderrStream], {
-        name,
-        Tty: false,
-        // --gpus all
-        HostConfig: {
-          DeviceRequests: [
-            {
-              Count: -1,
-              Driver: 'nvidia',
-              Capabilities: [['gpu']],
-            },
-          ],
-        },
-      })
-      .then(([res, container]) => {
-        const stderr = stderrStream.read() as Buffer | undefined;
-        const logs = flow.state.opStates[opStateIndex].logs;
-        if (stderr) {
-          logs.push({
-            type: 'stderr',
-            log: stderr.toString(),
-          });
+    updateOpState: Function,
+  ): Promise<OpState> {
+    return await new Promise<OpState>(async (resolve, reject) => {
+      let cmd = '';
+      for (let i = 0; i < cmds.length; i++) {
+        if (i === 0) {
+          cmd += cmds[i];
+        } else {
+          cmd += "'" + cmds[i] + "'";
         }
+      }
+      const flow = this.getFlow(flowId) as Flow;
+      const parsedcmd = parse(cmd);
 
-        return {
-          exitCode: res.StatusCode,
-          logs,
-        };
-      })
-      .catch((error) => {
-        chalk.red(console.log('Docker run failed', { error }));
-        // TODO: document error codes
-        return {
-          exitCode: 1,
+      try {
+        await this.pullImage(image);
+      } catch (error: any) {
+        console.log(chalk.red('Cannot pull image', { error }));
+        updateOpState({
+          exitCode: 2,
+          status: 'failed',
+          endTime: Date.now(),
           logs: [
             {
               type: 'stderr',
               log: error.message.toString(),
             },
-          ] as OpState['logs'],
-        };
+          ],
+        });
+        reject(flow.state.opStates[opStateIndex]);
+      }
+
+      // when flow is being cleared, resolve promise
+      this.eventEmitter.on('startClearFlow', (id) => {
+        if (id === flowId) {
+          this.eventEmitter.removeAllListeners('startClearFlow');
+          reject(flow.state.opStates[opStateIndex]);
+        }
       });
+
+      const name =
+        image +
+        '-' +
+        [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
+      updateOpState({ providerId: name });
+
+      const stdoutStream = new stream.PassThrough();
+      const stderrStream = new stream.PassThrough();
+      const logs: OpState['logs'] = [];
+
+      this.handleLogStreams(
+        name,
+        stdoutStream,
+        stderrStream,
+        (data: { log: string; type: 'stdin' | 'stdout' | 'stderr' }) => {
+          this.eventEmitter.emit('newLog', {
+            type: data.type,
+            log: data.log,
+          });
+          logs.push({
+            type: data.type,
+            log: data.log,
+          });
+          updateOpState({ logs });
+        },
+        3,
+      ).catch((e) => {
+        console.log(chalk.red(`Error handling log streams for ${name}`, e));
+      });
+
+      // pass stream, but we are not using it, as we are using handleLogStreams
+      const emptyStream = new stream.PassThrough();
+
+      return await this.docker
+        .run(image, parsedcmd as string[], emptyStream, {
+          name,
+          Tty: false,
+          // --gpus all
+          HostConfig: {
+            DeviceRequests: [
+              {
+                Count: -1,
+                Driver: 'nvidia',
+                Capabilities: [['gpu']],
+              },
+            ],
+          },
+        })
+        .then(async ([res, container]) => {
+          await this.finishOpContainerRun(container, updateOpState);
+          emptyStream.end();
+          this.eventEmitter.removeAllListeners('startClearFlow');
+          resolve(flow.state.opStates[opStateIndex]);
+        })
+        .catch((error) => {
+          console.log(chalk.red('Docker run failed', { error }));
+          // TODO: document error codes
+          updateOpState({
+            exitCode: 2,
+            status: 'failed',
+            endTime: Date.now(),
+            logs: [
+              {
+                type: 'stderr',
+                log: error.message.toString(),
+              },
+            ],
+          });
+          this.eventEmitter.removeAllListeners('startClearFlow');
+          throw new Error(error.message.toString());
+        });
+    });
+  }
+
+  /**
+   * Finish container run, extract results and update opState
+   * @param container
+   * @param opState
+   * @param containerInfo optional
+   */
+  private async finishOpContainerRun(
+    container: Docker.Container,
+    updateOpState: Function,
+    containerInfo?: Docker.ContainerInspectInfo,
+  ): Promise<void> {
+    if (!containerInfo) containerInfo = await container.inspect();
+
+    // op is done, get logs from container and save them in the flow
+    const log = await container.logs({
+      follow: false,
+      stdout: true,
+      stderr: true,
+    });
+    const logs: OpState['logs'] = [];
+
+    // parse output
+    const output = this.demuxOutput(log);
+    updateOpState({ logs });
+
+    for (let i = 0; i < output.length; i++) {
+      logs.push({
+        type: output[i].type as 'stderr' | 'stdin' | 'stdout',
+        log: output[i].log,
+      });
+      updateOpState({ logs });
+    }
+
+    updateOpState({
+      exitCode: containerInfo.State.ExitCode,
+      status: containerInfo.State.ExitCode ? 'failed' : 'success',
+      endTime: Math.floor(new Date(containerInfo.State.FinishedAt).getTime()),
+    });
+  }
+
+  private async handleLogStreams(
+    container: Docker.Container | string,
+    stdoutStream: stream.PassThrough,
+    stderrStream: stream.PassThrough,
+    callback: Function,
+    retries?: number,
+  ) {
+    await new Promise<void>(async (resolve, reject) => {
+      // TODO: now made with retries, check if there's a better solution..
+      if (!this.isDockerContainer(container)) {
+        const c = await this.getContainerByName(container);
+        if (c) {
+          container = this.docker.getContainer(c.Id);
+        } else {
+          if (retries && retries > 0) {
+            await sleep(1);
+            await this.handleLogStreams(
+              container,
+              stdoutStream,
+              stderrStream,
+              callback,
+              retries - 1,
+            );
+          } else {
+            reject();
+          }
+        }
+      }
+
+      if (this.isDockerContainer(container)) {
+        stderrStream.on('data', (chunk: Buffer) => {
+          callback({
+            type: 'stderr',
+            log: chunk.toString(),
+          });
+        });
+
+        stdoutStream.on('data', (chunk: Buffer) => {
+          callback({
+            type: 'stdout',
+            log: chunk.toString(),
+          });
+        });
+
+        const logStream = await container.logs({
+          stdout: true,
+          stderr: true,
+          follow: true,
+        });
+        container.modem.demuxStream(logStream, stdoutStream, stderrStream);
+
+        logStream.on('end', async () => {
+          stdoutStream.end();
+          stderrStream.end();
+          resolve();
+        });
+      }
+    });
   }
 
   public async clearFlow(flowId: string): Promise<void> {
@@ -377,11 +464,8 @@ export class DockerProvider extends BasicProvider implements Provider {
    * @param buffer
    * @returns
    */
-  private demuxOutput = (
-    buffer: Buffer,
-  ): { stdout: string; stderr: string } => {
-    const stdouts: Buffer[] = [];
-    const stderrs: Buffer[] = [];
+  private demuxOutput = (buffer: Buffer): { type: string; log: string }[] => {
+    const output = [];
 
     function bufferSlice(end: number) {
       const out = buffer.slice(0, end);
@@ -396,19 +480,26 @@ export class DockerProvider extends BasicProvider implements Provider {
       const content = bufferSlice(nextDataLength);
       switch (nextDataType) {
         case 1:
-          stdouts.push(content);
+          output.push({
+            type: 'stdout',
+            log: Buffer.concat([content]).toString('utf8'),
+          });
           break;
         case 2:
-          stderrs.push(content);
+          output.push({
+            type: 'stderr',
+            log: Buffer.concat([content]).toString('utf8'),
+          });
           break;
         default:
         // ignore
       }
     }
 
-    return {
-      stdout: Buffer.concat(stdouts).toString('utf8'),
-      stderr: Buffer.concat(stderrs).toString('utf8'),
-    };
+    return output;
   };
+
+  private isDockerContainer(obj: any): obj is Docker.Container {
+    return obj.modem !== undefined;
+  }
 }

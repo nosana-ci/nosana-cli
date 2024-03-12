@@ -87,21 +87,33 @@ export class BasicProvider implements Provider {
       // run operations
       for (let i = 0; i < flow.jobDefinition.ops.length; i++) {
         const op = flow.jobDefinition.ops[i];
-        let opState: OpState;
-        try {
-          const operationTypeFunction = this.supportedOps[op.type];
-          if (!operationTypeFunction) {
-            throw new Error(`no support for operation type ${op.type}`);
+        let opState: OpState = flow.state.opStates[i];
+        if (!opState.endTime) {
+          try {
+            const operationTypeFunction = this.supportedOps[op.type];
+            if (!operationTypeFunction) {
+              throw new Error(`no support for operation type ${op.type}`);
+            }
+            // @ts-ignore
+            opState = await this[operationTypeFunction](
+              op,
+              flowId,
+              (newOpStateData: object) => {
+                flow.state.opStates[i] = {
+                  ...flow.state.opStates[i],
+                  ...newOpStateData,
+                };
+                this.db.write();
+              },
+            );
+          } catch (error) {
+            console.error(chalk.red(error));
+            this.db.data.flows[flowId].state.opStates.find(
+              (opState) => opState.operationId === op.id,
+            )!.status = 'failed';
+            this.db.write();
+            break;
           }
-          // @ts-ignore
-          opState = await this[operationTypeFunction](op, flowId);
-        } catch (error) {
-          console.error(chalk.red(error));
-          this.db.data.flows[flowId].state.opStates.find(
-            (opState) => opState.operationId === op.id,
-          )!.status = 'failed';
-          this.db.write();
-          break;
         }
         if (opState && opState.status === 'failed') break;
       }
@@ -184,6 +196,7 @@ export class BasicProvider implements Provider {
   }
 
   public async clearFlow(flowId: string): Promise<void> {
+    this.eventEmitter.emit('startClearFlow', flowId);
     delete this.db.data.flows[flowId];
     this.db.write();
     console.log('Cleared flow', flowId);
