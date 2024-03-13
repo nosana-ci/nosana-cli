@@ -11,6 +11,7 @@ import chalk from 'chalk';
 import ora from 'ora';
 import fs from 'node:fs';
 import { IValidation } from 'typia';
+import util from 'util';
 
 let flow: Flow | undefined;
 let provider: Provider;
@@ -89,6 +90,8 @@ export async function runJob(
       },
     );
   }
-
-  console.log('result: ', result);
+  console.log(
+    'result: ',
+    util.inspect(result, { showHidden: false, depth: null, colors: true }),
+  );
 }

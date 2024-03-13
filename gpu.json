@@ -1,0 +1,19 @@
+{
+  "version": "0.1",
+  "type": "container",
+  "meta": {
+    "trigger": "cli"
+  },
+  "ops": [
+    {
+      "type": "container/run",
+      "id": "gpu",
+      "args": {
+        "cmds": [
+          "nvidia-smi"
+        ],
+        "image": "ubuntu"
+      }
+    }
+  ]
+}
