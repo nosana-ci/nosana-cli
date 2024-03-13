@@ -23,6 +23,10 @@ export interface OperationArgsMap {
   'container/run': {
     image: string;
     cmds: string[];
+    volumes?: [{
+      name: string,
+      dest: string
+    }]
   };
   'container/create-volume': {
     name: string;
@@ -68,6 +72,7 @@ export abstract class Provider {
   abstract getFlow(id: string): Flow | undefined;
   abstract continueFlow(flowId: string): Flow | Promise<Flow>;
   abstract clearFlow(flowId: string): Promise<void>;
+  abstract finishFlow(flowId: string, status?: string): void;
   abstract waitForFlowFinish(
     id: string,
     logCallback?: Function,

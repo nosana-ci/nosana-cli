@@ -6,14 +6,27 @@
   },
   "ops": [
     {
+      "type": "container/create-volume",
+      "id": "create-volume",
+      "args": {
+        "name": "random-id-volume"
+      }
+    },
+    {
       "type": "container/run",
       "id": "run-from-cli",
       "args": {
         "cmds": [
           "/bin/bash -c ",
-          "for i in {1..10}; do echo $i; sleep 1; done;"
+          "for i in {1..5}; do echo $i; sleep 1; done;",
+          "echo Hello World > /nosana/outputs/test.txt;",
+          "ls /nosana/outputs;"
         ],
-        "image": "ubuntu"
+        "image": "ubuntu",
+        "volumes": [{
+          "name": "random-id-volume",
+          "dest": "/nosana/outputs"
+        }]
       }
     },
     {
@@ -22,7 +35,7 @@
       "args": {
         "cmds": [
           "/bin/bash -c ",
-          "for i in {1..10}; do echo $i; sleep 1; done;"
+          "for i in {1..5}; do echo $i; sleep 1; done;"
         ],
         "image": "ubuntu"
       }
