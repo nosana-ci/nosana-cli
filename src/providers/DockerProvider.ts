@@ -201,38 +201,6 @@ export class DockerProvider extends BasicProvider implements Provider {
   }
 
   /**
-   * Pull docker image
-   * @param image
-   * @returns
-   */
-  private async pullImage(image: string) {
-    return await new Promise((resolve, reject): any =>
-      this.docker.pull(image, (err: any, stream: any) => {
-        this.docker.modem.followProgress(stream, onFinished);
-        function onFinished(err: any, output: any) {
-          if (!err) {
-            resolve(true);
-            return;
-          }
-          reject(err);
-        }
-      }),
-    );
-  }
-
-  /**
-   * Prune volumes that are not being used by containers
-   * @returns 
-   */
-  private async pruneVolumes() {
-    return await new Promise<void>((resolve, reject): any =>
-      this.docker.pruneVolumes({}, (result) => {
-        resolve();
-      }),
-    );
-  }
-
-  /**
    * Perform docker.run for given cmd, return logs
    * @param opArgs
    * @param flowId
@@ -468,27 +436,35 @@ export class DockerProvider extends BasicProvider implements Provider {
     for (let j = 0; j < flow.state.opStates.length; j++) {
       const op = flow.state.opStates[j];
       if (op.providerId) {
-        try {
-          const c = await this.getContainerByName(op.providerId);
-          if (c) {
-            const container = this.docker.getContainer(c.Id);
-            const containerInfo = await container.inspect();
-            if (containerInfo.State.Running) {
-              await container.stop();
-            }
-            await container.remove();
-          }
-        } catch (err: any) {
-          console.error(`couldnt stop container ${op.providerId} - ${err}`);
-        }
+        await this.stopAndRemoveContainer(op.providerId);
       }
     }
     super.clearFlow(flowId);
   }
 
   public async finishFlow(flowId: string, status?: string | undefined): Promise<void> {
+    const flow = this.getFlow(flowId) as Flow;
+
+    // first remove all containers
+    for (let i = 0; i < flow?.jobDefinition.ops.length; i++) {
+      if (flow.state.opStates[i].providerId) {
+        await this.stopAndRemoveContainer(flow.state.opStates[i].providerId as string);
+      }
+    }
+
+    // then remove all volumes
+    for (let i = 0; i < flow?.jobDefinition.ops.length; i++) {
+      const op = flow?.jobDefinition.ops[i];
+      if (op && op.type === "container/create-volume") {
+        try {
+          // @ts-ignore
+          await this.removeVolume(op.args.name); 
+        } catch (error) {
+          console.log('couldnt remove volume', error);
+        }
+      }
+    }
     super.finishFlow(flowId, status);
-    await this.pruneVolumes();
   }
 
   /****************
@@ -516,6 +492,50 @@ export class DockerProvider extends BasicProvider implements Provider {
   /****************
    *   Helpers   *
    ****************/
+  private async pullImage(image: string) {
+    return await new Promise((resolve, reject): any =>
+      this.docker.pull(image, (err: any, stream: any) => {
+        this.docker.modem.followProgress(stream, onFinished);
+        function onFinished(err: any, output: any) {
+          if (!err) {
+            resolve(true);
+            return;
+          }
+          reject(err);
+        }
+      }),
+    );
+  }
+
+  /**
+   * Remove volume
+   * @returns 
+   */
+  private async removeVolume(name: string) {
+    return await new Promise<void>(async (resolve, reject): Promise<any> => {
+      const volume = this.docker.getVolume(name);
+      await volume.remove();
+    });
+  }
+
+  private async stopAndRemoveContainer(providerId: string) {
+    if (providerId) {
+      try {
+        const c = await this.getContainerByName(providerId);
+        if (c) {
+          const container = this.docker.getContainer(c.Id);
+          const containerInfo = await container.inspect();
+          if (containerInfo.State.Running) {
+            await container.stop();
+          }
+          await container.remove();
+        }
+      } catch (err: any) {
+        console.error(`couldnt stop or remove container ${providerId} - ${err}`);
+      }
+    }
+  }
+
   /**
    * input: log Buffer, output stdout & stderr strings
    * @param buffer
