@@ -11,10 +11,12 @@ import stream from 'stream';
 import { parse } from 'shell-quote';
 import { BasicProvider } from './BasicProvider';
 import { sleep } from '../generic/utils.js';
-import util from 'util';
 
 export class DockerProvider extends BasicProvider implements Provider {
-  private docker: Docker;
+  protected docker: Docker;
+  protected host: string;
+  protected port: string;
+  protected protocol: string;
   protected supportedOps: { [key: string]: string } = {
     'container/run': this.opContainerRun.name,
     'container/create-volume': this.opCreateVolume.name,
@@ -35,10 +37,13 @@ export class DockerProvider extends BasicProvider implements Provider {
       throw new Error(`Protocol ${protocol} not supported`);
     }
 
+    this.host = podmanUri.hostname;
+    this.port = podmanUri.port;
+    this.protocol = protocol;
     this.docker = new Docker({
-      host: podmanUri.hostname,
-      port: podmanUri.port,
-      protocol: protocol as 'https' | 'http' | 'ssh' | undefined,
+      host: this.host,
+      port: this.port,
+      protocol: this.protocol as 'https' | 'http' | 'ssh' | undefined,
     });
   }
 
@@ -195,7 +200,7 @@ export class DockerProvider extends BasicProvider implements Provider {
    * @param opStateIndex
    * @returns
    */
-  private async executeCmd(
+  async executeCmd(
     opArgs: OperationArgsMap['container/run'],
     flowId: string,
     opStateIndex: number,
@@ -304,7 +309,7 @@ export class DockerProvider extends BasicProvider implements Provider {
    * @param opState
    * @param containerInfo optional
    */
-  private async finishOpContainerRun(
+  protected async finishOpContainerRun(
     container: Docker.Container,
     updateOpState: Function,
     containerInfo?: Docker.ContainerInspectInfo,
@@ -338,7 +343,7 @@ export class DockerProvider extends BasicProvider implements Provider {
     });
   }
 
-  private async handleLogStreams(
+  protected async handleLogStreams(
     container: Docker.Container | string,
     callback: Function,
     retries?: number,
@@ -433,7 +438,7 @@ export class DockerProvider extends BasicProvider implements Provider {
   /****************
    *   Getters   *
    ****************/
-  private async getContainerByName(
+  protected async getContainerByName(
     name: string,
   ): Promise<Docker.ContainerInfo | undefined> {
     const opts = {
@@ -455,7 +460,7 @@ export class DockerProvider extends BasicProvider implements Provider {
   /****************
    *   Helpers   *
    ****************/
-  private async pullImage(image: string) {
+  protected async pullImage(image: string) {
     return await new Promise((resolve, reject): any =>
       this.docker.pull(image, (err: any, stream: any) => {
         if (err) {
