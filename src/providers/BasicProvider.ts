@@ -89,6 +89,13 @@ export class BasicProvider implements Provider {
         const op = flow.jobDefinition.ops[i];
         let opState: OpState = flow.state.opStates[i];
         if (!opState.endTime) {
+          const updateOpState = (newOpStateData: object) => {
+            flow.state.opStates[i] = {
+              ...flow.state.opStates[i],
+              ...newOpStateData,
+            };
+            this.db.write();
+          };
           try {
             const operationTypeFunction = this.supportedOps[op.type];
             if (!operationTypeFunction) {
@@ -98,16 +105,20 @@ export class BasicProvider implements Provider {
             opState = await this[operationTypeFunction](
               op,
               flowId,
-              (newOpStateData: object) => {
-                flow.state.opStates[i] = {
-                  ...flow.state.opStates[i],
-                  ...newOpStateData,
-                };
-                this.db.write();
-              },
+              updateOpState,
             );
-          } catch (error) {
-            console.error(chalk.red(error));
+          } catch (error: any) {
+            updateOpState({
+              exitCode: 2,
+              status: 'failed',
+              endTime: Date.now(),
+              logs: [
+                {
+                  type: 'nodeerr',
+                  log: error.message ? error.message.toString() : error,
+                },
+              ],
+            });
             this.db.data.flows[flowId].state.opStates.find(
               (opState) => opState.operationId === op.id,
             )!.status = 'failed';
@@ -126,9 +137,7 @@ export class BasicProvider implements Provider {
     }
     this.finishFlow(
       flowId,
-      flow.state.errors && flow.state.errors.length > 0
-        ? 'node-error'
-        : undefined,
+      flow.state.errors && flow.state.errors.length > 0 ? 'error' : undefined,
     );
   }
 

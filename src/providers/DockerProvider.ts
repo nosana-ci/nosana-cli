@@ -11,6 +11,7 @@ import stream from 'stream';
 import { parse } from 'shell-quote';
 import { BasicProvider } from './BasicProvider';
 import { sleep } from '../generic/utils.js';
+import util from 'util';
 
 export class DockerProvider extends BasicProvider implements Provider {
   private docker: Docker;
@@ -138,20 +139,7 @@ export class DockerProvider extends BasicProvider implements Provider {
         startTime: Date.now(),
         status: 'running',
       });
-      try {
-        await this.executeCmd(op.args, flowId, opStateIndex, updateOpState);
-      } catch (e: any) {
-        updateOpState({
-          logs: [
-            {
-              type: 'stderr' as const,
-              log: e.toString(),
-            },
-          ],
-          status: 'failed',
-        });
-        throw new Error(e);
-      }
+      await this.executeCmd(op.args, flowId, opStateIndex, updateOpState);
     }
     return flow.state.opStates[opStateIndex];
   }
@@ -228,26 +216,14 @@ export class DockerProvider extends BasicProvider implements Provider {
       try {
         await this.pullImage(opArgs.image);
       } catch (error: any) {
-        console.log(chalk.red('Cannot pull image', { error }));
-        updateOpState({
-          exitCode: 2,
-          status: 'failed',
-          endTime: Date.now(),
-          logs: [
-            {
-              type: 'stderr',
-              log: error.message.toString(),
-            },
-          ],
-        });
-        reject(flow.state.opStates[opStateIndex]);
+        reject(chalk.red(`Cannot pull image ${opArgs.image}: `) + error);
       }
 
       // when flow is being cleared, resolve promise
       this.eventEmitter.on('startClearFlow', (id) => {
         if (id === flowId) {
           this.eventEmitter.removeAllListeners('startClearFlow');
-          reject(flow.state.opStates[opStateIndex]);
+          resolve(flow.state.opStates[opStateIndex]);
         }
       });
 
@@ -316,21 +292,8 @@ export class DockerProvider extends BasicProvider implements Provider {
           resolve(flow.state.opStates[opStateIndex]);
         })
         .catch((error) => {
-          console.log(chalk.red('Docker run failed', { error }));
-          // TODO: document error codes
-          updateOpState({
-            exitCode: 2,
-            status: 'failed',
-            endTime: Date.now(),
-            logs: [
-              {
-                type: 'stderr',
-                log: error.message.toString(),
-              },
-            ],
-          });
           this.eventEmitter.removeAllListeners('startClearFlow');
-          throw new Error(error.message.toString());
+          reject(error);
         });
     });
   }
@@ -495,7 +458,11 @@ export class DockerProvider extends BasicProvider implements Provider {
   private async pullImage(image: string) {
     return await new Promise((resolve, reject): any =>
       this.docker.pull(image, (err: any, stream: any) => {
-        this.docker.modem.followProgress(stream, onFinished);
+        if (err) {
+          reject(err);
+        } else {
+          this.docker.modem.followProgress(stream, onFinished);
+        }
         function onFinished(err: any, output: any) {
           if (!err) {
             resolve(true);
