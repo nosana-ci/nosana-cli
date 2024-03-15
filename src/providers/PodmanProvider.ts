@@ -61,7 +61,7 @@ export class PodmanProvider extends DockerProvider {
         volumes: opArgs.volumes,
         env: { "DEBUG": "1" },
         devices: [{ path: 'nvidia.com/gpu=all' }],
-        // portmappings: [{ container_port: 80, host_port: this.port }],
+        portmappings: [{ container_port: 80, host_port: 8081 }],
         create_working_dir: true,
         cgroups_mode: 'disabled',
       };
@@ -130,7 +130,7 @@ export class PodmanProvider extends DockerProvider {
               endTime: Date.now(),
               logs: [{
                 type: 'stderr',
-                log: 'Cannot start container'
+                log: 'Cannot start container: ' + (await start.json()).message
               }]
             });
             reject(flow.state.opStates[opStateIndex]);
@@ -142,7 +142,7 @@ export class PodmanProvider extends DockerProvider {
             endTime: Date.now(),
             logs: [{
               type: 'stderr',
-              log: 'Cannot create container'
+              log: 'Cannot create container' + (await create.json()).message
             }]
           });
           reject(flow.state.opStates[opStateIndex]);
