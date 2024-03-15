@@ -78,47 +78,60 @@ export class PodmanProvider extends DockerProvider {
             body: JSON.stringify(options),
           },
         );
-        // console.log('createContainer', create.status)
 
         // start container and handle logs
         if (create.status === 201) {
           const createResult = await create.json();
           
-          await fetch(`${this.apiUrl}/containers/${createResult.Id}/start`, {
+          const start = await fetch(`${this.apiUrl}/containers/${createResult.Id}/start`, {
             method: 'POST',
           });
 
-          const logs: OpState['logs'] = [];
-          await this.handleLogStreams(
-            name,
-            (data: { log: string; type: 'stdin' | 'stdout' | 'stderr' }) => {
-              this.eventEmitter.emit('newLog', {
-                type: data.type,
-                log: data.log,
-              });
-              logs.push({
-                type: data.type,
-                log: data.log,
-              });
-              updateOpState({ logs });
-            },
-          ).catch((e) => {
-            console.log(chalk.red(`Error handling log streams for ${name}`, e));
-          });
+          if (start.status === 204) {
+            const logs: OpState['logs'] = [];
+            await this.handleLogStreams(
+              name,
+              (data: { log: string; type: 'stdin' | 'stdout' | 'stderr' }) => {
+                this.eventEmitter.emit('newLog', {
+                  type: data.type,
+                  log: data.log,
+                });
+                logs.push({
+                  type: data.type,
+                  log: data.log,
+                });
+                updateOpState({ logs });
+              },
+            ).catch((e) => {
+              console.log(chalk.red(`Error handling log streams for ${name}`, e));
+            });
 
-          const c = await this.getContainerByName(name);
-          if (c) {
-            const container = this.docker.getContainer(c.Id);
-            await this.finishOpContainerRun(container, updateOpState);
-            resolve(flow.state.opStates[opStateIndex]);
+            const c = await this.getContainerByName(name);
+            if (c) {
+              const container = this.docker.getContainer(c.Id);
+              await this.finishOpContainerRun(container, updateOpState);
+              resolve(flow.state.opStates[opStateIndex]);
+            } else {
+              updateOpState({
+                exitCode: 3,
+                status: 'failed',
+                endTime: Date.now(),
+                logs: [{
+                  type: 'stderr',
+                  log: 'Cannot fetch container info'
+                }]
+              });
+              reject(flow.state.opStates[opStateIndex]);
+            }  
           } else {
+            console.log('couldnt start container', start.status);
             updateOpState({
-              exitCode: 3,
+              exitCode: 1,
               status: 'failed',
               endTime: Date.now(),
               logs: [{
                 type: 'stderr',
-                log: 'Cannot fetch container info'
+                log: 'Cannot start container'
               }]
             });
             reject(flow.state.opStates[opStateIndex]);
