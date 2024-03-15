@@ -24,6 +24,7 @@ import {
 import { PublicKey } from '@solana/web3.js';
 import { EMPTY_ADDRESS } from '../../services/jobs.js';
 import { IValidation } from 'typia';
+import { PodmanProvider } from '../../providers/PodmanProvider.js';
 
 let provider: Provider;
 let run: Run | void;
@@ -82,6 +83,9 @@ export async function startNode(
 
   console.log(`Provider:\t${chalk.greenBright.bold(options.provider)}`);
   switch (options.provider) {
+    case 'podman':
+      provider = new PodmanProvider(options.podman);
+      break;
     case 'docker':
     default:
       provider = new DockerProvider(options.podman);

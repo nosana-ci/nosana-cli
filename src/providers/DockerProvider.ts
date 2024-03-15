@@ -6,7 +6,7 @@ import {
   Flow,
   OperationArgsMap,
 } from './Provider';
-import Docker, { Container, MountType } from 'dockerode';
+import Docker, { MountType } from 'dockerode';
 import stream from 'stream';
 import { parse } from 'shell-quote';
 import { BasicProvider } from './BasicProvider';
@@ -154,7 +154,7 @@ export class DockerProvider extends BasicProvider implements Provider {
    * @param op Operation specs
    */
   private async opCreateVolume(
-    op: Operation<'container/run'>,
+    op: Operation<'container/create-volume'>,
     flowId: string,
     updateOpState: Function,
   ): Promise<string> {
@@ -166,7 +166,7 @@ export class DockerProvider extends BasicProvider implements Provider {
     return await new Promise(async (resolve, reject): Promise<any> => {
       this.docker.createVolume(
         {
-          Name: op.id,
+          Name: op.args.name,
         },
         (err, volume) => {
           if (err) {
@@ -485,8 +485,13 @@ export class DockerProvider extends BasicProvider implements Provider {
    */
   private async removeVolume(name: string) {
     return await new Promise<void>(async (resolve, reject): Promise<any> => {
-      const volume = this.docker.getVolume(name);
-      await volume.remove();
+      try {
+        const volume = this.docker.getVolume(name);
+        await volume.remove();
+        resolve(); 
+      } catch (error) {
+        reject(error);
+      }
     });
   }
 

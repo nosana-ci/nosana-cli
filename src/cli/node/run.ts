@@ -12,6 +12,7 @@ import ora from 'ora';
 import fs from 'node:fs';
 import { IValidation } from 'typia';
 import util from 'util';
+import { PodmanProvider } from '../../providers/PodmanProvider';
 
 let flow: Flow | undefined;
 let provider: Provider;
@@ -44,6 +45,9 @@ export async function runJob(
     }
   });
   switch (options.provider) {
+    case 'podman':
+      provider = new PodmanProvider(options.podman);
+      break;
     case 'docker':
     default:
       provider = new DockerProvider(options.podman);

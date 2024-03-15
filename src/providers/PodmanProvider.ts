@@ -1,17 +1,16 @@
 import chalk from 'chalk';
 import { DockerProvider } from './DockerProvider';
-import {
-  Flow,
-  OpState,
-  Operation,
-  OperationArgsMap,
-  Provider,
-} from './Provider';
+import { Flow, OpState, OperationArgsMap } from './Provider';
+import Docker from 'dockerode';
 import { parse } from 'shell-quote';
-import { MountType } from 'dockerode';
-import stream from 'stream';
 
 export class PodmanProvider extends DockerProvider {
+  private apiUrl: string;
+
+  constructor(podman: string) {
+    super(podman);
+    this.apiUrl = `${this.protocol}://${this.host}:${this.port}/v4.5.0/libpod`;
+  }
   /**
    * Run operation and return results
    * @param op Operation specs
@@ -55,64 +54,89 @@ export class PodmanProvider extends DockerProvider {
         [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
       updateOpState({ providerId: name });
 
-      // const logs: OpState['logs'] = [];
-      // this.handleLogStreams(
-      //   name,
-      //   (data: { log: string; type: 'stdin' | 'stdout' | 'stderr' }) => {
-      //     this.eventEmitter.emit('newLog', {
-      //       type: data.type,
-      //       log: data.log,
-      //     });
-      //     logs.push({
-      //       type: data.type,
-      //       log: data.log,
-      //     });
-      //     updateOpState({ logs });
-      //   },
-      //   3,
-      // ).catch((e) => {
-      //   console.log(chalk.red(`Error handling log streams for ${name}`, e));
-      // });
-
       const options = {
         image: opArgs.image,
-        command: ["/bin/bash", "-c", "echo Hello!"], // parsedcmd
-        // name,
-        // env: { DEBUG: 1 },
-        // volumes: opArgs.volumes,
-        // devices: [{ path: 'nvidia.com/gpu=all' }],
+        name: name,
+        command: parsedcmd,
+        volumes: opArgs.volumes,
+        // env: { "DEBUG": 1 },
+        devices: [{ path: 'nvidia.com/gpu=all' }],
         // portmappings: [{ container_port: 80, host_port: this.port }],
         // create_working_dir: true,
         // cgroups_mode: 'disabled',
       };
-      console.log('options', options);
 
       try {
-        const createContainer = await fetch(
-          `${this.protocol}://${this.host}:${this.port}/containers/create`,
+        // create container
+        const create = await fetch(
+          `${this.apiUrl}/containers/create`,
           {
             method: 'POST',
             headers: {
-              'Accept': 'application/json',
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
             },
             body: JSON.stringify(options),
           },
         );
-        const createResult = await createContainer.json();
-        console.log('createResult:', createResult);
+        // console.log('createContainer', create.status)
 
-        const startContainer = await fetch(
-          `${this.protocol}://${this.host}:${this.port}/containers/${createResult.Id}/start`,
-          {
+        // start container and handle logs
+        if (create.status === 201) {
+          const createResult = await create.json();
+          
+          await fetch(`${this.apiUrl}/containers/${createResult.Id}/start`, {
             method: 'POST',
-          },
-        );
+          });
 
-        // const startResult = await startContainer.json();
-        console.log('startResult:', startContainer);
+          const logs: OpState['logs'] = [];
+          await this.handleLogStreams(
+            name,
+            (data: { log: string; type: 'stdin' | 'stdout' | 'stderr' }) => {
+              this.eventEmitter.emit('newLog', {
+                type: data.type,
+                log: data.log,
+              });
+              logs.push({
+                type: data.type,
+                log: data.log,
+              });
+              updateOpState({ logs });
+            },
+          ).catch((e) => {
+            console.log(chalk.red(`Error handling log streams for ${name}`, e));
+          });
+
+          const c = await this.getContainerByName(name);
+          if (c) {
+            const container = this.docker.getContainer(c.Id);
+            await this.finishOpContainerRun(container, updateOpState);
+            resolve(flow.state.opStates[opStateIndex]);
+          } else {
+            updateOpState({
+              exitCode: 3,
+              status: 'failed',
+              endTime: Date.now(),
+              logs: [{
+                type: 'stderr',
+                log: 'Cannot fetch container info'
+              }]
+            });
+            reject(flow.state.opStates[opStateIndex]);
+          }
+        } else {
+          updateOpState({
+            exitCode: 1,
+            status: 'failed',
+            endTime: Date.now(),
+            logs: [{
+              type: 'stderr',
+              log: 'Cannot create container'
+            }]
+          });
+          reject(flow.state.opStates[opStateIndex]);
+        }
       } catch (error) {
-        console.log('error:', error);
+        reject(error);
       }
     });
   }
