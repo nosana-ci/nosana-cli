@@ -117,7 +117,7 @@ node
   .argument('<market>', 'market address')
   .addOption(
     new Option('--provider <provider>', 'provider used to run the job')
-      .choices(['docker'])
+      .choices(['docker', 'podman'])
       .default('docker'),
   )
   .addOption(
@@ -140,7 +140,7 @@ node
       '--provider <provider>',
       'provider used to run the job definition',
     )
-      .choices(['docker'])
+      .choices(['docker', 'podman'])
       .default('docker'),
   )
   .addOption(
