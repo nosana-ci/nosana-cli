@@ -59,11 +59,11 @@ export class PodmanProvider extends DockerProvider {
         name: name,
         command: parsedcmd,
         volumes: opArgs.volumes,
-        // env: { "DEBUG": 1 },
+        env: { "DEBUG": "1" },
         devices: [{ path: 'nvidia.com/gpu=all' }],
         // portmappings: [{ container_port: 80, host_port: this.port }],
-        // create_working_dir: true,
-        // cgroups_mode: 'disabled',
+        create_working_dir: true,
+        cgroups_mode: 'disabled',
       };
 
       try {
@@ -124,7 +124,6 @@ export class PodmanProvider extends DockerProvider {
               reject(flow.state.opStates[opStateIndex]);
             }  
           } else {
-            console.log('couldnt start container', start.status);
             updateOpState({
               exitCode: 1,
               status: 'failed',
