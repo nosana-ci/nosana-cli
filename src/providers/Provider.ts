@@ -33,6 +33,7 @@ export interface OperationArgsMap {
     devices?: Array<{
       path: string;
     }>,
+    work_dir?: string;
     environment?: {
       [key: string]: string;
     };

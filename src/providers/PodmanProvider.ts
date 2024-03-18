@@ -64,6 +64,7 @@ export class PodmanProvider extends DockerProvider {
         portmappings: [{ container_port: 80, host_port: 8081 }], // TODO: figure out what we want with portmappings
         create_working_dir: true,
         cgroups_mode: 'disabled',
+        work_dir: opArgs.work_dir
       };
 
       try {

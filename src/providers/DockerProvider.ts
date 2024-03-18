@@ -292,6 +292,7 @@ export class DockerProvider extends BasicProvider implements Provider {
             Mounts: volumes,
             DeviceRequests: devices,
           },
+          WorkingDir: opArgs.work_dir
         })
         .then(async ([res, container]) => {
           await this.finishOpContainerRun(container, updateOpState);
