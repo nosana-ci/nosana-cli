@@ -3,7 +3,7 @@ import figlet from 'figlet';
 import { Command, Option } from 'commander';
 import { setSDK } from './services/sdk.js';
 import { run, getJob, download, upload } from './cli/job/index.js';
-import { view, startNode, runJob } from './cli/node/index.js';
+import { view, startNode, runJob, runBenchmark } from './cli/node/index.js';
 const program = new Command();
 
 const VERSION = '0.2.0';
@@ -150,6 +150,34 @@ node
   )
   .description('Run Job Definition File')
   .action(runJob);
+node
+  .command('join-test-grid')
+  .addOption(
+    new Option(
+      '--provider <provider>',
+      'provider used to run the job definition',
+    )
+      .choices(['docker', 'podman'])
+      .default('docker'),
+  )
+  .addOption(
+    new Option('--podman <URI>', 'Podman connection URI').default(
+      'http://localhost:8080',
+    ),
+  )
+  .addOption(
+    new Option('-w, --wallet <wallet>', 'path to wallet private key').default(
+      '~/.nosana/nosana_key.json',
+    ),
+  )
+  .addOption(
+    new Option(
+      '--airdrop',
+      'request an airdrop when low on SOL on devnet',
+    ).default(true),
+  )
+  .description('Join Test Grid Devnet Job')
+  .action(runBenchmark);
 
 async function startCLI() {
   try {

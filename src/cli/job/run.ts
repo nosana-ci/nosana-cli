@@ -25,7 +25,7 @@ export async function run(
   let json_flow: { [key: string]: any }; // TODO: add JSON flow type
   if (options.file) {
     json_flow = JSON.parse(fs.readFileSync(options.file, 'utf8'));
-    json_flow.state['nosana/trigger'] = 'cli';
+    // json_flow.state['nosana/trigger'] = 'cli';
   } else {
     switch (options.type) {
       case 'docker':
