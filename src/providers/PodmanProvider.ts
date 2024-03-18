@@ -48,10 +48,7 @@ export class PodmanProvider extends DockerProvider {
         }
       });
 
-      const name =
-        opArgs.image +
-        '-' +
-        [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
+      const name = [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
       updateOpState({ providerId: name });
 
       const options = {

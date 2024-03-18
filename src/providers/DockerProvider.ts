@@ -232,10 +232,7 @@ export class DockerProvider extends BasicProvider implements Provider {
         }
       });
 
-      const name =
-        opArgs.image +
-        '-' +
-        [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
+      const name = [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
       updateOpState({ providerId: name });
 
       const logs: OpState['logs'] = [];
