@@ -274,20 +274,23 @@ export class DockerProvider extends BasicProvider implements Provider {
 
       // pass stream, but we are not using it, as we are using handleLogStreams
       const emptyStream = new stream.PassThrough();
+      const devices =
+        opArgs.devices && opArgs.devices.find((d) => d.path.includes('nvidia'))
+          ? [
+              {
+                Count: -1,
+                Driver: 'nvidia',
+                Capabilities: [['gpu']],
+              },
+            ]
+          : [];
       return await this.docker
         .run(opArgs.image, parsedcmd as string[], emptyStream, {
           name,
           Tty: false,
           HostConfig: {
             Mounts: volumes,
-            // --gpus all
-            DeviceRequests: [
-              {
-                Count: -1,
-                Driver: 'nvidia',
-                Capabilities: [['gpu']],
-              },
-            ],
+            DeviceRequests: devices,
           },
         })
         .then(async ([res, container]) => {
@@ -410,23 +413,28 @@ export class DockerProvider extends BasicProvider implements Provider {
     super.clearFlow(flowId);
   }
 
-  public async finishFlow(flowId: string, status?: string | undefined): Promise<void> {
+  public async finishFlow(
+    flowId: string,
+    status?: string | undefined,
+  ): Promise<void> {
     const flow = this.getFlow(flowId) as Flow;
 
     // first remove all containers
     for (let i = 0; i < flow?.jobDefinition.ops.length; i++) {
       if (flow.state.opStates[i].providerId) {
-        await this.stopAndRemoveContainer(flow.state.opStates[i].providerId as string);
+        await this.stopAndRemoveContainer(
+          flow.state.opStates[i].providerId as string,
+        );
       }
     }
 
     // then remove all volumes
     for (let i = 0; i < flow?.jobDefinition.ops.length; i++) {
       const op = flow?.jobDefinition.ops[i];
-      if (op && op.type === "container/create-volume") {
+      if (op && op.type === 'container/create-volume') {
         try {
           // @ts-ignore
-          await this.removeVolume(op.args.name); 
+          await this.removeVolume(op.args.name);
         } catch (error) {
           console.log('couldnt remove volume', error);
         }
@@ -481,14 +489,14 @@ export class DockerProvider extends BasicProvider implements Provider {
 
   /**
    * Remove volume
-   * @returns 
+   * @returns
    */
   private async removeVolume(name: string) {
     return await new Promise<void>(async (resolve, reject): Promise<any> => {
       try {
         const volume = this.docker.getVolume(name);
         await volume.remove();
-        resolve(); 
+        resolve();
       } catch (error) {
         reject(error);
       }
@@ -508,7 +516,9 @@ export class DockerProvider extends BasicProvider implements Provider {
           await container.remove();
         }
       } catch (err: any) {
-        console.error(`couldnt stop or remove container ${providerId} - ${err}`);
+        console.error(
+          `couldnt stop or remove container ${providerId} - ${err}`,
+        );
       }
     }
   }

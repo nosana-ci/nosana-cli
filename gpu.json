@@ -12,7 +12,15 @@
         "cmds": [
           "nvidia-smi"
         ],
-        "image": "ubuntu"
+        "image": "ubuntu",
+        "devices": [
+          {
+            "path": "nvidia.com/gpu=all"
+          }
+        ],
+        "environment": {
+          "DEBUG": "1"
+        }
       }
     }
   ]

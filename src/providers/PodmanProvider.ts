@@ -59,8 +59,8 @@ export class PodmanProvider extends DockerProvider {
         name: name,
         command: parsedcmd,
         volumes: opArgs.volumes,
-        env: { DEBUG: '1' }, // TODO: retrieve from job definition file
-        devices: [{ path: 'nvidia.com/gpu=all' }], // TODO: enable gpu in job definition file
+        env: opArgs.environment ? opArgs.environment : flow.jobDefinition.environment,
+        devices: opArgs.devices,
         portmappings: [{ container_port: 80, host_port: 8081 }], // TODO: figure out what we want with portmappings
         create_working_dir: true,
         cgroups_mode: 'disabled',

@@ -11,6 +11,9 @@ export type JobDefinition = {
     trigger?: string;
   };
   ops: Array<Operation<OperationType>>;
+  environment?: {
+    [key: string]: string;
+  };
 };
 export type JobType = 'container';
 
@@ -26,7 +29,13 @@ export interface OperationArgsMap {
     volumes?: [{
       name: string,
       dest: string
-    }]
+    }],
+    devices?: Array<{
+      path: string;
+    }>,
+    environment?: {
+      [key: string]: string;
+    };
   };
   'container/create-volume': {
     name: string;
