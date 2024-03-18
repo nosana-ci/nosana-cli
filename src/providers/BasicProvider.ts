@@ -18,6 +18,17 @@ export class BasicProvider implements Provider {
     this.db = JSONFileSyncPreset<FlowsDb>('db/flows.json', {
       flows: {},
     });
+
+    // Remove flows from db where flow is ended more than 3 days ago
+    const date = new Date();
+    date.setDate(date.getDate() - 3);
+    this.db.data.flows = Object.entries(this.db.data.flows).reduce((flow: any, [key, value]) => {
+      if (value.state.endTime && value.state.endTime > date.valueOf()) {
+        flow[key] = value;
+      }
+      return flow
+    }, {})
+    this.db.write();
   }
   /**
    * Main run
