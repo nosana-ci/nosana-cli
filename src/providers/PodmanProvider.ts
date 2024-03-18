@@ -59,33 +59,33 @@ export class PodmanProvider extends DockerProvider {
         name: name,
         command: parsedcmd,
         volumes: opArgs.volumes,
-        env: { "DEBUG": "1" },
-        devices: [{ path: 'nvidia.com/gpu=all' }],
-        portmappings: [{ container_port: 80, host_port: 8081 }],
+        env: { DEBUG: '1' }, // TODO: retrieve from job definition file
+        devices: [{ path: 'nvidia.com/gpu=all' }], // TODO: enable gpu in job definition file
+        portmappings: [{ container_port: 80, host_port: 8081 }], // TODO: figure out what we want with portmappings
         create_working_dir: true,
         cgroups_mode: 'disabled',
       };
 
       try {
         // create container
-        const create = await fetch(
-          `${this.apiUrl}/containers/create`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(options),
+        const create = await fetch(`${this.apiUrl}/containers/create`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
           },
-        );
+          body: JSON.stringify(options),
+        });
 
         // start container and handle logs
         if (create.status === 201) {
           const createResult = await create.json();
-          
-          const start = await fetch(`${this.apiUrl}/containers/${createResult.Id}/start`, {
-            method: 'POST',
-          });
+
+          const start = await fetch(
+            `${this.apiUrl}/containers/${createResult.Id}/start`,
+            {
+              method: 'POST',
+            },
+          );
 
           if (start.status === 204) {
             const logs: OpState['logs'] = [];
@@ -103,7 +103,9 @@ export class PodmanProvider extends DockerProvider {
                 updateOpState({ logs });
               },
             ).catch((e) => {
-              console.log(chalk.red(`Error handling log streams for ${name}`, e));
+              console.log(
+                chalk.red(`Error handling log streams for ${name}`, e),
+              );
             });
 
             const c = await this.getContainerByName(name);
@@ -116,22 +118,27 @@ export class PodmanProvider extends DockerProvider {
                 exitCode: 3,
                 status: 'failed',
                 endTime: Date.now(),
-                logs: [{
-                  type: 'stderr',
-                  log: 'Cannot fetch container info'
-                }]
+                logs: [
+                  {
+                    type: 'stderr',
+                    log: 'Cannot fetch container info',
+                  },
+                ],
               });
               reject(flow.state.opStates[opStateIndex]);
-            }  
+            }
           } else {
             updateOpState({
               exitCode: 1,
               status: 'failed',
               endTime: Date.now(),
-              logs: [{
-                type: 'stderr',
-                log: 'Cannot start container: ' + (await start.json()).message
-              }]
+              logs: [
+                {
+                  type: 'stderr',
+                  log:
+                    'Cannot start container: ' + (await start.json()).message,
+                },
+              ],
             });
             reject(flow.state.opStates[opStateIndex]);
           }
@@ -140,10 +147,12 @@ export class PodmanProvider extends DockerProvider {
             exitCode: 1,
             status: 'failed',
             endTime: Date.now(),
-            logs: [{
-              type: 'stderr',
-              log: 'Cannot create container' + (await create.json()).message
-            }]
+            logs: [
+              {
+                type: 'stderr',
+                log: 'Cannot create container' + (await create.json()).message,
+              },
+            ],
           });
           reject(flow.state.opStates[opStateIndex]);
         }

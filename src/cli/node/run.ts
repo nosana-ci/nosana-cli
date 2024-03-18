@@ -89,8 +89,12 @@ export async function runJob(
     flow = provider.run(jobDefinition);
     result = await provider.waitForFlowFinish(
       flow.id,
-      (log: { log: string; opIndex: number }) => {
-        console.log(log);
+      (log: { log: string; type: string }) => {
+        if (log.type === 'stdout') {
+          process.stdout.write(log.log);
+        } else {
+          process.stderr.write(log.log);
+        }
       },
     );
   }
