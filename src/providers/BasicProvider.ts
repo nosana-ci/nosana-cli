@@ -25,6 +25,8 @@ export class BasicProvider implements Provider {
     this.db.data.flows = Object.entries(this.db.data.flows).reduce((flow: any, [key, value]) => {
       if (value.state.endTime && value.state.endTime > date.valueOf()) {
         flow[key] = value;
+      } else if (!value.state.endTime) {
+        flow[key] = value;
       }
       return flow
     }, {})
