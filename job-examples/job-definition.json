@@ -16,12 +16,10 @@
       "type": "container/run",
       "id": "run-from-cli",
       "args": {
-        "cmds": [
+        "cmd": [
           "/bin/bash -c ",
-          "for i in {1..5}; do echo $i; sleep 1; done;",
           "echo Hello World > /nosana/outputs/test.txt;",
           "ls /nosana/outputs;",
-          "ls -all;",
           "pwd;"
         ],
         "image": "ubuntu",
@@ -29,10 +27,15 @@
           "name": "random-id-volume",
           "dest": "/nosana/outputs"
         }],
-        "environment": {
-          "DEBUG": "1"
-        },
         "work_dir": "/home/podman"
+      }
+    },
+    {
+      "type": "container/run",
+      "id": "run-from-cli-2",
+      "args": {
+        "cmd":  "/bin/bash -c 'echo Hello World; ls; pwd;'",
+        "image": "ubuntu"
       }
     }
   ]

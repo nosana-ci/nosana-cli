@@ -208,12 +208,16 @@ export class DockerProvider extends BasicProvider implements Provider {
   ): Promise<OpState> {
     return await new Promise<OpState>(async (resolve, reject) => {
       let cmd = '';
-      for (let i = 0; i < opArgs.cmds.length; i++) {
-        if (i === 0) {
-          cmd += opArgs.cmds[i];
-        } else {
-          cmd += "'" + opArgs.cmds[i] + "'";
+      if (Array.isArray(opArgs.cmd)) {
+        for (let i = 0; i < opArgs.cmd.length; i++) {
+          if (i === 0) {
+            cmd += opArgs.cmd[i];
+          } else {
+            cmd += "'" + opArgs.cmd[i] + "'";
+          }
         }
+      } else {
+        cmd = opArgs.cmd
       }
       const flow = this.getFlow(flowId) as Flow;
       const parsedcmd = parse(cmd);

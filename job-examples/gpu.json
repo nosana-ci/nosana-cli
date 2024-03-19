@@ -9,7 +9,7 @@
       "type": "container/run",
       "id": "gpu",
       "args": {
-        "cmds": [
+        "cmd": [
           "nvidia-smi"
         ],
         "image": "ubuntu",

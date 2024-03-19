@@ -9,7 +9,7 @@
       "type": "container/run",
       "id": "stats",
       "args": {
-        "cmds": [
+        "cmd": [
           "sh -c ",
           "echo \"\u001b[1;36mCPU: \u001b[0m\"; cat /proc/cpuinfo  | grep name | uniq;",
           "echo \"\u001b[1;36mRAM: \u001b[0m\"; grep MemTotal /proc/meminfo | awk '\\''{print $2 / 1024 \"MB\"}'\\'';",

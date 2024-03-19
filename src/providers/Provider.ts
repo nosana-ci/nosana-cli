@@ -25,7 +25,7 @@ export type Operation<T extends OperationType> = {
 export interface OperationArgsMap {
   'container/run': {
     image: string;
-    cmds: string[];
+    cmd: string[] | string;
     volumes?: [{
       name: string,
       dest: string
