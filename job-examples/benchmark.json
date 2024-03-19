@@ -19,14 +19,10 @@
           "echo \"\u001b[1;36mGPU: \u001b[0m\"; nvidia-smi -L;"
         ],
         "image": "registry.hub.docker.com/nosana/stats",
-        "environment": {
+        "env": {
           "DEBUG": "1"
         },
-        "devices": [
-          {
-            "path": "nvidia.com/gpu=all"
-          }
-        ]
+        "gpu": true
       }
     }
   ]

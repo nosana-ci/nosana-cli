@@ -10,10 +10,15 @@ export type JobDefinition = {
   meta?: {
     trigger?: string;
   };
-  ops: Array<Operation<OperationType>>;
-  environment?: {
-    [key: string]: string;
+  global?: {
+    image?: string;
+    gpu?: boolean;
+    env?: {
+      [key: string]: string;
+    };
+    work_dir?: string;
   };
+  ops: Array<Operation<OperationType>>;
 };
 export type JobType = 'container';
 
@@ -26,15 +31,15 @@ export interface OperationArgsMap {
   'container/run': {
     image: string;
     cmd: string[] | string;
-    volumes?: [{
-      name: string,
-      dest: string
-    }],
-    devices?: Array<{
-      path: string;
-    }>,
+    volumes?: [
+      {
+        name: string;
+        dest: string;
+      },
+    ];
+    gpu?: boolean;
     work_dir?: string;
-    environment?: {
+    env?: {
       [key: string]: string;
     };
   };

@@ -33,7 +33,7 @@ export class PodmanProvider extends DockerProvider {
           }
         }
       } else {
-        cmd = opArgs.cmd
+        cmd = opArgs.cmd;
       }
       const flow = this.getFlow(flowId) as Flow;
       const parsedcmd = parse(cmd);
@@ -55,17 +55,40 @@ export class PodmanProvider extends DockerProvider {
       const name = [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
       updateOpState({ providerId: name });
 
+      // check for global & local options
+      const gpu =
+        opArgs.gpu ||
+        (flow.jobDefinition.global && flow.jobDefinition.global.gpu)
+          ? [
+              {
+                path: 'nvidia.com/gpu=all',
+              },
+            ]
+          : [];
+      const work_dir =
+        opArgs.work_dir ||
+        !flow.jobDefinition.global ||
+        !flow.jobDefinition.global.work_dir
+          ? opArgs.work_dir
+          : flow.jobDefinition.global.work_dir;
+
+      const globalEnv =
+        flow.jobDefinition.global && flow.jobDefinition.global.env
+          ? flow.jobDefinition.global.env
+          : {};
+      const environment = { ...globalEnv, ...opArgs.env };
+
       const options = {
-        image: opArgs.image,
+        image: opArgs.image ? opArgs.image : flow.jobDefinition.global?.image,
         name: name,
         command: parsedcmd,
         volumes: opArgs.volumes,
-        env: opArgs.environment ? opArgs.environment : flow.jobDefinition.environment,
-        devices: opArgs.devices,
+        env: environment,
+        devices: gpu,
         portmappings: [{ container_port: 80, host_port: 8081 }], // TODO: figure out what we want with portmappings
         create_working_dir: true,
         cgroups_mode: 'disabled',
-        work_dir: opArgs.work_dir
+        work_dir
       };
 
       try {

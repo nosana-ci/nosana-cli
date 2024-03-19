@@ -4,6 +4,12 @@
   "meta": {
     "trigger": "cli"
   },
+  "global": {
+    "work_dir": "/home/",
+    "env": {
+      "DEBUG": "1"
+    }
+  },
   "ops": [
     {
       "type": "container/create-volume",

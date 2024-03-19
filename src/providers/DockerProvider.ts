@@ -217,7 +217,7 @@ export class DockerProvider extends BasicProvider implements Provider {
           }
         }
       } else {
-        cmd = opArgs.cmd
+        cmd = opArgs.cmd;
       }
       const flow = this.getFlow(flowId) as Flow;
       const parsedcmd = parse(cmd);
@@ -275,8 +275,18 @@ export class DockerProvider extends BasicProvider implements Provider {
 
       // pass stream, but we are not using it, as we are using handleLogStreams
       const emptyStream = new stream.PassThrough();
+
+      // check for global & local options
+      const work_dir =
+        opArgs.work_dir ||
+        !flow.jobDefinition.global ||
+        !flow.jobDefinition.global.work_dir
+          ? opArgs.work_dir
+          : flow.jobDefinition.global.work_dir;
+
       const devices =
-        opArgs.devices && opArgs.devices.find((d) => d.path.includes('nvidia'))
+        opArgs.gpu ||
+        (flow.jobDefinition.global && flow.jobDefinition.global.gpu)
           ? [
               {
                 Count: -1,
@@ -285,15 +295,26 @@ export class DockerProvider extends BasicProvider implements Provider {
               },
             ]
           : [];
+
+      const globalEnv =
+        flow.jobDefinition.global && flow.jobDefinition.global.env
+          ? flow.jobDefinition.global.env
+          : {};
+      const vars = [];
+      for (const [key, value] of Object.entries({ ...globalEnv, ...opArgs.env })) {
+        vars.push(`${key}=${value}`);
+      }
+
       return await this.docker
         .run(opArgs.image, parsedcmd as string[], emptyStream, {
           name,
           Tty: false,
+          Env: vars,
           HostConfig: {
             Mounts: volumes,
             DeviceRequests: devices,
           },
-          WorkingDir: opArgs.work_dir
+          WorkingDir: work_dir,
         })
         .then(async ([res, container]) => {
           await this.finishOpContainerRun(container, updateOpState);
