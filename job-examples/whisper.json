@@ -1,0 +1,20 @@
+{
+  "version": "0.1",
+  "type": "container",
+  "meta": {
+    "trigger": "cli"
+  },
+  "ops": [
+    {
+      "type": "container/run",
+      "id": "run-from-cli",
+      "args": {
+        "cmd": [
+          "python openai-whisper.py -p hello.mp3"
+        ],
+        "image": "docker.io/nosana/whisper:latest",
+        "gpu": true
+      }
+    }
+  ]
+}
