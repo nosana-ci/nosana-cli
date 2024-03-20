@@ -144,7 +144,7 @@ node
       .default('podman'),
   )
   .addOption(
-    new Option('--podman <URI>', 'Podman connection URI').default(
+    new Option('--docker, --podman <URI>', 'Podman connection URI').default(
       'http://localhost:8080',
     ),
   )
