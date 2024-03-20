@@ -31,33 +31,52 @@ All interactions with Nosana CLI are of the form
 ```shell
 $ nosana [command] [options] [argument]
 ```
-Available commands:
+Available `node` commands:
 ```
-run [options] [command...]  Create a job to run by Nosana Runners
-get [options] <job>         Get a job and display result
-download <ipfs> [path]      Download an external artifact from IPFS to specified path
-help [command]              display help for command
+node view <node>                          View (any) Nosana Node
+node start [options] <market>             Start Nosana Node
+node run [options] <job-definition-file>  Run Job Definition File
+node help [command]                       display help for command
+```
+
+
+Available `job` commands:
+```
+job post [options] [command...] Create a job to run by Nosana Runners
+job get [options] <job>         Get a job and display result
+job download <ipfs> [path]      Download an external artifact from IPFS to specified path
+job help [command]              display help for command
 ```
 
 Global options:
 ```
--V, --version               output the version number
--n, --network <network>     network to run on (default: "devnet")
--m, --market <market>       market to post job to
--w, --wallet <wallet>       path to wallet private key (default: "~/nosana_key.json")
--h, --help                  display help for command
+-V, --version                        output the version number
+-n, --network <network>              network to run on (choices: "devnet", "mainnet", default: "devnet")
+--rpc <url>                          RPC node to use
+--log <logLevel>                     Log level (choices: "info", "none", "debug", "trace", default: "debug")
 ```
 
-## Running jobs
-With the `nosana run [options] [command...]` command you can run nosana jobs. The default job type is `container`, meaning you can run commands in docker containers. 
+## Starting node
+With the `nosana node start [options] <market>` command you can start a Nosana Node and join the Nosana Network.
+
+Options:
+```
+  --provider <provider>     provider used to run the job (choices: "docker", "podman", default: "podman")
+  -w, --wallet <wallet>     path to wallet private key (default: "~/.nosana/nosana_key.json")
+  --docker, --podman <URI>  Podman/Docker connection URI (default: "http://localhost:8080")
+  -h, --help                display help for command
+```
+
+## Posting jobs
+With the `nosana job post [options] [command...]` command you can post nosana jobs to the Nosana Network. The default job type is `container`, meaning nodes will run your job in docker containers. 
 
 ### Example
 The following command will run `echo hello world` with the default `ubuntu` docker image (can be changed with the `--image` flag), while we specify the `--wait` flag to wait for the results:
 ```shell
-$ nosana run echo hello world --wait
+$ nosana job post echo hello world --wait
 ```
 
-All available options for `run`:
+All available options for `post`:
 ```
 --airdrop                request an airdrop when low on SOL on devnet (default: true)
 --gpu                    enable GPU on node

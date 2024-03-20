@@ -40,7 +40,7 @@ program
 
 const job = program.command('job');
 job
-  .command('run')
+  .command('post')
   .description('Create a job to run by Nosana Runners')
   .argument('[command...]', 'command to run')
   .addOption(
@@ -126,9 +126,10 @@ node
     ),
   )
   .addOption(
-    new Option('--podman <URI>', 'Podman connection URI').default(
-      'http://localhost:8080',
-    ),
+    new Option(
+      '--docker, --podman <URI>',
+      'Podman/Docker connection URI',
+    ).default('http://localhost:8080'),
   )
   .description('Start Nosana Node')
   .action(startNode);
@@ -144,9 +145,10 @@ node
       .default('podman'),
   )
   .addOption(
-    new Option('--docker, --podman <URI>', 'Podman connection URI').default(
-      'http://localhost:8080',
-    ),
+    new Option(
+      '--docker, --podman <URI>',
+      'Podman/Docker connection URI',
+    ).default('http://localhost:8080'),
   )
   .description('Run Job Definition File')
   .action(runJob);
@@ -161,9 +163,10 @@ node
       .default('docker'),
   )
   .addOption(
-    new Option('--podman <URI>', 'Podman connection URI').default(
-      'http://localhost:8080',
-    ),
+    new Option(
+      '--docker, --podman <URI>',
+      'Podman/Docker connection URI',
+    ).default('http://localhost:8080'),
   )
   .addOption(
     new Option('-w, --wallet <wallet>', 'path to wallet private key').default(
