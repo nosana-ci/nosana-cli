@@ -118,7 +118,7 @@ node
   .addOption(
     new Option('--provider <provider>', 'provider used to run the job')
       .choices(['docker', 'podman'])
-      .default('docker'),
+      .default('podman'),
   )
   .addOption(
     new Option('-w, --wallet <wallet>', 'path to wallet private key').default(
@@ -141,7 +141,7 @@ node
       'provider used to run the job definition',
     )
       .choices(['docker', 'podman'])
-      .default('docker'),
+      .default('podman'),
   )
   .addOption(
     new Option('--podman <URI>', 'Podman connection URI').default(

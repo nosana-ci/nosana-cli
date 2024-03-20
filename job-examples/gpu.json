@@ -13,11 +13,7 @@
           "nvidia-smi"
         ],
         "image": "ubuntu",
-        "devices": [
-          {
-            "path": "nvidia.com/gpu=all"
-          }
-        ],
+        "gpu": true,
         "env": {
           "DEBUG": "1"
         }

@@ -22,14 +22,17 @@ export class BasicProvider implements Provider {
     // Remove flows from db where flow is ended more than 3 days ago
     const date = new Date();
     date.setDate(date.getDate() - 3);
-    this.db.data.flows = Object.entries(this.db.data.flows).reduce((flow: any, [key, value]) => {
-      if (value.state.endTime && value.state.endTime > date.valueOf()) {
-        flow[key] = value;
-      } else if (!value.state.endTime) {
-        flow[key] = value;
-      }
-      return flow
-    }, {})
+    this.db.data.flows = Object.entries(this.db.data.flows).reduce(
+      (flow: any, [key, value]) => {
+        if (value.state.endTime && value.state.endTime > date.valueOf()) {
+          flow[key] = value;
+        } else if (!value.state.endTime) {
+          flow[key] = value;
+        }
+        return flow;
+      },
+      {},
+    );
     this.db.write();
   }
   /**
@@ -214,7 +217,7 @@ export class BasicProvider implements Provider {
     this.db.write();
 
     this.eventEmitter.emit('flowFinished', flowId);
-    console.log(`Finished flow ${flowId} \n`);
+    console.log(chalk.cyan(`Finished flow ${chalk.bold(flowId)}\n`));
   }
 
   public async clearFlow(flowId: string): Promise<void> {
