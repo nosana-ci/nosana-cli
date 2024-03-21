@@ -79,6 +79,7 @@ export async function runBenchmark(options: { [key: string]: any }) {
       errors: validation.errors,
     };
   } else {
+    spinner.text = chalk.cyan('Running benchmark');
     // Create new flow
     flow = provider.run(jobDefinition);
     result = await provider.waitForFlowFinish(
@@ -93,10 +94,34 @@ export async function runBenchmark(options: { [key: string]: any }) {
     );
   }
   spinner.stop();
-  console.log('node', node);
-  console.log(
-    'result: ',
-    util.inspect(result, { showHidden: false, depth: null, colors: true }),
-  );
-  // TODO: api request to backend with results & node address
+  // console.log('node', node);
+  // console.log(
+  //   'result: ',
+  //   util.inspect(result, { showHidden: false, depth: null, colors: true }),
+  // );
+
+  if (result.status === 'success') {
+    // TODO: api request to backend with results & node address
+    try {
+      // const registrationCode = await fetch(`/join-test-grid`, {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //   },
+      //   body: JSON.stringify({
+      //     node,
+      //     result,
+      //   }),
+      // });   
+
+      console.log(chalk.green('Benchmark finished'));
+      console.log('================================');
+      console.log(chalk.green('Thank you for registering for Nosana Node. \nWe\'ll review your registration and you will get an email from us if you are selected.'));
+    } catch (error) {
+      spinner.fail(chalk.red.bold('Failed to upload benchmark results, try again later'));
+    }
+  } else {
+    console.log(chalk.red(`Couldn't succesfully run benchmark, finished with status: ${result.status}`));
+
+  }
 }

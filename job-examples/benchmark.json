@@ -15,7 +15,7 @@
           "echo \"\u001b[1;36mRAM: \u001b[0m\"; grep MemTotal /proc/meminfo | awk '\\''{print $2 / 1024 \"MB\"}'\\'';",
           "echo \"\u001b[1;36mDISK SPACE: \u001b[0m\";df -h --output=size --total | awk '\\''END {print $1}'\\'';",
           "echo \"\u001b[1;36mCOUNTRY: \u001b[0m\"; (curl -ks https://ipinfo.io/$(curl -ks https://ipinfo.io/ip) | jq -r \".country\") || true;",
-          "echo \"\u001b[1;36mBANDWITH: \u001b[0m\"; speedtest-cli --simple || true;",
+          "echo \"\u001b[1;36mBANDWIDTH: \u001b[0m\"; speedtest-cli --simple || true;",
           "echo \"\u001b[1;36mGPU: \u001b[0m\"; nvidia-smi -L;"
         ],
         "image": "registry.hub.docker.com/nosana/stats",
