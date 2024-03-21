@@ -1,0 +1,24 @@
+{
+  "version": "0.1",
+  "type": "container",
+  "meta": {
+    "trigger": "cli"
+  },
+  "ops": [
+    {
+      "type": "container/run",
+      "id": "gpu-stats",
+      "args": {
+        "cmd": [
+          "sh -c ",
+          "nvidia-smi -L;"
+        ],
+        "image": "registry.hub.docker.com/nosana/stats",
+        "env": {
+          "DEBUG": "1"
+        },
+        "gpu": true
+      }
+    }
+  ]
+}

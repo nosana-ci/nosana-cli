@@ -153,19 +153,7 @@ export class PodmanProvider extends DockerProvider {
               reject(flow.state.opStates[opStateIndex]);
             }
           } else {
-            updateOpState({
-              exitCode: 1,
-              status: 'failed',
-              endTime: Date.now(),
-              logs: [
-                {
-                  type: 'stderr',
-                  log:
-                    'Cannot start container: ' + (await start.json()).message,
-                },
-              ],
-            });
-            reject(flow.state.opStates[opStateIndex]);
+            reject('Cannot start container: ' + (await start.json()).message);
           }
         } else {
           updateOpState({

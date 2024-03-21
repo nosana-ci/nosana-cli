@@ -1,4 +1,3 @@
-import { Command } from 'commander';
 import { DockerProvider } from '../../providers/DockerProvider';
 import {
   Provider,
