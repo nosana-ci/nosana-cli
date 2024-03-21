@@ -10,10 +10,10 @@ import chalk from 'chalk';
 import ora, { Ora } from 'ora';
 import fs from 'node:fs';
 import { IValidation } from 'typia';
-import util from 'util';
 import { PodmanProvider } from '../../providers/PodmanProvider';
 import { Client } from '@nosana/sdk';
 import { getSDK } from '../../services/sdk';
+import { input, confirm } from '@inquirer/prompts';
 
 let flow: Flow | undefined;
 let provider: Provider;
@@ -29,8 +29,11 @@ export async function runBenchmark(options: { [key: string]: any }) {
     if (!handlingSigInt) {
       handlingSigInt = true;
       console.log(chalk.yellow.bold('Shutting down..'));
+      if (spinner) {
+        spinner.stop();
+      }
       if (flow) {
-        const spinner = ora(chalk.cyan(`Stopping flow ${flow.id}`)).start();
+        spinner = ora(chalk.cyan(`Stopping flow ${flow.id}`)).start();
         try {
           await provider.clearFlow(flow.id);
 
@@ -79,7 +82,35 @@ export async function runBenchmark(options: { [key: string]: any }) {
       errors: validation.errors,
     };
   } else {
-    spinner.text = chalk.cyan('Running benchmark');
+    spinner.stop();
+    const answers = {
+      email: await input({
+        message: 'Your Email Address',
+        validate: (value) => /\S+@\S+\.\S+/.test(value),
+      }),
+      discord: await input({
+        message:
+          "What is your Discord username? (If you don't use Discord, leave blank)",
+      }),
+      twitter: await input({
+        message:
+          "What is your Twitter username? (If you don't use Twitter, leave blank)",
+      }),
+    };
+    if (!answers.email) {
+      console.log(chalk.red('Email address is required'));
+      process.exit();
+    }
+
+    const accept = await confirm({
+      message:
+        'Have you read the Participation Agreement and agree to the terms and conditions contained within?',
+    });
+    if (!accept) {
+      console.log(chalk.red('To continue you must agree to the terms and conditions'));
+      process.exit();
+    }
+    spinner = ora(chalk.cyan('Running benchmark')).start();
     // Create new flow
     flow = provider.run(jobDefinition);
     result = await provider.waitForFlowFinish(
@@ -94,11 +125,6 @@ export async function runBenchmark(options: { [key: string]: any }) {
     );
   }
   spinner.stop();
-  // console.log('node', node);
-  // console.log(
-  //   'result: ',
-  //   util.inspect(result, { showHidden: false, depth: null, colors: true }),
-  // );
 
   if (result.status === 'success') {
     // TODO: api request to backend with results & node address
@@ -111,8 +137,11 @@ export async function runBenchmark(options: { [key: string]: any }) {
       //   body: JSON.stringify({
       //     node,
       //     result,
+      //     email: answers.email,
+      //     discord: answers.discord
+      //     twitter: answers.twitter
       //   }),
-      // });   
+      // });
 
       console.log(chalk.green('Benchmark finished'));
       console.log('================================');
