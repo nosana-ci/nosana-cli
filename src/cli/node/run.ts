@@ -21,8 +21,7 @@ export async function runJob(
   jobDefinitionFile: string,
   options: {
     [key: string]: any;
-  },
-  cmd: Command | undefined,
+  }
 ) {
   let handlingSigInt: Boolean = false;
   process.on('SIGINT', async () => {
