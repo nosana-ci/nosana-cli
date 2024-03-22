@@ -403,19 +403,8 @@ export async function startNode(
             const jobDefinition: JobDefinition = await nosana.ipfs.retrieve(
               job.ipfsJob,
             );
-            const validation: IValidation<JobDefinition> =
-              validateJobDefinition(jobDefinition);
-            if (!validation.success) {
-              spinner.fail(chalk.red.bold('Job Definition validation failed'));
-              console.error(validation.errors);
-              result = {
-                status: 'validation-error',
-                errors: validation.errors,
-              };
-            } else {
-              // Create new flow
-              flowId = provider.run(jobDefinition, flowId).id;
-            }
+            // Create new flow
+            flowId = provider.run(jobDefinition, flowId).id;
           } else {
             provider.continueFlow(flowId);
           }

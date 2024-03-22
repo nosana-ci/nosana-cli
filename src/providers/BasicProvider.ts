@@ -1,8 +1,9 @@
 import chalk from 'chalk';
-import { JobDefinition, Provider, OpState, Flow, FlowState } from './Provider';
+import { JobDefinition, Provider, OpState, Flow, FlowState, validateJobDefinition } from './Provider';
 import { JSONFileSyncPreset } from 'lowdb/node';
 import { LowSync } from 'lowdb/lib';
 import EventEmitter from 'events';
+import { IValidation } from 'typia';
 
 type FlowsDb = {
   flows: { [key: string]: Flow };
@@ -60,6 +61,17 @@ export class BasicProvider implements Provider {
           opStates: [],
         },
       };
+
+      const validation: IValidation<JobDefinition> = validateJobDefinition(jobDefinition);
+      if (!validation.success) {
+        console.error(validation.errors);
+        flow.state.status = 'failed';
+        flow.state.endTime = Date.now();
+        flow.state.errors = validation.errors;
+        this.db.update(({ flows }) => (flows[id] = flow));
+        return flow;
+      }
+
       // Add ops from job definition to flow
       for (let i = 0; i < jobDefinition.ops.length; i++) {
         const op = jobDefinition.ops[i];

@@ -72,18 +72,7 @@ export async function runJob(
     fs.readFileSync(jobDefinitionFile, 'utf8'),
   );
   let result: Partial<FlowState>;
-
-  const validation: IValidation<JobDefinition> =
-    validateJobDefinition(jobDefinition);
-  if (!validation.success) {
-    spinner.fail(chalk.red.bold('Job Definition validation failed'));
-    console.error(validation.errors);
-    result = {
-      status: 'validation-error',
-      errors: validation.errors,
-    };
-  } else {
-    // Create new flow
+  try {
     flow = provider.run(jobDefinition);
     result = await provider.waitForFlowFinish(
       flow.id,
@@ -95,9 +84,11 @@ export async function runJob(
         }
       },
     );
-  }
-  console.log(
-    'result: ',
-    util.inspect(result, { showHidden: false, depth: null, colors: true }),
-  );
+    console.log(
+      'result: ',
+      util.inspect(result, { showHidden: false, depth: null, colors: true }),
+    );  
+  } catch (error) {
+    spinner.fail(chalk.red.bold(error));
+  }  
 }
