@@ -92,21 +92,83 @@ export async function startNode(
       provider = new DockerProvider(options.podman);
       break;
   }
-  let marketAccount: Market;
-  let nft: PublicKey | undefined;
+
+  /****************
+   * Benchmark *
+   ****************/
+  let gpus: Array<string> = [];
   try {
-    spinner = ora(chalk.cyan('Retrieving market')).start();
-    marketAccount = await nosana.jobs.getMarket(market);
-    spinner.stop();
-    console.log(`Market:\t\t${chalk.greenBright.bold(market)}`);
-    console.log('================================');
-  } catch (e: any) {
-    spinner.fail(chalk.red(`Could not retrieve market ${chalk.bold(market)}`));
-    if (e.message && e.message.includes('Account does not exist')) {
-      throw new Error(chalk.red(`Market ${chalk.bold(market)} not found`));
+    const jobDefinition: JobDefinition = JSON.parse(
+      fs.readFileSync('job-examples/benchmark-gpu.json', 'utf8'),
+    );
+    let result: Partial<FlowState>;
+    spinner = ora(chalk.cyan('Running benchmark')).start();
+    // Create new flow
+    const flow = provider.run(jobDefinition);
+    result = await provider.waitForFlowFinish(
+      flow.id,
+      (log: { log: string; type: string }) => {
+        if (log.type === 'stdout') {
+          process.stdout.write(log.log);
+        } else {
+          process.stderr.write(log.log);
+        }
+      },
+    );
+    if (
+      result &&
+      result.status === 'success' &&
+      result.opStates &&
+      result.opStates[0]
+    ) {
+      for (let i = 0; i < result.opStates[0].logs.length; i++) {
+        let gpu = result.opStates[0].logs[i];
+        if (gpu.log && gpu.log.includes('GPU')) {
+          gpu.log = gpu.log
+            .replace(/\([^()]*\)/g, '')
+            .replace(/^\d(?!0)/g, '')
+            .replace(/^[^_]*:/g, '')
+            .trim();
+          gpu.log = result.opStates[0].logs[0].log;
+          gpu.log = gpu.log?.toString()
+            .replace(
+              /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g,
+              '',
+            );
+          gpus.push(gpu.log as string);
+        }
+      }
+      console.log('GPUS', gpus)
+    } else if (result && result.opStates && result.opStates[0]) {
+      throw new Error(result.status);
     }
+  } catch (e) {
+    spinner.fail(chalk.red('Something went wrong while detecting GPU', e));
     throw e;
   }
+
+  let marketAccount: Market;
+  let nft: PublicKey | undefined;
+  if (market) {
+    try {
+      spinner = ora(chalk.cyan('Retrieving market')).start();
+      marketAccount = await nosana.jobs.getMarket(market);
+      spinner.stop();
+      console.log(`Market:\t\t${chalk.greenBright.bold(market)}`);
+      console.log('================================');
+    } catch (e: any) {
+      spinner.fail(chalk.red(`Could not retrieve market ${chalk.bold(market)}`));
+      if (e.message && e.message.includes('Account does not exist')) {
+        throw new Error(chalk.red(`Market ${chalk.bold(market)} not found`));
+      }
+      throw e;
+    }
+  } else {
+    console.log('No market');
+    return;
+    // TODO: call to backend with gpus[] and check if eligble for a market?
+  }
+
   /****************
    * Health Check *
    ****************/
@@ -167,56 +229,6 @@ export async function startNode(
       ),
     );
 
-    try {
-      let gpus: Array<string> = [];
-      const jobDefinition: JobDefinition = JSON.parse(
-        fs.readFileSync('job-examples/benchmark-gpu.json', 'utf8'),
-      );
-      let result: Partial<FlowState>;
-      spinner = ora(chalk.cyan('Running benchmark')).start();
-      // Create new flow
-      const flow = provider.run(jobDefinition);
-      result = await provider.waitForFlowFinish(
-        flow.id,
-        (log: { log: string; type: string }) => {
-          if (log.type === 'stdout') {
-            process.stdout.write(log.log);
-          } else {
-            process.stderr.write(log.log);
-          }
-        },
-      );
-      if (
-        result &&
-        result.status === 'success' &&
-        result.opStates &&
-        result.opStates[0]
-      ) {
-        for (let i = 0; i < result.opStates[0].logs.length; i++) {
-          let gpu = result.opStates[0].logs[i];
-          if (gpu.log && gpu.log.includes('GPU')) {
-            gpu.log = gpu.log
-              .replace(/\([^()]*\)/g, '')
-              .replace(/^\d(?!0)/g, '')
-              .replace(/^[^_]*:/g, '')
-              .trim();
-            gpu.log = result.opStates[0].logs[0].log;
-            gpu.log = gpu.log?.toString()
-              .replace(
-                /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g,
-                '',
-              );
-            gpus.push(gpu.log as string);
-          }
-        }
-        console.log('GPUS', gpus)
-      } else if (result && result.opStates && result.opStates[0]) {
-        throw new Error(result.status);
-      }
-    } catch (e) {
-      spinner.fail(chalk.red('Something went wrong while detecting GPU', e));
-      throw e;
-    }
     try {
       if (marketAccount.nodeAccessKey.toString() === EMPTY_ADDRESS.toString()) {
         spinner.succeed(chalk.green(`Open market ${chalk.bold(market)}`));

@@ -114,7 +114,7 @@ node
 
 node
   .command('start')
-  .argument('<market>', 'market address')
+  .argument('[market]', 'market address')
   .addOption(
     new Option('--provider <provider>', 'provider used to run the job')
       .choices(['docker', 'podman'])
