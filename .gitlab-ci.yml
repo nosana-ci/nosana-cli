@@ -15,8 +15,6 @@ variables:
 npm publish:
   image: node:20.11.1
   stage: deploy
-  only:
-    - main
   script:
     - sed -i "s/0.0.0/${CI_COMMIT_TAG:1}/" package.json
     - npm ci --omit=dev
