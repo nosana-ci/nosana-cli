@@ -1,7 +1,6 @@
 import chalk from 'chalk';
-import { DockerProvider } from './DockerProvider';
-import { Flow, OpState, OperationArgsMap } from './Provider';
-import Docker from 'dockerode';
+import { DockerProvider } from './DockerProvider.js';
+import { Flow, OpState, OperationArgsMap } from './Provider.js';
 import { parse } from 'shell-quote';
 
 export class PodmanProvider extends DockerProvider {

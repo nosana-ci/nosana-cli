@@ -5,11 +5,11 @@ import {
   OpState,
   Flow,
   OperationArgsMap,
-} from './Provider';
+} from './Provider.js';
 import Docker, { MountType } from 'dockerode';
 import stream from 'stream';
 import { parse } from 'shell-quote';
-import { BasicProvider } from './BasicProvider';
+import { BasicProvider } from './BasicProvider.js';
 import { sleep } from '../generic/utils.js';
 
 export class DockerProvider extends BasicProvider implements Provider {
