@@ -1,0 +1,50 @@
+{
+  "version": "0.1",
+  "type": "container",
+  "meta": {
+    "trigger": "cli"
+  },
+  "global": {
+    "work_dir": "/home/",
+    "env": {
+      "DEBUG": "1"
+    }
+  },
+  "ops": [
+    {
+      "type": "container/create-volume",
+      "id": "create-volume",
+      "args": {
+        "name": "random-id-volume"
+      }
+    },
+    {
+      "type": "container/run",
+      "id": "run-from-cli",
+      "args": {
+        "cmd": [
+          "/bin/bash -c ",
+          "echo Hello World > /nosana/outputs/test.txt;",
+          "ls /nosana/outputs;",
+          "pwd;"
+        ],
+        "image": "ubuntu",
+        "volumes": [
+          {
+            "name": "random-id-volume",
+            "dest": "/nosana/outputs"
+          }
+        ],
+        "work_dir": "/home/podman"
+      }
+    },
+    {
+      "type": "container/run",
+      "id": "run-from-cli-2",
+      "args": {
+        "cmd": "/bin/bash -c 'echo Hello World; ls; pwd;'",
+        "image": "ubuntu"
+      }
+    }
+  ]
+}

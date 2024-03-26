@@ -1,12 +1,12 @@
 import { Command } from 'commander';
 import { Client } from '@nosana/sdk';
-import { getSDK } from './index.js';
-import util from 'util';
-import { sleep } from '../utils.js';
-import { colors } from './terminal.js';
+import { getSDK } from '../../services/sdk.js';
 import { download } from './download.js';
+import { PublicKey } from '@solana/web3.js';
+import { waitForJobCompletion } from '../../services/jobs.js';
+import { clearLine, colors } from '../../generic/utils.js';
 
-export async function get(
+export async function getJob(
   jobAddress: string,
   options: {
     [key: string]: any;
@@ -18,114 +18,92 @@ export async function get(
     nosana = getSDK();
   }
   let job;
-  while (
-    !job ||
-    ((options.wait || options.download) &&
-      job.state !== 'COMPLETED' &&
-      job.state !== 'STOPPED')
-  ) {
-    console.log('retrieving job...');
-    try {
-      job = await nosana.jobs.get(jobAddress);
-    } catch (e) {
-      console.error(e);
-    }
-    if (job) {
-      if (
-        !(options.wait || options.download) ||
-        job.state === 'COMPLETED' ||
-        job.state === 'STOPPED'
-      ) {
-        if (options.raw) {
-          console.log(
-            util.inspect(job, { showHidden: false, depth: null, colors: true }),
-          );
-        } else {
-          console.log(
-            `Job:\t\t${
-              colors.BLUE
-            }https://explorer.nosana.io/jobs/${jobAddress}${
-              nosana.solana.config.network.includes('devnet')
-                ? '?network=devnet'
-                : ''
-            }${colors.RESET}`,
-          );
-          console.log(
-            `JSON flow:\t${colors.BLUE}${nosana.ipfs.config.gateway}${job.ipfsJob}${colors.RESET}`,
-          );
-          console.log(
-            `Result:\t\t${colors.BLUE}${nosana.ipfs.config.gateway}${job.ipfsResult}${colors.RESET}`,
-          );
-          console.log(
-            `Node:\t\t${colors.BLUE}https://explorer.nosana.io/nodes/${
-              job.node
-            }${
-              nosana.solana.config.network.includes('devnet')
-                ? '?network=devnet'
-                : ''
-            }${colors.RESET}`,
-          );
-          console.log(
-            `Market:\t\t${colors.BLUE}https://explorer.nosana.io/markets/${
-              job.market
-            }${
-              nosana.solana.config.network.includes('devnet')
-                ? '?network=devnet'
-                : ''
-            }${colors.RESET}`,
-          );
-          console.log(
-            `Price:\t\t${colors.CYAN}${job.price / 1e6} NOS/s${colors.RESET}`,
-          );
-          if (job.timeStart) {
-            console.log(
-              `Start Time:\t${colors.CYAN}${new Date(job.timeStart * 1000)}${
-                colors.RESET
-              }`,
-            );
-          }
-          if (job.timeEnd) {
-            console.log(
-              `Duration:\t${colors.CYAN}${job.timeEnd - job.timeStart} seconds${
-                colors.RESET
-              }`,
-            );
-            console.log(
-              `Total Costs:\t${colors.CYAN}${
-                ((job.timeEnd - job.timeStart) * job.price) / 1e6
-              } NOS${colors.RESET}`,
-            );
-          }
-          console.log(
-            `Status:\t\t${
-              job.state === 'COMPLETED' ? colors.GREEN : colors.CYAN
-            }${job.state}${colors.RESET}`,
-          );
-        }
-      } else {
-        console.log(
-          `${job.state === 'COMPLETED' ? colors.GREEN : colors.CYAN}${
-            job.state
-          }${colors.RESET}`,
-        );
-        await sleep(5);
-      }
-    } else {
-      await sleep(1);
-    }
+  console.log('retrieving job...');
+  try {
+    job = await nosana.jobs.get(jobAddress);
+    clearLine();
+  } catch (e) {
+    clearLine();
+    console.error(`${colors.RED}Could not retrieve job\n${colors.RESET}`, e);
   }
 
-  if (job.state === 'COMPLETED') {
-    const ipfsResult = await nosana.ipfs.retrieve(job.ipfsResult);
-    if (options.raw) {
+  if (job) {
+    console.log(
+      `Job:\t\t${colors.BLUE}https://explorer.nosana.io/jobs/${jobAddress}${
+        nosana.solana.config.network.includes('devnet') ? '?network=devnet' : ''
+      }${colors.RESET}`,
+    );
+    console.log(
+      `JSON flow:\t${colors.BLUE}${nosana.ipfs.config.gateway}${job.ipfsJob}${colors.RESET}`,
+    );
+    console.log(
+      `Market:\t\t${colors.BLUE}https://explorer.nosana.io/markets/${
+        job.market
+      }${
+        nosana.solana.config.network.includes('devnet') ? '?network=devnet' : ''
+      }${colors.RESET}`,
+    );
+    console.log(
+      `Price:\t\t${colors.CYAN}${job.price / 1e6} NOS/s${colors.RESET}`,
+    );
+
+    if (
+      (options.wait || options.download) &&
+      job.state !== 'COMPLETED' &&
+      job.state !== 'STOPPED'
+    ) {
       console.log(
-        util.inspect(ipfsResult, {
-          showHidden: false,
-          depth: null,
-          colors: true,
-        }),
+        `Status:\t\t${job.state === 'COMPLETED' ? colors.GREEN : colors.CYAN}${
+          job.state
+        }${colors.RESET}`,
       );
-    } else {
+
+      job = await waitForJobCompletion(new PublicKey(jobAddress));
+      clearLine();
+    }
+
+    if (job.state === 'COMPLETED' || job.state === 'STOPPED') {
+      console.log(
+        `Node:\t\t${colors.BLUE}https://explorer.nosana.io/nodes/${job.node}${
+          nosana.solana.config.network.includes('devnet')
+            ? '?network=devnet'
+            : ''
+        }${colors.RESET}`,
+      );
+
+      if (job.timeStart) {
+        console.log(
+          `Start Time:\t${colors.CYAN}${new Date(job.timeStart * 1000)}${
+            colors.RESET
+          }`,
+        );
+      }
+      if (job.timeEnd) {
+        console.log(
+          `Duration:\t${colors.CYAN}${job.timeEnd - job.timeStart} seconds${
+            colors.RESET
+          }`,
+        );
+        console.log(
+          `Total Costs:\t${colors.CYAN}${
+            ((job.timeEnd - job.timeStart) * job.price) / 1e6
+          } NOS${colors.RESET}`,
+        );
+      }
+      console.log(
+        `Status:\t\t${job.state === 'COMPLETED' ? colors.GREEN : colors.CYAN}${
+          job.state
+        }${colors.RESET}`,
+      );
+    }
+
+    if (job.state === 'COMPLETED') {
+      console.log(
+        `Result:\t\t${colors.BLUE}${nosana.ipfs.config.gateway}${job.ipfsResult}${colors.RESET}`,
+      );
+
+      const ipfsResult = await nosana.ipfs.retrieve(job.ipfsResult);
+
       console.log('Logs:');
       const result = ipfsResult?.results;
       if (result) {
@@ -224,4 +202,5 @@ export async function get(
       }
     }
   }
+  return job;
 }

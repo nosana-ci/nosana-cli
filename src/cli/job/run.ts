@@ -1,11 +1,10 @@
 import { Client } from '@nosana/sdk';
-import { colors } from './terminal.js';
-import { getSDK } from './index.js';
-import { get } from './get.js';
+import { getSDK } from '../../services/sdk.js';
+import { getJob } from './get.js';
 import { getWAPMUrlForCommandName } from './wapm.js';
-import util from 'util';
 import fs from 'node:fs';
 import { randomUUID } from 'crypto';
+import { colors } from '../../generic/utils.js';
 
 export async function run(
   command: Array<string>,
@@ -26,10 +25,10 @@ export async function run(
   let json_flow: { [key: string]: any }; // TODO: add JSON flow type
   if (options.file) {
     json_flow = JSON.parse(fs.readFileSync(options.file, 'utf8'));
-    json_flow.state['nosana/trigger'] = 'cli';
+    // json_flow.state['nosana/trigger'] = 'cli';
   } else {
     switch (options.type) {
-      case 'container':
+      case 'docker':
         json_flow = {
           state: {
             'nosana/type': 'docker',
@@ -145,11 +144,6 @@ export async function run(
     });
   }
 
-  if (options.raw) {
-    console.log(
-      util.inspect(json_flow, { showHidden: false, depth: null, colors: true }),
-    );
-  }
   const ipfsHash = await nosana.ipfs.pin(json_flow);
   console.log(
     `ipfs uploaded:\t${colors.BLUE}${nosana.ipfs.config.gateway + ipfsHash}${
@@ -175,7 +169,7 @@ export async function run(
   }
   const response = await nosana.jobs.list(ipfsHash);
   console.log('job posted!', response);
-  await get(response.job, options, undefined, nosana);
+  await getJob(response.job, options, undefined, nosana);
 
   if (!(options.wait || options.download)) {
     console.log(
