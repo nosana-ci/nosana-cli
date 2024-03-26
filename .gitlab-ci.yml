@@ -12,7 +12,7 @@ variables:
   CONTAINER_PLATFORMS: linux/amd64
   REG_REPOSITORY: nosana/nosana-cli
 
-deploy:
+npm publish:
   image: node:20.11.1
   stage: deploy
   only:
