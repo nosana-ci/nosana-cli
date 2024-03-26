@@ -29,10 +29,12 @@
           "pwd;"
         ],
         "image": "ubuntu",
-        "volumes": [{
-          "name": "random-id-volume",
-          "dest": "/nosana/outputs"
-        }],
+        "volumes": [
+          {
+            "name": "random-id-volume",
+            "dest": "/nosana/outputs"
+          }
+        ],
         "work_dir": "/home/podman"
       }
     },
@@ -40,7 +42,7 @@
       "type": "container/run",
       "id": "run-from-cli-2",
       "args": {
-        "cmd":  "/bin/bash -c 'echo Hello World; ls; pwd;'",
+        "cmd": "/bin/bash -c 'echo Hello World; ls; pwd;'",
         "image": "ubuntu"
       }
     }

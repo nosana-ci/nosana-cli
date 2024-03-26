@@ -20,7 +20,7 @@ export async function runJob(
   jobDefinitionFile: string,
   options: {
     [key: string]: any;
-  }
+  },
 ) {
   let handlingSigInt: Boolean = false;
   process.on('SIGINT', async () => {

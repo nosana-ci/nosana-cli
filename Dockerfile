@@ -1,11 +1,11 @@
-FROM node:18-alpine
+FROM node:20.11.1
 
-COPY package.json yarn.lock ./
-RUN yarn install
-
-# Copy files and compile it to javascript
+# nosana cli
+WORKDIR /usr/local/lib/nosana-cli
 COPY . .
-RUN npx tsc \
-    && chmod +x dist/index.js
+RUN npm ci \
+ && npm run build \
+ && npm ci --omit=dev \
+ && npm install -g
 
-ENTRYPOINT [ "dist/index.js" ]
+WORKDIR /

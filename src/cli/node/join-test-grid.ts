@@ -112,16 +112,25 @@ export async function runBenchmark(options: { [key: string]: any }) {
       //     node,
       //     result,
       //   }),
-      // });   
+      // });
 
       console.log(chalk.green('Benchmark finished'));
       console.log('================================');
-      console.log(chalk.green('Thank you for registering for Nosana Node. \nWe\'ll review your registration and you will get an email from us if you are selected.'));
+      console.log(
+        chalk.green(
+          "Thank you for registering for Nosana Node. \nWe'll review your registration and you will get an email from us if you are selected.",
+        ),
+      );
     } catch (error) {
-      spinner.fail(chalk.red.bold('Failed to upload benchmark results, try again later'));
+      spinner.fail(
+        chalk.red.bold('Failed to upload benchmark results, try again later'),
+      );
     }
   } else {
-    console.log(chalk.red(`Couldn't succesfully run benchmark, finished with status: ${result.status}`));
-
+    console.log(
+      chalk.red(
+        `Couldn't succesfully run benchmark, finished with status: ${result.status}`,
+      ),
+    );
   }
 }

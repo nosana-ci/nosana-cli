@@ -360,7 +360,10 @@ export async function startNode(
             console.log('Running job');
             spinner.text = chalk.cyan('Running job');
             // TODO: move to node service (e.g. waitForResult)?
-            result = await new Promise<FlowState>(async function (resolve, reject) {
+            result = await new Promise<FlowState>(async function (
+              resolve,
+              reject,
+            ) {
               // check if expired every minute
               const expireInterval = setInterval(async () => {
                 if (isRunExpired(run!, marketAccount.jobExpiration * 1.5)) {
