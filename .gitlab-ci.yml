@@ -3,19 +3,24 @@
 #  | | | | (_) \__ \ (_| | | | | (_| |
 #  |_| |_|\___/|___/\__,_|_| |_|\__,_|
 
-image: node:latest
+include:
+  - project: nosana-ci/tools/cicd/gitlab-ci
+    file: docker-container.yml
 
-stages:
-  - deploy
+variables:
+  DOCKERFILE_DIR: .
+  CONTAINER_PLATFORMS: linux/amd64
+  REG_REPOSITORY: nosana/nosana-cli
 
 deploy:
+  image: node:20.11.1
   stage: deploy
   only:
     - main
   script:
-    - yarn
-    - git config --global user.email "dev@nosana.io"
-    - git config --global user.name "Nosana"
+    - sed -i "s/0.0.0/${CI_COMMIT_TAG:1}/" package.json
+    - npm ci --omit=dev
     - npm config set '//registry.npmjs.org/:_authToken' "${NPM_TOKEN}"
     - npm run publish:public
-    # - git push # todo: fix, not working
+  rules:
+    - if: $CI_COMMIT_TAG && $CI_COMMIT_TAG != "latest"
