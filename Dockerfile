@@ -8,4 +8,5 @@ RUN npm ci \
  && npm ci --omit=dev \
  && npm install -g
 
-WORKDIR /
+WORKDIR /nosana
+COPY db .

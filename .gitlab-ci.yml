@@ -27,7 +27,7 @@ npm publish:
   stage: deploy
   script:
     - sed -i "s/0.0.0/${CI_COMMIT_TAG:1}/" package.json
-    - npm ci --omit=dev
+    - npm ci
     - npm config set '//registry.npmjs.org/:_authToken' "${NPM_TOKEN}"
     - npm run publish:public
   rules:
