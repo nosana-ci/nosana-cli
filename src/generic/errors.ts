@@ -4,6 +4,6 @@ class GenericError extends Error {
   }
 }
 
-class NotQueuedError extends GenericError { }
+class NotQueuedError extends GenericError {}
 
-export { GenericError, NotQueuedError }
+export { GenericError, NotQueuedError };

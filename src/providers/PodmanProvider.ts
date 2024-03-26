@@ -1,7 +1,6 @@
 import chalk from 'chalk';
-import { DockerProvider } from './DockerProvider';
-import { Flow, OpState, OperationArgsMap } from './Provider';
-import Docker from 'dockerode';
+import { DockerProvider } from './DockerProvider.js';
+import { Flow, OpState, OperationArgsMap } from './Provider.js';
 import { parse } from 'shell-quote';
 
 export class PodmanProvider extends DockerProvider {
@@ -52,7 +51,9 @@ export class PodmanProvider extends DockerProvider {
         }
       });
 
-      const name = [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
+      const name = [...Array(32)]
+        .map(() => Math.random().toString(36)[2])
+        .join('');
       updateOpState({ providerId: name });
 
       // check for global & local options
@@ -88,7 +89,7 @@ export class PodmanProvider extends DockerProvider {
         portmappings: [{ container_port: 80, host_port: 8081 }], // TODO: figure out what we want with portmappings
         create_working_dir: true,
         cgroups_mode: 'disabled',
-        work_dir
+        work_dir,
       };
 
       try {
@@ -156,18 +157,7 @@ export class PodmanProvider extends DockerProvider {
             reject('Cannot start container: ' + (await start.json()).message);
           }
         } else {
-          updateOpState({
-            exitCode: 1,
-            status: 'failed',
-            endTime: Date.now(),
-            logs: [
-              {
-                type: 'stderr',
-                log: 'Cannot create container' + (await create.json()).message,
-              },
-            ],
-          });
-          reject(flow.state.opStates[opStateIndex]);
+          reject('Cannot create container' + (await create.json()).message);
         }
       } catch (error) {
         reject(error);

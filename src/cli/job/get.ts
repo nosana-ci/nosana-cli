@@ -29,20 +29,18 @@ export async function getJob(
 
   if (job) {
     console.log(
-      `Job:\t\t${colors.BLUE
-      }https://explorer.nosana.io/jobs/${jobAddress}${nosana.solana.config.network.includes('devnet')
-        ? '?network=devnet'
-        : ''
+      `Job:\t\t${colors.BLUE}https://explorer.nosana.io/jobs/${jobAddress}${
+        nosana.solana.config.network.includes('devnet') ? '?network=devnet' : ''
       }${colors.RESET}`,
     );
     console.log(
       `JSON flow:\t${colors.BLUE}${nosana.ipfs.config.gateway}${job.ipfsJob}${colors.RESET}`,
     );
     console.log(
-      `Market:\t\t${colors.BLUE}https://explorer.nosana.io/markets/${job.market
-      }${nosana.solana.config.network.includes('devnet')
-        ? '?network=devnet'
-        : ''
+      `Market:\t\t${colors.BLUE}https://explorer.nosana.io/markets/${
+        job.market
+      }${
+        nosana.solana.config.network.includes('devnet') ? '?network=devnet' : ''
       }${colors.RESET}`,
     );
     console.log(
@@ -50,48 +48,52 @@ export async function getJob(
     );
 
     if (
-      ((options.wait || options.download) &&
-        job.state !== 'COMPLETED' &&
-        job.state !== 'STOPPED')
+      (options.wait || options.download) &&
+      job.state !== 'COMPLETED' &&
+      job.state !== 'STOPPED'
     ) {
       console.log(
-        `Status:\t\t${job.state === 'COMPLETED' ? colors.GREEN : colors.CYAN}${job.state}${colors.RESET}`,
+        `Status:\t\t${job.state === 'COMPLETED' ? colors.GREEN : colors.CYAN}${
+          job.state
+        }${colors.RESET}`,
       );
 
       job = await waitForJobCompletion(new PublicKey(jobAddress));
       clearLine();
     }
 
-    if (
-      job.state === 'COMPLETED' ||
-      job.state === 'STOPPED'
-    ) {
-
+    if (job.state === 'COMPLETED' || job.state === 'STOPPED') {
       console.log(
-        `Node:\t\t${colors.BLUE}https://explorer.nosana.io/nodes/${job.node
-        }${nosana.solana.config.network.includes('devnet')
-          ? '?network=devnet'
-          : ''
+        `Node:\t\t${colors.BLUE}https://explorer.nosana.io/nodes/${job.node}${
+          nosana.solana.config.network.includes('devnet')
+            ? '?network=devnet'
+            : ''
         }${colors.RESET}`,
       );
 
-
       if (job.timeStart) {
         console.log(
-          `Start Time:\t${colors.CYAN}${new Date(job.timeStart * 1000)}${colors.RESET
+          `Start Time:\t${colors.CYAN}${new Date(job.timeStart * 1000)}${
+            colors.RESET
           }`,
         );
       }
       if (job.timeEnd) {
         console.log(
-          `Duration:\t${colors.CYAN}${job.timeEnd - job.timeStart} seconds${colors.RESET}`,
+          `Duration:\t${colors.CYAN}${job.timeEnd - job.timeStart} seconds${
+            colors.RESET
+          }`,
         );
         console.log(
-          `Total Costs:\t${colors.CYAN}${((job.timeEnd - job.timeStart) * job.price) / 1e6} NOS${colors.RESET}`,
+          `Total Costs:\t${colors.CYAN}${
+            ((job.timeEnd - job.timeStart) * job.price) / 1e6
+          } NOS${colors.RESET}`,
         );
       }
       console.log(
-        `Status:\t\t${job.state === 'COMPLETED' ? colors.GREEN : colors.CYAN}${job.state}${colors.RESET}`,
+        `Status:\t\t${job.state === 'COMPLETED' ? colors.GREEN : colors.CYAN}${
+          job.state
+        }${colors.RESET}`,
       );
     }
 

@@ -1,17 +1,17 @@
-import { DockerProvider } from '../../providers/DockerProvider';
+import { DockerProvider } from '../../providers/DockerProvider.js';
 import {
   Provider,
   Flow,
   JobDefinition,
   validateJobDefinition,
   FlowState,
-} from '../../providers/Provider';
+} from '../../providers/Provider.js';
 import chalk from 'chalk';
 import ora from 'ora';
 import fs from 'node:fs';
 import { IValidation } from 'typia';
 import util from 'util';
-import { PodmanProvider } from '../../providers/PodmanProvider';
+import { PodmanProvider } from '../../providers/PodmanProvider.js';
 
 let flow: Flow | undefined;
 let provider: Provider;
@@ -20,7 +20,7 @@ export async function runJob(
   jobDefinitionFile: string,
   options: {
     [key: string]: any;
-  }
+  },
 ) {
   let handlingSigInt: Boolean = false;
   process.on('SIGINT', async () => {

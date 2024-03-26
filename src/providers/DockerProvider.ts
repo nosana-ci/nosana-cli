@@ -5,11 +5,11 @@ import {
   OpState,
   Flow,
   OperationArgsMap,
-} from './Provider';
+} from './Provider.js';
 import Docker, { MountType } from 'dockerode';
 import stream from 'stream';
 import { parse } from 'shell-quote';
-import { BasicProvider } from './BasicProvider';
+import { BasicProvider } from './BasicProvider.js';
 import { sleep } from '../generic/utils.js';
 
 export class DockerProvider extends BasicProvider implements Provider {
@@ -236,7 +236,9 @@ export class DockerProvider extends BasicProvider implements Provider {
         }
       });
 
-      const name = [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
+      const name = [...Array(32)]
+        .map(() => Math.random().toString(36)[2])
+        .join('');
       updateOpState({ providerId: name });
 
       const logs: OpState['logs'] = [];
@@ -301,7 +303,10 @@ export class DockerProvider extends BasicProvider implements Provider {
           ? flow.jobDefinition.global.env
           : {};
       const vars = [];
-      for (const [key, value] of Object.entries({ ...globalEnv, ...opArgs.env })) {
+      for (const [key, value] of Object.entries({
+        ...globalEnv,
+        ...opArgs.env,
+      })) {
         vars.push(`${key}=${value}`);
       }
 
