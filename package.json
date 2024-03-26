@@ -11,7 +11,13 @@
     "build": "npm run prepare && tsc",
     "test": "echo \"Error: no test specified\" && exit 1",
     "publish:public": "npm run build && npm publish --access public",
-    "prepare": "ts-patch install && typia patch"
+    "prepare": "ts-patch install && typia patch",
+    "prettier": "prettier --check .",
+    "prettier:fix": "prettier --write .",
+    "eslint": "eslint .",
+    "eslint:fix": "eslint --fix .",
+    "lint": "npm run prettier && npm run eslint",
+    "lint:fix": "npm run prettier:fix && npm run eslint:fix"
   },
   "keywords": [],
   "files": [

@@ -51,7 +51,9 @@ export class PodmanProvider extends DockerProvider {
         }
       });
 
-      const name = [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
+      const name = [...Array(32)]
+        .map(() => Math.random().toString(36)[2])
+        .join('');
       updateOpState({ providerId: name });
 
       // check for global & local options
@@ -87,7 +89,7 @@ export class PodmanProvider extends DockerProvider {
         portmappings: [{ container_port: 80, host_port: 8081 }], // TODO: figure out what we want with portmappings
         create_working_dir: true,
         cgroups_mode: 'disabled',
-        work_dir
+        work_dir,
       };
 
       try {

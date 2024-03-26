@@ -12,6 +12,13 @@ variables:
   CONTAINER_PLATFORMS: linux/amd64
   REG_REPOSITORY: nosana/nosana-cli
 
+npm prettier:
+  image: node:20.11.1
+  stage: test
+  script:
+    - npm ci
+    - npm run prettier:fix # todo: fix eslint
+
 npm publish:
   image: node:20.11.1
   stage: deploy
