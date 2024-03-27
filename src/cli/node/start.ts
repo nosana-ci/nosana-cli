@@ -43,7 +43,7 @@ export async function startNode(
    *************/
 
   let handlingSigInt: Boolean = false;
-  process.on('SIGINT', async () => {
+  const onShutdown = async () => {
     if (!handlingSigInt) {
       handlingSigInt = true;
       if (spinner) {
@@ -74,7 +74,9 @@ export async function startNode(
       handlingSigInt = false;
       process.exit();
     }
-  });
+  };
+  process.on('SIGINT', onShutdown);
+  process.on('SIGTERM', onShutdown);
 
   run = undefined;
   selectedMarket = undefined;
