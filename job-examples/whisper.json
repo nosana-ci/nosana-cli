@@ -7,7 +7,7 @@
   "ops": [
     {
       "type": "container/run",
-      "id": "run-from-cli",
+      "id": "run-whisper",
       "args": {
         "cmd": ["python openai-whisper.py -p hello.mp3"],
         "image": "docker.io/nosana/whisper:latest",
