@@ -39,7 +39,7 @@ export async function run(
               type: 'container/run',
               id: 'run-from-cli',
               args: {
-                cmds: [command.join(' ')],
+                cmd: [command.join(' ')],
                 image: options.image,
               },
             },
