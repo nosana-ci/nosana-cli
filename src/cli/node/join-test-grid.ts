@@ -71,6 +71,7 @@ export async function runBenchmark(options: { [key: string]: any }) {
 
   const validation: IValidation<JobDefinition> =
     validateJobDefinition(jobDefinition);
+  spinner.stop();
   if (!validation.success) {
     spinner.fail(chalk.red.bold('Job Definition validation failed'));
     console.error(validation.errors);
@@ -79,7 +80,7 @@ export async function runBenchmark(options: { [key: string]: any }) {
       errors: validation.errors,
     };
   } else {
-    spinner.text = chalk.cyan('Running benchmark');
+    console.log(chalk.cyan('Running benchmark'));
     // Create new flow
     flow = provider.run(jobDefinition);
     result = await provider.waitForFlowFinish(
@@ -93,7 +94,6 @@ export async function runBenchmark(options: { [key: string]: any }) {
       },
     );
   }
-  spinner.stop();
   // console.log('node', node);
   // console.log(
   //   'result: ',
