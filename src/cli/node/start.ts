@@ -17,14 +17,11 @@ import { NotQueuedError } from '../../generic/errors.js';
 import { DockerProvider } from '../../providers/DockerProvider.js';
 import {
   Provider,
-  Flow,
   JobDefinition,
-  validateJobDefinition,
   FlowState,
 } from '../../providers/Provider.js';
 import { PublicKey } from '@solana/web3.js';
 import { EMPTY_ADDRESS } from '../../services/jobs.js';
-import { IValidation } from 'typia';
 import { PodmanProvider } from '../../providers/PodmanProvider.js';
 
 let provider: Provider;
@@ -44,7 +41,7 @@ export async function startNode(
    *************/
 
   let handlingSigInt: Boolean = false;
-  process.on('SIGINT', async () => {
+  const onShutdown = async () => {
     if (!handlingSigInt) {
       handlingSigInt = true;
       if (spinner) {
@@ -75,7 +72,9 @@ export async function startNode(
       handlingSigInt = false;
       process.exit();
     }
-  });
+  };
+  process.on('SIGINT', onShutdown);
+  process.on('SIGTERM', onShutdown);
 
   run = undefined;
   selectedMarket = undefined;
@@ -130,7 +129,8 @@ export async function startNode(
             .replace(/^[^_]*:/g, '')
             .trim();
           gpu.log = result.opStates[0].logs[0].log;
-          gpu.log = gpu.log?.toString()
+          gpu.log = gpu.log
+            ?.toString()
             .replace(
               /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g,
               '',
@@ -138,7 +138,7 @@ export async function startNode(
           gpus.push(gpu.log as string);
         }
       }
-      console.log('GPUS', gpus)
+      console.log('GPUS', gpus);
     } else if (result && result.opStates && result.opStates[0]) {
       throw new Error(result.status);
     }
@@ -157,7 +157,9 @@ export async function startNode(
       console.log(`Market:\t\t${chalk.greenBright.bold(market)}`);
       console.log('================================');
     } catch (e: any) {
-      spinner.fail(chalk.red(`Could not retrieve market ${chalk.bold(market)}`));
+      spinner.fail(
+        chalk.red(`Could not retrieve market ${chalk.bold(market)}`),
+      );
       if (e.message && e.message.includes('Account does not exist')) {
         throw new Error(chalk.red(`Market ${chalk.bold(market)} not found`));
       }
@@ -410,8 +412,8 @@ export async function startNode(
           }
 
           if (!result) {
-            console.log('Running job');
-            spinner.text = chalk.cyan('Running job');
+            // console.log('Running job');
+            // spinner.text = chalk.cyan('Running job');
             // TODO: move to node service (e.g. waitForResult)?
             result = await new Promise<FlowState>(async function (
               resolve,

@@ -23,7 +23,7 @@ export async function runJob(
   },
 ) {
   let handlingSigInt: Boolean = false;
-  process.on('SIGINT', async () => {
+  const onShutdown = async () => {
     if (!handlingSigInt) {
       handlingSigInt = true;
       console.log(chalk.yellow.bold('Shutting down..'));
@@ -41,7 +41,10 @@ export async function runJob(
       handlingSigInt = false;
       process.exit();
     }
-  });
+  };
+  process.on('SIGINT', onShutdown);
+  process.on('SIGTERM', onShutdown);
+
   switch (options.provider) {
     case 'podman':
       provider = new PodmanProvider(options.podman);

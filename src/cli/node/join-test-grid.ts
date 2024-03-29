@@ -25,7 +25,7 @@ export async function runBenchmark(options: { [key: string]: any }) {
   let spinner: Ora;
 
   let handlingSigInt: Boolean = false;
-  process.on('SIGINT', async () => {
+  const onShutdown = async () => {
     if (!handlingSigInt) {
       handlingSigInt = true;
       console.log(chalk.yellow.bold('Shutting down..'));
@@ -46,7 +46,9 @@ export async function runBenchmark(options: { [key: string]: any }) {
       handlingSigInt = false;
       process.exit();
     }
-  });
+  };
+  process.on('SIGINT', onShutdown);
+  process.on('SIGTERM ', onShutdown);
 
   switch (options.provider) {
     case 'podman':
