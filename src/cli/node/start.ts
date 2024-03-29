@@ -351,6 +351,7 @@ export async function startNode(
                 errors: validation.errors,
               };
             } else {
+              spinner.succeed(chalk.green('Job Definition validation passed'));
               // Create new flow
               flowId = provider.run(jobDefinition, flowId).id;
             }
@@ -359,8 +360,8 @@ export async function startNode(
           }
 
           if (!result) {
-            console.log('Running job');
-            spinner.text = chalk.cyan('Running job');
+            // console.log('Running job');
+            // spinner.text = chalk.cyan('Running job');
             // TODO: move to node service (e.g. waitForResult)?
             result = await new Promise<FlowState>(async function (
               resolve,
