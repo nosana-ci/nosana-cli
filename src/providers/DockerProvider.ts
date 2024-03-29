@@ -144,6 +144,7 @@ export class DockerProvider extends BasicProvider implements Provider {
         startTime: Date.now(),
         status: 'running',
       });
+      console.log(chalk.cyan(`Executing step ${chalk.bold(op.id)}`));
       await this.executeCmd(op.args, flowId, opStateIndex, updateOpState);
     }
     return flow.state.opStates[opStateIndex];
@@ -221,8 +222,8 @@ export class DockerProvider extends BasicProvider implements Provider {
       }
       const flow = this.getFlow(flowId) as Flow;
       const parsedcmd = parse(cmd);
-
       try {
+        console.log(chalk.cyan(`Pulling image ${chalk.bold(opArgs.image)}`));
         await this.pullImage(opArgs.image);
       } catch (error: any) {
         reject(chalk.red(`Cannot pull image ${opArgs.image}: `) + error);
@@ -309,6 +310,9 @@ export class DockerProvider extends BasicProvider implements Provider {
       })) {
         vars.push(`${key}=${value}`);
       }
+      console.log(
+        chalk.cyan(`Running command  ${chalk.bold(parsedcmd.join(' '))}`),
+      );
 
       return await this.docker
         .run(opArgs.image, parsedcmd as string[], emptyStream, {

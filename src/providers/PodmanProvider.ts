@@ -38,6 +38,7 @@ export class PodmanProvider extends DockerProvider {
       const parsedcmd = parse(cmd);
 
       try {
+        console.log(chalk.cyan(`Pulling image ${chalk.bold(opArgs.image)}`));
         await this.pullImage(opArgs.image);
       } catch (error: any) {
         reject(chalk.red(`Cannot pull image ${opArgs.image}: `) + error);
@@ -91,7 +92,9 @@ export class PodmanProvider extends DockerProvider {
         cgroups_mode: 'disabled',
         work_dir,
       };
-
+      console.log(
+        chalk.cyan(`Running command  ${chalk.bold(parsedcmd.join(' '))}`),
+      );
       try {
         // create container
         const create = await fetch(`${this.apiUrl}/containers/create`, {
