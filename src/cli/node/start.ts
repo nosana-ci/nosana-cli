@@ -43,7 +43,7 @@ export async function startNode(
    *************/
 
   let handlingSigInt: Boolean = false;
-  process.on('SIGINT', async () => {
+  const onShutdown = async () => {
     if (!handlingSigInt) {
       handlingSigInt = true;
       if (spinner) {
@@ -74,7 +74,9 @@ export async function startNode(
       handlingSigInt = false;
       process.exit();
     }
-  });
+  };
+  process.on('SIGINT', onShutdown);
+  process.on('SIGTERM', onShutdown);
 
   run = undefined;
   selectedMarket = undefined;
@@ -349,6 +351,7 @@ export async function startNode(
                 errors: validation.errors,
               };
             } else {
+              spinner.succeed(chalk.green('Job Definition validation passed'));
               // Create new flow
               flowId = provider.run(jobDefinition, flowId).id;
             }
@@ -357,8 +360,8 @@ export async function startNode(
           }
 
           if (!result) {
-            console.log('Running job');
-            spinner.text = chalk.cyan('Running job');
+            // console.log('Running job');
+            // spinner.text = chalk.cyan('Running job');
             // TODO: move to node service (e.g. waitForResult)?
             result = await new Promise<FlowState>(async function (
               resolve,

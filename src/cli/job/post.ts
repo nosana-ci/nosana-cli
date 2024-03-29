@@ -25,21 +25,21 @@ export async function run(
   let json_flow: { [key: string]: any }; // TODO: add JSON flow type
   if (options.file) {
     json_flow = JSON.parse(fs.readFileSync(options.file, 'utf8'));
-    // json_flow.state['nosana/trigger'] = 'cli';
   } else {
     switch (options.type) {
       case 'docker':
         json_flow = {
-          state: {
-            'nosana/type': 'docker',
-            'nosana/trigger': 'cli',
+          version: '0.1',
+          type: 'container',
+          meta: {
+            trigger: 'cli',
           },
           ops: [
             {
-              op: 'container/run',
+              type: 'container/run',
               id: 'run-from-cli',
               args: {
-                cmds: [{ cmd: command.join(' ') }],
+                cmd: [command.join(' ')],
                 image: options.image,
               },
             },
