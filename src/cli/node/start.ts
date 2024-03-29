@@ -92,62 +92,8 @@ export async function startNode(
       break;
   }
 
-  /****************
-   * Benchmark *
-   ****************/
-  let gpus: Array<string> = [];
-  try {
-    const jobDefinition: JobDefinition = JSON.parse(
-      fs.readFileSync('job-examples/benchmark-gpu.json', 'utf8'),
-    );
-    let result: Partial<FlowState>;
-    spinner = ora(chalk.cyan('Running benchmark')).start();
-    // Create new flow
-    const flow = provider.run(jobDefinition);
-    result = await provider.waitForFlowFinish(
-      flow.id,
-      (log: { log: string; type: string }) => {
-        if (log.type === 'stdout') {
-          process.stdout.write(log.log);
-        } else {
-          process.stderr.write(log.log);
-        }
-      },
-    );
-    if (
-      result &&
-      result.status === 'success' &&
-      result.opStates &&
-      result.opStates[0]
-    ) {
-      for (let i = 0; i < result.opStates[0].logs.length; i++) {
-        let gpu = result.opStates[0].logs[i];
-        if (gpu.log && gpu.log.includes('GPU')) {
-          gpu.log = gpu.log
-            .replace(/\([^()]*\)/g, '')
-            .replace(/^\d(?!0)/g, '')
-            .replace(/^[^_]*:/g, '')
-            .trim();
-          gpu.log = result.opStates[0].logs[0].log;
-          gpu.log = gpu.log
-            ?.toString()
-            .replace(
-              /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g,
-              '',
-            );
-          gpus.push(gpu.log as string);
-        }
-      }
-      console.log('GPUS', gpus);
-    } else if (result && result.opStates && result.opStates[0]) {
-      throw new Error(result.status);
-    }
-  } catch (e) {
-    spinner.fail(chalk.red('Something went wrong while detecting GPU', e));
-    throw e;
-  }
 
-  let marketAccount: Market;
+  let marketAccount: Market | null = null;
   let nft: PublicKey | undefined;
   if (market) {
     try {
@@ -165,12 +111,7 @@ export async function startNode(
       }
       throw e;
     }
-  } else {
-    console.log('No market');
-    return;
-    // TODO: call to backend with gpus[] and check if eligble for a market?
   }
-
   /****************
    * Health Check *
    ****************/
@@ -210,6 +151,82 @@ export async function startNode(
         );
         break;
     }
+
+    /****************
+     * Benchmark *
+     ****************/
+    let gpus: Array<string> = [];
+    try {
+      const jobDefinition: JobDefinition = JSON.parse(
+        fs.readFileSync('job-examples/benchmark-gpu.json', 'utf8'),
+      );
+      let result: Partial<FlowState>;
+      spinner = ora(chalk.cyan('Running benchmark')).start();
+      // Create new flow
+      const flow = provider.run(jobDefinition);
+      result = await provider.waitForFlowFinish(
+        flow.id,
+        (log: { log: string; type: string }) => {
+          if (log.type === 'stdout') {
+            process.stdout.write(log.log);
+          } else {
+            process.stderr.write(log.log);
+          }
+        },
+      );
+      if (
+        result &&
+        result.status === 'success' &&
+        result.opStates &&
+        result.opStates[0]
+      ) {
+        for (let i = 0; i < result.opStates[0].logs.length; i++) {
+          let gpu = result.opStates[0].logs[i];
+          if (gpu.log && gpu.log.includes('GPU')) {
+            gpu.log = gpu.log
+              .replace(/\([^()]*\)/g, '')
+              .replace(/^\d(?!0)/g, '')
+              .replace(/^[^_]*:/g, '')
+              .trim();
+            gpu.log = result.opStates[0].logs[0].log;
+            gpu.log = gpu.log
+              ?.toString()
+              .replace(
+                /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g,
+                '',
+              );
+            gpus.push(gpu.log as string);
+          }
+        }
+        console.log('GPUS', gpus);
+      } else if (result && result.opStates && result.opStates[0]) {
+        throw new Error(result.status);
+      }
+    } catch (e) {
+      spinner.fail(chalk.red('Something went wrong while detecting GPU', e));
+      throw e;
+    }
+
+    if (!marketAccount) {
+      try {
+        // if user didnt give market, ask the backend which market we can enter
+        const response = await fetch(`/market-key`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            node,
+            gpus,
+          }),
+        });
+        const data = await response.json();
+        marketAccount = await nosana.jobs.getMarket(data.market);
+      } catch (e) {
+        throw e;
+      }
+    }
+
     let stake;
     try {
       spinner = ora(chalk.cyan('Checking stake account')).start();
@@ -232,7 +249,7 @@ export async function startNode(
     );
 
     try {
-      if (marketAccount.nodeAccessKey.toString() === EMPTY_ADDRESS.toString()) {
+      if (marketAccount?.nodeAccessKey.toString() === EMPTY_ADDRESS.toString()) {
         spinner.succeed(chalk.green(`Open market ${chalk.bold(market)}`));
       } else {
         spinner.text = chalk.cyan(
@@ -240,7 +257,7 @@ export async function startNode(
         );
         nft = await nosana.solana.getNftFromCollection(
           node,
-          marketAccount.nodeAccessKey.toString(),
+          marketAccount?.nodeAccessKey.toString() as string,
         );
         if (nft) {
           spinner.succeed(
@@ -373,7 +390,7 @@ export async function startNode(
           }
           await provider.clearFlow(run.publicKey.toString());
           run = undefined;
-        } else if (isRunExpired(run, marketAccount.jobTimeout * 1.5)) {
+        } else if (isRunExpired(run, marketAccount?.jobTimeout as number * 1.5)) {
           // Quit job when timeout * 1.5 is reached.
           spinner = ora(chalk.red('Job is expired, quiting job')).start();
           console.log(3);
@@ -421,7 +438,7 @@ export async function startNode(
             ) {
               // check if expired every minute
               const expireInterval = setInterval(async () => {
-                if (isRunExpired(run!, marketAccount.jobExpiration * 1.5)) {
+                if (isRunExpired(run!, marketAccount?.jobTimeout as number * 1.5)) {
                   clearInterval(expireInterval);
                   // Quit job when timeout * 1.5 is reached.
                   spinner = ora(
