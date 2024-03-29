@@ -20,8 +20,8 @@ export class PodmanProvider extends DockerProvider {
     flowId: string,
     opStateIndex: number,
     updateOpState: Function,
-  ): Promise<OpState> {
-    return await new Promise<OpState>(async (resolve, reject) => {
+  ): Promise<OpState | null> {
+    return await new Promise<OpState | null>(async (resolve, reject) => {
       let cmd = '';
       if (Array.isArray(opArgs.cmd)) {
         for (let i = 0; i < opArgs.cmd.length; i++) {
@@ -48,7 +48,7 @@ export class PodmanProvider extends DockerProvider {
       this.eventEmitter.on('startClearFlow', (id) => {
         if (id === flowId) {
           this.eventEmitter.removeAllListeners('startClearFlow');
-          resolve(flow.state.opStates[opStateIndex]);
+          resolve(flow ? flow.state.opStates[opStateIndex] : null);
         }
       });
 

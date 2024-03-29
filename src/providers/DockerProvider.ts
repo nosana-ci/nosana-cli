@@ -73,7 +73,7 @@ export class DockerProvider extends BasicProvider implements Provider {
     op: Operation<'container/run'>,
     flowId: string,
     updateOpState: Function,
-  ): Promise<OpState> {
+  ): Promise<OpState | null> {
     const flow = this.getFlow(flowId) as Flow;
     const opStateIndex = flow.state.opStates.findIndex(
       (opState) => op.id === opState.operationId,
@@ -147,7 +147,7 @@ export class DockerProvider extends BasicProvider implements Provider {
       console.log(chalk.cyan(`Executing step ${chalk.bold(op.id)}`));
       await this.executeCmd(op.args, flowId, opStateIndex, updateOpState);
     }
-    return flow.state.opStates[opStateIndex];
+    return flow ? flow.state.opStates[opStateIndex] : null;
   }
 
   /**
@@ -206,8 +206,8 @@ export class DockerProvider extends BasicProvider implements Provider {
     flowId: string,
     opStateIndex: number,
     updateOpState: Function,
-  ): Promise<OpState> {
-    return await new Promise<OpState>(async (resolve, reject) => {
+  ): Promise<OpState | null> {
+    return await new Promise<OpState | null>(async (resolve, reject) => {
       let cmd = '';
       if (Array.isArray(opArgs.cmd)) {
         for (let i = 0; i < opArgs.cmd.length; i++) {
@@ -233,7 +233,7 @@ export class DockerProvider extends BasicProvider implements Provider {
       this.eventEmitter.on('startClearFlow', (id) => {
         if (id === flowId) {
           this.eventEmitter.removeAllListeners('startClearFlow');
-          resolve(flow.state.opStates[opStateIndex]);
+          resolve(flow ? flow.state.opStates[opStateIndex] : null);
         }
       });
 

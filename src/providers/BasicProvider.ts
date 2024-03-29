@@ -109,7 +109,7 @@ export class BasicProvider implements Provider {
       // run operations
       for (let i = 0; i < flow.jobDefinition.ops.length; i++) {
         const op = flow.jobDefinition.ops[i];
-        let opState: OpState = flow.state.opStates[i];
+        let opState: OpState | null = flow.state.opStates[i];
         if (!opState.endTime) {
           const updateOpState = (newOpStateData: object) => {
             flow.state.opStates[i] = {
@@ -159,7 +159,9 @@ export class BasicProvider implements Provider {
     }
     this.finishFlow(
       flowId,
-      flow.state.errors && flow.state.errors.length > 0 ? 'error' : undefined,
+      flow && flow.state.errors && flow.state.errors.length > 0
+        ? 'error'
+        : undefined,
     );
   }
 
