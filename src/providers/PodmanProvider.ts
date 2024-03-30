@@ -85,6 +85,7 @@ export class PodmanProvider extends DockerProvider {
         name: name,
         command: parsedcmd,
         volumes: opArgs.volumes,
+        ...(opArgs.entrypoint ? { entrypoint: opArgs.entrypoint } : undefined),
         env: environment,
         devices: gpu,
         portmappings: [{ container_port: 80, host_port: 8081 }], // TODO: figure out what we want with portmappings

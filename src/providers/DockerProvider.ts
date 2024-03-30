@@ -319,6 +319,7 @@ export class DockerProvider extends BasicProvider implements Provider {
           name,
           Tty: false,
           Env: vars,
+          Entrypoint: opArgs.entrypoint,
           HostConfig: {
             Mounts: volumes,
             DeviceRequests: devices,
