@@ -39,7 +39,7 @@ export interface OperationArgsMap {
     ];
     gpu?: boolean;
     work_dir?: string;
-    entrypoint?: string[] | string;
+    entrypoint?: string[];
     env?: {
       [key: string]: string;
     };
