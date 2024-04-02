@@ -17,19 +17,15 @@ export class DockerProvider extends BasicProvider implements Provider {
   protected host: string;
   protected port: string;
   protected protocol: string;
-  protected supportedOps: { [key: string]: string } = {
-    'container/run': this.opContainerRun.name,
-    'container/create-volume': this.opCreateVolume.name,
-  };
 
-  constructor(podman: string) {
+  constructor(server: string) {
     super();
-    const podmanUri = new URL(
-      podman.startsWith('http') || podman.startsWith('ssh')
-        ? podman
-        : `http://${podman}`,
+    const serverUri = new URL(
+      server.startsWith('http') || server.startsWith('ssh')
+        ? server
+        : `http://${server}`,
     );
-    const protocol = podmanUri.protocol.replace(':', '');
+    const protocol = serverUri.protocol.replace(':', '');
     if (
       !['https', 'http', 'ssh'].includes(protocol) &&
       typeof protocol !== 'undefined'
@@ -37,58 +33,37 @@ export class DockerProvider extends BasicProvider implements Provider {
       throw new Error(`Protocol ${protocol} not supported`);
     }
 
-    this.host = podmanUri.hostname;
-    this.port = podmanUri.port;
+    this.host = serverUri.hostname;
+    this.port = serverUri.port;
     this.protocol = protocol;
     this.docker = new Docker({
       host: this.host,
       port: this.port,
       protocol: this.protocol as 'https' | 'http' | 'ssh' | undefined,
     });
-  }
 
-  /**
-   * Check if DockerProvider is healthy by checking if podman is running
-   * @returns boolean
-   */
-  public async healthy(throwError: Boolean = true): Promise<Boolean> {
-    try {
-      await this.docker.ping();
-      return true;
-    } catch (error) {
-      if (throwError) {
-        throw error;
-      }
-      console.error(error);
-      return false;
-    }
-  }
-
-  /**
-   * Run operation and return results
-   * @param op Operation specs
-   * @returns OpState
-   */
-  private async opContainerRun(
-    op: Operation<'container/run'>,
-    flowId: string,
-    updateOpState: Function,
-  ): Promise<OpState> {
-    const flow = this.getFlow(flowId) as Flow;
-    const opStateIndex = flow.state.opStates.findIndex(
-      (opState) => op.id === opState.operationId,
-    );
-    const opState = flow.state.opStates[opStateIndex];
-
-    if (opState.providerId) {
-      await new Promise<void>(async (resolve, reject) => {
+    /**
+     * Run operation and return results
+     * @param op Operation specs
+     * @returns OpState
+     */
+    this.supportedOps['container/run'] = async (
+      op: Operation<'container/run'>,
+      flowId: string,
+      updateOpState: Function,
+    ): Promise<OpState> => {
+      const flow = this.getFlow(flowId) as Flow;
+      const opStateIndex = flow.state.opStates.findIndex(
+        (opState) => op.id === opState.operationId,
+      );
+      const opState = flow.state.opStates[opStateIndex];
+      if (opState.providerId) {
         const c = await this.getContainerByName(opState.providerId as string);
 
         // when node is shutted down before the container started, it won't find the container
         // clear providerId so that it will be ran again
         if (!c) {
           updateOpState({ providerId: null });
-          resolve();
         } else {
           const container = this.docker.getContainer(c.Id);
           const containerInfo = await container.inspect();
@@ -126,71 +101,101 @@ export class DockerProvider extends BasicProvider implements Provider {
               updateOpState,
               containerInfo,
             );
-            resolve();
           } else if (containerInfo.State.Status === 'exited') {
             await this.finishOpContainerRun(
               container,
               updateOpState,
               containerInfo,
             );
-            resolve();
           }
         }
-      });
-    }
+      }
+      if (!opState.providerId) {
+        updateOpState({
+          startTime: Date.now(),
+          status: 'running',
+        });
+        console.log(chalk.cyan(`Executing step ${chalk.bold(op.id)}`));
+        try {
+          console.log(chalk.cyan(`Pulling image ${chalk.bold(op.args.image)}`));
+          await this.pullImage(op.args.image);
+        } catch (error: any) {
+          throw new Error(
+            chalk.red(`Cannot pull image ${op.args.image}: `) + error,
+          );
+        }
 
-    if (!opState.providerId) {
+        await this.executeCmd(op.args, flowId, opStateIndex, updateOpState);
+      }
+
+      return opState;
+    };
+
+    /**
+     * Create volume
+     * @param op Operation specs
+     */
+    this.supportedOps['container/create-volume'] = async (
+      op: Operation<'container/create-volume'>,
+      flowId: string,
+      updateOpState: Function,
+    ): Promise<OpState> => {
+      const flow = this.getFlow(flowId) as Flow;
+      const opStateIndex = flow.state.opStates.findIndex(
+        (opState) => op.id === opState.operationId,
+      );
+      const opState = flow.state.opStates[opStateIndex];
       updateOpState({
         startTime: Date.now(),
         status: 'running',
       });
-      await this.executeCmd(op.args, flowId, opStateIndex, updateOpState);
-    }
-    return flow.state.opStates[opStateIndex];
+
+      return await new Promise(async (resolve, reject) => {
+        this.docker.createVolume(
+          {
+            Name: op.args.name,
+          },
+          (err, volume) => {
+            if (err) {
+              console.log(err);
+              updateOpState({
+                endTime: Date.now(),
+                status: 'failed',
+                logs: [
+                  {
+                    type: 'stderr',
+                    log: err.message,
+                  },
+                ],
+              });
+              reject(err);
+            }
+            updateOpState({
+              endTime: Date.now(),
+              status: 'success',
+            });
+            resolve(opState);
+          },
+        );
+      });
+    };
   }
 
   /**
-   * Create volume
-   * @param op Operation specs
+   * Check if DockerProvider is healthy by checking if podman is running
+   * @returns boolean
    */
-  private async opCreateVolume(
-    op: Operation<'container/create-volume'>,
-    flowId: string,
-    updateOpState: Function,
-  ): Promise<string> {
-    updateOpState({
-      startTime: Date.now(),
-      status: 'running',
-    });
-
-    return await new Promise(async (resolve, reject): Promise<any> => {
-      this.docker.createVolume(
-        {
-          Name: op.args.name,
-        },
-        (err, volume) => {
-          if (err) {
-            console.log(err);
-            updateOpState({
-              endTime: Date.now(),
-              status: 'failed',
-              logs: [
-                {
-                  type: 'stderr',
-                  log: err.message,
-                },
-              ],
-            });
-            reject(err);
-          }
-          updateOpState({
-            endTime: Date.now(),
-            status: 'success',
-          });
-          resolve(op.id);
-        },
-      );
-    });
+  public async healthy(throwError: Boolean = true): Promise<Boolean> {
+    try {
+      await this.docker.ping();
+      return true;
+    } catch (error) {
+      if (throwError) {
+        throw error;
+      }
+      console.error(error);
+      return false;
+    }
   }
 
   /**
@@ -221,20 +226,6 @@ export class DockerProvider extends BasicProvider implements Provider {
       }
       const flow = this.getFlow(flowId) as Flow;
       const parsedcmd = parse(cmd);
-
-      try {
-        await this.pullImage(opArgs.image);
-      } catch (error: any) {
-        reject(chalk.red(`Cannot pull image ${opArgs.image}: `) + error);
-      }
-
-      // when flow is being cleared, resolve promise
-      this.eventEmitter.on('startClearFlow', (id) => {
-        if (id === flowId) {
-          this.eventEmitter.removeAllListeners('startClearFlow');
-          resolve(flow.state.opStates[opStateIndex]);
-        }
-      });
 
       const name = [...Array(32)]
         .map(() => Math.random().toString(36)[2])
@@ -309,6 +300,9 @@ export class DockerProvider extends BasicProvider implements Provider {
       })) {
         vars.push(`${key}=${value}`);
       }
+      console.log(
+        chalk.cyan(`Running command  ${chalk.bold(parsedcmd.join(' '))}`),
+      );
 
       return await this.docker
         .run(opArgs.image, parsedcmd as string[], emptyStream, {
@@ -324,11 +318,9 @@ export class DockerProvider extends BasicProvider implements Provider {
         .then(async ([res, container]) => {
           await this.finishOpContainerRun(container, updateOpState);
           emptyStream.end();
-          this.eventEmitter.removeAllListeners('startClearFlow');
           resolve(flow.state.opStates[opStateIndex]);
         })
         .catch((error) => {
-          this.eventEmitter.removeAllListeners('startClearFlow');
           reject(error);
         });
     });
@@ -429,18 +421,6 @@ export class DockerProvider extends BasicProvider implements Provider {
     });
   }
 
-  public async clearFlow(flowId: string): Promise<void> {
-    const flow = this.getFlow(flowId) as Flow;
-    // for every op in flow, stop & remove container
-    for (let j = 0; j < flow.state.opStates.length; j++) {
-      const op = flow.state.opStates[j];
-      if (op.providerId) {
-        await this.stopAndRemoveContainer(op.providerId);
-      }
-    }
-    super.clearFlow(flowId);
-  }
-
   public async finishFlow(
     flowId: string,
     status?: string | undefined,
@@ -539,9 +519,11 @@ export class DockerProvider extends BasicProvider implements Provider {
           const container = this.docker.getContainer(c.Id);
           const containerInfo = await container.inspect();
           if (containerInfo.State.Running) {
-            await container.stop();
+            // await container.stop();
+            await container.kill();
+          } else {
+            await container.remove();
           }
-          await container.remove();
         }
       } catch (err: any) {
         console.error(

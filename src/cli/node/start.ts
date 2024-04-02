@@ -41,7 +41,6 @@ export async function startNode(
   /*************
    * Bootstrap *
    *************/
-
   let handlingSigInt: Boolean = false;
   const onShutdown = async () => {
     if (!handlingSigInt) {
@@ -56,19 +55,30 @@ export async function startNode(
         try {
           const tx = await nosana.jobs.quit(run);
           spinner.succeed(`Job successfully quit with tx ${tx}`);
-        } catch (e) {
+        } catch (e: any) {
           spinner.fail(chalk.red.bold('Could not quit job'));
-          throw e;
+          const logLevel = cmd.optsWithGlobals().log;
+          if (logLevel === 'debug') {
+            console.error(e.message ? e.message : e);
+          } else if (logLevel === 'trace') {
+            console.error(e);
+          }
         }
-        await provider.clearFlow(run.publicKey.toString());
+        await provider.stopFlow(run.publicKey.toString());
+        await provider.waitForFlowFinish(run.publicKey.toString());
       } else if (selectedMarket) {
         spinner = ora(chalk.cyan('Leaving market queue')).start();
         try {
           const tx = await nosana.jobs.stop(selectedMarket.address);
           spinner.succeed(`Market queue successfully left with tx ${tx}`);
-        } catch (e) {
+        } catch (e: any) {
           spinner.fail(chalk.red.bold('Could not quit market queue'));
-          throw e;
+          const logLevel = cmd.optsWithGlobals().log;
+          if (logLevel === 'debug') {
+            console.error(e.message ? e.message : e);
+          } else if (logLevel === 'trace') {
+            console.error(e);
+          }
         }
       }
       handlingSigInt = false;
@@ -288,6 +298,9 @@ export async function startNode(
               throw e;
             }
           }
+        } else {
+          // We joined the market, but we are not queued, check for a run account
+          run = await getRun(node);
         }
       }
       if (run) {
@@ -307,7 +320,7 @@ export async function startNode(
             spinner.fail(chalk.red('Could not quit job'));
             throw e;
           }
-          await provider.clearFlow(run.publicKey.toString());
+          await provider.stopFlow(run.publicKey.toString());
           run = undefined;
         } else if (isRunExpired(run, marketAccount.jobTimeout * 1.5)) {
           // Quit job when timeout * 1.5 is reached.
@@ -320,7 +333,7 @@ export async function startNode(
             spinner.fail(chalk.red('Could not quit job'));
             throw e;
           }
-          await provider.clearFlow(run.publicKey.toString());
+          await provider.stopFlow(run.publicKey.toString());
           run = undefined;
         } else {
           spinner = ora(chalk.cyan('Checking provider health')).start();
@@ -334,7 +347,7 @@ export async function startNode(
           }
 
           let flowId = run.publicKey.toString();
-          let result: Partial<FlowState> | undefined;
+          let result: Partial<FlowState> | null = null;
           const existingFlow = provider.getFlow(flowId);
           if (!existingFlow) {
             spinner.text = chalk.cyan('Retrieving job definition');
@@ -363,7 +376,7 @@ export async function startNode(
             // console.log('Running job');
             // spinner.text = chalk.cyan('Running job');
             // TODO: move to node service (e.g. waitForResult)?
-            result = await new Promise<FlowState>(async function (
+            result = await new Promise<FlowState | null>(async function (
               resolve,
               reject,
             ) {
@@ -384,7 +397,7 @@ export async function startNode(
                     spinner.fail(chalk.red.bold('Could not quit job'));
                     reject(e);
                   }
-                  await provider.clearFlow(flowId);
+                  await provider.stopFlow(flowId);
                   reject('Job expired');
                 }
               }, 1000 * 60);
@@ -392,34 +405,39 @@ export async function startNode(
               clearInterval(expireInterval);
               resolve(flowResult);
             });
-            spinner.succeed('Retrieved results');
+            if (result) {
+              spinner.succeed('Retrieved results');
+              spinner.succeed('Retrieved results');
+              spinner.succeed('Retrieved results');
+            }
           }
-
-          spinner = ora(chalk.cyan('Uploading results to IPFS')).start();
-          let ipfsResult: string;
-          try {
-            ipfsResult = await nosana.ipfs.pin(result as object);
-            spinner.succeed(`Uploaded results to IPFS ${ipfsResult}`);
-          } catch (e) {
-            spinner.fail(chalk.red.bold('Could not upload results to IPFS'));
-            throw e;
-          }
-          const bytesArray = nosana.ipfs.IpfsHashToByteArray(ipfsResult);
-          spinner = ora(chalk.cyan('Finishing job')).start();
-          try {
-            const tx = await nosana.jobs.submitResult(
-              bytesArray,
-              run.publicKey,
-              job.market.toString(),
-            );
-            run = undefined;
-            selectedMarket = undefined;
-            spinner.succeed(
-              chalk.green('Job finished ') + chalk.green.bold(tx),
-            );
-          } catch (e) {
-            spinner.fail(chalk.red.bold('Could not finish job'));
-            throw e;
+          if (result) {
+            spinner = ora(chalk.cyan('Uploading results to IPFS')).start();
+            let ipfsResult: string;
+            try {
+              ipfsResult = await nosana.ipfs.pin(result as object);
+              spinner.succeed(`Uploaded results to IPFS ${ipfsResult}`);
+            } catch (e) {
+              spinner.fail(chalk.red.bold('Could not upload results to IPFS'));
+              throw e;
+            }
+            const bytesArray = nosana.ipfs.IpfsHashToByteArray(ipfsResult);
+            spinner = ora(chalk.cyan('Finishing job')).start();
+            try {
+              const tx = await nosana.jobs.submitResult(
+                bytesArray,
+                run.publicKey,
+                job.market.toString(),
+              );
+              run = undefined;
+              selectedMarket = undefined;
+              spinner.succeed(
+                chalk.green('Job finished ') + chalk.green.bold(tx),
+              );
+            } catch (e) {
+              spinner.fail(chalk.red.bold('Could not finish job'));
+              throw e;
+            }
           }
         }
       }
