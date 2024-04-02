@@ -64,8 +64,8 @@ export class PodmanProvider extends DockerProvider {
         opArgs.entrypoint ||
         !flow.jobDefinition.global ||
         !flow.jobDefinition.global.entrypoint
-          ? opArgs.entrypoint && ifStringCastToArray(opArgs.entrypoint)
-          : ifStringCastToArray(flow.jobDefinition.global.entrypoint);
+          ? opArgs.entrypoint
+          : flow.jobDefinition.global.entrypoint;
 
       const globalEnv =
         flow.jobDefinition.global && flow.jobDefinition.global.env
@@ -78,7 +78,9 @@ export class PodmanProvider extends DockerProvider {
         name: name,
         command: parsedcmd,
         volumes: opArgs.volumes,
-        ...(entrypoint ? { entrypoint } : undefined),
+        ...(entrypoint
+          ? { entrypoint: ifStringCastToArray(entrypoint) }
+          : undefined),
         env: environment,
         devices: gpu,
         // portmappings: [{ container_port: 80, host_port: 8081 }], // TODO: figure out what we want with portmappings
