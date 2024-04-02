@@ -78,7 +78,7 @@ export class PodmanProvider extends DockerProvider {
         work_dir,
       };
       console.log(
-        chalk.cyan(`Running command  ${chalk.bold(parsedcmd.join(' '))}`),
+        chalk.cyan(`- Running command  ${chalk.bold(parsedcmd.join(' '))}`),
       );
       try {
         // create container

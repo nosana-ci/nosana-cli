@@ -117,7 +117,9 @@ export class DockerProvider extends BasicProvider implements Provider {
         });
         console.log(chalk.cyan(`Executing step ${chalk.bold(op.id)}`));
         try {
-          console.log(chalk.cyan(`Pulling image ${chalk.bold(op.args.image)}`));
+          console.log(
+            chalk.cyan(`- Pulling image ${chalk.bold(op.args.image)}`),
+          );
           await this.pullImage(op.args.image);
         } catch (error: any) {
           throw new Error(
@@ -301,7 +303,7 @@ export class DockerProvider extends BasicProvider implements Provider {
         vars.push(`${key}=${value}`);
       }
       console.log(
-        chalk.cyan(`Running command  ${chalk.bold(parsedcmd.join(' '))}`),
+        chalk.cyan(`- Running command  ${chalk.bold(parsedcmd.join(' '))}`),
       );
 
       return await this.docker
