@@ -2,6 +2,7 @@ import chalk from 'chalk';
 import { DockerProvider } from './DockerProvider.js';
 import { Flow, OpState, OperationArgsMap } from './Provider.js';
 import { parse } from 'shell-quote';
+import { ifStringCastToArray } from '../generic/utils.js';
 
 export class PodmanProvider extends DockerProvider {
   private apiUrl: string;
@@ -59,6 +60,13 @@ export class PodmanProvider extends DockerProvider {
           ? opArgs.work_dir
           : flow.jobDefinition.global.work_dir;
 
+      const entrypoint =
+        opArgs.entrypoint ||
+        !flow.jobDefinition.global ||
+        !flow.jobDefinition.global.entrypoint
+          ? opArgs.entrypoint && ifStringCastToArray(opArgs.entrypoint)
+          : ifStringCastToArray(flow.jobDefinition.global.entrypoint);
+
       const globalEnv =
         flow.jobDefinition.global && flow.jobDefinition.global.env
           ? flow.jobDefinition.global.env
@@ -70,7 +78,7 @@ export class PodmanProvider extends DockerProvider {
         name: name,
         command: parsedcmd,
         volumes: opArgs.volumes,
-        ...(opArgs.entrypoint ? { entrypoint: opArgs.entrypoint } : undefined),
+        ...(entrypoint ? { entrypoint } : undefined),
         env: environment,
         devices: gpu,
         // portmappings: [{ container_port: 80, host_port: 8081 }], // TODO: figure out what we want with portmappings

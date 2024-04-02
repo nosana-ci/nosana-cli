@@ -13,6 +13,7 @@ export type JobDefinition = {
   global?: {
     image?: string;
     gpu?: boolean;
+    entrypoint?: string | string[];
     env?: {
       [key: string]: string;
     };
@@ -39,7 +40,7 @@ export interface OperationArgsMap {
     ];
     gpu?: boolean;
     work_dir?: string;
-    entrypoint?: string[];
+    entrypoint?: string | string[];
     env?: {
       [key: string]: string;
     };

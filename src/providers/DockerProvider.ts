@@ -279,6 +279,13 @@ export class DockerProvider extends BasicProvider implements Provider {
           ? opArgs.work_dir
           : flow.jobDefinition.global.work_dir;
 
+      const entrypoint =
+        opArgs.entrypoint ||
+        !flow.jobDefinition.global ||
+        !flow.jobDefinition.global.entrypoint
+          ? opArgs.entrypoint
+          : flow.jobDefinition.global.entrypoint;
+
       const devices =
         opArgs.gpu ||
         (flow.jobDefinition.global && flow.jobDefinition.global.gpu)
@@ -311,7 +318,7 @@ export class DockerProvider extends BasicProvider implements Provider {
           name,
           Tty: false,
           Env: vars,
-          Entrypoint: opArgs.entrypoint,
+          Entrypoint: entrypoint,
           HostConfig: {
             Mounts: volumes,
             DeviceRequests: devices,
