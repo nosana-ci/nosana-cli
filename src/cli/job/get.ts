@@ -5,6 +5,7 @@ import { download } from './download.js';
 import { PublicKey } from '@solana/web3.js';
 import { waitForJobCompletion } from '../../services/jobs.js';
 import { clearLine, colors } from '../../generic/utils.js';
+import { OpState } from '../../providers/Provider.js';
 
 export async function getJob(
   jobAddress: string,
@@ -105,8 +106,36 @@ export async function getJob(
       const ipfsResult = await nosana.ipfs.retrieve(job.ipfsResult);
 
       console.log('Logs:');
-      const result = ipfsResult?.results;
-      if (result) {
+
+      const result = ipfsResult.results;
+      if (ipfsResult.opStates) {
+        // New result format
+        for (let i = 0; i < ipfsResult.opStates.length; i++) {
+          const opState: OpState = ipfsResult.opStates[i];
+          console.log(
+            `\n${colors.CYAN}- Executed step ${opState.operationId} in ${
+              (opState.endTime! - opState.startTime!) / 1000
+            }s${colors.RESET}`,
+          );
+          let logString = '';
+          for (let k = 0; k < opState.logs.length; k++) {
+            const log = opState.logs[k];
+            const color =
+              log.type === 'stderr' && opState.exitCode ? colors.RED : '';
+            logString += `${color}${log.log}${colors.RESET}`;
+          }
+          console.log(logString);
+          if (opState.status) {
+            console.log(
+              `${
+                opState.exitCode ? colors.RED : colors.GREEN
+              }Exited with status ${opState.status} with code ${
+                opState.exitCode
+              } ${colors.RESET}`,
+            );
+          }
+        }
+      } else if (result) {
         const jsonFlow = await nosana.ipfs.retrieve(job.ipfsJob);
         let commands = [];
 
