@@ -16,7 +16,9 @@ export async function setSDK(
   airdrop: boolean = false,
 ): Promise<Client> {
   const config: ClientConfig = {
-    solana: {},
+    solana: {
+      priority_fee: 100000,
+    },
   };
   if (rpc) config.solana!.network = rpc;
   if (market) config.solana!.market_address = market;

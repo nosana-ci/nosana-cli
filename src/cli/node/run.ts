@@ -28,8 +28,8 @@ export async function runJob(
       if (flow) {
         const spinner = ora(chalk.cyan(`Stopping flow ${flow.id}`)).start();
         try {
-          await provider.clearFlow(flow.id);
-
+          await provider.stopFlow(flow.id);
+          await provider.waitForFlowFinish(flow.id);
           spinner.succeed(chalk.green(`Flow succesfully stopped`));
         } catch (e) {
           spinner.fail(chalk.red.bold('Could not stop flow'));
@@ -72,16 +72,18 @@ export async function runJob(
   const jobDefinition: JobDefinition = JSON.parse(
     fs.readFileSync(jobDefinitionFile, 'utf8'),
   );
-  let result: Partial<FlowState>;
+  let result: Partial<FlowState> | null = null;
   try {
     flow = provider.run(jobDefinition);
     result = await provider.waitForFlowFinish(
       flow.id,
       (log: { log: string; type: string }) => {
-        if (log.type === 'stdout') {
-          process.stdout.write(log.log);
-        } else {
-          process.stderr.write(log.log);
+        if (!handlingSigInt) {
+          if (log.type === 'stdout') {
+            process.stdout.write(log.log);
+          } else {
+            process.stderr.write(log.log);
+          }
         }
       },
     );
