@@ -17,7 +17,7 @@ export async function setSDK(
 ): Promise<Client> {
   const config: ClientConfig = {
     solana: {
-      priority_fee: 50000,
+      priority_fee: 100000,
     },
   };
   if (rpc) config.solana!.network = rpc;

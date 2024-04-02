@@ -32,7 +32,7 @@ export async function runBenchmark(options: { [key: string]: any }) {
       if (flow) {
         const spinner = ora(chalk.cyan(`Stopping flow ${flow.id}`)).start();
         try {
-          await provider.clearFlow(flow.id);
+          await provider.stopFlow(flow.id);
 
           spinner.succeed(chalk.green(`Flow succesfully stopped`));
         } catch (e) {
@@ -69,7 +69,7 @@ export async function runBenchmark(options: { [key: string]: any }) {
   const jobDefinition: JobDefinition = JSON.parse(
     fs.readFileSync(jobDefinitionFile, 'utf8'),
   );
-  let result: Partial<FlowState>;
+  let result: Partial<FlowState> | null;
 
   const validation: IValidation<JobDefinition> =
     validateJobDefinition(jobDefinition);
@@ -102,7 +102,7 @@ export async function runBenchmark(options: { [key: string]: any }) {
   //   util.inspect(result, { showHidden: false, depth: null, colors: true }),
   // );
 
-  if (result.status === 'success') {
+  if (result && result.status === 'success') {
     // TODO: api request to backend with results & node address
     try {
       // const registrationCode = await fetch(`/join-test-grid`, {
@@ -131,7 +131,9 @@ export async function runBenchmark(options: { [key: string]: any }) {
   } else {
     console.log(
       chalk.red(
-        `Couldn't succesfully run benchmark, finished with status: ${result.status}`,
+        `Couldn't succesfully run benchmark, finished with status: ${
+          result ? result.status : 'cleared'
+        }`,
       ),
     );
   }
