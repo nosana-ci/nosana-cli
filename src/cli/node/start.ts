@@ -171,7 +171,7 @@ export async function startNode(
       const jobDefinition: JobDefinition = JSON.parse(
         fs.readFileSync('job-examples/benchmark-gpu.json', 'utf8'),
       );
-      let result: Partial<FlowState>;
+      let result: Partial<FlowState> | null;
       spinner = ora(chalk.cyan('Running benchmark')).start();
       // Create new flow
       const flow = provider.run(jobDefinition);
