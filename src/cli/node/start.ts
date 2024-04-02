@@ -121,8 +121,12 @@ export async function startNode(
   /****************
    * Health Check *
    ****************/
-  const healthCheck = async () => {
-    spinner = ora(chalk.cyan('Checking SOL balance')).start();
+  const healthCheck = async (printDetailed: boolean = true) => {
+    if (printDetailed) {
+      spinner = ora(chalk.cyan('Checking SOL balance')).start();
+    } else {
+      spinner = ora(chalk.cyan('Health checks')).start();
+    }
     try {
       const stats: NodeStats = await getNodeStats(node);
       if (stats.sol / 1e9 < 0.001) {
@@ -131,16 +135,19 @@ export async function startNode(
           `SOL balance ${stats.sol / 1e9} should be 0.001 or higher`,
         );
       }
-      spinner.succeed(
-        chalk.green(`Sol balance: ${chalk.bold(stats.sol / 1e9)}`),
-      );
+      if (printDetailed) {
+        spinner.succeed(
+          chalk.green(`Sol balance: ${chalk.bold(stats.sol / 1e9)}`),
+        );
+      }
     } catch (e) {
       spinner.warn(
         'Could not check SOL balance, make sure you have enough SOL',
       );
     }
-
-    spinner = ora(chalk.cyan('Checking provider health')).start();
+    if (printDetailed) {
+      spinner = ora(chalk.cyan('Checking provider health')).start();
+    }
     try {
       await provider.healthy();
     } catch (error) {
@@ -152,14 +159,18 @@ export async function startNode(
     switch (options.provider) {
       case 'docker':
       default:
-        spinner.succeed(
-          chalk.green(`Podman is running on ${chalk.bold(options.podman)}`),
-        );
+        if (printDetailed) {
+          spinner.succeed(
+            chalk.green(`Podman is running on ${chalk.bold(options.podman)}`),
+          );
+        }
         break;
     }
     let stake;
     try {
-      spinner = ora(chalk.cyan('Checking stake account')).start();
+      if (printDetailed) {
+        spinner = ora(chalk.cyan('Checking stake account')).start();
+      }
       stake = await nosana.stake.get(node);
     } catch (error: any) {
       if (error.message && error.message.includes('Account does not exist')) {
@@ -172,30 +183,38 @@ export async function startNode(
         throw error;
       }
     }
-    spinner.succeed(
-      chalk.green(
-        `Stake found with ${chalk.bold(stake.amount / 1e6)} NOS staked`,
-      ),
-    );
+    if (printDetailed) {
+      spinner.succeed(
+        chalk.green(
+          `Stake found with ${chalk.bold(stake.amount / 1e6)} NOS staked`,
+        ),
+      );
+    }
     try {
       if (marketAccount.nodeAccessKey.toString() === EMPTY_ADDRESS.toString()) {
-        spinner.succeed(chalk.green(`Open market ${chalk.bold(market)}`));
+        if (printDetailed) {
+          spinner.succeed(chalk.green(`Open market ${chalk.bold(market)}`));
+        }
       } else {
-        spinner.text = chalk.cyan(
-          `Checking required access key for market ${chalk.bold(market)}`,
-        );
+        if (printDetailed) {
+          spinner.text = chalk.cyan(
+            `Checking required access key for market ${chalk.bold(market)}`,
+          );
+        }
         nft = await nosana.solana.getNftFromCollection(
           node,
           marketAccount.nodeAccessKey.toString(),
         );
         if (nft) {
-          spinner.succeed(
-            chalk.green(
-              `Found access key ${chalk.bold(nft)} for market ${chalk.bold(
-                market,
-              )}`,
-            ),
-          );
+          if (printDetailed) {
+            spinner.succeed(
+              chalk.green(
+                `Found access key ${chalk.bold(nft)} for market ${chalk.bold(
+                  market,
+                )}`,
+              ),
+            );
+          }
         } else {
           throw new Error('Could not find access key');
         }
@@ -204,15 +223,18 @@ export async function startNode(
       spinner.fail(chalk.red(`Denied access to market ${chalk.bold(market)}`));
       throw e;
     }
+    if (!printDetailed) {
+      spinner.succeed('Health checks passed');
+    }
   };
-  await healthCheck();
+  await healthCheck(true);
   /****************
    *   Job Loop   *
    ****************/
   const jobLoop = async (firstRun: Boolean = false): Promise<void> => {
     try {
       if (!firstRun) {
-        await healthCheck();
+        await healthCheck(false);
       }
       spinner = ora(chalk.cyan('Checking existing runs')).start();
 
