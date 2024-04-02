@@ -74,7 +74,7 @@ export type OpState = {
   endTime: number | null;
   exitCode: number | null;
   logs: Array<{
-    type: 'stdin' | 'stdout' | 'stderr';
+    type: 'stdin' | 'stdout' | 'stderr' | 'nodeerr';
     log: string | undefined;
   }>;
 };
@@ -88,9 +88,10 @@ export abstract class Provider {
   abstract getFlow(id: string): Flow | undefined;
   abstract continueFlow(flowId: string): Flow | Promise<Flow>;
   abstract clearFlow(flowId: string): Promise<void>;
+  abstract stopFlow(flowId: string): Promise<void>;
   abstract finishFlow(flowId: string, status?: string): void;
   abstract waitForFlowFinish(
     id: string,
     logCallback?: Function,
-  ): Promise<FlowState>;
+  ): Promise<FlowState | null>;
 }

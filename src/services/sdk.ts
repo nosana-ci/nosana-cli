@@ -17,7 +17,7 @@ export async function setSDK(
 ): Promise<Client> {
   const config: ClientConfig = {
     solana: {
-      priority_fee: 50000,
+      priority_fee: 100000,
     },
   };
   if (rpc) config.solana!.network = rpc;
@@ -53,9 +53,7 @@ export async function setSDK(
 
   nosana = new Client(network, wallet, config);
 
-  console.log(
-    `Network:\t${colors.GREEN}${nosana.solana.config.network}${colors.RESET}`,
-  );
+  console.log(`Network:\t${colors.GREEN}${network}${colors.RESET}`);
   if (keyfile) {
     const solBalance = await nosana.solana.getSolBalance();
     const nosBalance = await nosana.solana.getNosBalance();

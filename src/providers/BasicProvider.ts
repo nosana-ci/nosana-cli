@@ -5,6 +5,8 @@ import {
   OpState,
   Flow,
   FlowState,
+  Operation,
+  OperationType,
 } from './Provider.js';
 import { JSONFileSyncPreset } from 'lowdb/node';
 import { LowSync } from 'lowdb/lib';
@@ -14,10 +16,16 @@ type FlowsDb = {
   flows: { [key: string]: Flow };
 };
 
+type OpFunction = (
+  op: Operation<any>,
+  flowId: string,
+  updateOpState: (newOpStateData: Partial<FlowState>) => void,
+) => Promise<OpState>;
+
 export class BasicProvider implements Provider {
   protected db: LowSync<FlowsDb>;
   protected eventEmitter: EventEmitter = new EventEmitter();
-  protected supportedOps: { [key: string]: string } = {};
+  protected supportedOps: { [key: string]: OpFunction } = {};
 
   constructor() {
     // Create or read database
@@ -111,24 +119,42 @@ export class BasicProvider implements Provider {
         const op = flow.jobDefinition.ops[i];
         let opState: OpState = flow.state.opStates[i];
         if (!opState.endTime) {
-          const updateOpState = (newOpStateData: object) => {
+          const updateOpState = (newOpStateData: Partial<OpState>) => {
             flow.state.opStates[i] = {
               ...flow.state.opStates[i],
               ...newOpStateData,
             };
             this.db.write();
+            return flow.state.opStates[i];
           };
           try {
             const operationTypeFunction = this.supportedOps[op.type];
             if (!operationTypeFunction) {
               throw new Error(`no support for operation type ${op.type}`);
             }
-            // @ts-ignore
-            opState = await this[operationTypeFunction](
-              op,
-              flowId,
-              updateOpState,
-            );
+            opState = await new Promise<OpState>(async (resolve, reject) => {
+              // when flow is being stopped, resolve promise
+              this.eventEmitter.on('startStopFlow', (id) => {
+                if (id === flowId) {
+                  const stoppedOpState = updateOpState({
+                    status: 'stopped',
+                    endTime: Date.now(),
+                  });
+                  resolve(stoppedOpState);
+                }
+              });
+              try {
+                const finishedOpState = await operationTypeFunction(
+                  op,
+                  flowId,
+                  updateOpState,
+                );
+                resolve(finishedOpState);
+              } catch (error) {
+                reject(error);
+              }
+            });
+            this.eventEmitter.removeAllListeners('startStopFlow');
           } catch (error: any) {
             updateOpState({
               exitCode: 2,
@@ -148,7 +174,11 @@ export class BasicProvider implements Provider {
             break;
           }
         }
-        if (opState && opState.status === 'failed') break;
+        if (opState) {
+          // Stop running when operation failed or when we stopped the operation
+          if (opState.status === 'failed') break;
+          else if (opState.status === 'stopped') break;
+        }
       }
     } catch (error: any) {
       if (!this.db.data.flows[flowId].state.errors) {
@@ -159,7 +189,9 @@ export class BasicProvider implements Provider {
     }
     this.finishFlow(
       flowId,
-      flow.state.errors && flow.state.errors.length > 0 ? 'error' : undefined,
+      flow && flow.state.errors && flow.state.errors.length > 0
+        ? 'error'
+        : undefined,
     );
   }
 
@@ -180,7 +212,7 @@ export class BasicProvider implements Provider {
   public async waitForFlowFinish(
     flowId: string,
     logCallback?: Function,
-  ): Promise<FlowState> {
+  ): Promise<FlowState | null> {
     return await new Promise((resolve, reject) => {
       const flow = this.db.data.flows[flowId];
       if (!flow) reject('Flow not found');
@@ -194,10 +226,10 @@ export class BasicProvider implements Provider {
         });
       }
 
-      this.eventEmitter.on('flowFinished', (flowId) => {
+      this.eventEmitter.on('flowFinished', (flow: Flow) => {
         this.eventEmitter.removeAllListeners('flowFinished');
         this.eventEmitter.removeAllListeners('newLog');
-        resolve(this.db.data.flows[flowId].state);
+        resolve(flow ? flow.state : null);
       });
     });
   }
@@ -208,29 +240,29 @@ export class BasicProvider implements Provider {
    */
   public finishFlow(flowId: string, status?: string) {
     const checkStatus = (op: OpState) => op.status === 'failed';
+    const flow = this.db.data.flows[flowId];
+    if (!flow) throw new Error(`Could not find flow ${flowId}`);
+
     if (status) {
-      this.db.data.flows[flowId].state.status = status;
+      flow.state.status = status;
     } else {
-      this.db.data.flows[flowId].state.status =
-        this.db.data.flows[flowId].state.opStates.some(checkStatus) ||
-        this.db.data.flows[flowId].state.opStates.every(
-          (opState) => !opState.status,
-        )
+      flow.state.status =
+        flow.state.opStates.some(checkStatus) ||
+        flow.state.opStates.every((opState) => !opState.status)
           ? 'failed'
           : 'success';
     }
-    this.db.data.flows[flowId].state.endTime = Date.now();
+    flow.state.endTime = Date.now();
     this.db.write();
-
-    this.eventEmitter.emit('flowFinished', flowId);
-    console.log(chalk.cyan(`Finished flow ${chalk.bold(flowId)}\n`));
+    this.eventEmitter.emit('flowFinished', flow);
   }
 
   public async clearFlow(flowId: string): Promise<void> {
-    this.eventEmitter.emit('startClearFlow', flowId);
     delete this.db.data.flows[flowId];
     this.db.write();
-    console.log('Cleared flow', flowId);
+  }
+  public async stopFlow(flowId: string): Promise<void> {
+    this.eventEmitter.emit('startStopFlow', flowId);
   }
 
   /****************

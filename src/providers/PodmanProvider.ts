@@ -37,21 +37,6 @@ export class PodmanProvider extends DockerProvider {
       const flow = this.getFlow(flowId) as Flow;
       const parsedcmd = parse(cmd);
 
-      try {
-        console.log(chalk.cyan(`Pulling image ${chalk.bold(opArgs.image)}`));
-        await this.pullImage(opArgs.image);
-      } catch (error: any) {
-        reject(chalk.red(`Cannot pull image ${opArgs.image}: `) + error);
-      }
-
-      // when flow is being cleared, resolve promise
-      this.eventEmitter.on('startClearFlow', (id) => {
-        if (id === flowId) {
-          this.eventEmitter.removeAllListeners('startClearFlow');
-          resolve(flow.state.opStates[opStateIndex]);
-        }
-      });
-
       const name = [...Array(32)]
         .map(() => Math.random().toString(36)[2])
         .join('');
@@ -88,13 +73,13 @@ export class PodmanProvider extends DockerProvider {
         ...(opArgs.entrypoint ? { entrypoint: opArgs.entrypoint } : undefined),
         env: environment,
         devices: gpu,
-        portmappings: [{ container_port: 80, host_port: 8081 }], // TODO: figure out what we want with portmappings
+        // portmappings: [{ container_port: 80, host_port: 8081 }], // TODO: figure out what we want with portmappings
         create_working_dir: true,
         cgroups_mode: 'disabled',
         work_dir,
       };
       console.log(
-        chalk.cyan(`Running command  ${chalk.bold(parsedcmd.join(' '))}`),
+        chalk.cyan(`- Running command  ${chalk.bold(parsedcmd.join(' '))}`),
       );
       try {
         // create container
