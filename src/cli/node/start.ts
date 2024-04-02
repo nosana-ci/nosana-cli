@@ -184,22 +184,9 @@ export async function startNode(
         for (let i = 0; i < result.opStates[0].logs.length; i++) {
           let gpu = result.opStates[0].logs[i];
           if (gpu.log && gpu.log.includes('GPU')) {
-            gpu.log = gpu.log
-              .replace(/\([^()]*\)/g, '')
-              .replace(/^\d(?!0)/g, '')
-              .replace(/^[^_]*:/g, '')
-              .trim();
-            gpu.log = result.opStates[0].logs[0].log;
-            gpu.log = gpu.log
-              ?.toString()
-              .replace(
-                /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g,
-                '',
-              );
             gpus.push(gpu.log as string);
           }
         }
-        console.log('GPUS', gpus);
       } else if (result && result.opStates && result.opStates[0]) {
         throw new Error(result.status);
       }
@@ -221,10 +208,12 @@ export async function startNode(
           }),
         });
         const data = await response.json();
-        console.log('check market results', data);
-        market = data.market;
-        marketAccount = await nosana.jobs.getMarket(data.market);
+        if (data && data.name === 'Error') throw new Error(data.message);
+        // console.log('group', data);
+        market = data[1].market;
+        marketAccount = await nosana.jobs.getMarket(data[1].market);
       } catch (e) {
+        spinner.fail(chalk.red('Error checking market', e));
         throw e;
       }
     }
@@ -251,9 +240,9 @@ export async function startNode(
     );
 
     try {
-      if (marketAccount?.nodeAccessKey.toString() === EMPTY_ADDRESS.toString()) {
+      if (marketAccount && marketAccount.nodeAccessKey.toString() === EMPTY_ADDRESS.toString()) {
         spinner.succeed(chalk.green(`Open market ${chalk.bold(market)}`));
-      } else {
+      } else if(market) {
         spinner.text = chalk.cyan(
           `Checking required access key for market ${chalk.bold(market)}`,
         );
