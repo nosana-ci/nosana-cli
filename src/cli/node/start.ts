@@ -23,6 +23,7 @@ import {
 import { PublicKey } from '@solana/web3.js';
 import { EMPTY_ADDRESS } from '../../services/jobs.js';
 import { PodmanProvider } from '../../providers/PodmanProvider.js';
+import { envConfig } from '../../config.js';
 
 let provider: Provider;
 let run: Run | void;
@@ -210,17 +211,18 @@ export async function startNode(
     if (!marketAccount) {
       try {
         // if user didnt give market, ask the backend which market we can enter
-        const response = await fetch(`/market-key`, {
+        const response = await fetch(`${envConfig.get('BACKEND_URL')}/nodes/${node}/check-market`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            node,
             gpus,
           }),
         });
         const data = await response.json();
+        console.log('check market results', data);
+        market = data.market;
         marketAccount = await nosana.jobs.getMarket(data.market);
       } catch (e) {
         throw e;

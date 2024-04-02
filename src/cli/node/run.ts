@@ -3,13 +3,11 @@ import {
   Provider,
   Flow,
   JobDefinition,
-  validateJobDefinition,
   FlowState,
 } from '../../providers/Provider.js';
 import chalk from 'chalk';
 import ora from 'ora';
 import fs from 'node:fs';
-import { IValidation } from 'typia';
 import util from 'util';
 import { PodmanProvider } from '../../providers/PodmanProvider.js';
 
@@ -90,8 +88,8 @@ export async function runJob(
     console.log(
       'result: ',
       util.inspect(result, { showHidden: false, depth: null, colors: true }),
-    );  
+    );
   } catch (error) {
     spinner.fail(chalk.red.bold(error));
-  }  
+  }
 }
