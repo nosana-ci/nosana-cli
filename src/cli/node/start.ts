@@ -407,8 +407,6 @@ export async function startNode(
             });
             if (result) {
               spinner.succeed('Retrieved results');
-              spinner.succeed('Retrieved results');
-              spinner.succeed('Retrieved results');
             }
           }
           if (result) {
