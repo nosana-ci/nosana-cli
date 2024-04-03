@@ -25,4 +25,12 @@ const colors = {
   RESET: '\u001b[0m',
 };
 
-export { now, sleep, clearLine, colors };
+/**
+ * Method to test and cast strings into string arrays
+ * @param {string | string[]} value The string or string array being tested and casted
+ * @returns { string[] } Returns a string array
+ */
+const ifStringCastToArray = (value: string | string[]) =>
+  typeof value === 'string' ? [value] : value;
+
+export { now, sleep, clearLine, colors, ifStringCastToArray };
