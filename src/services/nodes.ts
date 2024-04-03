@@ -80,21 +80,29 @@ export const waitForRun = async (
     if (enableQueueCheck) {
       // check if we are still queued in a market every minute
       checkQueuedInterval = setInterval(async () => {
-        const selectedMarket = await checkQueued(node, market);
-        if (!selectedMarket) {
-          reject(new NotQueuedError('Node not queued anymore'));
-        } else {
-          if (enableQueueCheck instanceof Function) {
-            enableQueueCheck(selectedMarket);
+        try {
+          const selectedMarket = await checkQueued(node, market);
+          if (!selectedMarket) {
+            reject(new NotQueuedError('Node not queued anymore'));
+          } else {
+            if (enableQueueCheck instanceof Function) {
+              enableQueueCheck(selectedMarket);
+            }
           }
+        } catch (e) {
+          console.warn('\nCould not update queue status');
         }
       }, 60000);
     }
 
     // As a fallback for the run events, runs every 5 minutes
     getRunsInterval = setInterval(async () => {
-      const run: Run | void = await getRun(node);
-      if (run) resolve(run);
+      try {
+        const run: Run | void = await getRun(node);
+        if (run) resolve(run);
+      } catch (e) {
+        console.warn('\nCould not check for new runs');
+      }
     }, 60000 * 5);
     subscriptionId = nosana.jobs.connection!.onProgramAccountChange(
       jobProgram.programId,
