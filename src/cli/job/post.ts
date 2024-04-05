@@ -59,13 +59,14 @@ export async function run(
   }
   const artifactId = 'artifact-' + randomUUID();
   if (options.output) {
-    if (options.type === 'wasm' || options.type === 'whisper') {
-      throw new Error('artifacts not yet supported for this job type');
-    }
+    throw new Error('artifact support coming soon!');
     const volumeId = randomUUID() + '-volume';
     const createVolumeOp = {
       op: 'container/create-volume',
-      id: volumeId,
+      id: 'create-volume-' + volumeId,
+      args: {
+        name: volumeId,
+      },
     };
     for (let i = 0; i < json_flow.ops.length; i++) {
       json_flow.ops[i].args.volumes = [
@@ -89,14 +90,14 @@ export async function run(
           RUST_BACKTRACE: '1',
           RUST_LOG: 'info',
         },
-        workdir: options.output,
+        work_dir: options.output,
         volumes: [
           {
             name: volumeId,
             dest: options.output,
           },
         ],
-        cmds: [{ cmd }],
+        cmd: [cmd],
       },
     });
   }
