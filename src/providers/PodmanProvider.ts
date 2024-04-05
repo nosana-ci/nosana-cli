@@ -7,8 +7,8 @@ import { ifStringCastToArray } from '../generic/utils.js';
 export class PodmanProvider extends DockerProvider {
   private apiUrl: string;
 
-  constructor(podman: string) {
-    super(podman);
+  constructor(podman: string, configLocation: string) {
+    super(podman, configLocation);
     this.apiUrl = `${this.protocol}://${this.host}:${this.port}/v4.5.0/libpod`;
   }
   /**

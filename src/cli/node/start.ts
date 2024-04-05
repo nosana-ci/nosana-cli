@@ -96,11 +96,11 @@ export async function startNode(
   console.log(`Provider:\t${chalk.greenBright.bold(options.provider)}`);
   switch (options.provider) {
     case 'podman':
-      provider = new PodmanProvider(options.podman);
+      provider = new PodmanProvider(options.podman, options.config);
       break;
     case 'docker':
     default:
-      provider = new DockerProvider(options.podman);
+      provider = new DockerProvider(options.podman, options.config);
       break;
   }
   let marketAccount: Market;

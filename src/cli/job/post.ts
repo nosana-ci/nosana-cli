@@ -169,11 +169,11 @@ export async function run(
   }
   const response = await nosana.jobs.list(ipfsHash);
   console.log('job posted!', response);
-  await getJob(response.job, options, undefined, nosana);
+  await getJob(response.job, options, undefined);
 
   if (!(options.wait || options.download)) {
     console.log(
-      `\nrun ${colors.CYAN}nosana get ${response.job}${colors.RESET} to retrieve job and result`,
+      `\nrun ${colors.CYAN}nosana job get ${response.job}${colors.RESET} to retrieve job and result`,
     );
   }
 }

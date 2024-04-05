@@ -49,11 +49,11 @@ export async function runBenchmark(options: { [key: string]: any }) {
 
   switch (options.provider) {
     case 'podman':
-      provider = new PodmanProvider(options.podman);
+      provider = new PodmanProvider(options.podman, options.config);
       break;
     case 'docker':
     default:
-      provider = new DockerProvider(options.podman);
+      provider = new DockerProvider(options.podman, options.config);
       break;
   }
   spinner = ora(chalk.cyan('Checking provider health')).start();

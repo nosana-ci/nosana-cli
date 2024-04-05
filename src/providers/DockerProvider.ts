@@ -18,8 +18,8 @@ export class DockerProvider extends BasicProvider implements Provider {
   protected port: string;
   protected protocol: string;
 
-  constructor(server: string) {
-    super();
+  constructor(server: string, configLocation: string) {
+    super(configLocation);
     const serverUri = new URL(
       server.startsWith('http') || server.startsWith('ssh')
         ? server
