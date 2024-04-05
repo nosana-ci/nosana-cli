@@ -14,6 +14,7 @@ import { input, confirm } from '@inquirer/prompts';
 import { PodmanProvider } from '../../providers/PodmanProvider.js';
 import { Client } from '@nosana/sdk';
 import { getSDK } from '../../services/sdk.js';
+import { envConfig } from '../../config';
 
 let flow: Flow | undefined;
 let provider: Provider;
@@ -77,6 +78,7 @@ export async function runBenchmark(options: { [key: string]: any }) {
   const validation: IValidation<JobDefinition> =
     validateJobDefinition(jobDefinition);
   spinner.stop();
+  let answers;
   if (!validation.success) {
     spinner.fail(chalk.red.bold('Job Definition validation failed'));
     console.error(validation.errors);
@@ -86,7 +88,7 @@ export async function runBenchmark(options: { [key: string]: any }) {
     };
   } else {
     spinner.stop();
-    const answers = {
+    answers = {
       email: await input({
         message: 'Your Email Address',
         validate: (value) => /\S+@\S+\.\S+/.test(value),
@@ -110,7 +112,9 @@ export async function runBenchmark(options: { [key: string]: any }) {
         'Have you read the Participation Agreement and agree to the terms and conditions contained within?',
     });
     if (!accept) {
-      console.log(chalk.red('To continue you must agree to the terms and conditions'));
+      console.log(
+        chalk.red('To continue you must agree to the terms and conditions'),
+      );
       process.exit();
     }
     spinner = ora(chalk.cyan('Running benchmark')).start();
@@ -129,22 +133,27 @@ export async function runBenchmark(options: { [key: string]: any }) {
   }
   spinner.stop();
 
-  if (result && result.status === 'success') {
-    // TODO: api request to backend with results & node address
+  if (result && result.status === 'success' && result.opStates && answers) {
     try {
-      // const registrationCode = await fetch(`/join-test-grid`, {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify({
-      //     node,
-      //     result,
-      //     email: answers.email,
-      //     discord: answers.discord
-      //     twitter: answers.twitter
-      //   }),
-      // });
+      const response = await fetch(
+        `${envConfig.get('BACKEND_URL')}/nodes/join-test-grid`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            nodeAddress: node,
+            results: result.opStates[0].logs,
+            email: answers.email,
+            discord: answers.discord,
+            twitter: answers.twitter,
+          }),
+        },
+      );
+      const data = await response.json();
+      console.log('response data', data);
+      if (data && data.name === 'Error') throw new Error(data.message);
 
       console.log(chalk.green('Benchmark finished'));
       console.log('================================');
@@ -154,6 +163,7 @@ export async function runBenchmark(options: { [key: string]: any }) {
         ),
       );
     } catch (error) {
+      console.error(error);
       spinner.fail(
         chalk.red.bold('Failed to upload benchmark results, try again later'),
       );
