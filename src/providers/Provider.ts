@@ -1,4 +1,5 @@
 // TODO: move types to SDK
+import { CronJob } from 'cron';
 import typia from 'typia';
 
 /************************
@@ -95,4 +96,6 @@ export abstract class Provider {
     id: string,
     logCallback?: Function,
   ): Promise<FlowState | null>;
+  abstract clearOldFlows(): Promise<void>;
+  public clearFlowsCronJob?: CronJob;
 }

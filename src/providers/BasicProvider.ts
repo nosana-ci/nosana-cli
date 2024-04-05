@@ -12,6 +12,7 @@ import os from 'os';
 import { JSONFileSyncPreset } from 'lowdb/node';
 import { LowSync } from 'lowdb/lib';
 import EventEmitter from 'events';
+import { CronJob } from 'cron';
 
 type FlowsDb = {
   flows: { [key: string]: Flow };
@@ -27,6 +28,14 @@ export class BasicProvider implements Provider {
   protected db: LowSync<FlowsDb>;
   protected eventEmitter: EventEmitter = new EventEmitter();
   protected supportedOps: { [key: string]: OpFunction } = {};
+  public clearFlowsCronJob: CronJob = new CronJob(
+    '0 */12 * * *', // every 12 hours
+    () => {
+      this.clearOldFlows();
+    },
+    null,
+    true, // start
+  );
 
   constructor(configLocation: string) {
     // Create or read database
@@ -37,22 +46,6 @@ export class BasicProvider implements Provider {
     this.db = JSONFileSyncPreset<FlowsDb>(`${configLocation}/flows.json`, {
       flows: {},
     });
-
-    // Remove flows from db where flow is ended more than 3 days ago
-    const date = new Date();
-    date.setDate(date.getDate() - 3);
-    this.db.data.flows = Object.entries(this.db.data.flows).reduce(
-      (flow: any, [key, value]) => {
-        if (value.state.endTime && value.state.endTime > date.valueOf()) {
-          flow[key] = value;
-        } else if (!value.state.endTime) {
-          flow[key] = value;
-        }
-        return flow;
-      },
-      {},
-    );
-    this.db.write();
   }
   /**
    * Main run
@@ -268,6 +261,18 @@ export class BasicProvider implements Provider {
   }
   public async stopFlow(flowId: string): Promise<void> {
     this.eventEmitter.emit('startStopFlow', flowId);
+  }
+
+  public async clearOldFlows(): Promise<void> {
+    // Remove flows from db where flow is ended more than 3 days ago
+    const date = new Date();
+    date.setDate(date.getDate() - 3);
+    for (const flowId in this.db.data.flows) {
+      const flow = this.db.data.flows[flowId];
+      if (flow.state.endTime && flow.state.endTime < date.valueOf()) {
+        await this.clearFlow(flowId);
+      }
+    }
   }
 
   /****************
