@@ -7,8 +7,9 @@ import {
   FlowState,
   validateJobDefinition,
   Operation,
-  OperationType,
 } from './Provider.js';
+import fs from 'fs';
+import os from 'os';
 import { JSONFileSyncPreset } from 'lowdb/node';
 import { LowSync } from 'lowdb/lib';
 import EventEmitter from 'events';
@@ -29,9 +30,13 @@ export class BasicProvider implements Provider {
   protected eventEmitter: EventEmitter = new EventEmitter();
   protected supportedOps: { [key: string]: OpFunction } = {};
 
-  constructor() {
+  constructor(configLocation: string) {
     // Create or read database
-    this.db = JSONFileSyncPreset<FlowsDb>('db/flows.json', {
+    if (configLocation[0] === '~') {
+      configLocation = configLocation.replace('~', os.homedir());
+    }
+    fs.mkdirSync(configLocation, { recursive: true });
+    this.db = JSONFileSyncPreset<FlowsDb>(`${configLocation}/flows.json`, {
       flows: {},
     });
 

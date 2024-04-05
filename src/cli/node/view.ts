@@ -72,7 +72,7 @@ export async function view(
     if (spinner) spinner.stop();
     const jobAddress = run.account.job.toString();
     console.log(chalk.green.bold('Found claimed job!'));
-    await getJob(jobAddress, { wait: true, ...options }, undefined, nosana);
+    await getJob(jobAddress, { wait: true, ...options }, undefined);
   }
   return view(node, options, cmd);
 }

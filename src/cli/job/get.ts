@@ -13,11 +13,8 @@ export async function getJob(
     [key: string]: any;
   },
   cmd: Command | undefined,
-  nosana?: Client,
-) {
-  if (!nosana) {
-    nosana = getSDK();
-  }
+): Promise<void> {
+  const nosana: Client = getSDK();
   let job;
   console.log('retrieving job...');
   try {
@@ -231,5 +228,4 @@ export async function getJob(
       }
     }
   }
-  return job;
 }

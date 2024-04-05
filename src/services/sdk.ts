@@ -2,8 +2,8 @@ import { Wallet } from '@coral-xyz/anchor';
 import { Client, ClientConfig } from '@nosana/sdk';
 import fs from 'fs';
 import os from 'os';
+import path from 'path';
 import { Keypair, LAMPORTS_PER_SOL } from '@solana/web3.js';
-import fetch from 'node-fetch';
 import { colors } from '../generic/utils.js';
 
 let nosana: Client;
@@ -42,6 +42,7 @@ export async function setSDK(
         );
 
         const keypair = Keypair.generate();
+        fs.mkdirSync(path.dirname(keyfile), { recursive: true });
         fs.writeFileSync(
           keyfile,
           JSON.stringify(Buffer.from(keypair.secretKey).toJSON().data),
