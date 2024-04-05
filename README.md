@@ -78,12 +78,8 @@ Options:
 ```
 
 ## Starting node
-<<<<<<< HEAD
-Once your node is registred and you are selected to run your node, you can start your node with the `nosana node start [options] <market>` command.
-=======
 
 With the `nosana node start [options] <market>` command you can start a Nosana Node and join the Nosana Network.
->>>>>>> 9fdc239116d5f4a81e511538b6810d1fcf3e8824
 
 Options:
 
