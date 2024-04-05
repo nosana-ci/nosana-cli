@@ -51,8 +51,10 @@ export async function runBenchmark(options: { [key: string]: any }) {
   process.on('SIGINT', onShutdown);
   process.on('SIGTERM ', onShutdown);
 
+  console.log(`Provider:\t${chalk.greenBright.bold(options.provider)}`);
   switch (options.provider) {
     case 'podman':
+      console.log(options.podman);
       provider = new PodmanProvider(options.podman, options.config);
       break;
     case 'docker':
@@ -152,7 +154,6 @@ export async function runBenchmark(options: { [key: string]: any }) {
         },
       );
       const data = await response.json();
-      console.log('response data', data);
       if (data && data.name === 'Error') throw new Error(data.message);
 
       console.log(chalk.green('Benchmark finished'));
@@ -164,11 +165,17 @@ export async function runBenchmark(options: { [key: string]: any }) {
       );
     } catch (error) {
       console.error(error);
-      spinner.fail(
-        chalk.red.bold('Failed to upload benchmark results, try again later'),
-      );
+      spinner.fail(chalk.red.bold('Failed to register'));
     }
   } else {
+    if (
+      result &&
+      result.opStates &&
+      result.opStates[0] &&
+      result.opStates[0].logs[0].type === 'nodeerr'
+    ) {
+      console.log(chalk.red(result.opStates[0].logs[0].log));
+    }
     console.log(
       chalk.red(
         `Couldn't succesfully run benchmark, finished with status: ${

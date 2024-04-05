@@ -32,7 +32,7 @@ export class BasicProvider implements Provider {
 
   constructor(configLocation: string) {
     // Create or read database
-    if (configLocation[0] === '~') {
+    if (configLocation && configLocation[0] === '~') {
       configLocation = configLocation.replace('~', os.homedir());
     }
     fs.mkdirSync(configLocation, { recursive: true });
@@ -82,7 +82,8 @@ export class BasicProvider implements Provider {
         },
       };
 
-      const validation: IValidation<JobDefinition> = validateJobDefinition(jobDefinition);
+      const validation: IValidation<JobDefinition> =
+        validateJobDefinition(jobDefinition);
       if (!validation.success) {
         console.error(validation.errors);
         flow.state.status = 'failed';

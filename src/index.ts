@@ -197,6 +197,12 @@ node
       'request an airdrop when low on SOL on devnet',
     ).default(true),
   )
+  .addOption(
+    new Option(
+      '-c, --config <path>',
+      'Config path (to store the flows database and other config)',
+    ).default('~/.nosana/'),
+  )
   .description('Join Test Grid Devnet Job')
   .action(runBenchmark);
 
