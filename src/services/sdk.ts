@@ -75,11 +75,10 @@ export async function setSDK(
         nosBalance ? nosBalance.uiAmount : 0
       } NOS${colors.RESET}`,
     );
-
     if (
       airdrop &&
-      nosana.solana.config.network.includes('devnet') &&
-      solBalance < 1 * LAMPORTS_PER_SOL
+      network.includes('devnet') &&
+      solBalance < 0.01 * LAMPORTS_PER_SOL
       // || !nosBalance ||
       // !nosBalance.uiAmount ||
       // nosBalance.uiAmount < 1

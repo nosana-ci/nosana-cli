@@ -27,7 +27,7 @@ export async function run(
     json_flow = JSON.parse(fs.readFileSync(options.file, 'utf8'));
   } else {
     switch (options.type) {
-      case 'docker':
+      case 'container':
         json_flow = {
           version: '0.1',
           type: 'container',
@@ -46,58 +46,15 @@ export async function run(
           ],
         };
         break;
-      case 'wasm':
-        let wasmUrl = options.wasm;
-        if (!wasmUrl) {
-          wasmUrl = await getWAPMUrlForCommandName(command[0]);
-        }
-        json_flow = {
-          state: {
-            'nosana/type': 'wasm',
-            'nosana/trigger': 'cli',
-          },
-          ops: [
-            {
-              op: 'wasm/run',
-              id: 'run-from-cli',
-              args: {
-                cmds: [{ cmd: command.join(' ') }],
-                wasm: wasmUrl,
-              },
-            },
-          ],
-        };
-        break;
-      case 'whisper':
-        let audioUrl: string = command[0];
-        if (!audioUrl.startsWith('http')) {
-          audioUrl =
-            nosana.ipfs.config.gateway + (await nosana.ipfs.pinFile(audioUrl));
-          console.log(
-            `audio file uploaded:\t${colors.BLUE}${audioUrl}${colors.RESET}`,
-          );
-        }
-        json_flow = {
-          state: {
-            'nosana/type': 'whisper',
-            'nosana/trigger': 'cli',
-          },
-          ops: [
-            {
-              op: 'whisper/run',
-              id: 'run-from-cli',
-              args: {
-                audio: audioUrl,
-              },
-            },
-          ],
-        };
-        break;
       default:
         throw new Error(`type ${options.type} not supported yet`);
     }
+
     if (options.gpu) {
-      json_flow.ops[0].args.devices = [{ path: 'nvidia.com/gpu=all' }];
+      if (!json_flow.global) {
+        json_flow.global = {};
+      }
+      json_flow.global.gpu = true;
     }
   }
   const artifactId = 'artifact-' + randomUUID();
