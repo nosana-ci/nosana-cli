@@ -5,6 +5,12 @@ import { getWAPMUrlForCommandName } from './wapm.js';
 import fs from 'node:fs';
 import { randomUUID } from 'crypto';
 import { colors } from '../../generic/utils.js';
+import { IValidation } from 'typia';
+import {
+  JobDefinition,
+  validateJobDefinition,
+} from '../../providers/Provider.js';
+import chalk from 'chalk';
 
 export async function run(
   command: Array<string>,
@@ -100,6 +106,12 @@ export async function run(
         cmd: [cmd],
       },
     });
+  }
+  const validation: IValidation<JobDefinition> =
+    validateJobDefinition(json_flow);
+  if (!validation.success) {
+    console.error(validation.errors);
+    throw new Error(chalk.red.bold('Job Definition validation failed'));
   }
 
   const ipfsHash = await nosana.ipfs.pin(json_flow);
