@@ -1,7 +1,6 @@
 import { Client } from '@nosana/sdk';
 import { getSDK } from '../../services/sdk.js';
 import { getJob } from './get.js';
-import { getWAPMUrlForCommandName } from './wapm.js';
 import fs from 'node:fs';
 import { randomUUID } from 'crypto';
 import { colors } from '../../generic/utils.js';
@@ -21,10 +20,6 @@ export async function run(
   if (command.length && options.file) {
     console.error(
       `${colors.YELLOW}WARNING: [command] ignored as file flag is already set${colors.RESET}`,
-    );
-  } else if (!command.length && !options.file) {
-    throw new Error(
-      'error: either specify a [command] or provide a file with the --file flag',
     );
   }
   const nosana: Client = getSDK();
