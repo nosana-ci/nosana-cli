@@ -107,4 +107,7 @@ export async function runJob(
       util.inspect(result, { showHidden: false, depth: null, colors: true }),
     );
   }
+  if (provider.clearFlowsCronJob) {
+    provider.clearFlowsCronJob.stop();
+  }
 }
