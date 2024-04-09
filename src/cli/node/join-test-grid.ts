@@ -54,7 +54,6 @@ export async function runBenchmark(options: { [key: string]: any }) {
   console.log(`Provider:\t${chalk.greenBright.bold(options.provider)}`);
   switch (options.provider) {
     case 'podman':
-      console.log(options.podman);
       provider = new PodmanProvider(options.podman, options.config);
       break;
     case 'docker':
@@ -146,7 +145,7 @@ export async function runBenchmark(options: { [key: string]: any }) {
           },
           body: JSON.stringify({
             nodeAddress: node,
-            results: result.opStates[0].logs,
+            results: result.opStates,
             email: answers.email,
             discord: answers.discord,
             twitter: answers.twitter,
@@ -155,6 +154,7 @@ export async function runBenchmark(options: { [key: string]: any }) {
       );
       const data = await response.json();
       if (data && data.name === 'Error') throw new Error(data.message);
+      // console.log(data);
 
       console.log(chalk.green('Benchmark finished'));
       console.log('================================');
@@ -163,9 +163,10 @@ export async function runBenchmark(options: { [key: string]: any }) {
           "Thank you for registering for Nosana Node. \nWe'll review your registration and you will get an email from us if you are selected.",
         ),
       );
+      return;
     } catch (error) {
       console.error(error);
-      spinner.fail(chalk.red.bold('Failed to register'));
+      throw new Error(chalk.red.bold('Failed to register'));
     }
   } else {
     if (
@@ -176,7 +177,7 @@ export async function runBenchmark(options: { [key: string]: any }) {
     ) {
       console.log(chalk.red(result.opStates[0].logs[0].log));
     }
-    console.log(
+    throw new Error(
       chalk.red(
         `Couldn't succesfully run benchmark, finished with status: ${
           result ? result.status : 'cleared'
