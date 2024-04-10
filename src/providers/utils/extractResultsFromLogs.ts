@@ -21,19 +21,23 @@ export function extractResultsFromLogs(
         operationResults,
       )) {
         if (logType.includes(type) && log) {
-          const regexExp = new RegExp(regex);
+          try {
+            const regexExp = new RegExp(regex === '*' ? '/*' : regex);
 
-          if (regexExp.test(log)) {
-            if (extractedResults[filterName]) {
-              if (typeof extractedResults[filterName] === 'string') {
-                extractedResults[filterName] = [
-                  extractedResults[filterName] as string,
-                ];
+            if (regexExp.test(log)) {
+              if (extractedResults[filterName]) {
+                if (typeof extractedResults[filterName] === 'string') {
+                  extractedResults[filterName] = [
+                    extractedResults[filterName] as string,
+                  ];
+                }
+                (extractedResults[filterName] as string[]).push(log);
+              } else {
+                extractedResults[filterName] = log;
               }
-              (extractedResults[filterName] as string[]).push(log);
-            } else {
-              extractedResults[filterName] = log;
             }
+          } catch (err) {
+            extractedResults[filterName] = `${err}`;
           }
         }
       }
