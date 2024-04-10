@@ -454,6 +454,11 @@ export async function startNode(
               spinner.succeed(
                 chalk.green('Job finished ') + chalk.green.bold(tx),
               );
+              if (result.status !== 'success') {
+                // Flow failed, so we have a cooldown of 5 minutes
+                console.log(chalk.cyan('Waiting to enter the queue'));
+                await sleep(300);
+              }
             } catch (e) {
               spinner.fail(chalk.red.bold('Could not finish job'));
               throw e;
