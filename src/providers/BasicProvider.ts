@@ -6,6 +6,7 @@ import {
   Flow,
   FlowState,
   Operation,
+  OperationResults,
 } from './Provider.js';
 import fs from 'fs';
 import os from 'os';
@@ -22,6 +23,7 @@ type OpFunction = (
   op: Operation<any>,
   flowId: string,
   updateOpState: (newOpStateData: Partial<FlowState>) => void,
+  operationResults: OperationResults | undefined,
 ) => Promise<OpState>;
 
 export class BasicProvider implements Provider {
@@ -152,6 +154,7 @@ export class BasicProvider implements Provider {
                   op,
                   flowId,
                   updateOpState,
+                  flow.jobDefinition.ops[i].results,
                 );
                 resolve(finishedOpState);
               } catch (error) {

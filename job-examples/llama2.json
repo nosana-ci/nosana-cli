@@ -1,0 +1,28 @@
+{
+  "version": "0.0.1",
+  "type": "container",
+  "meta": {
+    "trigger": "cli"
+  },
+  "ops": [
+    {
+      "type": "container/run",
+      "id": "llama2",
+      "args": {
+        "cmd": ["python3 llama2.py 'What colour is the sky?'"],
+        "image": "docker.io/matthammond962/llama2-python-gpu-binding:q8",
+        "gpu": true
+      },
+      "results": {
+        "cuda-devices-found": {
+          "regex": "Device [0-9]:",
+          "logType": ["stderr"]
+        },
+        "llama2-response": {
+          "regex": "What colour is the sky?",
+          "logType": ["stdout"]
+        }
+      }
+    }
+  ]
+}
