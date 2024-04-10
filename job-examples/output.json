@@ -1,0 +1,21 @@
+{
+  "version": "0.1",
+  "type": "container",
+  "meta": {
+    "trigger": "cli"
+  },
+  "ops": [
+    {
+      "type": "container/run",
+      "id": "test-output-folder",
+      "args": {
+        "image": "ubuntu",
+        "cmd": [
+          "bash -c ",
+          "echo test-output > /output/file.txt"
+        ],
+        "output": "/output"
+      }
+    }
+  ]
+}

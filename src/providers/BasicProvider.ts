@@ -72,6 +72,7 @@ export class BasicProvider implements Provider {
           opStates: [],
         },
       };
+      flow = this.hookPreRun(flow);
       // Add ops from job definition to flow
       for (let i = 0; i < jobDefinition.ops.length; i++) {
         const op = jobDefinition.ops[i];
@@ -103,6 +104,11 @@ export class BasicProvider implements Provider {
     return flow;
   }
 
+  protected hookPreRun(flow: Flow): Flow {
+    // You can implement this hook if you want to change something to the
+    // flow/job definition before running
+    return flow;
+  }
   /**
    * Run operations form job definition
    * @param jobDefinition

@@ -73,11 +73,22 @@ export class PodmanProvider extends DockerProvider {
           : {};
       const environment = { ...globalEnv, ...opArgs.env };
 
+      const volumes = [];
+      if (opArgs.volumes && opArgs.volumes.length > 0) {
+        for (let i = 0; i < opArgs.volumes.length; i++) {
+          const volume = opArgs.volumes[i];
+          volumes.push({
+            dest: volume.dest,
+            name: flowId + '-' + volume.name,
+          });
+        }
+      }
+
       const options = {
         image: opArgs.image ? opArgs.image : flow.jobDefinition.global?.image,
         name: name,
         command: parsedcmd,
-        volumes: opArgs.volumes,
+        volumes,
         ...(entrypoint
           ? { entrypoint: ifStringCastToArray(entrypoint) }
           : undefined),
