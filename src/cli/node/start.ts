@@ -391,6 +391,7 @@ export async function startNode(
               flowId = provider.run(jobDefinition, flowId).id;
             }
           } else {
+            spinner.info(chalk.cyan('Continuing with existing flow'));
             provider.continueFlow(flowId);
           }
 
