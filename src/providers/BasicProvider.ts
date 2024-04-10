@@ -250,8 +250,10 @@ export class BasicProvider implements Provider {
           ? 'failed'
           : 'success';
     }
-    flow.state.endTime = Date.now();
-    this.db.write();
+    if (!flow.state.endTime) {
+      flow.state.endTime = Date.now();
+      this.db.write();
+    }
     this.eventEmitter.emit('flowFinished', flow);
   }
 
