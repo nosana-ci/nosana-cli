@@ -6,11 +6,13 @@ import {
   Flow,
   OperationArgsMap,
 } from './Provider.js';
-import Docker, { MountType } from 'dockerode';
+import Docker, { MountType, VolumeInspectInfo } from 'dockerode';
 import stream from 'stream';
 import { parse } from 'shell-quote';
 import { BasicProvider } from './BasicProvider.js';
 import { sleep } from '../generic/utils.js';
+import { getSDK } from '../services/sdk.js';
+import { exitCode } from 'process';
 
 export class DockerProvider extends BasicProvider implements Provider {
   protected docker: Docker;
@@ -147,6 +149,8 @@ export class DockerProvider extends BasicProvider implements Provider {
         (opState) => op.id === opState.operationId,
       );
       const opState = flow.state.opStates[opStateIndex];
+      console.log(chalk.cyan(`Executing step ${chalk.bold(op.id)}`));
+      console.log(chalk.cyan(`- Creating volume ${chalk.bold(op.args.name)}`));
       updateOpState({
         startTime: Date.now(),
         status: 'running',
@@ -155,14 +159,14 @@ export class DockerProvider extends BasicProvider implements Provider {
       return await new Promise(async (resolve, reject) => {
         this.docker.createVolume(
           {
-            Name: op.args.name,
+            Name: flowId + '-' + op.args.name,
           },
           (err, volume) => {
             if (err) {
-              console.log(err);
               updateOpState({
                 endTime: Date.now(),
                 status: 'failed',
+                exitCode: 1,
                 logs: [
                   {
                     type: 'stderr',
@@ -173,7 +177,9 @@ export class DockerProvider extends BasicProvider implements Provider {
               reject(err);
             }
             updateOpState({
+              providerId: volume?.name,
               endTime: Date.now(),
+              exitCode: 0,
               status: 'success',
             });
             resolve(opState);
@@ -261,7 +267,7 @@ export class DockerProvider extends BasicProvider implements Provider {
           const volume = opArgs.volumes[i];
           volumes.push({
             Target: volume.dest,
-            Source: volume.name,
+            Source: flowId + '-' + volume.name,
             Type: 'volume' as MountType,
             ReadOnly: false,
           });
@@ -334,6 +340,57 @@ export class DockerProvider extends BasicProvider implements Provider {
           reject(error);
         });
     });
+  }
+
+  protected hookPreRun(flow: Flow): Flow {
+    for (let i = 0; i < flow.jobDefinition.ops.length; i++) {
+      const op = flow.jobDefinition.ops[i];
+      if (op.type === 'container/run') {
+        const args = op.args as OperationArgsMap['container/run'];
+        if (args.output) {
+          const outputVolume = `output-${op.id}`;
+          const volume = {
+            dest: args.output,
+            name: outputVolume,
+          };
+          if (!args.volumes) args.volumes = [volume];
+          else args.volumes.push(volume);
+          const createVolumeOperation: Operation<'container/create-volume'> = {
+            type: 'container/create-volume',
+            id: 'create-output-volume',
+            args: {
+              name: outputVolume,
+            },
+          };
+          flow.jobDefinition.ops.splice(i, 0, createVolumeOperation);
+          const nosana = getSDK();
+          const outputOperation: Operation<'container/run'> = {
+            type: 'container/run',
+            id: 'create-output-artifact',
+            args: {
+              image: 'docker.io/nosana/nosana-node-helper:latest',
+              env: {
+                SECRETS_MANAGER: nosana.secrets.config.manager,
+                SECRETS_TOKEN: 'TODO-make-secrets-token-optional',
+                PINATA_JWT: nosana.ipfs.config.jwt!,
+                RUST_BACKTRACE: '1',
+                RUST_LOG: 'info',
+              },
+              volumes: [
+                {
+                  name: outputVolume,
+                  dest: '/nosana-ci/outputs',
+                },
+              ],
+              cmd: `nosana-node-helper artifact-uploader --job-id ${outputVolume} --path /nosana-ci/outputs`,
+            },
+          };
+          flow.jobDefinition.ops.splice(i + 2, 0, outputOperation);
+          i = i + 2;
+        }
+      }
+    }
+    return flow;
   }
 
   /**
@@ -451,10 +508,13 @@ export class DockerProvider extends BasicProvider implements Provider {
       const op = flow?.jobDefinition.ops[i];
       if (op && op.type === 'container/create-volume') {
         try {
-          // @ts-ignore
-          await this.removeVolume(op.args.name);
-        } catch (error) {
-          console.log('couldnt remove volume', error);
+          const args = op.args as OperationArgsMap['container/create-volume'];
+          await this.removeVolume(flow.id + '-' + args.name);
+        } catch (error: any) {
+          console.log(
+            chalk.red('couldnt remove volume'),
+            error.message ? error.message : error,
+          );
         }
       }
     }

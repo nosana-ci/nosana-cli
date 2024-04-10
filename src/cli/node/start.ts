@@ -429,7 +429,7 @@ export async function startNode(
               resolve(flowResult);
             });
             if (result) {
-              spinner.succeed('Retrieved results');
+              spinner.succeed(`Retrieved results with status ${result.status}`);
             }
           }
           if (result) {
