@@ -103,7 +103,6 @@ export async function startNode(
       break;
   }
 
-
   let marketAccount: Market | null = null;
   let nft: PublicKey | undefined;
   if (market) {
@@ -181,7 +180,8 @@ export async function startNode(
         fs.readFileSync('job-examples/benchmark-gpu.json', 'utf8'),
       );
       let result: Partial<FlowState> | null;
-      spinner = ora(chalk.cyan('Running benchmark')).start();
+      // spinner = ora(chalk.cyan('Running benchmark')).start();
+      console.log(chalk.cyan('Running benchmark'));
       // Create new flow
       const flow = provider.run(jobDefinition);
       result = await provider.waitForFlowFinish(
@@ -210,22 +210,25 @@ export async function startNode(
         throw new Error(result.status);
       }
     } catch (e) {
-      spinner.fail(chalk.red('Something went wrong while detecting GPU', e));
+      console.error(chalk.red('Something went wrong while detecting GPU', e));
       throw e;
     }
 
     if (!marketAccount) {
       try {
         // if user didnt give market, ask the backend which market we can enter
-        const response = await fetch(`${envConfig.get('BACKEND_URL')}/nodes/${node}/check-market`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
+        const response = await fetch(
+          `${envConfig.get('BACKEND_URL')}/nodes/${node}/check-market`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              gpus,
+            }),
           },
-          body: JSON.stringify({
-            gpus,
-          }),
-        });
+        );
         const data = await response.json();
         if (data && data.name === 'Error') throw new Error(data.message);
         // console.log('group', data);
@@ -415,7 +418,9 @@ export async function startNode(
           }
           await provider.stopFlow(run.publicKey.toString());
           run = undefined;
-        } else if (isRunExpired(run, marketAccount?.jobTimeout as number * 1.5)) {
+        } else if (
+          isRunExpired(run, (marketAccount?.jobTimeout as number) * 1.5)
+        ) {
           // Quit job when timeout * 1.5 is reached.
           spinner = ora(chalk.red('Job is expired, quiting job')).start();
           console.log(3);
@@ -463,7 +468,12 @@ export async function startNode(
             ) {
               // check if expired every minute
               const expireInterval = setInterval(async () => {
-                if (isRunExpired(run!, marketAccount?.jobTimeout as number * 1.5)) {
+                if (
+                  isRunExpired(
+                    run!,
+                    (marketAccount?.jobTimeout as number) * 1.5,
+                  )
+                ) {
                   clearInterval(expireInterval);
                   // Quit job when timeout * 1.5 is reached.
                   spinner = ora(

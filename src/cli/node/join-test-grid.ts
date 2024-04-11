@@ -118,7 +118,8 @@ export async function runBenchmark(options: { [key: string]: any }) {
       );
       process.exit();
     }
-    spinner = ora(chalk.cyan('Running benchmark')).start();
+    // spinner = ora(chalk.cyan('Running benchmark')).start();
+    console.log(chalk.cyan('Running benchmark'));
     // Create new flow
     flow = provider.run(jobDefinition);
     result = await provider.waitForFlowFinish(
@@ -132,7 +133,6 @@ export async function runBenchmark(options: { [key: string]: any }) {
       },
     );
   }
-  spinner.stop();
 
   if (result && result.status === 'success' && result.opStates && answers) {
     try {
@@ -177,6 +177,7 @@ export async function runBenchmark(options: { [key: string]: any }) {
     ) {
       console.log(chalk.red(result.opStates[0].logs[0].log));
     }
+    console.log(result?.opStates![5]);
     throw new Error(
       chalk.red(
         `Couldn't succesfully run benchmark, finished with status: ${

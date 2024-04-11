@@ -178,7 +178,7 @@ node
       'provider used to run the job definition',
     )
       .choices(['docker', 'podman'])
-      .default('docker'),
+      .default('podman'),
   )
   .addOption(
     new Option(
