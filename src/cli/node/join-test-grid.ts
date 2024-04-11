@@ -147,8 +147,8 @@ export async function runBenchmark(options: { [key: string]: any }) {
             nodeAddress: node,
             results: result.opStates,
             email: answers.email,
-            discord: answers.discord,
-            twitter: answers.twitter,
+            discord: answers.discord ? answers.discord : null,
+            twitter: answers.twitter ? answers.twitter : null,
           }),
         },
       );
