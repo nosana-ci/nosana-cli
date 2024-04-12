@@ -1,0 +1,22 @@
+{
+  "version": "0.1",
+  "type": "container",
+  "meta": {
+    "trigger": "cli"
+  },
+  "ops": [
+    {
+      "type": "container/run",
+      "id": "run-stablediffusion",
+      "args": {
+        "cmd": [
+          "sh -c ",
+          "python main.py --o /nosana-ci/outputs --p \"Craft an abstract representation of GPUs contributing to the democratization of AI through accessible and scalable computing resources.\""
+        ],
+        "image": "docker.io/nosana/stable-diffusion:latest",
+        "gpu": true,
+        "output": "/nosana-ci/outputs"
+      }
+    }
+  ]
+}
