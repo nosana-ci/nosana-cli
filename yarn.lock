@@ -157,10 +157,10 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
-"@nosana/sdk@^0.3.13":
-  version "0.3.13"
-  resolved "https://registry.npmjs.org/@nosana/sdk/-/sdk-0.3.13.tgz"
-  integrity sha512-0eoviqatTYimbOQ1BUGafE95EEPj9m7EUM9MltWK+vYl9ppSYElHu+coCPegg5Po30zcmN8XgPxIJ8CWmhs1TQ==
+"@nosana/sdk@^0.3.15":
+  version "0.3.15"
+  resolved "https://registry.npmjs.org/@nosana/sdk/-/sdk-0.3.15.tgz"
+  integrity sha512-F7D7rBIm2hshLh1FUqFR15I0Zw7EyLTJHKdrStxdKz5ScF3gGGdf4l8tZS64MfVd3xfN2wfgHxmEe1++o0lp4A==
   dependencies:
     "@coral-xyz/anchor" "^0.28.1-beta.1"
     "@solana/spl-token" "^0.3.8"
