@@ -57,12 +57,12 @@ export type OperationType = keyof OperationArgsMap;
 export type StdOptions = 'stdin' | 'stdout' | 'stderr' | 'nodeerr';
 
 export type OperationResults = {
-  [key: string]: OperationResult;
+  [key: string]: string | OperationResult;
 };
 
-type OperationResult = {
+export type OperationResult = {
   regex: string;
-  logType: [StdOptions?, StdOptions?, StdOptions?];
+  logType: [StdOptions, StdOptions?, StdOptions?, StdOptions?];
 };
 
 /************************
