@@ -14,12 +14,9 @@
         "gpu": true
       },
       "results": {
-        "cuda-devices-found": {
-          "regex": "Device [0-9]:",
-          "logType": ["stderr"]
-        },
+        "cuda-devices-found": "Device [0-9].+?(?=,)",
         "llama2-response": {
-          "regex": "What colour is the sky?",
+          "regex": "(?<=A:  \\[\\/INST\\]  )(.*)(?=',)",
           "logType": ["stdout"]
         }
       }
