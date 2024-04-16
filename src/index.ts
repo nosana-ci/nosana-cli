@@ -9,6 +9,16 @@ const program: Command = new Command();
 const VERSION: string = '0.2.0';
 console.log(figlet.textSync('Nosana'));
 
+const rpcOption = new Option('--rpc <url>', 'RPC node to use');
+const networkOption = new Option('-n, --network <network>', 'network to run on')
+  .default('devnet')
+  .choices(['devnet', 'mainnet']);
+
+const walletOption = new Option(
+  '-w, --wallet <wallet>',
+  'path to wallet private key',
+).default('~/.nosana/nosana_key.json');
+
 program
   .name('nosana')
   .description('Nosana CLI')
@@ -17,21 +27,16 @@ program
   .hook('preAction', async (thisCommand, actionCommand) => {
     const opts = actionCommand.optsWithGlobals();
     let market = opts.market;
-
-    await setSDK(
-      opts.network,
-      opts.rpc,
-      market,
-      opts.wallet,
-      actionCommand.opts().airdrop,
-    );
+    if (opts.network) {
+      await setSDK(
+        opts.network,
+        opts.rpc,
+        market,
+        opts.wallet,
+        actionCommand.opts().airdrop,
+      );
+    }
   })
-  .addOption(
-    new Option('-n, --network <network>', 'network to run on')
-      .default('devnet')
-      .choices(['devnet', 'mainnet']),
-  )
-  .addOption(new Option('--rpc <url>', 'RPC node to use'))
   .addOption(
     new Option('--log <logLevel>', 'Log level')
       .default('debug')
@@ -43,6 +48,8 @@ job
   .command('post')
   .description('Create a job to run by Nosana Runners')
   .argument('[command...]', 'command to run')
+  .addOption(networkOption)
+  .addOption(rpcOption)
   .addOption(
     new Option(
       '--airdrop',
@@ -58,11 +65,7 @@ job
     ),
   )
   .addOption(new Option('-m, --market <market>', 'market to use'))
-  .addOption(
-    new Option('-w, --wallet <wallet>', 'path to wallet private key').default(
-      '~/.nosana/nosana_key.json',
-    ),
-  )
+  .addOption(walletOption)
   .addOption(
     new Option('--type <type>', 'type to run')
       .choices(['container'])
@@ -90,6 +93,8 @@ job
   .addOption(
     new Option('--wait', 'wait for job to be completed and show result'),
   )
+  .addOption(networkOption)
+  .addOption(rpcOption)
   .addOption(
     new Option(
       '--download [path]',
@@ -102,12 +107,16 @@ job
   .command('upload')
   .description('Upload a file to IPFS')
   .argument('<path>', 'file to upload')
+  .addOption(networkOption)
+  .addOption(rpcOption)
   .action(upload);
 
 job
   .command('download')
   .description('Download an external artifact from IPFS to specified path')
   .argument('<ipfs>', 'ipfs hash')
+  .addOption(networkOption)
+  .addOption(rpcOption)
   .argument('[path]', 'local path to store downloaded artifact')
   .action(download);
 
@@ -115,20 +124,20 @@ const node: Command = program.command('node');
 node
   .command('view')
   .argument('<node>', 'node address')
+  .addOption(networkOption)
+  .addOption(rpcOption)
   .description('View Nosana Node')
   .action(view);
 node
   .command('start')
   .argument('<market>', 'market address')
+  .addOption(networkOption)
+  .addOption(rpcOption)
+  .addOption(walletOption)
   .addOption(
     new Option('--provider <provider>', 'provider used to run the job')
       .choices(['docker', 'podman'])
       .default('podman'),
-  )
-  .addOption(
-    new Option('-w, --wallet <wallet>', 'path to wallet private key').default(
-      '~/.nosana/nosana_key.json',
-    ),
   )
   .addOption(
     new Option(
@@ -185,11 +194,9 @@ node
       'Podman/Docker connection URI',
     ).default('http://localhost:8080'),
   )
-  .addOption(
-    new Option('-w, --wallet <wallet>', 'path to wallet private key').default(
-      '~/.nosana/nosana_key.json',
-    ),
-  )
+  .addOption(walletOption)
+  .addOption(networkOption)
+  .addOption(rpcOption)
   .addOption(
     new Option(
       '--airdrop',
