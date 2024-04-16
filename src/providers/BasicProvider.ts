@@ -138,6 +138,7 @@ export class BasicProvider implements Provider {
             if (!operationTypeFunction) {
               throw new Error(`no support for operation type ${op.type}`);
             }
+            0;
             opState = await new Promise<OpState>(async (resolve, reject) => {
               // when flow is being stopped, resolve promise
               this.eventEmitter.on('startStopFlow', (id) => {
@@ -178,6 +179,7 @@ export class BasicProvider implements Provider {
               (opState) => opState.operationId === op.id,
             )!.status = 'failed';
             this.db.write();
+            this.eventEmitter.removeAllListeners('startStopFlow');
             break;
           }
         }
