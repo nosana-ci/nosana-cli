@@ -51,6 +51,7 @@ job
       'request an airdrop when low on SOL on devnet',
     ).default(true),
   )
+  .addOption(new Option('--no-airdrop', 'no airdrop on devnet'))
   .addOption(new Option('--gpu', 'enable GPU on node'))
   .addOption(
     new Option(
@@ -203,6 +204,7 @@ node
       'Config path (to store the flows database and other config)',
     ).default('~/.nosana/'),
   )
+  .addOption(new Option('--no-airdrop', 'no airdrop on devnet'))
   .description('Join Test Grid Devnet Job')
   .action(runBenchmark);
 

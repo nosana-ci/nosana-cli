@@ -248,6 +248,9 @@ export async function startNode(
       stake = await nosana.stake.get(node);
     } catch (error: any) {
       if (error.message && error.message.includes('Account does not exist')) {
+        spinner.text = chalk.cyan('Creating NOS ATA');
+        // Create NOS ATA if it doesn't exist
+        await nosana.solana.createNosAta(node);
         spinner.text = chalk.cyan('Creating stake account');
         // If no stake account: create empty stake account
         await nosana.stake.create(new PublicKey(node), 0, 14);
@@ -455,6 +458,7 @@ export async function startNode(
             // Create new flow
             flowId = provider.run(jobDefinition, flowId).id;
           } else {
+            spinner.info(chalk.cyan('Continuing with existing flow'));
             provider.continueFlow(flowId);
           }
 
@@ -497,7 +501,7 @@ export async function startNode(
               resolve(flowResult);
             });
             if (result) {
-              spinner.succeed('Retrieved results');
+              spinner.succeed(`Retrieved results with status ${result.status}`);
             }
           }
           if (result) {
@@ -523,6 +527,11 @@ export async function startNode(
               spinner.succeed(
                 chalk.green('Job finished ') + chalk.green.bold(tx),
               );
+              if (result.status !== 'success') {
+                // Flow failed, so we have a cooldown of 5 minutes
+                console.log(chalk.cyan('Waiting to enter the queue'));
+                await sleep(300);
+              }
             } catch (e) {
               spinner.fail(chalk.red.bold('Could not finish job'));
               throw e;

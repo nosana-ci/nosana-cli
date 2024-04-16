@@ -108,10 +108,9 @@ All available options for `post`:
 --airdrop                request an airdrop when low on SOL on devnet (default: true)
 --gpu                    enable GPU on node
 -o, --output <path>      specify which folder inside the container you want to upload
---wasm <url>             wasm url to run
 --type <type>            type to run (default: "container")
 -i, --image <image>      docker image to use (default: "ubuntu")
---f, --file [path]       file with the JSON flow
+--f, --file <path>       file with the JSON flow
 --wait                   wait for job to be completed and show result
 --download               download external artifacts (implies --wait)
 ```

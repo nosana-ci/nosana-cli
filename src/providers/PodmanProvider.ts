@@ -1,6 +1,11 @@
 import chalk from 'chalk';
 import { DockerProvider } from './DockerProvider.js';
-import { Flow, OpState, OperationArgsMap } from './Provider.js';
+import {
+  Flow,
+  OpState,
+  OperationArgsMap,
+  OperationResults,
+} from './Provider.js';
 import { parse } from 'shell-quote';
 import { ifStringCastToArray } from '../generic/utils.js';
 
@@ -21,6 +26,7 @@ export class PodmanProvider extends DockerProvider {
     flowId: string,
     opStateIndex: number,
     updateOpState: Function,
+    operationResults: OperationResults | undefined,
   ): Promise<OpState> {
     return await new Promise<OpState>(async (resolve, reject) => {
       let cmd = '';
@@ -73,11 +79,22 @@ export class PodmanProvider extends DockerProvider {
           : {};
       const environment = { ...globalEnv, ...opArgs.env };
 
+      const volumes = [];
+      if (opArgs.volumes && opArgs.volumes.length > 0) {
+        for (let i = 0; i < opArgs.volumes.length; i++) {
+          const volume = opArgs.volumes[i];
+          volumes.push({
+            dest: volume.dest,
+            name: flowId + '-' + volume.name,
+          });
+        }
+      }
+
       const options = {
         image: opArgs.image ? opArgs.image : flow.jobDefinition.global?.image,
         name: name,
         command: parsedcmd,
-        volumes: opArgs.volumes,
+        volumes,
         ...(entrypoint
           ? { entrypoint: ifStringCastToArray(entrypoint) }
           : undefined),
@@ -136,7 +153,11 @@ export class PodmanProvider extends DockerProvider {
             const c = await this.getContainerByName(name);
             if (c) {
               const container = this.docker.getContainer(c.Id);
-              await this.finishOpContainerRun(container, updateOpState);
+              await this.finishOpContainerRun({
+                container,
+                updateOpState,
+                operationResults,
+              });
               resolve(flow.state.opStates[opStateIndex]);
             } else {
               updateOpState({

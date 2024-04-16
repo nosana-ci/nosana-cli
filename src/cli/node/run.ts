@@ -94,4 +94,7 @@ export async function runJob(
   } catch (error) {
     spinner.fail(chalk.red.bold(error));
   }
+  if (provider.clearFlowsCronJob) {
+    provider.clearFlowsCronJob.stop();
+  }
 }
