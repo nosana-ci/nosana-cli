@@ -5,14 +5,16 @@ import {
   OpState,
   Flow,
   OperationArgsMap,
+  OperationResults,
+  Log,
 } from './Provider.js';
-import Docker, { MountType, VolumeInspectInfo } from 'dockerode';
+import Docker, { MountType } from 'dockerode';
 import stream from 'stream';
 import { parse } from 'shell-quote';
 import { BasicProvider } from './BasicProvider.js';
 import { sleep } from '../generic/utils.js';
 import { getSDK } from '../services/sdk.js';
-import { exitCode } from 'process';
+import { extractResultsFromLogs } from './utils/extractResultsFromLogs.js';
 
 export class DockerProvider extends BasicProvider implements Provider {
   protected docker: Docker;
@@ -53,6 +55,7 @@ export class DockerProvider extends BasicProvider implements Provider {
       op: Operation<'container/run'>,
       flowId: string,
       updateOpState: Function,
+      operationResults: OperationResults | undefined,
     ): Promise<OpState> => {
       const flow = this.getFlow(flowId) as Flow;
       const opStateIndex = flow.state.opStates.findIndex(
@@ -98,17 +101,19 @@ export class DockerProvider extends BasicProvider implements Provider {
               );
             }
 
-            await this.finishOpContainerRun(
+            await this.finishOpContainerRun({
               container,
               updateOpState,
               containerInfo,
-            );
+              operationResults,
+            });
           } else if (containerInfo.State.Status === 'exited') {
-            await this.finishOpContainerRun(
+            await this.finishOpContainerRun({
               container,
               updateOpState,
               containerInfo,
-            );
+              operationResults,
+            });
           }
         }
       }
@@ -129,7 +134,13 @@ export class DockerProvider extends BasicProvider implements Provider {
           );
         }
 
-        await this.executeCmd(op.args, flowId, opStateIndex, updateOpState);
+        await this.executeCmd(
+          op.args,
+          flowId,
+          opStateIndex,
+          updateOpState,
+          operationResults,
+        );
       }
 
       return opState;
@@ -218,6 +229,7 @@ export class DockerProvider extends BasicProvider implements Provider {
     flowId: string,
     opStateIndex: number,
     updateOpState: Function,
+    operationResults: OperationResults | undefined,
   ): Promise<OpState> {
     return await new Promise<OpState>(async (resolve, reject) => {
       let cmd = '';
@@ -332,7 +344,11 @@ export class DockerProvider extends BasicProvider implements Provider {
           WorkingDir: work_dir,
         })
         .then(async ([res, container]) => {
-          await this.finishOpContainerRun(container, updateOpState);
+          await this.finishOpContainerRun({
+            container,
+            updateOpState,
+            operationResults,
+          });
           emptyStream.end();
           resolve(flow.state.opStates[opStateIndex]);
         })
@@ -399,11 +415,17 @@ export class DockerProvider extends BasicProvider implements Provider {
    * @param opState
    * @param containerInfo optional
    */
-  protected async finishOpContainerRun(
-    container: Docker.Container,
-    updateOpState: Function,
-    containerInfo?: Docker.ContainerInspectInfo,
-  ): Promise<void> {
+  protected async finishOpContainerRun({
+    container,
+    containerInfo,
+    operationResults,
+    updateOpState,
+  }: {
+    container: Docker.Container;
+    containerInfo?: Docker.ContainerInspectInfo;
+    operationResults?: OperationResults | undefined;
+    updateOpState: Function;
+  }): Promise<void> {
     if (!containerInfo) containerInfo = await container.inspect();
 
     // op is done, get logs from container and save them in the flow
@@ -412,25 +434,22 @@ export class DockerProvider extends BasicProvider implements Provider {
       stdout: true,
       stderr: true,
     });
-    const logs: OpState['logs'] = [];
+    const logs: OpState['logs'] = this.demuxOutput(log);
+    const results: OpState['results'] = extractResultsFromLogs(
+      logs,
+      operationResults,
+    );
 
-    // parse output
-    const output = this.demuxOutput(log);
-    updateOpState({ logs });
-
-    for (let i = 0; i < output.length; i++) {
-      logs.push({
-        type: output[i].type as 'stderr' | 'stdin' | 'stdout',
-        log: output[i].log,
-      });
-      updateOpState({ logs });
-    }
-
-    updateOpState({
+    const updatedOpState: Partial<OpState> = {
+      logs,
       exitCode: containerInfo.State.ExitCode,
       status: containerInfo.State.ExitCode ? 'failed' : 'success',
       endTime: Math.floor(new Date(containerInfo.State.FinishedAt).getTime()),
-    });
+    };
+
+    if (results) updatedOpState['results'] = results;
+
+    updateOpState(updatedOpState);
   }
 
   protected async handleLogStreams(
@@ -606,10 +625,10 @@ export class DockerProvider extends BasicProvider implements Provider {
   /**
    * input: log Buffer, output stdout & stderr strings
    * @param buffer
-   * @returns
+   * @returns demuxOutput
    */
-  private demuxOutput = (buffer: Buffer): { type: string; log: string }[] => {
-    const output = [];
+  private demuxOutput = (buffer: Buffer): Log[] => {
+    const output: Log[] = [];
 
     function bufferSlice(end: number) {
       const out = buffer.slice(0, end);

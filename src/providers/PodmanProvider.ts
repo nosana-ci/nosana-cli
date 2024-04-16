@@ -1,6 +1,11 @@
 import chalk from 'chalk';
 import { DockerProvider } from './DockerProvider.js';
-import { Flow, OpState, OperationArgsMap } from './Provider.js';
+import {
+  Flow,
+  OpState,
+  OperationArgsMap,
+  OperationResults,
+} from './Provider.js';
 import { parse } from 'shell-quote';
 import { ifStringCastToArray } from '../generic/utils.js';
 
@@ -21,6 +26,7 @@ export class PodmanProvider extends DockerProvider {
     flowId: string,
     opStateIndex: number,
     updateOpState: Function,
+    operationResults: OperationResults | undefined,
   ): Promise<OpState> {
     return await new Promise<OpState>(async (resolve, reject) => {
       let cmd = '';
@@ -147,7 +153,11 @@ export class PodmanProvider extends DockerProvider {
             const c = await this.getContainerByName(name);
             if (c) {
               const container = this.docker.getContainer(c.Id);
-              await this.finishOpContainerRun(container, updateOpState);
+              await this.finishOpContainerRun({
+                container,
+                updateOpState,
+                operationResults,
+              });
               resolve(flow.state.opStates[opStateIndex]);
             } else {
               updateOpState({
