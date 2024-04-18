@@ -530,10 +530,10 @@ export class DockerProvider extends BasicProvider implements Provider {
           const args = op.args as OperationArgsMap['container/create-volume'];
           await this.removeVolume(flow.id + '-' + args.name);
         } catch (error: any) {
-          console.log(
-            chalk.red('couldnt remove volume'),
-            error.message ? error.message : error,
-          );
+          // console.error(
+          //   chalk.red('couldnt remove volume'),
+          //   error.message ? error.message : error,
+          // );
         }
       }
     }
@@ -615,9 +615,9 @@ export class DockerProvider extends BasicProvider implements Provider {
           }
         }
       } catch (err: any) {
-        console.error(
-          `couldnt stop or remove container ${providerId} - ${err}`,
-        );
+        // console.error(
+        //   `couldnt stop or remove container ${providerId} - ${err}`,
+        // );
       }
     }
   }
