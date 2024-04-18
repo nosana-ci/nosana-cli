@@ -592,7 +592,7 @@ export class DockerProvider extends BasicProvider implements Provider {
           reject(err);
         }
         spinner.stop();
-        const spinnies = new Spinnies();
+        const spinnies = new Spinnies({ spinnerColor: 'cyan' });
         function onProgress(event: any) {
           if (!progress.includes(event.id)) {
             spinnies.add(event.id, { text: '' });
