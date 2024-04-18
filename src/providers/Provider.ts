@@ -1,4 +1,5 @@
 // TODO: move types to SDK
+import { CronJob } from 'cron';
 import typia from 'typia';
 
 /************************
@@ -27,6 +28,7 @@ export type Operation<T extends OperationType> = {
   type: OperationType;
   id: string;
   args: OperationArgsMap[T];
+  results?: OperationResults;
 };
 export interface OperationArgsMap {
   'container/run': {
@@ -40,6 +42,7 @@ export interface OperationArgsMap {
     ];
     gpu?: boolean;
     work_dir?: string;
+    output?: string;
     entrypoint?: string | string[];
     env?: {
       [key: string]: string;
@@ -50,6 +53,17 @@ export interface OperationArgsMap {
   };
 }
 export type OperationType = keyof OperationArgsMap;
+
+export type StdOptions = 'stdin' | 'stdout' | 'stderr' | 'nodeerr';
+
+export type OperationResults = {
+  [key: string]: string | OperationResult;
+};
+
+export type OperationResult = {
+  regex: string;
+  logType: [StdOptions, StdOptions?, StdOptions?, StdOptions?];
+};
 
 /************************
  *   Job Result Types   *
@@ -67,6 +81,11 @@ export type Flow = {
   state: FlowState;
 };
 
+export type Log = {
+  type: StdOptions;
+  log: string | undefined;
+};
+
 export type OpState = {
   providerId: string | null;
   operationId: string | null;
@@ -74,10 +93,10 @@ export type OpState = {
   startTime: number | null;
   endTime: number | null;
   exitCode: number | null;
-  logs: Array<{
-    type: 'stdin' | 'stdout' | 'stderr' | 'nodeerr';
-    log: string | undefined;
-  }>;
+  logs: Array<Log>;
+  results?: {
+    [key: string]: string | string[];
+  };
 };
 
 export const validateJobDefinition =
@@ -95,4 +114,6 @@ export abstract class Provider {
     id: string,
     logCallback?: Function,
   ): Promise<FlowState | null>;
+  abstract clearOldFlows(): Promise<void>;
+  public clearFlowsCronJob?: CronJob;
 }

@@ -1,0 +1,35 @@
+{
+  "version": "0.1",
+  "type": "container",
+  "meta": {
+    "trigger": "cli"
+  },
+  "ops": [
+    {
+      "type": "container/run",
+      "id": "hello-world",
+      "args": {
+        "cmd": [
+          "-c ",
+          "echo running ubuntu;",
+          "echo Device 0: NVIDIA GeForce RTX 3070, compute capability 8.6, VMM: yes >>/dev/stderr;",
+          "echo Device 1: NVIDIA GeForce RTX 3080, compute capability 8.6, VMM: yes"
+        ],
+        "entrypoint": ["sh"],
+        "image": "ubuntu"
+      },
+      "results": {
+        "detected-gpu-stderr": {
+          "regex": "Device [0-9].*",
+          "logType": ["stderr"]
+        },
+        "detected-gpu-all-std": "Device [0-9].*",
+        "empty-result": "Missing",
+        "throw-error": {
+          "regex": "\\",
+          "logType": ["stdout", "stderr"]
+        }
+      }
+    }
+  ]
+}
