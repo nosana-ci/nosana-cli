@@ -147,14 +147,19 @@ export async function runBenchmark(options: { [key: string]: any }) {
             nodeAddress: node,
             results: result.opStates,
             email: answers.email,
-            discord: answers.discord ? answers.discord : null,
-            twitter: answers.twitter ? answers.twitter : null,
+            discord: answers.discord,
+            twitter: answers.twitter,
           }),
         },
       );
       const data = await response.json();
-      if (data && data.name === 'Error') throw new Error(data.message);
-      // console.log(data);
+      if (data && data.name === 'Error' || data.errors) {
+        if (data.errors) {
+          throw new Error(data.errors[0])
+        }
+        throw new Error(data.message)
+      };
+      console.log(data);
 
       console.log(chalk.green('Benchmark finished'));
       console.log('================================');

@@ -174,47 +174,46 @@ export async function startNode(
     /****************
      * Benchmark *
      ****************/
-    let gpus: Array<string> = [];
-    try {
-      const jobDefinition: JobDefinition = JSON.parse(
-        fs.readFileSync('job-examples/benchmark-gpu.json', 'utf8'),
-      );
-      let result: Partial<FlowState> | null;
-      // spinner = ora(chalk.cyan('Running benchmark')).start();
-      console.log(chalk.cyan('Running benchmark'));
-      // Create new flow
-      const flow = provider.run(jobDefinition);
-      result = await provider.waitForFlowFinish(
-        flow.id,
-        (log: { log: string; type: string }) => {
-          if (log.type === 'stdout') {
-            process.stdout.write(log.log);
-          } else {
-            process.stderr.write(log.log);
-          }
-        },
-      );
-      if (
-        result &&
-        result.status === 'success' &&
-        result.opStates &&
-        result.opStates[0]
-      ) {
-        for (let i = 0; i < result.opStates[0].logs.length; i++) {
-          let gpu = result.opStates[0].logs[i];
-          if (gpu.log && gpu.log.includes('GPU')) {
-            gpus.push(gpu.log as string);
-          }
-        }
-      } else if (result && result.opStates && result.opStates[0]) {
-        throw new Error(result.status);
-      }
-    } catch (e) {
-      console.error(chalk.red('Something went wrong while detecting GPU', e));
-      throw e;
-    }
-
     if (!marketAccount) {
+      let gpus: Array<string> = [];
+      try {
+        const jobDefinition: JobDefinition = JSON.parse(
+          fs.readFileSync('job-examples/benchmark-gpu.json', 'utf8'),
+        );
+        let result: Partial<FlowState> | null;
+        // spinner = ora(chalk.cyan('Running benchmark')).start();
+        console.log(chalk.cyan('Running benchmark'));
+        // Create new flow
+        const flow = provider.run(jobDefinition);
+        result = await provider.waitForFlowFinish(
+          flow.id,
+          (log: { log: string; type: string }) => {
+            if (log.type === 'stdout') {
+              process.stdout.write(log.log);
+            } else {
+              process.stderr.write(log.log);
+            }
+          },
+        );
+        if (
+          result &&
+          result.status === 'success' &&
+          result.opStates &&
+          result.opStates[0]
+        ) {
+          for (let i = 0; i < result.opStates[0].logs.length; i++) {
+            let gpu = result.opStates[0].logs[i];
+            if (gpu.log && gpu.log.includes('GPU')) {
+              gpus.push(gpu.log as string);
+            }
+          }
+        } else if (result && result.opStates && result.opStates[0]) {
+          throw new Error(result.status);
+        }
+      } catch (e) {
+        console.error(chalk.red('Something went wrong while detecting GPU', e));
+        throw e;
+      }
       try {
         // if user didnt give market, ask the backend which market we can enter
         const response = await fetch(
