@@ -229,7 +229,67 @@ export async function startNode(
           },
         );
         const data = await response.json();
-        if (data && data.name === 'Error') throw new Error(data.message);
+        if (
+          data &&
+          data.name === 'Error' &&
+          data.message &&
+          data.message.includes('Assigned market doesnt support current GPU')
+        ) {
+          try {
+            console.log(chalk.cyan('Changing market'));
+            const nodeResponse = await fetch(
+              `${envConfig.get('BACKEND_URL')}/nodes/${node}`,
+              {
+                method: 'GET',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+              },
+            );
+            const nodeDb = await nodeResponse.json();
+            if (nodeDb && nodeDb.accessKeyMint) {
+              try {
+                // send nft to backend
+                const nftTx = await nosana.solana.transferNft(
+                  envConfig.get('BACKEND_SOLANA_ADDRESS'),
+                  nodeDb.accessKeyMint,
+                );
+                if (!nftTx) throw new Error('Couldnt trade NFT');
+
+                const response = await fetch(
+                  `${envConfig.get('BACKEND_URL')}/nodes/change-market`,
+                  {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      address: node,
+                    }),
+                  },
+                );
+                console.log('data change-market', response);
+                const data = await response.json();
+                if (data && data.name === 'Error')
+                  throw new Error(data.message);
+                if (printDetailed) {
+                  console.log('Changed to market', data.newMarket);
+                }
+              } catch (error) {
+                if (printDetailed) {
+                  console.log('Couldnt change market', error);
+                }
+                throw new Error();
+              }
+            } else {
+              throw new Error('Could not find access key');
+            }
+          } catch (error) {
+            throw new Error('Could not find access key');
+          }
+        } else {
+          throw new Error(data.message);
+        }
         // console.log('group', data);
         market = data[1].market;
         marketAccount = await nosana.jobs.getMarket(data[1].market);
@@ -292,76 +352,7 @@ export async function startNode(
             );
           }
         } else {
-          // go through all collections and check if node has nft from another market
-          // if theres an nft
-          //    send it to backend address
-          //    call change-market to get new market assigned
-          // else
-          //    error no access key found
-          try {
-            const response = await fetch(
-              `${envConfig.get('BACKEND_URL')}/nodes/gpu-groups`,
-              {
-                method: 'GET',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-              },
-            );
-            const groups = await response.json();
-            if (!groups) throw new Error();
-
-            let differentNft;
-            for (const [key, value] of Object.entries(groups)) {
-              if (value) {
-                // @ts-ignore
-                nft = await nosana.solana.getNftFromCollection(node, value.nft);
-                if (nft) {
-                  differentNft = nft;
-                  if (printDetailed) {
-                    // @ts-ignore
-                    console.log('Found NFT for different market: ', value.market);
-                  }
-                  break;
-                }
-              }
-            }
-            console.log('NFT', differentNft?.toString());
-
-            if (differentNft) {
-              try {
-                // send nft to backend
-                const nftTx = await nosana.solana.sendNft(
-                  envConfig.get('BACKEND_SOLANA_ADDRESS'),
-                  differentNft,
-                );
-                if (printDetailed) {
-                  console.log('NFT tx', nftTx);
-                }
-                const response = await fetch(
-                  `${envConfig.get('BACKEND_URL')}/change-market`,
-                  {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                      address: node,
-                    }),
-                  },
-                );
-                const data = await response.json();
-                if (data && data.name === 'Error') throw new Error(data.message);
-              } catch (error) {
-                if (printDetailed) {
-                  console.log('Couldnt trade NFT', error);
-                }
-                throw new Error();
-              }
-            }
-          } catch (error) {
-            throw new Error('Could not find access key');
-          }
+          throw new Error('Could not find access key');
         }
       }
     } catch (e: any) {
