@@ -292,7 +292,76 @@ export async function startNode(
             );
           }
         } else {
-          throw new Error('Could not find access key');
+          // go through all collections and check if node has nft from another market
+          // if theres an nft
+          //    send it to backend address
+          //    call change-market to get new market assigned
+          // else
+          //    error no access key found
+          try {
+            const response = await fetch(
+              `${envConfig.get('BACKEND_URL')}/nodes/gpu-groups`,
+              {
+                method: 'GET',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+              },
+            );
+            const groups = await response.json();
+            if (!groups) throw new Error();
+
+            let differentNft;
+            for (const [key, value] of Object.entries(groups)) {
+              if (value) {
+                // @ts-ignore
+                nft = await nosana.solana.getNftFromCollection(node, value.nft);
+                if (nft) {
+                  differentNft = nft;
+                  if (printDetailed) {
+                    // @ts-ignore
+                    console.log('Found NFT for different market: ', value.market);
+                  }
+                  break;
+                }
+              }
+            }
+            // console.log('NFT', differentNft?.toString());
+
+            if (differentNft) {
+              try {
+                // send nft to backend
+                const nftTx = await nosana.solana.sendNft(
+                  envConfig.get('BACKEND_SOLANA_ADDRESS'),
+                  differentNft,
+                );
+                if (printDetailed) {
+                  console.log('NFT tx', nftTx);
+                }
+                const response = await fetch(
+                  `${envConfig.get('BACKEND_URL')}/change-market`,
+                  {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      address: node,
+                    }),
+                  },
+                );
+                const data = await response.json();
+                if (data && data.name === 'Error') throw new Error(data.message);
+              } catch (error) {
+                if (printDetailed) {
+                  console.log('Couldnt trade NFT', error);
+                }
+                throw new Error();
+              }
+            }
+          } catch (error) {
+            throw new Error('Could not find access key');
+          }
         }
       }
     } catch (e: any) {
