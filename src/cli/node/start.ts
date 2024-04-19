@@ -268,7 +268,6 @@ export async function startNode(
                     }),
                   },
                 );
-                console.log('data change-market', response);
                 const data = await response.json();
                 if (data && data.name === 'Error')
                   throw new Error(data.message);
