@@ -262,7 +262,7 @@ export async function startNode(
                     method: 'POST',
                     headers: {
                       'Content-Type': 'application/json',
-                      'Authorization': envConfig.get('ADMIN_KEY')
+                      Authorization: envConfig.get('ADMIN_KEY'),
                     },
                     body: JSON.stringify({
                       address: node,
@@ -303,7 +303,7 @@ export async function startNode(
       // create NOS ATA if it doesn't exists
       await nosana.solana.createNosAta(node);
     } catch (error) {
-      throw error
+      throw error;
     }
 
     let stake;

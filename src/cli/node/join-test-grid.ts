@@ -153,12 +153,12 @@ export async function runBenchmark(options: { [key: string]: any }) {
         },
       );
       const data = await response.json();
-      if (data && data.name === 'Error' || data.errors) {
+      if ((data && data.name === 'Error') || data.errors) {
         if (data.errors) {
-          throw new Error(data.errors[0])
+          throw new Error(data.errors[0]);
         }
-        throw new Error(data.message)
-      };
+        throw new Error(data.message);
+      }
       console.log(data);
 
       console.log(chalk.green('Benchmark finished'));
