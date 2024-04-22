@@ -239,6 +239,13 @@ export async function startNode(
       }
     }
 
+    try {
+      // Create NOS ATA if it doesn't exist
+      await nosana.solana.createNosAta(node);
+    } catch (error) {
+      throw error;
+    }
+
     let stake;
     try {
       if (printDetailed) {
@@ -247,9 +254,6 @@ export async function startNode(
       stake = await nosana.stake.get(node);
     } catch (error: any) {
       if (error.message && error.message.includes('Account does not exist')) {
-        spinner.text = chalk.cyan('Creating NOS ATA');
-        // Create NOS ATA if it doesn't exist
-        await nosana.solana.createNosAta(node);
         spinner.text = chalk.cyan('Creating stake account');
         // If no stake account: create empty stake account
         await nosana.stake.create(new PublicKey(node), 0, 14);
