@@ -262,6 +262,7 @@ export async function startNode(
                     method: 'POST',
                     headers: {
                       'Content-Type': 'application/json',
+                      'Authorization': envConfig.get('ADMIN_KEY')
                     },
                     body: JSON.stringify({
                       address: node,
