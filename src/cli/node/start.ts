@@ -132,6 +132,7 @@ export async function startNode(
       {
         method: 'GET',
         headers: {
+          Authorization: envConfig.get('ADMIN_KEY'),
           'Content-Type': 'application/json',
         },
       },
