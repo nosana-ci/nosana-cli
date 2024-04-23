@@ -9,10 +9,7 @@
       "type": "container/run",
       "id": "cpu",
       "args": {
-        "cmd": [
-          "sh -c ",
-          "cat /proc/cpuinfo  | grep name | uniq;"
-        ],
+        "cmd": ["sh -c ", "cat /proc/cpuinfo  | grep name | uniq;"],
         "image": "registry.hub.docker.com/nosana/stats",
         "env": {
           "DEBUG": "1"
@@ -65,10 +62,7 @@
       "type": "container/run",
       "id": "bandwidth",
       "args": {
-        "cmd": [
-          "sh -c ",
-          "speedtest-cli --simple || true;"
-        ],
+        "cmd": ["sh -c ", "speedtest-cli --simple || true;"],
         "image": "registry.hub.docker.com/nosana/stats",
         "env": {
           "DEBUG": "1"
@@ -79,10 +73,7 @@
       "type": "container/run",
       "id": "gpu",
       "args": {
-        "cmd": [
-          "sh -c ",
-          "nvidia-smi -L;"
-        ],
+        "cmd": ["sh -c ", "nvidia-smi -L;"],
         "image": "registry.hub.docker.com/nosana/stats",
         "env": {
           "DEBUG": "1"

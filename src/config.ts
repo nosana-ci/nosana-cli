@@ -6,7 +6,7 @@ export const initEnv = () =>
     override: true,
   });
 
-type EnvType = 'BACKEND_URL' | 'BACKEND_SOLANA_ADDRESS';
+type EnvType = 'BACKEND_URL' | 'BACKEND_SOLANA_ADDRESS' | 'ADMIN_KEY';
 
 class Config {
   public get(name: EnvType) {

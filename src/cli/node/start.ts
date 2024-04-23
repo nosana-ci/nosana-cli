@@ -122,6 +122,55 @@ export async function startNode(
       throw e;
     }
   }
+
+  // Check if node is onboarded and has received access key
+  // if not call onboard endpoint to create access key tx
+  // TODO: also do the market check here? Or add this to the market check
+  try {
+    const response = await fetch(
+      `${envConfig.get('BACKEND_URL')}/nodes/${node}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    );
+    const nodeResponse = await response.json();
+    if (!nodeResponse) throw new Error('Failed to fetch node info');
+    if (nodeResponse.status === 'onboarded' && !nodeResponse.accessKeyMint) {
+      const response = await fetch(
+        `${envConfig.get('BACKEND_URL')}/nodes/onboard`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: envConfig.get('ADMIN_KEY'),
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            address: node,
+          }),
+        },
+      );
+      const onboardResponse = await response.json();
+      if (!onboardResponse) throw new Error('Something went wrong onboarding');
+      if (onboardResponse.market) {
+        console.log(
+          chalk.cyan(`Node onboarded in market ${onboardResponse.market}`),
+        );
+      }
+    } else if (nodeResponse.status !== 'onboarded')
+      throw new Error('Node not onboarded yet');
+  } catch (e: unknown) {
+    if (e instanceof Error && e.message.includes('Node not onboarded yet')) {
+      throw new Error(
+        "Node is onboarded yet. You'll receive an email once you are onboarded.",
+      );
+    } else {
+      console.log(e);
+    }
+  }
+
   /****************
    * Health Check *
    ****************/
@@ -229,7 +278,67 @@ export async function startNode(
           },
         );
         const data = await response.json();
-        if (data && data.name === 'Error') throw new Error(data.message);
+        if (
+          data &&
+          data.name === 'Error' &&
+          data.message &&
+          data.message.includes('Assigned market doesnt support current GPU')
+        ) {
+          try {
+            console.log(chalk.cyan('Changing market'));
+            const nodeResponse = await fetch(
+              `${envConfig.get('BACKEND_URL')}/nodes/${node}`,
+              {
+                method: 'GET',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+              },
+            );
+            const nodeDb = await nodeResponse.json();
+            if (nodeDb && nodeDb.accessKeyMint) {
+              try {
+                // send nft to backend
+                const nftTx = await nosana.solana.transferNft(
+                  envConfig.get('BACKEND_SOLANA_ADDRESS'),
+                  nodeDb.accessKeyMint,
+                );
+                if (!nftTx) throw new Error('Couldnt trade NFT');
+
+                const response = await fetch(
+                  `${envConfig.get('BACKEND_URL')}/nodes/change-market`,
+                  {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      Authorization: envConfig.get('ADMIN_KEY'),
+                    },
+                    body: JSON.stringify({
+                      address: node,
+                    }),
+                  },
+                );
+                const data = await response.json();
+                if (data && data.name === 'Error')
+                  throw new Error(data.message);
+                if (printDetailed) {
+                  console.log('Changed to market', data.newMarket);
+                }
+              } catch (error) {
+                if (printDetailed) {
+                  console.log('Couldnt change market', error);
+                }
+                throw new Error();
+              }
+            } else {
+              throw new Error('Could not find access key');
+            }
+          } catch (error) {
+            throw new Error('Could not find access key');
+          }
+        } else {
+          throw new Error(data.message);
+        }
         // console.log('group', data);
         market = data[1].market;
         marketAccount = await nosana.jobs.getMarket(data[1].market);
@@ -240,7 +349,7 @@ export async function startNode(
     }
 
     try {
-      // Create NOS ATA if it doesn't exist
+      // create NOS ATA if it doesn't exists
       await nosana.solana.createNosAta(node);
     } catch (error) {
       throw error;

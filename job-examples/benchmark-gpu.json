@@ -9,10 +9,7 @@
       "type": "container/run",
       "id": "gpu-stats",
       "args": {
-        "cmd": [
-          "sh -c ",
-          "nvidia-smi -L;"
-        ],
+        "cmd": ["sh -c ", "nvidia-smi -L;"],
         "image": "registry.hub.docker.com/nosana/stats",
         "env": {
           "DEBUG": "1"
