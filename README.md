@@ -65,11 +65,13 @@ Global options:
 ```
 
 ## Register for Test Grid
+
 To get started with your Nosana Node on the Test Grid, you will first have to register. The registration consists of a benchmark which will measure your hardware and bandwidth.
 
 `nosana node join-test-grid [options]`
 
 Options:
+
 ```
   --provider <provider>     provider used to run the job (choices: "docker", "podman", default: "podman")
   -w, --wallet <wallet>     path to wallet private key (default: "~/.nosana/nosana_key.json")
