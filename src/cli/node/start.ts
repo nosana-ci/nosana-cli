@@ -137,7 +137,8 @@ export async function startNode(
       },
     );
     const nodeResponse = await response.json();
-    if (!nodeResponse) throw new Error('Failed to fetch node info');
+    if (!nodeResponse || (nodeResponse && nodeResponse.name === 'Error'))
+      throw new Error(nodeResponse.message);
     if (nodeResponse.status === 'onboarded' && !nodeResponse.accessKeyMint) {
       const response = await fetch(
         `${envConfig.get('BACKEND_URL')}/nodes/onboard`,
@@ -163,7 +164,11 @@ export async function startNode(
   } catch (e: unknown) {
     if (e instanceof Error && e.message.includes('Node not onboarded yet')) {
       throw new Error(
-        "Node is onboarded yet. You'll receive an email once you are onboarded.",
+        "Node is not onboarded yet. You'll receive an email once you are onboarded.",
+      );
+    } else if (e instanceof Error && e.message.includes('Node not found')) {
+      throw new Error(
+        'Node is not registred yet. To register run the join-test-grid command.',
       );
     } else {
       console.log(e);
