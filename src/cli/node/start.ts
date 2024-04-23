@@ -132,7 +132,6 @@ export async function startNode(
       {
         method: 'GET',
         headers: {
-          Authorization: envConfig.get('ADMIN_KEY'),
           'Content-Type': 'application/json',
         },
       },
@@ -145,7 +144,6 @@ export async function startNode(
         {
           method: 'POST',
           headers: {
-            Authorization: envConfig.get('ADMIN_KEY'),
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
@@ -312,7 +310,6 @@ export async function startNode(
                     method: 'POST',
                     headers: {
                       'Content-Type': 'application/json',
-                      Authorization: envConfig.get('ADMIN_KEY'),
                     },
                     body: JSON.stringify({
                       address: node,
