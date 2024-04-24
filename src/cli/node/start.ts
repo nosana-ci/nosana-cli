@@ -164,11 +164,15 @@ export async function startNode(
   } catch (e: unknown) {
     if (e instanceof Error && e.message.includes('Node not onboarded yet')) {
       throw new Error(
-        "Node is not onboarded yet. You'll receive an email once you are onboarded.",
+        chalk.yellow(
+          'Node is still on the waitlist, wait until you are accepted.',
+        ),
       );
     } else if (e instanceof Error && e.message.includes('Node not found')) {
       throw new Error(
-        'Node is not registred yet. To register run the join-test-grid command.',
+        chalk.yellow(
+          'Node is not registred yet. To register run the join-test-grid command.',
+        ),
       );
     } else {
       console.log(e);
