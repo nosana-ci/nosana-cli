@@ -233,7 +233,7 @@ export async function startNode(
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            gpus: ['test'],
+            gpus,
           }),
         },
       );
