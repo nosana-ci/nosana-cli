@@ -589,7 +589,7 @@ export async function startNode(
               resolve,
               reject,
             ) {
-              // check if expired every minute
+              // check if expired every 10 minutes
               const expireInterval = setInterval(async () => {
                 if (
                   isRunExpired(
@@ -614,7 +614,7 @@ export async function startNode(
                   await provider.stopFlow(flowId);
                   reject('Job expired');
                 }
-              }, 1000 * 60);
+              }, 60000 * 10);
               const flowResult = await provider.waitForFlowFinish(flowId);
               clearInterval(expireInterval);
               resolve(flowResult);

@@ -78,7 +78,7 @@ export const waitForRun = async (
   let checkQueuedInterval: NodeJS.Timeout;
   return new Promise<Run>(function (resolve, reject) {
     if (enableQueueCheck) {
-      // check if we are still queued in a market every minute
+      // check if we are still queued in a market every 2 minutes
       checkQueuedInterval = setInterval(async () => {
         try {
           const selectedMarket = await checkQueued(node, market);
@@ -92,7 +92,7 @@ export const waitForRun = async (
         } catch (e) {
           console.warn('\nCould not update queue status');
         }
-      }, 60000);
+      }, 60000 * 2);
     }
 
     // As a fallback for the run events, runs every 5 minutes
