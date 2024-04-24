@@ -238,7 +238,6 @@ export async function startNode(
         },
       );
       const data = await response.json();
-      let market: string;
       if (data && data.name === 'Error' && data.message) {
         if (
           data.message.includes('Assigned market doesnt support current GPU')
@@ -299,6 +298,9 @@ export async function startNode(
         market = data[1].market;
       }
       marketAccount = await nosana.jobs.getMarket(market);
+      spinner.stop();
+      console.log(`Market:\t\t${chalk.greenBright.bold(market)}`);
+      console.log('================================');
     } catch (e) {
       spinner.fail(chalk.red('Error checking market'));
       throw e;
