@@ -224,7 +224,7 @@ export async function startNode(
                 nodeResponse.accessKeyMint,
               );
               if (!nftTx) throw new Error('Couldnt trade NFT');
-              await sleep(15); // make sure RPC can pick up on the transferred NFT
+              await sleep(25); // make sure RPC can pick up on the transferred NFT
               spinner.succeed('Access key sent back with tx ' + nftTx);
               spinner = ora(chalk.cyan('Setting market')).start();
             } catch (e: any) {
