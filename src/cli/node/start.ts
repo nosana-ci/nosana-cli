@@ -224,13 +224,16 @@ export async function startNode(
                 nodeResponse.accessKeyMint,
               );
               if (!nftTx) throw new Error('Couldnt trade NFT');
-              await sleep(10); // make sure RPC can pick up on the transferred NFT
+              await sleep(15); // make sure RPC can pick up on the transferred NFT
               spinner.succeed('Access key sent back with tx ' + nftTx);
               spinner = ora(chalk.cyan('Setting market')).start();
             } catch (e: any) {
               if (e.message.includes('Provided owner is not allowed')) {
                 spinner.warn('Access key not owned anymore');
                 spinner = ora(chalk.cyan('Setting market')).start();
+              } else if (e.message.includes('custom program error: 0x1')) {
+                spinner.fail('Unsufficient funds to transfer access key. Add some SOL to your wallet to cover transaction fees.');
+                throw e;
               } else {
                 throw e;
               }
