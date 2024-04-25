@@ -4,6 +4,7 @@ import { getSDK } from '../../services/sdk.js';
 import chalk from 'chalk';
 import ora, { type Ora } from 'ora';
 import { sleep, clearLine } from '../../generic/utils.js';
+import fs from 'node:fs';
 import {
   getRun,
   checkQueued,
@@ -16,15 +17,16 @@ import { NotQueuedError } from '../../generic/errors.js';
 import { DockerProvider } from '../../providers/DockerProvider.js';
 import {
   Provider,
-  Flow,
   JobDefinition,
-  validateJobDefinition,
   FlowState,
 } from '../../providers/Provider.js';
 import { PublicKey } from '@solana/web3.js';
 import { EMPTY_ADDRESS } from '../../services/jobs.js';
-import { IValidation } from 'typia';
 import { PodmanProvider } from '../../providers/PodmanProvider.js';
+import { envConfig } from '../../config.js';
+import { fetch, setGlobalDispatcher, Agent } from 'undici';
+
+setGlobalDispatcher(new Agent({ connect: { timeout: 150_000 } }));
 
 let provider: Provider;
 let run: Run | void;
@@ -103,8 +105,188 @@ export async function startNode(
       provider = new DockerProvider(options.podman, options.config);
       break;
   }
-  let marketAccount: Market;
   let nft: PublicKey | undefined;
+  // TODO: should we even allow setting a custom market account?
+  if (!market) {
+    let nodeResponse: any;
+    try {
+      // Check if node is onboarded and has received access key
+      // if not call onboard endpoint to create access key tx
+
+      const response = await fetch(
+        `${envConfig.get('BACKEND_URL')}/nodes/${node}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+      nodeResponse = await response.json();
+      if (!nodeResponse || (nodeResponse && nodeResponse.name === 'Error')) {
+        throw new Error(nodeResponse.message);
+      }
+      if (nodeResponse.status !== 'onboarded') {
+        throw new Error('Node not onboarded yet');
+      }
+    } catch (e: unknown) {
+      if (e instanceof Error && e.message.includes('Node not onboarded yet')) {
+        throw new Error(
+          chalk.yellow(
+            'Node is still on the waitlist, wait until you are accepted.',
+          ),
+        );
+      } else if (e instanceof Error && e.message.includes('Node not found')) {
+        throw new Error(
+          chalk.yellow(
+            'Node is not registred yet. To register run the join-test-grid command.',
+          ),
+        );
+      }
+      throw e;
+    }
+    let gpus: Array<string> = [];
+    try {
+      /****************
+       * Benchmark *
+       ****************/
+      const jobDefinition: JobDefinition = JSON.parse(
+        fs.readFileSync('job-examples/benchmark-gpu.json', 'utf8'),
+      );
+      let result: Partial<FlowState> | null;
+      // spinner = ora(chalk.cyan('Running benchmark')).start();
+      console.log(chalk.cyan('Running benchmark'));
+      // Create new flow
+      const flow = provider.run(jobDefinition);
+      result = await provider.waitForFlowFinish(
+        flow.id,
+        (log: { log: string; type: string }) => {
+          if (log.type === 'stdout') {
+            process.stdout.write(log.log);
+          } else {
+            process.stderr.write(log.log);
+          }
+        },
+      );
+      if (
+        result &&
+        result.status === 'success' &&
+        result.opStates &&
+        result.opStates[0]
+      ) {
+        for (let i = 0; i < result.opStates[0].logs.length; i++) {
+          let gpu = result.opStates[0].logs[i];
+          if (gpu.log && gpu.log.includes('GPU')) {
+            gpus.push(gpu.log as string);
+          }
+        }
+      } else if (result && result.opStates && result.opStates[0]) {
+        throw new Error(result.status);
+      }
+    } catch (e) {
+      console.error(chalk.red('Something went wrong while detecting GPU', e));
+      throw e;
+    }
+
+    try {
+      spinner = ora(chalk.cyan('Matching GPU to correct market')).start();
+      // if user didnt give market, ask the backend which market we can enter
+      const response = await fetch(
+        `${envConfig.get('BACKEND_URL')}/nodes/${node}/check-market`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            gpus,
+          }),
+        },
+      );
+      const data: any = await response.json();
+      if (
+        (data && data.name === 'Error' && data.message) ||
+        !nodeResponse.accessKeyMint ||
+        !nodeResponse.marketAddress
+      ) {
+        if (
+          data.message.includes('Assigned market doesnt support current GPU') ||
+          !nodeResponse.accessKeyMint ||
+          !nodeResponse.marketAddress
+        ) {
+          spinner.text = chalk.cyan('Setting market');
+          if (nodeResponse && nodeResponse.accessKeyMint) {
+            // send nft to backend
+            spinner.text = chalk.cyan('Sending back old access key');
+            try {
+              const nftTx = await nosana.solana.transferNft(
+                envConfig.get('BACKEND_SOLANA_ADDRESS'),
+                nodeResponse.accessKeyMint,
+              );
+              if (!nftTx) throw new Error('Couldnt trade NFT');
+              await sleep(25); // make sure RPC can pick up on the transferred NFT
+              spinner.succeed('Access key sent back with tx ' + nftTx);
+              spinner = ora(chalk.cyan('Setting market')).start();
+            } catch (e: any) {
+              if (e.message.includes('Provided owner is not allowed')) {
+                spinner.warn('Access key not owned anymore');
+                spinner = ora(chalk.cyan('Setting market')).start();
+              } else if (e.message.includes('custom program error: 0x1')) {
+                spinner.fail(
+                  chalk.red(
+                    'Unsufficient funds to transfer access key. Add some SOL to your wallet to cover transaction fees.',
+                  ),
+                );
+                throw e;
+              } else {
+                throw e;
+              }
+            }
+          }
+          let data: any;
+          try {
+            const response = await fetch(
+              `${envConfig.get('BACKEND_URL')}/nodes/change-market`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  address: node,
+                }),
+              },
+            );
+
+            data = await response.json();
+          } catch (e: any) {
+            throw new Error(
+              chalk.red(
+                'Something went wrong with minting your access key, please try again. ',
+              ) + e.message,
+            );
+          }
+          if (data && data.name && data.name.includes('Error')) {
+            throw new Error(data.message);
+          }
+          market = data.newMarket;
+          nft = new PublicKey(data.newMint);
+        } else {
+          throw new Error(data.message);
+        }
+      } else {
+        // current GPU matches market
+        market = data[1].market;
+        nft = new PublicKey(nodeResponse.accessKeyMint);
+      }
+    } catch (e) {
+      spinner.fail(chalk.red('Error checking or onboarding in market'));
+      throw e;
+    }
+    spinner.succeed('Got access key for market: ' + market);
+  }
+
+  let marketAccount: Market | null = null;
   try {
     spinner = ora(chalk.cyan('Retrieving market')).start();
     marketAccount = await nosana.jobs.getMarket(market);
@@ -127,8 +309,15 @@ export async function startNode(
     } else {
       spinner = ora(chalk.cyan('Health checks')).start();
     }
+    let stats: NodeStats | null = null;
     try {
-      const stats: NodeStats = await getNodeStats(node);
+      stats = await getNodeStats(node);
+    } catch (e) {
+      spinner.warn(
+        'Could not check SOL balance, make sure you have enough SOL',
+      );
+    }
+    if (stats) {
       if (stats.sol / 1e9 < 0.001) {
         spinner.fail(chalk.red.bold('Not enough SOL balance'));
         throw new Error(
@@ -140,10 +329,6 @@ export async function startNode(
           chalk.green(`Sol balance: ${chalk.bold(stats.sol / 1e9)}`),
         );
       }
-    } catch (e) {
-      spinner.warn(
-        'Could not check SOL balance, make sure you have enough SOL',
-      );
     }
     if (printDetailed) {
       spinner = ora(chalk.cyan('Checking provider health')).start();
@@ -166,6 +351,14 @@ export async function startNode(
         }
         break;
     }
+
+    try {
+      // create NOS ATA if it doesn't exists
+      await nosana.solana.createNosAta(node);
+    } catch (error) {
+      throw error;
+    }
+
     let stake;
     try {
       if (printDetailed) {
@@ -174,9 +367,6 @@ export async function startNode(
       stake = await nosana.stake.get(node);
     } catch (error: any) {
       if (error.message && error.message.includes('Account does not exist')) {
-        spinner.text = chalk.cyan('Creating NOS ATA');
-        // Create NOS ATA if it doesn't exist
-        await nosana.solana.createNosAta(node);
         spinner.text = chalk.cyan('Creating stake account');
         // If no stake account: create empty stake account
         await nosana.stake.create(new PublicKey(node), 0, 14);
@@ -194,7 +384,9 @@ export async function startNode(
       );
     }
     try {
-      if (marketAccount.nodeAccessKey.toString() === EMPTY_ADDRESS.toString()) {
+      if (
+        marketAccount!.nodeAccessKey.toString() === EMPTY_ADDRESS.toString()
+      ) {
         if (printDetailed) {
           spinner.succeed(chalk.green(`Open market ${chalk.bold(market)}`));
         }
@@ -204,11 +396,12 @@ export async function startNode(
             `Checking required access key for market ${chalk.bold(market)}`,
           );
         }
-        nft = await nosana.solana.getNftFromCollection(
+        const nftFromChain = await nosana.solana.getNftFromCollection(
           node,
-          marketAccount.nodeAccessKey.toString(),
+          marketAccount?.nodeAccessKey.toString() as string,
         );
-        if (nft) {
+        if (nftFromChain) {
+          nft = nftFromChain;
           if (printDetailed) {
             spinner.succeed(
               chalk.green(
@@ -219,7 +412,16 @@ export async function startNode(
             );
           }
         } else {
-          throw new Error('Could not find access key');
+          if (!nft) {
+            throw new Error('Could not find access key');
+          }
+          spinner.succeed(
+            chalk.yellow(
+              `Could not find key on-chain, trying access key ${chalk.bold(
+                nft,
+              )} for market ${chalk.bold(market)}`,
+            ),
+          );
         }
       }
     } catch (e: any) {
@@ -347,7 +549,9 @@ export async function startNode(
           }
           await provider.stopFlow(run.publicKey.toString());
           run = undefined;
-        } else if (isRunExpired(run, marketAccount.jobTimeout * 1.5)) {
+        } else if (
+          isRunExpired(run, (marketAccount?.jobTimeout as number) * 1.5)
+        ) {
           // Quit job when timeout * 1.5 is reached.
           spinner = ora(chalk.red('Job is expired, quiting job')).start();
           console.log(3);
@@ -379,19 +583,8 @@ export async function startNode(
             const jobDefinition: JobDefinition = await nosana.ipfs.retrieve(
               job.ipfsJob,
             );
-            const validation: IValidation<JobDefinition> =
-              validateJobDefinition(jobDefinition);
-            if (!validation.success) {
-              spinner.fail(chalk.red.bold('Job Definition validation failed'));
-              result = {
-                status: 'validation-error',
-                errors: validation.errors,
-              };
-            } else {
-              spinner.succeed(chalk.green('Job Definition validation passed'));
-              // Create new flow
-              flowId = provider.run(jobDefinition, flowId).id;
-            }
+            // Create new flow
+            flowId = provider.run(jobDefinition, flowId).id;
           } else {
             spinner.info(chalk.cyan('Continuing with existing flow'));
             provider.continueFlow(flowId);
@@ -407,7 +600,12 @@ export async function startNode(
             ) {
               // check if expired every 10 minutes
               const expireInterval = setInterval(async () => {
-                if (isRunExpired(run!, marketAccount.jobExpiration * 1.5)) {
+                if (
+                  isRunExpired(
+                    run!,
+                    (marketAccount?.jobTimeout as number) * 1.5,
+                  )
+                ) {
                   clearInterval(expireInterval);
                   // Quit job when timeout * 1.5 is reached.
                   spinner = ora(

@@ -4,6 +4,8 @@ import { Command, Option } from 'commander';
 import { setSDK } from './services/sdk.js';
 import { run, getJob, download, upload } from './cli/job/index.js';
 import { view, startNode, runJob, runBenchmark } from './cli/node/index.js';
+import { initEnv, envConfig } from './config';
+initEnv();
 const program: Command = new Command();
 
 const VERSION: string = '0.2.0';
@@ -119,7 +121,7 @@ node
   .action(view);
 node
   .command('start')
-  .argument('<market>', 'market address')
+  .argument('[market]', 'market address')
   .addOption(
     new Option('--provider <provider>', 'provider used to run the job')
       .choices(['docker', 'podman'])
@@ -177,7 +179,7 @@ node
       'provider used to run the job definition',
     )
       .choices(['docker', 'podman'])
-      .default('docker'),
+      .default('podman'),
   )
   .addOption(
     new Option(
@@ -195,6 +197,12 @@ node
       '--airdrop',
       'request an airdrop when low on SOL on devnet',
     ).default(true),
+  )
+  .addOption(
+    new Option(
+      '-c, --config <path>',
+      'Config path (to store the flows database and other config)',
+    ).default('~/.nosana/'),
   )
   .addOption(new Option('--no-airdrop', 'no airdrop on devnet'))
   .description('Join Test Grid Devnet Job')
