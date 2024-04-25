@@ -168,7 +168,7 @@ export async function runBenchmark(options: { [key: string]: any }) {
           "Thank you for registering for Nosana Node. \nWe'll review your registration and you will get an email from us if you are selected.",
         ),
       );
-      return;
+      process.exit();
     } catch (error) {
       console.error(error);
       throw new Error(chalk.red.bold('Failed to register'));
