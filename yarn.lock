@@ -270,10 +270,10 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
-"@nosana/sdk@^0.3.16":
-  version "0.3.16"
-  resolved "https://registry.npmjs.org/@nosana/sdk/-/sdk-0.3.16.tgz"
-  integrity sha512-UJxdSYrmypevn/AEp5L0R9r4gLQeP0aJWaTIajZ2YxgT3C8nr5dsFxidjUitzRnieB7YrzqBBa/qe0X9kk8HhA==
+"@nosana/sdk@^0.3.18":
+  version "0.3.18"
+  resolved "https://registry.npmjs.org/@nosana/sdk/-/sdk-0.3.18.tgz"
+  integrity sha512-KT0PFKlUHg9kSMM2KRsYNWqc00tKih84N4UhfBOmD1ChO0ayGNnlARIpqKG6GGAs7SoARoUp6WJldzhMIkitrA==
   dependencies:
     "@coral-xyz/anchor" "^0.28.1-beta.1"
     "@solana/spl-token" "^0.3.8"
@@ -3167,6 +3167,11 @@ undici-types@~5.26.4:
   version "5.26.5"
   resolved "https://registry.npmjs.org/undici-types/-/undici-types-5.26.5.tgz"
   integrity sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA==
+
+undici@^6.14.1:
+  version "6.14.1"
+  resolved "https://registry.npmjs.org/undici/-/undici-6.14.1.tgz"
+  integrity sha512-mAel3i4BsYhkeVPXeIPXVGPJKeBzqCieZYoFsbWfUzd68JmHByhc1Plit5WlylxXFaGpgkZB8mExlxnt+Q1p7A==
 
 uri-js@^4.2.2:
   version "4.4.1"

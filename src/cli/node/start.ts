@@ -24,6 +24,9 @@ import { PublicKey } from '@solana/web3.js';
 import { EMPTY_ADDRESS } from '../../services/jobs.js';
 import { PodmanProvider } from '../../providers/PodmanProvider.js';
 import { envConfig } from '../../config.js';
+import { fetch, setGlobalDispatcher, Agent } from 'undici';
+
+setGlobalDispatcher(new Agent({ connect: { timeout: 150_000 } }));
 
 let provider: Provider;
 let run: Run | void;
@@ -102,84 +105,46 @@ export async function startNode(
       provider = new DockerProvider(options.podman, options.config);
       break;
   }
-
-  let marketAccount: Market | null = null;
   let nft: PublicKey | undefined;
-  if (market) {
+  // TODO: should we even allow setting a custom market account?
+  if (!market) {
+    let nodeResponse: any;
     try {
-      spinner = ora(chalk.cyan('Retrieving market')).start();
-      marketAccount = await nosana.jobs.getMarket(market);
-      spinner.stop();
-      console.log(`Market:\t\t${chalk.greenBright.bold(market)}`);
-      console.log('================================');
-    } catch (e: any) {
-      spinner.fail(
-        chalk.red(`Could not retrieve market ${chalk.bold(market)}`),
-      );
-      if (e.message && e.message.includes('Account does not exist')) {
-        throw new Error(chalk.red(`Market ${chalk.bold(market)} not found`));
-      }
-      throw e;
-    }
-  }
+      // Check if node is onboarded and has received access key
+      // if not call onboard endpoint to create access key tx
 
-  // Check if node is onboarded and has received access key
-  // if not call onboard endpoint to create access key tx
-  try {
-    const response = await fetch(
-      `${envConfig.get('BACKEND_URL')}/nodes/${node}`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      },
-    );
-    const nodeResponse = await response.json();
-    if (!nodeResponse || (nodeResponse && nodeResponse.name === 'Error'))
-      throw new Error(nodeResponse.message);
-    if (nodeResponse.status === 'onboarded' && !nodeResponse.accessKeyMint) {
       const response = await fetch(
-        `${envConfig.get('BACKEND_URL')}/nodes/onboard`,
+        `${envConfig.get('BACKEND_URL')}/nodes/${node}`,
         {
-          method: 'POST',
+          method: 'GET',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            address: node,
-          }),
         },
       );
-      const onboardResponse = await response.json();
-      if (!onboardResponse) throw new Error('Something went wrong onboarding');
-      if (onboardResponse.market) {
-        console.log(
-          chalk.cyan(`Node onboarded in market ${onboardResponse.market}`),
+      nodeResponse = await response.json();
+      if (!nodeResponse || (nodeResponse && nodeResponse.name === 'Error')) {
+        throw new Error(nodeResponse.message);
+      }
+      if (nodeResponse.status !== 'onboarded') {
+        throw new Error('Node not onboarded yet');
+      }
+    } catch (e: unknown) {
+      if (e instanceof Error && e.message.includes('Node not onboarded yet')) {
+        throw new Error(
+          chalk.yellow(
+            'Node is still on the waitlist, wait until you are accepted.',
+          ),
+        );
+      } else if (e instanceof Error && e.message.includes('Node not found')) {
+        throw new Error(
+          chalk.yellow(
+            'Node is not registred yet. To register run the join-test-grid command.',
+          ),
         );
       }
-    } else if (nodeResponse.status !== 'onboarded')
-      throw new Error('Node not onboarded yet');
-  } catch (e: unknown) {
-    if (e instanceof Error && e.message.includes('Node not onboarded yet')) {
-      throw new Error(
-        chalk.yellow(
-          'Node is still on the waitlist, wait until you are accepted.',
-        ),
-      );
-    } else if (e instanceof Error && e.message.includes('Node not found')) {
-      throw new Error(
-        chalk.yellow(
-          'Node is not registred yet. To register run the join-test-grid command.',
-        ),
-      );
-    } else {
-      console.log(e);
+      throw e;
     }
-  }
-
-  // TODO: should we even allow setting a custom market account?
-  if (!marketAccount) {
     let gpus: Array<string> = [];
     try {
       /****************
@@ -222,6 +187,7 @@ export async function startNode(
       console.error(chalk.red('Something went wrong while detecting GPU', e));
       throw e;
     }
+
     try {
       spinner = ora(chalk.cyan('Matching GPU to correct market')).start();
       // if user didnt give market, ask the backend which market we can enter
@@ -237,74 +203,95 @@ export async function startNode(
           }),
         },
       );
-      const data = await response.json();
-      if (data && data.name === 'Error' && data.message) {
+      const data: any = await response.json();
+      if (
+        (data && data.name === 'Error' && data.message) ||
+        !nodeResponse.accessKeyMint ||
+        !nodeResponse.marketAddress
+      ) {
         if (
-          data.message.includes('Assigned market doesnt support current GPU')
+          data.message.includes('Assigned market doesnt support current GPU') ||
+          !nodeResponse.accessKeyMint ||
+          !nodeResponse.marketAddress
         ) {
+          spinner.text = chalk.cyan('Setting market');
+          if (nodeResponse && nodeResponse.accessKeyMint) {
+            // send nft to backend
+            spinner.text = chalk.cyan('Sending back old access key');
+            try {
+              const nftTx = await nosana.solana.transferNft(
+                envConfig.get('BACKEND_SOLANA_ADDRESS'),
+                nodeResponse.accessKeyMint,
+              );
+              if (!nftTx) throw new Error('Couldnt trade NFT');
+              await sleep(5);
+              spinner.succeed('Access key sent back with tx ' + nftTx);
+              spinner = ora(chalk.cyan('Setting market')).start();
+            } catch (e: any) {
+              if (e.message.includes('Provided owner is not allowed')) {
+                spinner.warn('Access key not owned anymore');
+                spinner = ora(chalk.cyan('Setting market')).start();
+              } else {
+                throw e;
+              }
+            }
+          }
+          let data: any;
           try {
-            spinner.text = chalk.cyan('Changing market');
-            const nodeResponse = await fetch(
-              `${envConfig.get('BACKEND_URL')}/nodes/${node}`,
+            const response = await fetch(
+              `${envConfig.get('BACKEND_URL')}/nodes/change-market`,
               {
-                method: 'GET',
+                method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
                 },
+                body: JSON.stringify({
+                  address: node,
+                }),
               },
             );
-            const nodeDb = await nodeResponse.json();
-            if (nodeDb && nodeDb.accessKeyMint) {
-              try {
-                // send nft to backend
-                const nftTx = await nosana.solana.transferNft(
-                  envConfig.get('BACKEND_SOLANA_ADDRESS'),
-                  nodeDb.accessKeyMint,
-                );
-                if (!nftTx) throw new Error('Couldnt trade NFT');
 
-                const response = await fetch(
-                  `${envConfig.get('BACKEND_URL')}/nodes/change-market`,
-                  {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                      address: node,
-                    }),
-                  },
-                );
-                const data = await response.json();
-                if (data && data.name === 'Error') {
-                  throw new Error(data.message);
-                }
-                market = data.newMarket;
-                console.log('Changed to market', data.newMarket);
-              } catch (error) {
-                throw error;
-              }
-            } else {
-              throw new Error('Could not find access key');
-            }
-          } catch (error) {
-            throw error;
+            data = await response.json();
+          } catch (e: any) {
+            throw new Error(
+              chalk.red(
+                'Something went wrong with minting your access key, please try again. ',
+              ) + e.message,
+            );
           }
+          if (data && data.name && data.name.includes('Error')) {
+            throw new Error(data.message);
+          }
+          market = data.newMarket;
+          nft = new PublicKey(data.newMint);
         } else {
           throw new Error(data.message);
         }
       } else {
         // current GPU matches market
         market = data[1].market;
+        nft = new PublicKey(nodeResponse.accessKeyMint);
       }
-      marketAccount = await nosana.jobs.getMarket(market);
-      spinner.stop();
-      console.log(`Market:\t\t${chalk.greenBright.bold(market)}`);
-      console.log('================================');
     } catch (e) {
-      spinner.fail(chalk.red('Error checking market'));
+      spinner.fail(chalk.red('Error checking or onboarding in market'));
       throw e;
     }
+    spinner.succeed('Got access key for market: ' + market);
+  }
+
+  let marketAccount: Market | null = null;
+  try {
+    spinner = ora(chalk.cyan('Retrieving market')).start();
+    marketAccount = await nosana.jobs.getMarket(market);
+    spinner.stop();
+    console.log(`Market:\t\t${chalk.greenBright.bold(market)}`);
+    console.log('================================');
+  } catch (e: any) {
+    spinner.fail(chalk.red(`Could not retrieve market ${chalk.bold(market)}`));
+    if (e.message && e.message.includes('Account does not exist')) {
+      throw new Error(chalk.red(`Market ${chalk.bold(market)} not found`));
+    }
+    throw e;
   }
   /****************
    * Health Check *
@@ -399,11 +386,12 @@ export async function startNode(
             `Checking required access key for market ${chalk.bold(market)}`,
           );
         }
-        nft = await nosana.solana.getNftFromCollection(
+        const nftFromChain = await nosana.solana.getNftFromCollection(
           node,
           marketAccount?.nodeAccessKey.toString() as string,
         );
-        if (nft) {
+        if (nftFromChain) {
+          nft = nftFromChain;
           if (printDetailed) {
             spinner.succeed(
               chalk.green(
@@ -414,7 +402,16 @@ export async function startNode(
             );
           }
         } else {
-          throw new Error('Could not find access key');
+          if (!nft) {
+            throw new Error('Could not find access key');
+          }
+          spinner.succeed(
+            chalk.yellow(
+              `Could not find key on-chain, trying access key ${chalk.bold(
+                nft,
+              )} for market ${chalk.bold(market)}`,
+            ),
+          );
         }
       }
     } catch (e: any) {
