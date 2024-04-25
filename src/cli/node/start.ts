@@ -224,7 +224,7 @@ export async function startNode(
                 nodeResponse.accessKeyMint,
               );
               if (!nftTx) throw new Error('Couldnt trade NFT');
-              await sleep(15); // make sure RPC can pick up on the transferred NFT
+              await sleep(25); // make sure RPC can pick up on the transferred NFT
               spinner.succeed('Access key sent back with tx ' + nftTx);
               spinner = ora(chalk.cyan('Setting market')).start();
             } catch (e: any) {
@@ -233,7 +233,9 @@ export async function startNode(
                 spinner = ora(chalk.cyan('Setting market')).start();
               } else if (e.message.includes('custom program error: 0x1')) {
                 spinner.fail(
-                  'Unsufficient funds to transfer access key. Add some SOL to your wallet to cover transaction fees.',
+                  chalk.red(
+                    'Unsufficient funds to transfer access key. Add some SOL to your wallet to cover transaction fees.',
+                  ),
                 );
                 throw e;
               } else {
@@ -307,8 +309,15 @@ export async function startNode(
     } else {
       spinner = ora(chalk.cyan('Health checks')).start();
     }
+    let stats: NodeStats | null = null;
     try {
-      const stats: NodeStats = await getNodeStats(node);
+      stats = await getNodeStats(node);
+    } catch (e) {
+      spinner.warn(
+        'Could not check SOL balance, make sure you have enough SOL',
+      );
+    }
+    if (stats) {
       if (stats.sol / 1e9 < 0.001) {
         spinner.fail(chalk.red.bold('Not enough SOL balance'));
         throw new Error(
@@ -320,10 +329,6 @@ export async function startNode(
           chalk.green(`Sol balance: ${chalk.bold(stats.sol / 1e9)}`),
         );
       }
-    } catch (e) {
-      spinner.warn(
-        'Could not check SOL balance, make sure you have enough SOL',
-      );
     }
     if (printDetailed) {
       spinner = ora(chalk.cyan('Checking provider health')).start();
