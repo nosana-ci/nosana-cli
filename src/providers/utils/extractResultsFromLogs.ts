@@ -1,4 +1,4 @@
-import { OpState, OperationResult, OperationResults } from '../Provider';
+import { OpState, OperationResult, OperationResults } from '../Provider.js';
 
 /**
  * Initiates results object to retain order from job definition
