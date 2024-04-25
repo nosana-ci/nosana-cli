@@ -140,7 +140,7 @@ export async function startNode(
       throw new Error(nodeResponse.message);
     if (nodeResponse.status === 'onboarded' && !nodeResponse.accessKeyMint) {
       const response = await fetch(
-        `${envConfig.get('BACKEND_URL')}/nodes/onboard`,
+        `${envConfig.get('BACKEND_URL')}/nodes/change-market`,
         {
           method: 'POST',
           headers: {
@@ -160,7 +160,7 @@ export async function startNode(
       }
     } else if (nodeResponse.status !== 'onboarded')
       throw new Error('Node not onboarded yet');
-  } catch (e: unknown) {
+  } catch (e: any) {
     if (e instanceof Error && e.message.includes('Node not onboarded yet')) {
       throw new Error(
         chalk.yellow(
@@ -174,7 +174,7 @@ export async function startNode(
         ),
       );
     } else {
-      console.log(e);
+      throw e;
     }
   }
 
