@@ -232,7 +232,7 @@ export async function startNode(
                 spinner.warn('Access key not owned anymore');
                 spinner = ora(chalk.cyan('Setting market')).start();
               } else if (e.message.includes('custom program error: 0x1')) {
-                spinner.fail('Unsufficient funds to transfer access key. Add some SOL to your wallet to cover transaction fees.');
+                spinner.fail(chalk.red('Unsufficient funds to transfer access key. Add some SOL to your wallet to cover transaction fees.'));
                 throw e;
               } else {
                 throw e;
