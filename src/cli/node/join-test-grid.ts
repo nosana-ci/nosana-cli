@@ -14,7 +14,7 @@ import { input, confirm } from '@inquirer/prompts';
 import { PodmanProvider } from '../../providers/PodmanProvider.js';
 import { Client } from '@nosana/sdk';
 import { getSDK } from '../../services/sdk.js';
-import { envConfig } from '../../config';
+import { envConfig } from '../../config.js';
 
 let flow: Flow | undefined;
 let provider: Provider;
