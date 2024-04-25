@@ -159,7 +159,7 @@ export async function runBenchmark(options: { [key: string]: any }) {
         }
         throw new Error(data.message);
       }
-      console.log(data);
+      // console.log(data);
 
       console.log(chalk.green('Benchmark finished'));
       console.log('================================');
@@ -182,7 +182,6 @@ export async function runBenchmark(options: { [key: string]: any }) {
     ) {
       console.log(chalk.red(result.opStates[0].logs[0].log));
     }
-    console.log(result?.opStates![5]);
     throw new Error(
       chalk.red(
         `Couldn't succesfully run benchmark, finished with status: ${
