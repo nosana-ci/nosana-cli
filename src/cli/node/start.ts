@@ -25,6 +25,7 @@ import { EMPTY_ADDRESS } from '../../services/jobs.js';
 import { PodmanProvider } from '../../providers/PodmanProvider.js';
 import { envConfig } from '../../config.js';
 import { fetch, setGlobalDispatcher, Agent } from 'undici';
+import benchmarkGPU from '../../benchmark-gpu.json' assert { type: 'json' };
 
 setGlobalDispatcher(new Agent({ connect: { timeout: 150_000 } }));
 
@@ -150,9 +151,8 @@ export async function startNode(
       /****************
        * Benchmark *
        ****************/
-      const jobDefinition: JobDefinition = JSON.parse(
-        fs.readFileSync('job-examples/benchmark-gpu.json', 'utf8'),
-      );
+      // @ts-expect-error todo fix
+      const jobDefinition: JobDefinition = benchmarkGPU;
       let result: Partial<FlowState> | null;
       // spinner = ora(chalk.cyan('Running benchmark')).start();
       console.log(chalk.cyan('Running benchmark'));
