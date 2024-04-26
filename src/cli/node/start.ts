@@ -4,7 +4,6 @@ import { getSDK } from '../../services/sdk.js';
 import chalk from 'chalk';
 import ora, { type Ora } from 'ora';
 import { sleep, clearLine } from '../../generic/utils.js';
-import fs from 'node:fs';
 import {
   getRun,
   checkQueued,
