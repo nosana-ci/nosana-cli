@@ -233,7 +233,9 @@ export async function startNode(
               } else if (e.message.includes('custom program error: 0x1')) {
                 spinner.fail(
                   chalk.red(
-                    'Unsufficient funds to transfer access key. Add some SOL to your wallet to cover transaction fees.',
+                    `Unsufficient funds to transfer access key. Add some SOL to your wallet to cover transaction fees: ${chalk.cyan(
+                      node,
+                    )}`,
                   ),
                 );
                 throw e;
@@ -320,7 +322,11 @@ export async function startNode(
       if (stats.sol / 1e9 < 0.001) {
         spinner.fail(chalk.red.bold('Not enough SOL balance'));
         throw new Error(
-          `SOL balance ${stats.sol / 1e9} should be 0.001 or higher`,
+          `SOL balance ${
+            stats.sol / 1e9
+          } should be 0.001 or higher. Send some SOL to your node address ${chalk.cyan(
+            node,
+          )} `,
         );
       }
       if (printDetailed) {
