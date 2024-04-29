@@ -319,12 +319,12 @@ export async function startNode(
       );
     }
     if (stats) {
-      if (stats.sol / 1e9 < 0.001) {
+      if (stats.sol / 1e9 < 0.005) {
         spinner.fail(chalk.red.bold('Not enough SOL balance'));
         throw new Error(
           `SOL balance ${
             stats.sol / 1e9
-          } should be 0.001 or higher. Send some SOL to your node address ${chalk.cyan(
+          } should be 0.005 or higher. Send some SOL to your node address ${chalk.cyan(
             node,
           )} `,
         );
