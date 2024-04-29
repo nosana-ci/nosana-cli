@@ -10,9 +10,15 @@ type EnvType = 'BACKEND_URL' | 'BACKEND_SOLANA_ADDRESS';
 
 class Config {
   public get(name: EnvType) {
-    const env = process.env[name];
+    let env = process.env[name];
     if (!env) {
-      throw new Error(`Config error. Can't get ${name}.`);
+      // TEMP CONFIG FIX
+      if (name == 'BACKEND_URL') env = 'https://dashboard.k8s.prd.nos.ci/api';
+      if (name == 'BACKEND_SOLANA_ADDRESS')
+        env = '7rFPFnxjXHC2sfDy3qrDa9pEb4j49oivMuV7e8sYDPmB';
+      if (!env) {
+        throw new Error(`Config error. Can't get ${name}.`);
+      }
     }
     return env;
   }

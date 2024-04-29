@@ -14,13 +14,13 @@ import { input, confirm } from '@inquirer/prompts';
 import { PodmanProvider } from '../../providers/PodmanProvider.js';
 import { Client } from '@nosana/sdk';
 import { getSDK } from '../../services/sdk.js';
-import { envConfig } from '../../config';
+import { envConfig } from '../../config.js';
+import benchmark from '../../benchmark.json' assert { type: 'json' };
 
 let flow: Flow | undefined;
 let provider: Provider;
 
 export async function runBenchmark(options: { [key: string]: any }) {
-  const jobDefinitionFile = 'job-examples/benchmark.json';
   const nosana: Client = getSDK();
   const node = nosana.solana.provider!.wallet.publicKey.toString();
   let spinner: Ora;
@@ -71,9 +71,8 @@ export async function runBenchmark(options: { [key: string]: any }) {
     throw error;
   }
 
-  const jobDefinition: JobDefinition = JSON.parse(
-    fs.readFileSync(jobDefinitionFile, 'utf8'),
-  );
+  // @ts-expect-error todo fix
+  const jobDefinition: JobDefinition = benchmark;
   let result: Partial<FlowState> | null;
 
   const validation: IValidation<JobDefinition> =

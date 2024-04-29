@@ -1,6 +1,6 @@
 # Nosana Typescript CLI
 
-A CLI package for running [Nosana](https://nosana.io/) jobs.
+A CLI package for running [Nosana](https://nosana.io/) jobs or running a Nosana Node.
 
 ## What is the Nosana Typescript CLI?
 

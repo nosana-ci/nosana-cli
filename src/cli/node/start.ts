@@ -4,7 +4,6 @@ import { getSDK } from '../../services/sdk.js';
 import chalk from 'chalk';
 import ora, { type Ora } from 'ora';
 import { sleep, clearLine } from '../../generic/utils.js';
-import fs from 'node:fs';
 import {
   getRun,
   checkQueued,
@@ -25,6 +24,7 @@ import { EMPTY_ADDRESS } from '../../services/jobs.js';
 import { PodmanProvider } from '../../providers/PodmanProvider.js';
 import { envConfig } from '../../config.js';
 import { fetch, setGlobalDispatcher, Agent } from 'undici';
+import benchmarkGPU from '../../benchmark-gpu.json' assert { type: 'json' };
 
 setGlobalDispatcher(new Agent({ connect: { timeout: 150_000 } }));
 
@@ -150,9 +150,8 @@ export async function startNode(
       /****************
        * Benchmark *
        ****************/
-      const jobDefinition: JobDefinition = JSON.parse(
-        fs.readFileSync('job-examples/benchmark-gpu.json', 'utf8'),
-      );
+      // @ts-expect-error todo fix
+      const jobDefinition: JobDefinition = benchmarkGPU;
       let result: Partial<FlowState> | null;
       // spinner = ora(chalk.cyan('Running benchmark')).start();
       console.log(chalk.cyan('Running benchmark'));
@@ -311,8 +310,15 @@ export async function startNode(
     } else {
       spinner = ora(chalk.cyan('Health checks')).start();
     }
+    let stats: NodeStats | null = null;
     try {
-      const stats: NodeStats = await getNodeStats(node);
+      stats = await getNodeStats(node);
+    } catch (e) {
+      spinner.warn(
+        'Could not check SOL balance, make sure you have enough SOL',
+      );
+    }
+    if (stats) {
       if (stats.sol / 1e9 < 0.001) {
         spinner.fail(chalk.red.bold('Not enough SOL balance'));
         throw new Error(
@@ -328,9 +334,6 @@ export async function startNode(
           chalk.green(`Sol balance: ${chalk.bold(stats.sol / 1e9)}`),
         );
       }
-    } catch (e) {
-      spinner.warn('Error in SOL balance check');
-      throw e;
     }
     if (printDetailed) {
       spinner = ora(chalk.cyan('Checking provider health')).start();

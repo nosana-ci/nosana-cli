@@ -1,0 +1,85 @@
+{
+  "version": "0.1",
+  "type": "container",
+  "meta": {
+    "trigger": "cli"
+  },
+  "ops": [
+    {
+      "type": "container/run",
+      "id": "cpu",
+      "args": {
+        "cmd": ["sh -c ", "cat /proc/cpuinfo  | grep name | uniq;"],
+        "image": "registry.hub.docker.com/nosana/stats",
+        "env": {
+          "DEBUG": "1"
+        }
+      }
+    },
+    {
+      "type": "container/run",
+      "id": "ram",
+      "args": {
+        "cmd": [
+          "sh -c ",
+          "grep MemTotal /proc/meminfo | awk '\\''{print $2 / 1024 \"MB\"}'\\'';"
+        ],
+        "image": "registry.hub.docker.com/nosana/stats",
+        "env": {
+          "DEBUG": "1"
+        }
+      }
+    },
+    {
+      "type": "container/run",
+      "id": "disk-space",
+      "args": {
+        "cmd": [
+          "sh -c ",
+          "df -h --output=size --total | awk '\\''END {print $1}'\\'';"
+        ],
+        "image": "registry.hub.docker.com/nosana/stats",
+        "env": {
+          "DEBUG": "1"
+        }
+      }
+    },
+    {
+      "type": "container/run",
+      "id": "country",
+      "args": {
+        "cmd": [
+          "sh -c ",
+          "(curl -ks https://ipinfo.io/$(curl -ks https://ipinfo.io/ip) | jq -r \".country\") || true;"
+        ],
+        "image": "registry.hub.docker.com/nosana/stats",
+        "env": {
+          "DEBUG": "1"
+        }
+      }
+    },
+    {
+      "type": "container/run",
+      "id": "bandwidth",
+      "args": {
+        "cmd": ["sh -c ", "speedtest-cli --simple || true;"],
+        "image": "registry.hub.docker.com/nosana/stats",
+        "env": {
+          "DEBUG": "1"
+        }
+      }
+    },
+    {
+      "type": "container/run",
+      "id": "gpu",
+      "args": {
+        "cmd": ["sh -c ", "nvidia-smi -L;"],
+        "image": "registry.hub.docker.com/nosana/stats",
+        "env": {
+          "DEBUG": "1"
+        },
+        "gpu": true
+      }
+    }
+  ]
+}
