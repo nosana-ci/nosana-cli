@@ -206,8 +206,15 @@ export class DockerProvider extends BasicProvider implements Provider {
    */
   public async healthy(throwError: Boolean = true): Promise<Boolean> {
     try {
-      await this.docker.ping();
-      return true;
+      const info = await this.docker.info();
+      if (typeof info === 'object' && info !== null && info.ID) {
+        return true;
+      } else {
+        if (throwError) {
+          throw "Can't recognize podman or docker";
+        }
+        return false;
+      }
     } catch (error) {
       if (throwError) {
         throw error;

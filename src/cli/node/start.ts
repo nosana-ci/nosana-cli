@@ -105,6 +105,16 @@ export async function startNode(
       provider = new DockerProvider(options.podman, options.config);
       break;
   }
+
+  try {
+    await provider.healthy();
+  } catch (error) {
+    console.log(
+      chalk.red(`${chalk.bold(options.provider)} provider not healthy`),
+    );
+    throw error;
+  }
+
   let nft: PublicKey | undefined;
   // TODO: should we even allow setting a custom market account?
   if (!market) {
