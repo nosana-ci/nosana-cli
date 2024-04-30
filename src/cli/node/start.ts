@@ -180,9 +180,9 @@ export async function startNode(
           }
         }
       } else if (result && result.opStates && result.opStates[0]) {
-        throw new Error(result.status);
+        throw result.opStates[0].logs;
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(chalk.red('Something went wrong while detecting GPU', e));
       throw e;
     }
@@ -217,30 +217,41 @@ export async function startNode(
           if (nodeResponse && nodeResponse.accessKeyMint) {
             // send nft to backend
             spinner.text = chalk.cyan('Sending back old access key');
-            try {
-              const nftTx = await nosana.solana.transferNft(
-                envConfig.get('BACKEND_SOLANA_ADDRESS'),
-                nodeResponse.accessKeyMint,
-              );
-              if (!nftTx) throw new Error('Couldnt trade NFT');
-              await sleep(25); // make sure RPC can pick up on the transferred NFT
-              spinner.succeed('Access key sent back with tx ' + nftTx);
-              spinner = ora(chalk.cyan('Setting market')).start();
-            } catch (e: any) {
-              if (e.message.includes('Provided owner is not allowed')) {
-                spinner.warn('Access key not owned anymore');
-                spinner = ora(chalk.cyan('Setting market')).start();
-              } else if (e.message.includes('custom program error: 0x1')) {
-                spinner.fail(
-                  chalk.red(
-                    `Unsufficient funds to transfer access key. Add some SOL to your wallet to cover transaction fees: ${chalk.cyan(
-                      node,
-                    )}`,
-                  ),
+            const maxRetries = 3
+            for (let tries = 0; tries < maxRetries; tries++) {
+              try {
+                const nftTx = await nosana.solana.transferNft(
+                  envConfig.get('BACKEND_SOLANA_ADDRESS'),
+                  nodeResponse.accessKeyMint,
                 );
-                throw e;
-              } else {
-                throw e;
+                if (!nftTx) throw new Error('Couldnt trade NFT');
+                await sleep(25); // make sure RPC can pick up on the transferred NFT
+                spinner.succeed('Access key sent back with tx ' + nftTx);
+                spinner = ora(chalk.cyan('Setting market')).start();
+                break;
+              } catch (e: any) {
+                if (e.message.includes('Provided owner is not allowed')) {
+                  spinner.warn('Access key not owned anymore');
+                  spinner = ora(chalk.cyan('Setting market')).start();
+                  break;
+                } else if (e.message.includes('custom program error: 0x1')) {
+                  spinner.fail(
+                    chalk.red(
+                      `Unsufficient funds to transfer access key. Add some SOL to your wallet to cover transaction fees: ${chalk.cyan(
+                        node,
+                      )}`,
+                    ),
+                  );
+                  throw e;
+                }
+                if (tries >= 2) {
+                   if (e.message.includes('block height exceeded')) {
+                    spinner.fail(chalk.red(`Couldn't transfer NFT, possibly due to Solana congestion. Please try again later`));
+                    throw e;
+                  } else {
+                    throw e;
+                  }
+                }
               }
             }
           }
