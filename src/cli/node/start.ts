@@ -217,7 +217,7 @@ export async function startNode(
           if (nodeResponse && nodeResponse.accessKeyMint) {
             // send nft to backend
             spinner.text = chalk.cyan('Sending back old access key');
-            const maxRetries = 3
+            const maxRetries = 3;
             for (let tries = 0; tries < maxRetries; tries++) {
               try {
                 const nftTx = await nosana.solana.transferNft(
@@ -245,8 +245,12 @@ export async function startNode(
                   throw e;
                 }
                 if (tries >= 2) {
-                   if (e.message.includes('block height exceeded')) {
-                    spinner.fail(chalk.red(`Couldn't transfer NFT, possibly due to Solana congestion. Please try again later`));
+                  if (e.message.includes('block height exceeded')) {
+                    spinner.fail(
+                      chalk.red(
+                        `Couldn't transfer NFT, possibly due to Solana congestion. Please try again later`,
+                      ),
+                    );
                     throw e;
                   } else {
                     throw e;
