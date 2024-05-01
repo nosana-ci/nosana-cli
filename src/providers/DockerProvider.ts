@@ -521,7 +521,32 @@ export class DockerProvider extends BasicProvider implements Provider {
     const flow = this.getFlow(flowId) as Flow;
 
     // first remove all containers
-    for (let i = 0; i < flow?.jobDefinition.ops.length; i++) {
+    let totalLogLines = 0;
+    for (let i = 0; i < flow?.state.opStates.length; i++) {
+      // Quick fix to limit log size. TODO: figure out a better way
+      if (flow.state.opStates[i].logs && totalLogLines !== -1) {
+        totalLogLines += flow.state.opStates[i].logs.length;
+      }
+
+      if (totalLogLines > 25000 || totalLogLines === -1) {
+        if (totalLogLines !== -1) {
+          flow.state.opStates[i].logs = flow.state.opStates[i].logs.slice(0, 5);
+          totalLogLines = -1;
+          flow.state.opStates[i].logs.push({
+            type: 'nodeerr',
+            log: 'I: logs cut off, too long..',
+          });
+        } else {
+          flow.state.opStates[i].logs = [
+            {
+              type: 'nodeerr',
+              log: 'I: logs cut off, too long..',
+            },
+          ];
+        }
+        this.db.write();
+      }
+
       if (flow.state.opStates[i].providerId) {
         await this.stopAndRemoveContainer(
           flow.state.opStates[i].providerId as string,
