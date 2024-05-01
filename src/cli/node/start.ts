@@ -613,6 +613,7 @@ export async function startNode(
             const jobDefinition: JobDefinition = await nosana.ipfs.retrieve(
               job.ipfsJob,
             );
+            spinner.succeed(chalk.green('Retrieved job definition'));
             // Create new flow
             flowId = provider.run(jobDefinition, flowId).id;
           } else {
