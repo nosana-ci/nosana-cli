@@ -169,14 +169,29 @@ export async function startNode(
       const flow = provider.run(jobDefinition);
       result = await provider.waitForFlowFinish(
         flow.id,
-        (log: { log: string; type: string }) => {
-          if (log.type === 'stdout') {
-            process.stdout.write(log.log);
+        (event: { log: string; type: string }) => {
+          if (event.type === 'info') {
+            if (spinner && spinner.isSpinning) {
+              spinner.succeed();
+            }
+            if (
+              event.log.includes('Creating volume') ||
+              event.log.includes('Pulling image')
+            ) {
+              spinner = ora(event.log).start();
+            } else {
+              console.log(event.log);
+            }
+          } else if (event.type === 'stdout') {
+            console.log(event.log);
           } else {
-            process.stderr.write(log.log);
+            console.error(event.log);
           }
         },
       );
+      if (spinner && spinner.isSpinning) {
+        spinner.succeed();
+      }
       if (
         result &&
         result.status === 'success' &&
@@ -643,7 +658,6 @@ export async function startNode(
                     chalk.red('Job is expired, quiting job'),
                   ).start();
                   try {
-                    console.log(4);
                     const tx = await nosana.jobs.quit(run!);
                     spinner.succeed(`Job successfully quit with tx ${tx}`);
                     run = undefined;
@@ -655,9 +669,40 @@ export async function startNode(
                   reject('Job expired');
                 }
               }, 60000 * 10);
-              const flowResult = await provider.waitForFlowFinish(flowId);
-              clearInterval(expireInterval);
-              resolve(flowResult);
+              try {
+                const flowResult = await provider.waitForFlowFinish(
+                  flowId,
+                  (event: { log: string; type: string }) => {
+                    if (!handlingSigInt) {
+                      if (event.type === 'info') {
+                        if (spinner && spinner.isSpinning) {
+                          spinner.succeed();
+                        }
+                        // TODO: create special type for spinners?
+                        if (
+                          event.log.includes('Running in container') ||
+                          event.log.includes('Creating volume') ||
+                          event.log.includes('Pulling image')
+                        ) {
+                          spinner = ora(event.log).start();
+                        } else {
+                          console.log(event.log);
+                        }
+                      }
+                    }
+                  },
+                );
+                if (spinner && spinner.isSpinning) {
+                  spinner.succeed();
+                }
+                clearInterval(expireInterval);
+                resolve(flowResult);
+              } catch (e) {
+                if (spinner && spinner.isSpinning) {
+                  spinner.fail();
+                }
+                throw e;
+              }
             });
             if (result) {
               spinner.succeed(`Retrieved results with status ${result.status}`);

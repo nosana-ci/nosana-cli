@@ -117,14 +117,15 @@ export async function runBenchmark(options: { [key: string]: any }) {
       );
       process.exit();
     }
-    // spinner = ora(chalk.cyan('Running benchmark')).start();
     console.log(chalk.cyan('Running benchmark'));
     // Create new flow
     flow = provider.run(jobDefinition);
     result = await provider.waitForFlowFinish(
       flow.id,
       (log: { log: string; type: string }) => {
-        if (log.type === 'stdout') {
+        if (log.type === 'info') {
+          console.log(log.log);
+        } else if (log.type === 'stdout') {
           process.stdout.write(log.log);
         } else {
           process.stderr.write(log.log);

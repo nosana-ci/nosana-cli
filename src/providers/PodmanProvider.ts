@@ -105,9 +105,11 @@ export class PodmanProvider extends DockerProvider {
         cgroups_mode: 'disabled',
         work_dir,
       };
-      console.log(
-        chalk.cyan(`- Running command  ${chalk.bold(parsedcmd.join(' '))}`),
-      );
+
+      this.eventEmitter.emit('newLog', {
+        type: 'info',
+        log: chalk.cyan('Running in container'),
+      });
       try {
         // create container
         const create = await fetch(`${this.apiUrl}/containers/create`, {
@@ -145,7 +147,7 @@ export class PodmanProvider extends DockerProvider {
                 updateOpState({ logs });
               },
             ).catch((e) => {
-              console.log(
+              console.error(
                 chalk.red(`Error handling log streams for ${name}`, e),
               );
             });

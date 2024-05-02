@@ -16,6 +16,7 @@ import { LowSync } from 'lowdb/lib';
 import EventEmitter from 'events';
 import { IValidation } from 'typia';
 import { CronJob } from 'cron';
+import { sleep } from '../generic/utils.js';
 
 type FlowsDb = {
   flows: { [key: string]: Flow };
@@ -131,8 +132,13 @@ export class BasicProvider implements Provider {
    * @param flowStateId
    */
   protected async runFlow(flowId: string): Promise<void> {
-    console.log(chalk.cyan(`Running flow ${chalk.bold(flowId)}`));
     const flow = this.db.data.flows[flowId];
+    // Allow user to attach to events
+    await sleep(0.1);
+    this.eventEmitter.emit('newLog', {
+      type: 'info',
+      log: chalk.cyan(`Running flow ${chalk.bold(flowId)}`),
+    });
     try {
       // run operations
       for (let i = 0; i < flow.jobDefinition.ops.length; i++) {
@@ -165,6 +171,10 @@ export class BasicProvider implements Provider {
                 }
               });
               try {
+                this.eventEmitter.emit('newLog', {
+                  type: 'info',
+                  log: chalk.cyan(`Executing step ${chalk.bold(op.id)}`),
+                });
                 const finishedOpState = await operationTypeFunction(
                   op,
                   flowId,

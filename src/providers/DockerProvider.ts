@@ -15,6 +15,7 @@ import { BasicProvider } from './BasicProvider.js';
 import { sleep } from '../generic/utils.js';
 import { getSDK } from '../services/sdk.js';
 import { extractResultsFromLogs } from './utils/extractResultsFromLogs.js';
+import ora from 'ora';
 
 export class DockerProvider extends BasicProvider implements Provider {
   protected docker: Docker;
@@ -96,7 +97,7 @@ export class DockerProvider extends BasicProvider implements Provider {
                 },
               );
             } catch (e) {
-              console.log(
+              console.error(
                 chalk.red(`Error handling log streams for ${c.Id}`, e),
               );
             }
@@ -122,11 +123,7 @@ export class DockerProvider extends BasicProvider implements Provider {
           startTime: Date.now(),
           status: 'running',
         });
-        console.log(chalk.cyan(`Executing step ${chalk.bold(op.id)}`));
         try {
-          console.log(
-            chalk.cyan(`- Pulling image ${chalk.bold(op.args.image)}`),
-          );
           await this.pullImage(op.args.image);
         } catch (error: any) {
           throw new Error(
@@ -160,8 +157,10 @@ export class DockerProvider extends BasicProvider implements Provider {
         (opState) => op.id === opState.operationId,
       );
       const opState = flow.state.opStates[opStateIndex];
-      console.log(chalk.cyan(`Executing step ${chalk.bold(op.id)}`));
-      console.log(chalk.cyan(`- Creating volume ${chalk.bold(op.args.name)}`));
+      this.eventEmitter.emit('newLog', {
+        type: 'info',
+        log: chalk.cyan(`- Creating volume ${chalk.bold(op.args.name)}`),
+      });
       updateOpState({
         startTime: Date.now(),
         status: 'running',
@@ -276,7 +275,7 @@ export class DockerProvider extends BasicProvider implements Provider {
         },
         3,
       ).catch((e) => {
-        console.log(chalk.red(`Error handling log streams for ${name}`, e));
+        console.error(chalk.red(`Error handling log streams for ${name}`, e));
       });
 
       // create volume mount array
@@ -334,9 +333,11 @@ export class DockerProvider extends BasicProvider implements Provider {
       })) {
         vars.push(`${key}=${value}`);
       }
-      console.log(
-        chalk.cyan(`- Running command  ${chalk.bold(parsedcmd.join(' '))}`),
-      );
+
+      this.eventEmitter.emit('newLog', {
+        type: 'info',
+        log: chalk.cyan('Running in container'),
+      });
 
       return await this.docker
         .run(opArgs.image, parsedcmd as string[], emptyStream, {
@@ -598,12 +599,16 @@ export class DockerProvider extends BasicProvider implements Provider {
    *   Helpers   *
    ****************/
   protected async pullImage(image: string) {
+    this.eventEmitter.emit('newLog', {
+      type: 'info',
+      log: chalk.cyan(`Pulling image ${chalk.bold(image)}`),
+    });
     return await new Promise((resolve, reject): any =>
       this.docker.pull(image, (err: any, stream: any) => {
         if (err) {
           reject(err);
         } else {
-          this.docker.modem.followProgress(stream, onFinished);
+          this.docker.modem.followProgress(stream, onFinished, onProgress);
         }
         function onFinished(err: any, output: any) {
           if (!err) {
@@ -611,6 +616,9 @@ export class DockerProvider extends BasicProvider implements Provider {
             return;
           }
           reject(err);
+        }
+        function onProgress(event: any) {
+          // TODO: multiple progress bars happening at the same time, how do we show this?
         }
       }),
     );
