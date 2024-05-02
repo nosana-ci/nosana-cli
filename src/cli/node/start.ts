@@ -171,7 +171,17 @@ export async function startNode(
         flow.id,
         (event: { log: string; type: string }) => {
           if (event.type === 'info') {
-            console.log(event.log);
+            if (spinner && spinner.isSpinning) {
+              spinner.succeed();
+            }
+            if (
+              event.log.includes('Creating volume') ||
+              event.log.includes('Pulling image')
+            ) {
+              spinner = ora(event.log).start();
+            } else {
+              console.log(event.log);
+            }
           } else if (event.type === 'stdout') {
             console.log(event.log);
           } else {
@@ -179,6 +189,9 @@ export async function startNode(
           }
         },
       );
+      if (spinner && spinner.isSpinning) {
+        spinner.succeed();
+      }
       if (
         result &&
         result.status === 'success' &&
@@ -656,32 +669,40 @@ export async function startNode(
                   reject('Job expired');
                 }
               }, 60000 * 10);
-              let flowSpinner: Ora | null = null;
-              const flowResult = await provider.waitForFlowFinish(
-                flowId,
-                (event: { log: string; type: string }) => {
-                  if (!handlingSigInt) {
-                    if (event.type === 'info') {
-                      if (flowSpinner) {
-                        flowSpinner.succeed();
-                        flowSpinner = null;
-                      }
-                      if (
-                        event.log.includes('Running command') ||
-                        event.log.includes('Creating volume')
-                      ) {
-                        flowSpinner = ora(event.log).start();
-                      } else {
-                        console.log(event.log);
+              try {
+                const flowResult = await provider.waitForFlowFinish(
+                  flowId,
+                  (event: { log: string; type: string }) => {
+                    if (!handlingSigInt) {
+                      if (event.type === 'info') {
+                        if (spinner && spinner.isSpinning) {
+                          spinner.succeed();
+                        }
+                        // TODO: create special type for spinners?
+                        if (
+                          event.log.includes('Running command') ||
+                          event.log.includes('Creating volume') ||
+                          event.log.includes('Pulling image')
+                        ) {
+                          spinner = ora(event.log).start();
+                        } else {
+                          console.log(event.log);
+                        }
                       }
                     }
-                  }
-                },
-              );
-              // @ts-expect-error ts thinks flowSpinner is never, set but it can be set in the event callback..
-              if (flowSpinner) flowSpinner.succeed();
-              clearInterval(expireInterval);
-              resolve(flowResult);
+                  },
+                );
+                if (spinner && spinner.isSpinning) {
+                  spinner.succeed();
+                }
+                clearInterval(expireInterval);
+                resolve(flowResult);
+              } catch (e) {
+                if (spinner && spinner.isSpinning) {
+                  spinner.fail();
+                }
+                throw e;
+              }
             });
             if (result) {
               spinner.succeed(`Retrieved results with status ${result.status}`);

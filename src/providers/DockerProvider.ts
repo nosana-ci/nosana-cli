@@ -16,7 +16,6 @@ import { sleep } from '../generic/utils.js';
 import { getSDK } from '../services/sdk.js';
 import { extractResultsFromLogs } from './utils/extractResultsFromLogs.js';
 import ora from 'ora';
-import Spinnies from 'spinnies';
 
 export class DockerProvider extends BasicProvider implements Provider {
   protected docker: Docker;
@@ -600,45 +599,26 @@ export class DockerProvider extends BasicProvider implements Provider {
    *   Helpers   *
    ****************/
   protected async pullImage(image: string) {
-    // TODO: use eventEmitter newLog for this
-    const spinner = ora(
-      chalk.cyan(`Pulling image ${chalk.bold(image)}`),
-    ).start();
+    this.eventEmitter.emit('newLog', {
+      type: 'info',
+      log: chalk.cyan(`Pulling image ${chalk.bold(image)}`),
+    });
     return await new Promise((resolve, reject): any =>
       this.docker.pull(image, (err: any, stream: any) => {
         if (err) {
-          spinner.fail(chalk.red(`Failed to pull image ${chalk.bold(image)}`));
           reject(err);
         } else {
           this.docker.modem.followProgress(stream, onFinished, onProgress);
         }
-        const progress: Array<string> = [];
-
         function onFinished(err: any, output: any) {
-          for (let id of progress) {
-            spinnies.remove(id);
-          }
-          spinnies.checkIfActiveSpinners();
           if (!err) {
-            spinner.succeed(chalk.green(`Pulled image ${chalk.bold(image)}`));
             resolve(true);
             return;
           }
-          spinner.fail(chalk.red(`Failed to pull image ${chalk.bold(image)}`));
           reject(err);
         }
-        spinner.stop();
-        const spinnies = new Spinnies({ spinnerColor: 'cyan' });
         function onProgress(event: any) {
-          if (!progress.includes(event.id)) {
-            spinnies.add(event.id, { text: '' });
-            progress.push(event.id);
-          }
-          spinnies.update(event.id, {
-            text: `${event.id}: ${event.status} ${
-              event.progress ? event.progress : ''
-            }`,
-          });
+          // TODO: multiple progress bars happening at the same time, how do we show this?
         }
       }),
     );
