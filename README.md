@@ -1,6 +1,6 @@
 # Nosana Typescript CLI
 
-A CLI package for running [Nosana](https://nosana.io/) jobs.
+A CLI package for running [Nosana](https://nosana.io/) jobs or running a Nosana Node.
 
 ## What is the Nosana Typescript CLI?
 
@@ -40,6 +40,7 @@ Available `node` commands:
 
 ```
 node view <node>                          View (any) Nosana Node
+node join-test-grid [command]             Register for Nosana testgrid
 node start [options] <market>             Start Nosana Node
 node run [options] <job-definition-file>  Run Job Definition File
 node help [command]                       display help for command
@@ -61,6 +62,21 @@ Global options:
 -n, --network <network>              network to run on (choices: "devnet", "mainnet", default: "devnet")
 --rpc <url>                          RPC node to use
 --log <logLevel>                     Log level (choices: "info", "none", "debug", "trace", default: "debug")
+```
+
+## Register for Test Grid
+
+To get started with your Nosana Node on the Test Grid, you will first have to register. The registration consists of a benchmark which will measure your hardware and bandwidth.
+
+`nosana node join-test-grid [options]`
+
+Options:
+
+```
+  --provider <provider>     provider used to run the job (choices: "docker", "podman", default: "podman")
+  -w, --wallet <wallet>     path to wallet private key (default: "~/.nosana/nosana_key.json")
+  --docker, --podman <URI>  Podman/Docker connection URI (default: "http://localhost:8080")
+  -h, --help                display help for command
 ```
 
 ## Starting node

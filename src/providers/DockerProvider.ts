@@ -98,7 +98,7 @@ export class DockerProvider extends BasicProvider implements Provider {
                 },
               );
             } catch (e) {
-              console.log(
+              console.error(
                 chalk.red(`Error handling log streams for ${c.Id}`, e),
               );
             }
@@ -124,7 +124,6 @@ export class DockerProvider extends BasicProvider implements Provider {
           startTime: Date.now(),
           status: 'running',
         });
-        console.log(chalk.cyan(`Executing step ${chalk.bold(op.id)}`));
         try {
           await this.pullImage(op.args.image);
         } catch (error: any) {
@@ -159,8 +158,10 @@ export class DockerProvider extends BasicProvider implements Provider {
         (opState) => op.id === opState.operationId,
       );
       const opState = flow.state.opStates[opStateIndex];
-      console.log(chalk.cyan(`Executing step ${chalk.bold(op.id)}`));
-      console.log(chalk.cyan(`- Creating volume ${chalk.bold(op.args.name)}`));
+      this.eventEmitter.emit('newLog', {
+        type: 'info',
+        log: chalk.cyan(`- Creating volume ${chalk.bold(op.args.name)}`),
+      });
       updateOpState({
         startTime: Date.now(),
         status: 'running',
@@ -205,8 +206,15 @@ export class DockerProvider extends BasicProvider implements Provider {
    */
   public async healthy(throwError: Boolean = true): Promise<Boolean> {
     try {
-      await this.docker.ping();
-      return true;
+      const info = await this.docker.info();
+      if (typeof info === 'object' && info !== null && info.ID) {
+        return true;
+      } else {
+        if (throwError) {
+          throw "Can't recognize podman or docker";
+        }
+        return false;
+      }
     } catch (error) {
       if (throwError) {
         throw error;
@@ -268,7 +276,7 @@ export class DockerProvider extends BasicProvider implements Provider {
         },
         3,
       ).catch((e) => {
-        console.log(chalk.red(`Error handling log streams for ${name}`, e));
+        console.error(chalk.red(`Error handling log streams for ${name}`, e));
       });
 
       // create volume mount array
@@ -326,9 +334,11 @@ export class DockerProvider extends BasicProvider implements Provider {
       })) {
         vars.push(`${key}=${value}`);
       }
-      console.log(
-        chalk.cyan(`- Running command  ${chalk.bold(parsedcmd.join(' '))}`),
-      );
+
+      this.eventEmitter.emit('newLog', {
+        type: 'info',
+        log: chalk.cyan(`Running command  ${chalk.bold(parsedcmd.join(' '))}`),
+      });
 
       return await this.docker
         .run(opArgs.image, parsedcmd as string[], emptyStream, {
@@ -513,7 +523,32 @@ export class DockerProvider extends BasicProvider implements Provider {
     const flow = this.getFlow(flowId) as Flow;
 
     // first remove all containers
-    for (let i = 0; i < flow?.jobDefinition.ops.length; i++) {
+    let totalLogLines = 0;
+    for (let i = 0; i < flow?.state.opStates.length; i++) {
+      // Quick fix to limit log size. TODO: figure out a better way
+      if (flow.state.opStates[i].logs && totalLogLines !== -1) {
+        totalLogLines += flow.state.opStates[i].logs.length;
+      }
+
+      if (totalLogLines > 25000 || totalLogLines === -1) {
+        if (totalLogLines !== -1) {
+          flow.state.opStates[i].logs = flow.state.opStates[i].logs.slice(0, 5);
+          totalLogLines = -1;
+          flow.state.opStates[i].logs.push({
+            type: 'nodeerr',
+            log: 'I: logs cut off, too long..',
+          });
+        } else {
+          flow.state.opStates[i].logs = [
+            {
+              type: 'nodeerr',
+              log: 'I: logs cut off, too long..',
+            },
+          ];
+        }
+        this.db.write();
+      }
+
       if (flow.state.opStates[i].providerId) {
         await this.stopAndRemoveContainer(
           flow.state.opStates[i].providerId as string,
@@ -565,6 +600,7 @@ export class DockerProvider extends BasicProvider implements Provider {
    *   Helpers   *
    ****************/
   protected async pullImage(image: string) {
+    // TODO: use eventEmitter newLog for this
     const spinner = ora(
       chalk.cyan(`Pulling image ${chalk.bold(image)}`),
     ).start();

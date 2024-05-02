@@ -3,13 +3,11 @@ import {
   Provider,
   Flow,
   JobDefinition,
-  validateJobDefinition,
   FlowState,
 } from '../../providers/Provider.js';
 import chalk from 'chalk';
 import ora from 'ora';
 import fs from 'node:fs';
-import { IValidation } from 'typia';
 import util from 'util';
 import { PodmanProvider } from '../../providers/PodmanProvider.js';
 
@@ -74,19 +72,8 @@ export async function runJob(
   const jobDefinition: JobDefinition = JSON.parse(
     fs.readFileSync(jobDefinitionFile, 'utf8'),
   );
-  let result: Partial<FlowState> | null;
-
-  const validation: IValidation<JobDefinition> =
-    validateJobDefinition(jobDefinition);
-  if (!validation.success) {
-    spinner.fail(chalk.red.bold('Job Definition validation failed'));
-    console.error(validation.errors);
-    result = {
-      status: 'validation-error',
-      errors: validation.errors,
-    };
-  } else {
-    // Create new flow
+  let result: Partial<FlowState> | null = null;
+  try {
     flow = provider.run(jobDefinition);
     result = await provider.waitForFlowFinish(
       flow.id,
@@ -100,12 +87,12 @@ export async function runJob(
         }
       },
     );
-  }
-  if (!handlingSigInt) {
     console.log(
       'result: ',
       util.inspect(result, { showHidden: false, depth: null, colors: true }),
     );
+  } catch (error) {
+    spinner.fail(chalk.red.bold(error));
   }
   if (provider.clearFlowsCronJob) {
     provider.clearFlowsCronJob.stop();
