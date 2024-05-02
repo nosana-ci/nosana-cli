@@ -108,7 +108,7 @@ export class PodmanProvider extends DockerProvider {
 
       this.eventEmitter.emit('newLog', {
         type: 'info',
-        log: chalk.cyan(`Running command  ${chalk.bold(parsedcmd.join(' '))}`),
+        log: chalk.cyan('Running in container'),
       });
       try {
         // create container

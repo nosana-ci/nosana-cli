@@ -680,7 +680,7 @@ export async function startNode(
                         }
                         // TODO: create special type for spinners?
                         if (
-                          event.log.includes('Running command') ||
+                          event.log.includes('Running in container') ||
                           event.log.includes('Creating volume') ||
                           event.log.includes('Pulling image')
                         ) {
