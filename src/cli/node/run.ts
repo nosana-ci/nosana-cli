@@ -77,12 +77,14 @@ export async function runJob(
     flow = provider.run(jobDefinition);
     result = await provider.waitForFlowFinish(
       flow.id,
-      (log: { log: string; type: string }) => {
+      (event: { log: string; type: string }) => {
         if (!handlingSigInt) {
-          if (log.type === 'stdout') {
-            process.stdout.write(log.log);
+          if (event.type === 'info') {
+            console.log(event.log);
+          } else if (event.type === 'stdout') {
+            process.stdout.write(event.log);
           } else {
-            process.stderr.write(log.log);
+            process.stderr.write(event.log);
           }
         }
       },
