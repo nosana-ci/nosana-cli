@@ -581,7 +581,6 @@ export async function startNode(
         console.log(chalk.green('Claimed job ') + chalk.green.bold(jobAddress));
         const job: Job = await nosana.jobs.get(jobAddress);
         if (job.market.toString() !== market) {
-          console.log(1);
           spinner = ora(
             chalk.red('Job has the wrong market, quiting job'),
           ).start();
@@ -599,7 +598,6 @@ export async function startNode(
         ) {
           // Quit job when timeout * 1.5 is reached.
           spinner = ora(chalk.red('Job is expired, quiting job')).start();
-          console.log(3);
           try {
             const tx = await nosana.jobs.quit(run);
             spinner.succeed(`Job successfully quit with tx ${tx}`);
@@ -644,8 +642,9 @@ export async function startNode(
               resolve,
               reject,
             ) {
-              // check if expired every 10 minutes
+              // check if expired every minute
               const expireInterval = setInterval(async () => {
+                console.log('checking run expired..');
                 if (
                   isRunExpired(
                     run!,
@@ -668,7 +667,7 @@ export async function startNode(
                   await provider.stopFlow(flowId);
                   reject('Job expired');
                 }
-              }, 60000 * 10);
+              }, 60000);
               try {
                 const flowResult = await provider.waitForFlowFinish(
                   flowId,
