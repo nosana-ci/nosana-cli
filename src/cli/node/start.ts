@@ -644,7 +644,6 @@ export async function startNode(
             ) {
               // check if expired every minute
               const expireInterval = setInterval(async () => {
-                console.log('checking run expired..');
                 if (
                   isRunExpired(
                     run!,
