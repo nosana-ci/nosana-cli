@@ -183,9 +183,9 @@ export async function startNode(
               console.log(event.log);
             }
           } else if (event.type === 'stdout') {
-            console.log(event.log);
+            process.stdout.write(event.log);
           } else {
-            console.error(event.log);
+            process.stderr.write(event.log);
           }
         },
       );

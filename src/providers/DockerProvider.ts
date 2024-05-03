@@ -8,7 +8,7 @@ import {
   OperationResults,
   Log,
 } from './Provider.js';
-import Docker, { MountType } from 'dockerode';
+import Docker, { Container, MountType } from 'dockerode';
 import stream from 'stream';
 import { parse } from 'shell-quote';
 import { BasicProvider } from './BasicProvider.js';
@@ -16,6 +16,7 @@ import { sleep } from '../generic/utils.js';
 import { getSDK } from '../services/sdk.js';
 import { extractResultsFromLogs } from './utils/extractResultsFromLogs.js';
 import ora from 'ora';
+import { u } from 'tar';
 
 export class DockerProvider extends BasicProvider implements Provider {
   protected docker: Docker;
@@ -476,11 +477,11 @@ export class DockerProvider extends BasicProvider implements Provider {
             await sleep(1);
             await this.handleLogStreams(container, callback, retries - 1);
           } else {
-            reject();
+            reject('Could not find container');
           }
         }
       }
-
+      let checkContainerInterval: NodeJS.Timeout | undefined = undefined;
       if (this.isDockerContainer(container)) {
         const stdoutStream = new stream.PassThrough();
         const stderrStream = new stream.PassThrough();
@@ -509,8 +510,31 @@ export class DockerProvider extends BasicProvider implements Provider {
         logStream.on('end', async () => {
           stdoutStream.end();
           stderrStream.end();
+          clearInterval(checkContainerInterval);
           resolve();
         });
+        // Check if container is still running (in case we missed the logStream `end` event) every 30s
+        checkContainerInterval = setInterval(async () => {
+          try {
+            const containerInfo = await (container as Container).inspect();
+            // Create streams and wait for it to finish
+            if (
+              containerInfo.State.Status !== 'created' &&
+              containerInfo.State.Status !== 'running'
+            ) {
+              stdoutStream.end();
+              stderrStream.end();
+              clearInterval(checkContainerInterval);
+              resolve();
+            }
+          } catch (e) {
+            clearInterval(checkContainerInterval);
+            resolve();
+          }
+        }, 30000);
+      } else {
+        clearInterval(checkContainerInterval);
+        reject('Could not find container');
       }
     });
   }
