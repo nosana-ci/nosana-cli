@@ -730,9 +730,9 @@ export async function startNode(
                 chalk.green('Job finished ') + chalk.green.bold(tx),
               );
               if (result.status !== 'success') {
-                // Flow failed, so we have a cooldown of 5 minutes
+                // Flow failed, so we have a cooldown of 15 minutes
                 console.log(chalk.cyan('Waiting to enter the queue'));
-                await sleep(300);
+                await sleep(900);
               }
             } catch (e) {
               spinner.fail(chalk.red.bold('Could not finish job'));
