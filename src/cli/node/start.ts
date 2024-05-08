@@ -32,6 +32,8 @@ let provider: Provider;
 let run: Run | void;
 let selectedMarket: Market | void;
 let spinner: Ora;
+// 25gb
+const MIN_DISK_SPACE = 25000;
 
 export async function startNode(
   market: string,
@@ -94,7 +96,6 @@ export async function startNode(
   selectedMarket = undefined;
   const nosana: Client = getSDK();
   const node = nosana.solana.provider!.wallet.publicKey.toString();
-
   console.log(`Provider:\t${chalk.greenBright.bold(options.provider)}`);
   switch (options.provider) {
     case 'podman':
@@ -122,7 +123,6 @@ export async function startNode(
     try {
       // Check if node is onboarded and has received access key
       // if not call onboard endpoint to create access key tx
-
       const response = await fetch(
         `${envConfig.get('BACKEND_URL')}/nodes/${node}`,
         {
@@ -155,62 +155,9 @@ export async function startNode(
       }
       throw e;
     }
+    // benchmark
     let gpus: Array<string> = [];
-    try {
-      /****************
-       * Benchmark *
-       ****************/
-      // @ts-expect-error todo fix
-      const jobDefinition: JobDefinition = benchmarkGPU;
-      let result: Partial<FlowState> | null;
-      // spinner = ora(chalk.cyan('Running benchmark')).start();
-      console.log(chalk.cyan('Running benchmark'));
-      // Create new flow
-      const flow = provider.run(jobDefinition);
-      result = await provider.waitForFlowFinish(
-        flow.id,
-        (event: { log: string; type: string }) => {
-          if (event.type === 'info') {
-            if (spinner && spinner.isSpinning) {
-              spinner.succeed();
-            }
-            if (
-              event.log.includes('Creating volume') ||
-              event.log.includes('Pulling image')
-            ) {
-              spinner = ora(event.log).start();
-            } else {
-              console.log(event.log);
-            }
-          } else if (event.type === 'stdout') {
-            process.stdout.write(event.log);
-          } else {
-            process.stderr.write(event.log);
-          }
-        },
-      );
-      if (spinner && spinner.isSpinning) {
-        spinner.succeed();
-      }
-      if (
-        result &&
-        result.status === 'success' &&
-        result.opStates &&
-        result.opStates[0]
-      ) {
-        for (let i = 0; i < result.opStates[0].logs.length; i++) {
-          let gpu = result.opStates[0].logs[i];
-          if (gpu.log && gpu.log.includes('GPU')) {
-            gpus.push(gpu.log as string);
-          }
-        }
-      } else if (result && result.opStates && result.opStates[0]) {
-        throw result.opStates[0].logs;
-      }
-    } catch (e: any) {
-      console.error(chalk.red('Something went wrong while detecting GPU', e));
-      throw e;
-    }
+    gpus = await runBenchmark();
 
     try {
       spinner = ora(chalk.cyan('Matching GPU to correct market')).start();
@@ -349,6 +296,8 @@ export async function startNode(
       spinner = ora(chalk.cyan('Checking SOL balance')).start();
     } else {
       spinner = ora(chalk.cyan('Health checks')).start();
+      // only run benchmark when it isnt first run of healthCheck as it already ran on start
+      await runBenchmark(printDetailed);
     }
     let stats: NodeStats | null = null;
     try {
@@ -766,3 +715,103 @@ export async function startNode(
   };
   jobLoop(true);
 }
+
+const runBenchmark = async (
+  printDetailed: boolean = true,
+): Promise<Array<string>> => {
+  let gpus: Array<string> = [];
+  try {
+    /****************
+     * Benchmark *
+     ****************/
+    // @ts-expect-error todo fix
+    const jobDefinition: JobDefinition = benchmarkGPU;
+    let result: Partial<FlowState> | null;
+    // spinner = ora(chalk.cyan('Running benchmark')).start();
+    if (printDetailed) {
+      console.log(chalk.cyan('Running benchmark'));
+    }
+    // Create new flow
+    const flow = provider.run(jobDefinition);
+    result = await provider.waitForFlowFinish(
+      flow.id,
+      (event: { log: string; type: string }) => {
+        if (printDetailed) {
+          if (event.type === 'info') {
+            if (spinner && spinner.isSpinning) {
+              spinner.succeed();
+            }
+            if (
+              event.log.includes('Creating volume') ||
+              event.log.includes('Pulling image')
+            ) {
+              spinner = ora(event.log).start();
+            } else {
+              console.log(event.log);
+            }
+          } else if (event.type === 'stdout') {
+            process.stdout.write(event.log);
+          } else {
+            process.stderr.write(event.log);
+          }
+        }
+      },
+    );
+    if (spinner && spinner.isSpinning) {
+      spinner.succeed();
+    }
+    if (
+      result &&
+      result.status === 'success' &&
+      result.opStates &&
+      result.opStates[0] &&
+      result.opStates[1]
+    ) {
+      // GPU
+      for (let i = 0; i < result.opStates[0].logs.length; i++) {
+        let gpu = result.opStates[0].logs[i];
+        if (gpu.log && gpu.log.includes('GPU')) {
+          gpus.push(gpu.log as string);
+        }
+      }
+
+      if (!result.opStates[1].logs)
+        throw new Error(`Can't find disk space output`);
+
+      // Disk space
+      for (let i = 0; i < result.opStates[1].logs.length; i++) {
+        let ds = result.opStates[1].logs[i];
+        if (ds.log) {
+          // in MB
+          const availableDiskSpace = parseInt(ds.log);
+          if (MIN_DISK_SPACE > availableDiskSpace) {
+            throw new Error(
+              `Not enough disk space available, found ${
+                availableDiskSpace / 1000
+              } GB available. Needs minimal ${MIN_DISK_SPACE / 1000} GB.`,
+            );
+          }
+        } else {
+          throw new Error(`Can't find disk space output`);
+        }
+      }
+    } else if (result && result.status === 'failed' && result.opStates) {
+      const output = [];
+      if (result.opStates[0]) {
+        output.push(result.opStates[0].logs);
+      }
+      if (result.opStates[1]) {
+        output.push(result.opStates[1].logs);
+      }
+      throw output;
+    } else {
+      throw 'Cant find results';
+    }
+  } catch (e: any) {
+    console.error(
+      chalk.red('Something went wrong while detecting hardware', e),
+    );
+    throw e;
+  }
+  return gpus;
+};
