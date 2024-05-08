@@ -116,6 +116,12 @@ export async function startNode(
     throw error;
   }
 
+  // sign message for authentication
+  const signature = (await nosana.solana.signMessage(
+    envConfig.get('SIGN_MESSAGE'),
+  )) as Uint8Array;
+  const base64Signature = Buffer.from(signature).toString('base64');
+
   let nft: PublicKey | undefined;
   // TODO: should we even allow setting a custom market account?
   if (!market) {
@@ -128,6 +134,7 @@ export async function startNode(
         {
           method: 'GET',
           headers: {
+            Authorization: `${node}:${base64Signature}`,
             'Content-Type': 'application/json',
           },
         },
@@ -167,6 +174,7 @@ export async function startNode(
         {
           method: 'POST',
           headers: {
+            Authorization: `${node}:${base64Signature}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
@@ -238,6 +246,7 @@ export async function startNode(
               {
                 method: 'POST',
                 headers: {
+                  Authorization: `${node}:${base64Signature}`,
                   'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({

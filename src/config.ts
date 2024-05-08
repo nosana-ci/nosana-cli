@@ -6,7 +6,7 @@ export const initEnv = () =>
     override: true,
   });
 
-type EnvType = 'BACKEND_URL' | 'BACKEND_SOLANA_ADDRESS';
+type EnvType = 'BACKEND_URL' | 'BACKEND_SOLANA_ADDRESS' | 'SIGN_MESSAGE';
 
 class Config {
   public get(name: EnvType) {
@@ -16,6 +16,7 @@ class Config {
       if (name == 'BACKEND_URL') env = 'https://dashboard.k8s.prd.nos.ci/api';
       if (name == 'BACKEND_SOLANA_ADDRESS')
         env = '7rFPFnxjXHC2sfDy3qrDa9pEb4j49oivMuV7e8sYDPmB';
+      if (name == 'SIGN_MESSAGE') env = 'Hello Nosana Node!';
       if (!env) {
         throw new Error(`Config error. Can't get ${name}.`);
       }
