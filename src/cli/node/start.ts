@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { Client, Job, Market, Run } from '@nosana/sdk';
+import { Client, Job, KeyWallet, Market, Run } from '@nosana/sdk';
 import { getSDK } from '../../services/sdk.js';
 import chalk from 'chalk';
 import ora, { type Ora } from 'ora';
@@ -19,7 +19,7 @@ import {
   JobDefinition,
   FlowState,
 } from '../../providers/Provider.js';
-import { PublicKey } from '@solana/web3.js';
+import { PublicKey, Transaction, VersionedTransaction } from '@solana/web3.js';
 import { EMPTY_ADDRESS } from '../../services/jobs.js';
 import { PodmanProvider } from '../../providers/PodmanProvider.js';
 import { envConfig } from '../../config.js';
@@ -189,56 +189,59 @@ export async function startNode(
         !nodeResponse.marketAddress
       ) {
         if (
-          data.message.includes('Assigned market doesnt support current GPU') ||
+          (data.message &&
+            data.message.includes(
+              'Assigned market doesnt support current GPU',
+            )) ||
           !nodeResponse.accessKeyMint ||
           !nodeResponse.marketAddress
         ) {
           spinner.text = chalk.cyan('Setting market');
-          if (nodeResponse && nodeResponse.accessKeyMint) {
-            // send nft to backend
-            spinner.text = chalk.cyan('Sending back old access key');
-            const maxRetries = 3;
-            for (let tries = 0; tries < maxRetries; tries++) {
-              try {
-                const nftTx = await nosana.solana.transferNft(
-                  envConfig.get('BACKEND_SOLANA_ADDRESS'),
-                  nodeResponse.accessKeyMint,
-                );
-                if (!nftTx) throw new Error('Couldnt trade NFT');
-                await sleep(25); // make sure RPC can pick up on the transferred NFT
-                spinner.succeed('Access key sent back with tx ' + nftTx);
-                spinner = ora(chalk.cyan('Setting market')).start();
-                break;
-              } catch (e: any) {
-                if (e.message.includes('Provided owner is not allowed')) {
-                  spinner.warn('Access key not owned anymore');
-                  spinner = ora(chalk.cyan('Setting market')).start();
-                  break;
-                } else if (e.message.includes('custom program error: 0x1')) {
-                  spinner.fail(
-                    chalk.red(
-                      `Unsufficient funds to transfer access key. Add some SOL to your wallet to cover transaction fees: ${chalk.cyan(
-                        node,
-                      )}`,
-                    ),
-                  );
-                  throw e;
-                }
-                if (tries >= 2) {
-                  if (e.message.includes('block height exceeded')) {
-                    spinner.fail(
-                      chalk.red(
-                        `Couldn't transfer NFT, possibly due to Solana congestion. Please try again later`,
-                      ),
-                    );
-                    throw e;
-                  } else {
-                    throw e;
-                  }
-                }
-              }
-            }
-          }
+          // if (nodeResponse && nodeResponse.accessKeyMint) {
+          //   // send nft to backend
+          //   spinner.text = chalk.cyan('Sending back old access key');
+          //   const maxRetries = 3;
+          //   for (let tries = 0; tries < maxRetries; tries++) {
+          //     try {
+          //       const nftTx = await nosana.solana.transferNft(
+          //         envConfig.get('BACKEND_SOLANA_ADDRESS'),
+          //         nodeResponse.accessKeyMint,
+          //       );
+          //       if (!nftTx) throw new Error('Couldnt trade NFT');
+          //       await sleep(25); // make sure RPC can pick up on the transferred NFT
+          //       spinner.succeed('Access key sent back with tx ' + nftTx);
+          //       spinner = ora(chalk.cyan('Setting market')).start();
+          //       break;
+          //     } catch (e: any) {
+          //       if (e.message.includes('Provided owner is not allowed')) {
+          //         spinner.warn('Access key not owned anymore');
+          //         spinner = ora(chalk.cyan('Setting market')).start();
+          //         break;
+          //       } else if (e.message.includes('custom program error: 0x1')) {
+          //         spinner.fail(
+          //           chalk.red(
+          //             `Unsufficient funds to transfer access key. Add some SOL to your wallet to cover transaction fees: ${chalk.cyan(
+          //               node,
+          //             )}`,
+          //           ),
+          //         );
+          //         throw e;
+          //       }
+          //       if (tries >= 2) {
+          //         if (e.message.includes('block height exceeded')) {
+          //           spinner.fail(
+          //             chalk.red(
+          //               `Couldn't transfer NFT, possibly due to Solana congestion. Please try again later`,
+          //             ),
+          //           );
+          //           throw e;
+          //         } else {
+          //           throw e;
+          //         }
+          //       }
+          //     }
+          //   }
+          // }
           let data: any;
           try {
             const response = await fetch(
@@ -255,7 +258,48 @@ export async function startNode(
               },
             );
 
-            data = await response.json();
+            data = await response.arrayBuffer();
+            console.log('change market data', data);
+            try {
+              // deserialize & send SFT tx
+              const feePayer = (nosana.solana.provider?.wallet as KeyWallet)
+                .payer;
+              const recoveredTransaction = await getRawTransaction(
+                new Uint8Array(data),
+              );
+              console.log('recovered transaction', recoveredTransaction);
+
+              if (recoveredTransaction instanceof VersionedTransaction) {
+                recoveredTransaction.sign([feePayer]);
+              } else {
+                recoveredTransaction.partialSign(feePayer);
+              }
+              const txnSignature =
+                await nosana.solana.connection?.sendRawTransaction(
+                  recoveredTransaction.serialize(),
+                );
+              console.log('txnSignature', txnSignature);
+
+              const response = await fetch(
+                `${envConfig.get('BACKEND_URL')}/nodes/sync-node`,
+                {
+                  method: 'POST',
+                  headers: {
+                    Authorization: `${node}:${base64Signature}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    address: node,
+                  }),
+                },
+              );
+
+              const sync = await response.json();
+              console.log('sync', sync);
+            } catch (error) {
+              console.log(error);
+              throw new Error('Couldnt send SFT transaction from backend');
+            }
           } catch (e: any) {
             throw new Error(
               chalk.red(
@@ -266,6 +310,7 @@ export async function startNode(
           if (data && data.name && data.name.includes('Error')) {
             throw new Error(data.message);
           }
+          console.log('dataa', data);
           market = data.newMarket;
           nft = new PublicKey(data.newMint);
         } else {
@@ -823,4 +868,16 @@ const runBenchmark = async (
     throw e;
   }
   return gpus;
+};
+
+const getRawTransaction = async (
+  encodedTransaction: Uint8Array,
+): Promise<Transaction | VersionedTransaction> => {
+  let recoveredTransaction: Transaction | VersionedTransaction;
+  try {
+    recoveredTransaction = Transaction.from(encodedTransaction);
+  } catch (error) {
+    recoveredTransaction = VersionedTransaction.deserialize(encodedTransaction);
+  }
+  return recoveredTransaction;
 };
