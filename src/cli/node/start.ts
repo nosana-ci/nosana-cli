@@ -213,14 +213,16 @@ export async function startNode(
               },
             );
 
-            data = await response.arrayBuffer();
-            console.log('change market data', data);
+            data = await response.json();
+            if (!data || (data && data.name === 'Error')) {
+              throw new Error(data.message);
+            }
             try {
               // deserialize & send SFT tx
               const feePayer = (nosana.solana.provider?.wallet as KeyWallet)
                 .payer;
               const recoveredTransaction = await getRawTransaction(
-                new Uint8Array(data),
+                Uint8Array.from(Object.values(data.tx)),
               );
               console.log('recovered transaction', recoveredTransaction);
 
@@ -262,10 +264,10 @@ export async function startNode(
               ) + e.message,
             );
           }
+          console.log('data', data);
           if (data && data.name && data.name.includes('Error')) {
             throw new Error(data.message);
           }
-          console.log('dataa', data);
           market = data.newMarket;
           nft = new PublicKey(data.newMint);
         } else {
