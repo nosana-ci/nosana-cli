@@ -79,7 +79,7 @@ export class DockerProvider extends BasicProvider implements Provider {
           if (containerInfo.State.Running) {
             // wait for log streams to finish, handle new logs with callback
             try {
-              const logs: OpState['logs'] = [];
+              // const logs: OpState['logs'] = [];
               await this.handleLogStreams(
                 container,
                 (data: {
@@ -90,11 +90,11 @@ export class DockerProvider extends BasicProvider implements Provider {
                     type: data.type,
                     log: data.log,
                   });
-                  logs.push({
-                    type: data.type,
-                    log: data.log,
-                  });
-                  updateOpState({ logs });
+                  // logs.push({
+                  //   type: data.type,
+                  //   log: data.log,
+                  // });
+                  // updateOpState({ logs });
                 },
               );
             } catch (e) {
@@ -259,7 +259,7 @@ export class DockerProvider extends BasicProvider implements Provider {
         .join('');
       updateOpState({ providerId: name });
 
-      const logs: OpState['logs'] = [];
+      // const logs: OpState['logs'] = [];
 
       this.handleLogStreams(
         name,
@@ -268,11 +268,11 @@ export class DockerProvider extends BasicProvider implements Provider {
             type: data.type,
             log: data.log,
           });
-          logs.push({
-            type: data.type,
-            log: data.log,
-          });
-          updateOpState({ logs });
+          // logs.push({
+          //   type: data.type,
+          //   log: data.log,
+          // });
+          // updateOpState({ logs });
         },
         3,
       ).catch((e) => {
