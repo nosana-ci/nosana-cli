@@ -264,7 +264,6 @@ export async function startNode(
               ) + e.message,
             );
           }
-          console.log('data', data);
           if (data && data.name && data.name.includes('Error')) {
             throw new Error(data.message);
           }
