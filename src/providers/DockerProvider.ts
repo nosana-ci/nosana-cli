@@ -627,6 +627,24 @@ export class DockerProvider extends BasicProvider implements Provider {
       type: 'info',
       log: chalk.cyan(`Pulling image ${chalk.bold(image)}`),
     });
+    const images = await this.docker.listImages();
+    if (!image.includes(':')) image += ':latest';
+    for (var i = 0, len = images.length; i < len; i++) {
+      if (
+        images[i].RepoTags &&
+        (images[i].RepoTags?.indexOf(image) !== -1 ||
+          images[i].RepoTags?.indexOf('docker.io/library/' + image) !== -1 ||
+          images[i].RepoTags?.indexOf('docker.io/' + image) !== -1 ||
+          images[i].RepoTags?.indexOf(
+            'registry.hub.docker.com/library/' + image,
+          ) !== -1 ||
+          images[i].RepoTags?.indexOf('registry.hub.docker.com/' + image) !==
+            -1)
+      ) {
+        // image in cache
+        return true;
+      }
+    }
     return await new Promise((resolve, reject): any =>
       this.docker.pull(image, (err: any, stream: any) => {
         if (err) {
