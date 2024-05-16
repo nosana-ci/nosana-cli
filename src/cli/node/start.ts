@@ -19,7 +19,12 @@ import {
   JobDefinition,
   FlowState,
 } from '../../providers/Provider.js';
-import { PublicKey, Transaction, VersionedTransaction } from '@solana/web3.js';
+import {
+  BlockheightBasedTransactionConfirmationStrategy,
+  PublicKey,
+  Transaction,
+  VersionedTransaction,
+} from '@solana/web3.js';
 import { EMPTY_ADDRESS } from '../../services/jobs.js';
 import { PodmanProvider } from '../../providers/PodmanProvider.js';
 import { envConfig } from '../../config.js';
@@ -224,7 +229,6 @@ export async function startNode(
               const recoveredTransaction = await getRawTransaction(
                 Uint8Array.from(Object.values(data.tx)),
               );
-              console.log('recovered transaction', recoveredTransaction);
 
               if (recoveredTransaction instanceof VersionedTransaction) {
                 recoveredTransaction.sign([feePayer]);
@@ -235,7 +239,23 @@ export async function startNode(
                 await nosana.solana.connection?.sendRawTransaction(
                   recoveredTransaction.serialize(),
                 );
-              console.log('txnSignature', txnSignature);
+
+              const latestBlockHash =
+                await nosana.solana.connection?.getLatestBlockhash();
+              if (latestBlockHash && txnSignature) {
+                const confirmStrategy: BlockheightBasedTransactionConfirmationStrategy =
+                  {
+                    blockhash: latestBlockHash.blockhash,
+                    lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+                    signature: txnSignature,
+                  };
+                await nosana.solana.connection?.confirmTransaction(
+                  confirmStrategy,
+                );
+              } else {
+                throw new Error('Couldnt confirm minting transaction');
+              }
+              // console.log('txnSignature', txnSignature);
 
               const response = await fetch(
                 `${envConfig.get('BACKEND_URL')}/nodes/sync-node`,
@@ -252,7 +272,7 @@ export async function startNode(
               );
 
               const sync = await response.json();
-              console.log('sync', sync);
+              // console.log('sync', sync);
             } catch (error) {
               console.log(error);
               throw new Error('Couldnt send SFT transaction from backend');
