@@ -132,7 +132,7 @@ export class PodmanProvider extends DockerProvider {
           );
 
           if (start.status === 204) {
-            const logs: OpState['logs'] = [];
+            // const logs: OpState['logs'] = [];
             await this.handleLogStreams(
               name,
               (data: { log: string; type: 'stdin' | 'stdout' | 'stderr' }) => {
@@ -140,11 +140,11 @@ export class PodmanProvider extends DockerProvider {
                   type: data.type,
                   log: data.log,
                 });
-                logs.push({
-                  type: data.type,
-                  log: data.log,
-                });
-                updateOpState({ logs });
+                // logs.push({
+                //   type: data.type,
+                //   log: data.log,
+                // });
+                // updateOpState({ logs });
               },
             ).catch((e) => {
               console.error(

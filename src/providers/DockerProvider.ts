@@ -79,7 +79,7 @@ export class DockerProvider extends BasicProvider implements Provider {
           if (containerInfo.State.Running) {
             // wait for log streams to finish, handle new logs with callback
             try {
-              const logs: OpState['logs'] = [];
+              // const logs: OpState['logs'] = [];
               await this.handleLogStreams(
                 container,
                 (data: {
@@ -90,11 +90,11 @@ export class DockerProvider extends BasicProvider implements Provider {
                     type: data.type,
                     log: data.log,
                   });
-                  logs.push({
-                    type: data.type,
-                    log: data.log,
-                  });
-                  updateOpState({ logs });
+                  // logs.push({
+                  //   type: data.type,
+                  //   log: data.log,
+                  // });
+                  // updateOpState({ logs });
                 },
               );
             } catch (e) {
@@ -259,7 +259,7 @@ export class DockerProvider extends BasicProvider implements Provider {
         .join('');
       updateOpState({ providerId: name });
 
-      const logs: OpState['logs'] = [];
+      // const logs: OpState['logs'] = [];
 
       this.handleLogStreams(
         name,
@@ -268,11 +268,11 @@ export class DockerProvider extends BasicProvider implements Provider {
             type: data.type,
             log: data.log,
           });
-          logs.push({
-            type: data.type,
-            log: data.log,
-          });
-          updateOpState({ logs });
+          // logs.push({
+          //   type: data.type,
+          //   log: data.log,
+          // });
+          // updateOpState({ logs });
         },
         3,
       ).catch((e) => {
@@ -627,6 +627,24 @@ export class DockerProvider extends BasicProvider implements Provider {
       type: 'info',
       log: chalk.cyan(`Pulling image ${chalk.bold(image)}`),
     });
+    const images = await this.docker.listImages();
+    if (!image.includes(':')) image += ':latest';
+    for (var i = 0, len = images.length; i < len; i++) {
+      if (
+        images[i].RepoTags &&
+        (images[i].RepoTags?.indexOf(image) !== -1 ||
+          images[i].RepoTags?.indexOf('docker.io/library/' + image) !== -1 ||
+          images[i].RepoTags?.indexOf('docker.io/' + image) !== -1 ||
+          images[i].RepoTags?.indexOf(
+            'registry.hub.docker.com/library/' + image,
+          ) !== -1 ||
+          images[i].RepoTags?.indexOf('registry.hub.docker.com/' + image) !==
+            -1)
+      ) {
+        // image in cache
+        return true;
+      }
+    }
     return await new Promise((resolve, reject): any =>
       this.docker.pull(image, (err: any, stream: any) => {
         if (err) {
