@@ -5,6 +5,8 @@ import os from 'os';
 import path from 'path';
 import { Keypair, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { colors } from '../generic/utils.js';
+import { envConfig } from '../config.js';
+import chalk from 'chalk';
 
 let nosana: Client;
 
@@ -20,7 +22,6 @@ export async function setSDK(
       priority_fee: 100000,
     },
   };
-  if (rpc) config.solana!.network = rpc;
   if (market) config.solana!.market_address = market;
 
   let wallet: Wallet | string | Keypair | Iterable<number> | undefined =
@@ -52,7 +53,33 @@ export async function setSDK(
     }
   }
 
+  if (rpc) {
+    config.solana!.network = rpc;
+  }
   nosana = new Client(network, wallet, config);
+  if (!rpc && network === 'mainnet' && wallet) {
+    // sign message for authentication
+    const signature = (await nosana.solana.signMessage(
+      envConfig.get('SIGN_MESSAGE'),
+    )) as Uint8Array;
+    const base64Signature = Buffer.from(signature).toString('base64');
+    const node = nosana.solana.wallet.publicKey.toString();
+    const response = await fetch(`${envConfig.get('BACKEND_URL')}/rpc`, {
+      method: 'GET',
+      headers: {
+        Authorization: `${node}:${base64Signature}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    const rpcFromBackend = await response.json();
+    if (response.status !== 200) {
+      console.log(chalk.red('Could not retrieve RPC'));
+      throw new Error(rpcFromBackend.message);
+    } else {
+      config.solana!.network = rpcFromBackend.url;
+      nosana = new Client(network, wallet, config);
+    }
+  }
 
   console.log(`Network:\t${colors.GREEN}${network}${colors.RESET}`);
   if (keyfile) {
