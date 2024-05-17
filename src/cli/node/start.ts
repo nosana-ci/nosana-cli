@@ -203,6 +203,70 @@ export async function startNode(
         ) {
           spinner.text = chalk.cyan('Setting market');
           let data: any;
+          if (nodeResponse.accessKeyMint) {
+            const sfts = [
+              'EriVoySzVWF4NtNxQFCFASR4632N9sh9YumTjkhGkkgL',
+              '4TNvuVu3cj3BXfyNi9QSExtwAMub5BLCCejq2GFiVjSJ',
+              'Fw4AtMMaE1xVGwiFZRFL2jwMQsXh8NsffZTPg1JXgAfY',
+              '2JzciMonVeQ4thsEgWiLNJ8EX6jW7uZjaJJQo5zVwB6o',
+              '4WedXpV8rWZqYyKZUsuBeGBj3GafroFWFSKk16Ui6AeZ',
+              'BX4yK1s8vAPuXdgbVSDBRgPPT3fRkWpvPFw8TptmKr7F',
+              'Adx1F4QjYW76yq8fxTPaGedsApfRuZo3NadoYR9Ptse7',
+              'Ds36m2NHLbq8GPHnbBfJtZHmNrCnuFkP5NXK9iXkTWXU',
+              '2xo9j5zRkPpGzxmzreRA2n3818118EFvXbJUNh7NvyPS',
+              '6JSckt68jTqFxNTskDsE8ZweVNxwas68HmGURnj2KKkz',
+              'HdCbnZfQEpxPQg1NBwKFWeHMLL2rTTMPKGXAoJ5NN1rW',
+              '6cyXqcj1CFZ4MhcZWSYRw5HmDz6hK8WuQTgLxhReQ7KX',
+              '5PwUugNiPeZVmrdeP1WuEmWnpTYDZPbohMKsEwtHAMtL',
+              '8t2BH4NEEtdcqWJf7WvQ4zgwx5ahH2e9fcxYUZJagCAR',
+              'WFWWb3fHbf57gJTWoA3tBL35gfhR5h4azt719e8Cegt',
+            ];
+            if (!sfts.includes(nodeResponse.accessKeyMint)) {
+              // send nft to backend
+              spinner.text = chalk.cyan('Sending back old access key');
+              const maxRetries = 3;
+              for (let tries = 0; tries < maxRetries; tries++) {
+                try {
+                  const nftTx = await nosana.solana.transferNft(
+                    envConfig.get('BACKEND_SOLANA_ADDRESS'),
+                    nodeResponse.accessKeyMint,
+                  );
+                  if (!nftTx) throw new Error('Couldnt trade NFT');
+                  await sleep(25); // make sure RPC can pick up on the transferred NFT
+                  spinner.succeed('Access key sent back with tx ' + nftTx);
+                  spinner = ora(chalk.cyan('Setting market')).start();
+                  break;
+                } catch (e: any) {
+                  if (e.message.includes('Provided owner is not allowed')) {
+                    spinner.warn('Access key not owned anymore');
+                    spinner = ora(chalk.cyan('Setting market')).start();
+                    break;
+                  } else if (e.message.includes('custom program error: 0x1')) {
+                    spinner.fail(
+                      chalk.red(
+                        `Unsufficient funds to transfer access key. Add some SOL to your wallet to cover transaction fees: ${chalk.cyan(
+                          node,
+                        )}`,
+                      ),
+                    );
+                    throw e;
+                  }
+                  if (tries >= 2) {
+                    if (e.message.includes('block height exceeded')) {
+                      spinner.fail(
+                        chalk.red(
+                          `Couldn't transfer NFT, possibly due to Solana congestion. Please try again later`,
+                        ),
+                      );
+                      throw e;
+                    } else {
+                      throw e;
+                    }
+                  }
+                }
+              }
+            }
+          }
           try {
             const response = await fetch(
               `${envConfig.get('BACKEND_URL')}/nodes/change-market`,
@@ -217,9 +281,8 @@ export async function startNode(
                 }),
               },
             );
-
             data = await response.json();
-            if (!data || (data && data.name === 'Error')) {
+            if (!data || (data && data.name && data.name.includes('Error'))) {
               throw new Error(data.message);
             }
             try {
@@ -256,7 +319,7 @@ export async function startNode(
                 throw new Error('Couldnt confirm minting transaction');
               }
               // console.log('txnSignature', txnSignature);
-
+              await sleep(30);
               const response = await fetch(
                 `${envConfig.get('BACKEND_URL')}/nodes/sync-node`,
                 {
@@ -273,11 +336,15 @@ export async function startNode(
 
               const sync = await response.json();
               // console.log('sync', sync);
-            } catch (error) {
-              console.log(error);
-              throw new Error('Couldnt send SFT transaction from backend');
+            } catch (e: any) {
+              spinner.fail();
+              throw new Error(
+                chalk.red('Couldnt send SFT transaction from backend ') +
+                  e.message,
+              );
             }
           } catch (e: any) {
+            spinner.fail();
             throw new Error(
               chalk.red(
                 'Something went wrong with minting your access key, please try again. ',
