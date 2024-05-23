@@ -121,15 +121,25 @@ export const waitForRun = async (
       'confirmed',
       coderFilters,
     );
-  }).then((run) => {
-    if (typeof subscriptionId !== 'undefined')
-      nosana.jobs.connection!.removeProgramAccountChangeListener(
-        subscriptionId,
-      );
-    if (getRunsInterval) clearInterval(getRunsInterval);
-    if (checkQueuedInterval) clearInterval(checkQueuedInterval);
-    return run;
-  });
+  })
+    .then((run) => {
+      if (typeof subscriptionId !== 'undefined')
+        nosana.jobs.connection!.removeProgramAccountChangeListener(
+          subscriptionId,
+        );
+      if (getRunsInterval) clearInterval(getRunsInterval);
+      if (checkQueuedInterval) clearInterval(checkQueuedInterval);
+      return run;
+    })
+    .catch((error) => {
+      if (typeof subscriptionId !== 'undefined')
+        nosana.jobs.connection!.removeProgramAccountChangeListener(
+          subscriptionId,
+        );
+      if (getRunsInterval) clearInterval(getRunsInterval);
+      if (checkQueuedInterval) clearInterval(checkQueuedInterval);
+      throw error;
+    });
 };
 
 export const checkQueued = async (

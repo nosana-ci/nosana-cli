@@ -742,6 +742,7 @@ export async function startNode(
                 clearInterval(expireInterval);
                 resolve(flowResult);
               } catch (e) {
+                clearInterval(expireInterval);
                 if (spinner && spinner.isSpinning) {
                   spinner.fail();
                 }
