@@ -14,7 +14,7 @@ import { input, confirm } from '@inquirer/prompts';
 import { PodmanProvider } from '../../providers/PodmanProvider.js';
 import { Client } from '@nosana/sdk';
 import { getSDK } from '../../services/sdk.js';
-import { envConfig } from '../../config.js';
+import { config } from '../../config.js';
 import benchmark from '../../benchmark.json' assert { type: 'json' };
 
 let flow: Flow | undefined;
@@ -137,7 +137,7 @@ export async function runBenchmark(options: { [key: string]: any }) {
   if (result && result.status === 'success' && result.opStates && answers) {
     try {
       const response = await fetch(
-        `${envConfig.get('BACKEND_URL')}/nodes/join-test-grid`,
+        `${config.backendUrl}/nodes/join-test-grid`,
         {
           method: 'POST',
           headers: {
