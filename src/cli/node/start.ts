@@ -803,7 +803,7 @@ export async function startNode(
         console.error(e);
       }
 
-      for (let timer = 30; timer > 0; timer--) {
+      for (let timer = 60; timer > 0; timer--) {
         spinner.start(chalk.cyan(`Retrying in ${timer}s`));
         await sleep(1);
       }
