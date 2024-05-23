@@ -27,7 +27,7 @@ import {
 } from '@solana/web3.js';
 import { EMPTY_ADDRESS } from '../../services/jobs.js';
 import { PodmanProvider } from '../../providers/PodmanProvider.js';
-import { envConfig } from '../../config.js';
+import { config } from '../../config.js';
 import { fetch, setGlobalDispatcher, Agent } from 'undici';
 import benchmarkGPU from '../../benchmark-gpu.json' assert { type: 'json' };
 
@@ -123,7 +123,7 @@ export async function startNode(
 
   // sign message for authentication
   const signature = (await nosana.solana.signMessage(
-    envConfig.get('SIGN_MESSAGE'),
+    config.signMessage,
   )) as Uint8Array;
   const base64Signature = Buffer.from(signature).toString('base64');
 
@@ -134,16 +134,13 @@ export async function startNode(
     try {
       // Check if node is onboarded and has received access key
       // if not call onboard endpoint to create access key tx
-      const response = await fetch(
-        `${envConfig.get('BACKEND_URL')}/nodes/${node}`,
-        {
-          method: 'GET',
-          headers: {
-            Authorization: `${node}:${base64Signature}`,
-            'Content-Type': 'application/json',
-          },
+      const response = await fetch(`${config.backendUrl}/nodes/${node}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `${node}:${base64Signature}`,
+          'Content-Type': 'application/json',
         },
-      );
+      });
       nodeResponse = await response.json();
       if (!nodeResponse || (nodeResponse && nodeResponse.name === 'Error')) {
         throw new Error(nodeResponse.message);
@@ -175,7 +172,7 @@ export async function startNode(
       spinner = ora(chalk.cyan('Matching GPU to correct market')).start();
       // if user didnt give market, ask the backend which market we can enter
       const response = await fetch(
-        `${envConfig.get('BACKEND_URL')}/nodes/${node}/check-market`,
+        `${config.backendUrl}/nodes/${node}/check-market`,
         {
           method: 'POST',
           headers: {
@@ -228,7 +225,7 @@ export async function startNode(
               for (let tries = 0; tries < maxRetries; tries++) {
                 try {
                   const nftTx = await nosana.solana.transferNft(
-                    envConfig.get('BACKEND_SOLANA_ADDRESS'),
+                    config.backendSolanaAddress,
                     nodeResponse.accessKeyMint,
                   );
                   if (!nftTx) throw new Error('Couldnt trade NFT');
@@ -269,7 +266,7 @@ export async function startNode(
           }
           try {
             const response = await fetch(
-              `${envConfig.get('BACKEND_URL')}/nodes/change-market`,
+              `${config.backendUrl}/nodes/change-market`,
               {
                 method: 'POST',
                 headers: {
@@ -321,7 +318,7 @@ export async function startNode(
               // console.log('txnSignature', txnSignature);
               await sleep(30);
               const response = await fetch(
-                `${envConfig.get('BACKEND_URL')}/nodes/sync-node`,
+                `${config.backendUrl}/nodes/sync-node`,
                 {
                   method: 'POST',
                   headers: {

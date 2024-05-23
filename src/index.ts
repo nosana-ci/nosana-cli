@@ -4,8 +4,6 @@ import { Command, Option } from 'commander';
 import { setSDK } from './services/sdk.js';
 import { run, getJob, download, upload } from './cli/job/index.js';
 import { view, startNode, runJob, runBenchmark } from './cli/node/index.js';
-import { initEnv, envConfig } from './config.js';
-initEnv();
 const program: Command = new Command();
 
 const VERSION: string = '0.2.0';

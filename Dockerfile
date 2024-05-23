@@ -7,5 +7,6 @@ RUN npm ci \
  && npm run build \
  && npm ci --omit=dev \
  && npm install -g
+ENV NODE_ENV production
 
 WORKDIR /nosana

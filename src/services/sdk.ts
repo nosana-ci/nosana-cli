@@ -5,7 +5,7 @@ import os from 'os';
 import path from 'path';
 import { Keypair, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { colors } from '../generic/utils.js';
-import { envConfig } from '../config.js';
+import { config as envConfig } from '../config.js';
 import chalk from 'chalk';
 
 let nosana: Client;
@@ -60,11 +60,11 @@ export async function setSDK(
   if (!rpc && network === 'mainnet' && wallet) {
     // sign message for authentication
     const signature = (await nosana.solana.signMessage(
-      envConfig.get('SIGN_MESSAGE'),
+      envConfig.signMessage,
     )) as Uint8Array;
     const base64Signature = Buffer.from(signature).toString('base64');
     const node = nosana.solana.wallet.publicKey.toString();
-    const response = await fetch(`${envConfig.get('BACKEND_URL')}/rpc`, {
+    const response = await fetch(`${envConfig.backendUrl}/rpc`, {
       method: 'GET',
       headers: {
         Authorization: `${node}:${base64Signature}`,
