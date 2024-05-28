@@ -865,14 +865,14 @@ const runBenchmark = async (
     ) {
       // GPU
       if (!result.opStates[0].logs)
-        throw new Error(`Can't find GPU benchmark output`);
+        throw new Error('Cannot find GPU benchmark output');
 
-      const { devices, error } = JSON.parse(
+      const { devices } = JSON.parse(
         result.opStates[0].logs[0].log!,
       ) as CudaCheckResponse;
 
       if (!devices) {
-        throw new Error(`GPU benchmark failed: ${JSON.stringify(error)}`);
+        throw new Error('GPU benchmark returned with no devices');
       }
 
       for (const { index, name, uuid, results } of devices) {
@@ -907,9 +907,21 @@ const runBenchmark = async (
       }
     } else if (result && result.status === 'failed' && result.opStates) {
       const output = [];
+
       if (result.opStates[0]) {
+        const { error } = JSON.parse(
+          result.opStates[0].logs[0].log!,
+        ) as CudaCheckResponse;
+
+        if (error) {
+          output.push(
+            `GPU benchmark failed, please ensure your NVidia Cuda runtime drivers are up to date and your NVidia Container Toolkit is correctly configured.`,
+          );
+        }
+
         output.push(result.opStates[0].logs);
       }
+
       if (result.opStates[1]) {
         output.push(result.opStates[1].logs);
       }
