@@ -30,6 +30,7 @@ import { PodmanProvider } from '../../providers/PodmanProvider.js';
 import { config } from '../../config.js';
 import { fetch, setGlobalDispatcher, Agent } from 'undici';
 import benchmarkGPU from '../../benchmark-gpu.json' assert { type: 'json' };
+import { CudaCheckResponse } from './types.js';
 
 setGlobalDispatcher(new Agent({ connect: { timeout: 150_000 } }));
 
@@ -863,11 +864,25 @@ const runBenchmark = async (
       result.opStates[1]
     ) {
       // GPU
-      for (let i = 0; i < result.opStates[0].logs.length; i++) {
-        let gpu = result.opStates[0].logs[i];
-        if (gpu.log && gpu.log.includes('GPU')) {
-          gpus.push(gpu.log as string);
+      if (!result.opStates[0].logs)
+        throw new Error(`Can't find GPU benchmark output`);
+
+      const { devices, error } = JSON.parse(
+        result.opStates[0].logs[0].log!,
+      ) as CudaCheckResponse;
+
+      if (!devices) {
+        throw new Error(`GPU benchmark failed: ${JSON.stringify(error)}`);
+      }
+
+      for (const { index, name, uuid, results } of devices) {
+        const sum = results.reduce((a, b) => a + b, 0);
+
+        if (sum / (index + 1) !== 55) {
+          throw new Error(`GPU logic test failed`);
         }
+
+        gpus.push(`GPU ${index}: ${name} (UUID: ${uuid})`);
       }
 
       if (!result.opStates[1].logs)

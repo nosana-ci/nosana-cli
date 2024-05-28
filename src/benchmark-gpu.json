@@ -7,13 +7,10 @@
   "ops": [
     {
       "type": "container/run",
-      "id": "gpu-stats",
+      "id": "cuda-runtime-check",
       "args": {
-        "cmd": ["sh -c ", "nvidia-smi -L;"],
-        "image": "registry.hub.docker.com/nosana/stats",
-        "env": {
-          "DEBUG": "1"
-        },
+        "cmd": ["./cuda_check"],
+        "image": "registry.hub.docker.com/nosana/stats:v1.0.2",
         "gpu": true
       }
     },
@@ -25,7 +22,7 @@
           "sh -c ",
           "df -m --output=avail --total | awk '\\''END {print $1}'\\'';"
         ],
-        "image": "registry.hub.docker.com/nosana/stats",
+        "image": "registry.hub.docker.com/nosana/stats:v1.0.2",
         "env": {
           "DEBUG": "1"
         }
