@@ -10,7 +10,7 @@
       "id": "cuda-runtime-check",
       "args": {
         "cmd": ["./cuda_check"],
-        "image": "registry.hub.docker.com/nosana/stats:v1.0.2",
+        "image": "registry.hub.docker.com/nosana/stats:v1.0.4",
         "gpu": true
       }
     },
@@ -22,7 +22,7 @@
           "sh -c ",
           "df -m --output=avail --total | awk '\\''END {print $1}'\\'';"
         ],
-        "image": "registry.hub.docker.com/nosana/stats:v1.0.2",
+        "image": "registry.hub.docker.com/nosana/stats:v1.0.4",
         "env": {
           "DEBUG": "1"
         }
