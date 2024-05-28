@@ -864,12 +864,15 @@ const runBenchmark = async (
       result.opStates[1]
     ) {
       // GPU
+      if (!result.opStates[0].logs)
+        throw new Error(`Can't find GPU benchmark output`);
+
       const { devices, error } = JSON.parse(
-        result.opStates[2].logs[0].log!,
+        result.opStates[0].logs[0].log!,
       ) as CudaCheckResponse;
 
       if (!devices) {
-        throw new Error(`GPU test failed: ${JSON.stringify(error)}`);
+        throw new Error(`GPU benchmark failed: ${JSON.stringify(error)}`);
       }
 
       for (const { index, name, uuid, results } of devices) {
