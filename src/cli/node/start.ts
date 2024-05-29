@@ -18,6 +18,7 @@ import {
   Provider,
   JobDefinition,
   FlowState,
+  OperationArgsMap,
 } from '../../providers/Provider.js';
 import {
   BlockheightBasedTransactionConfirmationStrategy,
@@ -688,11 +689,22 @@ export async function startNode(
             ) {
               // check if expired every minute
               const expireInterval = setInterval(async () => {
-                // if (provider.isFlowExposed(flowId)) {
-                //   if (isRunExpired(run!, marketAccount?.jobTimeout as number)) {
-                //     await provider.stopFlow(flowId);
-                //   }
-                // }
+                const flow = provider.getFlow(flowId);
+                if (flow) {
+                  const isFlowExposed =
+                    flow.jobDefinition.ops.map(
+                      (op) =>
+                        op.type === 'container/run' &&
+                        (op.args as OperationArgsMap['container/run']).expose,
+                    ).length > 0;
+                  if (isFlowExposed) {
+                    if (
+                      isRunExpired(run!, marketAccount?.jobTimeout as number)
+                    ) {
+                      await provider.stopFlow(flowId);
+                    }
+                  }
+                }
                 if (
                   isRunExpired(
                     run!,
