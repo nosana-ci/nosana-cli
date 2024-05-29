@@ -105,7 +105,7 @@ export async function startNode(
   console.log(`Provider:\t${chalk.greenBright.bold(options.provider)}`);
   switch (options.provider) {
     case 'podman':
-      provider = new PodmanProvider(options.podman, options.config);
+      provider = new PodmanProvider(options.podman, options.config, node);
       break;
     case 'docker':
     default:
@@ -688,6 +688,11 @@ export async function startNode(
             ) {
               // check if expired every minute
               const expireInterval = setInterval(async () => {
+                // if (provider.isFlowExposed(flowId)) {
+                //   if (isRunExpired(run!, marketAccount?.jobTimeout as number)) {
+                //     await provider.stopFlow(flowId);
+                //   }
+                // }
                 if (
                   isRunExpired(
                     run!,

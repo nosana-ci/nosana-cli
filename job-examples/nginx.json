@@ -1,0 +1,18 @@
+{
+  "version": "0.1",
+  "type": "container",
+  "meta": {
+    "trigger": "cli"
+  },
+  "ops": [
+    {
+      "type": "container/run",
+      "id": "nginx",
+      "args": {
+        "cmd": [],
+        "image": "nginx",
+        "expose": 80
+      }
+    }
+  ]
+}
