@@ -1,0 +1,20 @@
+{
+  "version": "0.1",
+  "type": "container",
+  "meta": {
+    "trigger": "cli"
+  },
+  "ops": [
+    {
+      "type": "container/run",
+      "id": "jupyter-notebook",
+      "args": {
+        "cmd": [
+        ],
+        "expose": 8888,
+        "image": "quay.io/jupyter/scipy-notebook:2024-05-27",
+        "gpu": true
+      }
+    }
+  ]
+}
