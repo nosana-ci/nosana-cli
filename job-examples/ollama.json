@@ -7,11 +7,12 @@
   "ops": [
     {
       "type": "container/run",
-      "id": "gpu",
+      "id": "ollama",
       "args": {
-        "cmd": ["nvidia-smi -L"],
-        "image": "ubuntu",
-        "gpu": true
+        "cmd": [],
+        "image": "docker.io/ollama/ollama",
+        "gpu": true,
+        "expose": 11434
       }
     }
   ]

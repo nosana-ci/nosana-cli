@@ -11,12 +11,10 @@ import { ifStringCastToArray } from '../generic/utils.js';
 
 export class PodmanProvider extends DockerProvider {
   private apiUrl: string;
-  private nodeName: string;
 
-  constructor(podman: string, configLocation: string, nodeName: string) {
+  constructor(podman: string, configLocation: string) {
     super(podman, configLocation);
     this.apiUrl = `${this.protocol}://${this.host}:${this.port}/v4.5.0/libpod`;
-    this.nodeName = nodeName;
   }
   /**
    * Run operation and return results
@@ -136,7 +134,7 @@ export class PodmanProvider extends DockerProvider {
             },
           );
           if (opArgs.expose) {
-            this.startFrpc(name, opArgs.expose);
+            this.startFrpc(flowId, name, opArgs.expose);
           }
 
           if (start.status === 204) {
@@ -195,7 +193,7 @@ export class PodmanProvider extends DockerProvider {
     });
   }
 
-  async startFrpc(name: string, port: number): Promise<void> {
+  async startFrpc(flowId: string, name: string, port: number): Promise<void> {
     const networks: any = {};
     networks[name] = {};
     const options = {
@@ -204,12 +202,12 @@ export class PodmanProvider extends DockerProvider {
       command: parse('-c /etc/frp/frpc.toml'),
       netns: { nsmode: 'bridge' },
       env: {
-        FRP_SERVER_ADDR: '143.178.233.0',
+        FRP_SERVER_ADDR: 'node.k8s.prd.nos.ci',
         FRP_SERVER_PORT: '7000',
         FRP_NAME: name,
         FRP_LOCAL_IP: name,
         FRP_LOCAL_PORT: port.toString(),
-        FRP_CUSTOM_DOMAIN: this.nodeName + '.variable.nl',
+        FRP_CUSTOM_DOMAIN: flowId + '.node.k8s.prd.nos.ci',
       },
       Networks: networks,
       create_working_dir: true,

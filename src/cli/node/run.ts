@@ -43,11 +43,11 @@ export async function runJob(
   process.on('SIGINT', onShutdown);
   process.on('SIGTERM', onShutdown);
 
-  const nodeName = 'FcBdtm6eMEedWubFW6n5UCPjf2GydHEnWjDA5Ge2WeNh';
+  const nodeName = 'laurens';
 
   switch (options.provider) {
     case 'podman':
-      provider = new PodmanProvider(options.podman, options.config, nodeName);
+      provider = new PodmanProvider(options.podman, options.config);
       break;
     case 'docker':
     default:

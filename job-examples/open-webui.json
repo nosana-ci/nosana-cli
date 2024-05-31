@@ -7,11 +7,12 @@
   "ops": [
     {
       "type": "container/run",
-      "id": "gpu",
+      "id": "open-webui",
       "args": {
-        "cmd": ["nvidia-smi -L"],
-        "image": "ubuntu",
-        "gpu": true
+        "cmd": [],
+        "image": "ghcr.io/open-webui/open-webui:main",
+        "gpu": true,
+        "expose": 8080
       }
     }
   ]
