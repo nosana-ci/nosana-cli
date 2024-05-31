@@ -204,7 +204,7 @@ export class PodmanProvider extends DockerProvider {
       netns: { nsmode: 'bridge' },
       env: {
         FRP_SERVER_ADDR: config.frp.serverAddr,
-        FRP_SERVER_PORT: config.frp.serverPort,
+        FRP_SERVER_PORT: config.frp.serverPort.toString(),
         FRP_NAME: name,
         FRP_LOCAL_IP: name,
         FRP_LOCAL_PORT: port.toString(),
