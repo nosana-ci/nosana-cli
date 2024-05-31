@@ -8,6 +8,7 @@ import {
 } from './Provider.js';
 import { parse } from 'shell-quote';
 import { ifStringCastToArray } from '../generic/utils.js';
+import { config } from '../config.js';
 
 export class PodmanProvider extends DockerProvider {
   private apiUrl: string;
@@ -202,12 +203,12 @@ export class PodmanProvider extends DockerProvider {
       command: parse('-c /etc/frp/frpc.toml'),
       netns: { nsmode: 'bridge' },
       env: {
-        FRP_SERVER_ADDR: 'node.k8s.prd.nos.ci',
-        FRP_SERVER_PORT: '7000',
+        FRP_SERVER_ADDR: config.frp.serverAddr,
+        FRP_SERVER_PORT: config.frp.serverPort,
         FRP_NAME: name,
         FRP_LOCAL_IP: name,
         FRP_LOCAL_PORT: port.toString(),
-        FRP_CUSTOM_DOMAIN: flowId + '.node.k8s.prd.nos.ci',
+        FRP_CUSTOM_DOMAIN: flowId + '.' + config.frp.serverAddr,
       },
       Networks: networks,
       create_working_dir: true,
