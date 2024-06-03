@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import { Client } from '@nosana/sdk';
 import { getSDK } from '../../services/sdk.js';
 import { download } from './download.js';
-import 'rpc-websockets/dist/lib/client';
+import 'rpc-websockets/dist/lib/client.js';
 import { PublicKey } from '@solana/web3.js';
 import { waitForJobCompletion } from '../../services/jobs.js';
 import { clearLine, colors } from '../../generic/utils.js';

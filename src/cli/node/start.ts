@@ -19,7 +19,7 @@ import {
   JobDefinition,
   FlowState,
 } from '../../providers/Provider.js';
-import 'rpc-websockets/dist/lib/client';
+import 'rpc-websockets/dist/lib/client.js';
 import {
   BlockheightBasedTransactionConfirmationStrategy,
   PublicKey,
