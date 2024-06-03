@@ -60,7 +60,7 @@
     "lowdb": "^7.0.1",
     "node-fetch": "^3.3.2",
     "ora": "^8.0.1",
-    "rpc-websockets": "^7.9.0",
+    "rpc-websockets": "7.9.0",
     "shell-quote": "^1.8.1",
     "stream": "^0.0.2",
     "tar": "^6.2.0",
