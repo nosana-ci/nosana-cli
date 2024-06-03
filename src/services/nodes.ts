@@ -1,5 +1,6 @@
 import { Client, Market, Run } from '@nosana/sdk';
 import { getSDK } from './sdk.js';
+import 'rpc-websockets/dist/lib/client';
 import { ClientSubscriptionId, PublicKey, TokenAmount } from '@solana/web3.js';
 import { NotQueuedError } from '../generic/errors.js';
 

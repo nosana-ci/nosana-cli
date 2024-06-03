@@ -1,5 +1,6 @@
 import { Client, Job, mapJob } from '@nosana/sdk';
 import { getSDK } from './sdk.js';
+import 'rpc-websockets/dist/lib/client';
 import { ClientSubscriptionId, PublicKey } from '@solana/web3.js';
 
 export const EMPTY_ADDRESS = new PublicKey('11111111111111111111111111111111');

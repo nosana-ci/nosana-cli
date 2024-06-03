@@ -3,6 +3,7 @@ import { Client, ClientConfig } from '@nosana/sdk';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
+import 'rpc-websockets/dist/lib/client';
 import { Keypair, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { colors } from '../generic/utils.js';
 import { config as envConfig } from '../config.js';
