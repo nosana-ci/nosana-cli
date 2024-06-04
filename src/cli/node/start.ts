@@ -20,6 +20,7 @@ import {
   FlowState,
   OperationArgsMap,
 } from '../../providers/Provider.js';
+import 'rpc-websockets/dist/lib/client.js';
 import {
   BlockheightBasedTransactionConfirmationStrategy,
   PublicKey,

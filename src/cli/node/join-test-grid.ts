@@ -165,7 +165,7 @@ export async function runBenchmark(options: { [key: string]: any }) {
       console.log('================================');
       console.log(
         chalk.green(
-          "Thank you for registering for Nosana Node. \nWe'll review your registration and you will get an email from us if you are selected.",
+          'Thank you for registering for Nosana Node. We will selectively onboard new participants into the Test Grid based on market requirements and ability of your hardware to run advanced AI models All nodes selected for onboarding will be announced in our Discord server only. Please join our Discord server here: https://discord.gg/Nosana-AI to receive updates.',
         ),
       );
       process.exit();
