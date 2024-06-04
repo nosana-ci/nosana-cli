@@ -159,16 +159,15 @@ export class PodmanProvider extends DockerProvider {
               );
             });
 
-            const c = await this.getContainerByName(name);
-            if (c) {
-              const container = this.docker.getContainer(c.Id);
+            try {
+              const container = this.docker.getContainer(name);
               await this.finishOpContainerRun({
                 container,
                 updateOpState,
                 operationResults,
               });
               resolve(flow.state.opStates[opStateIndex]);
-            } else {
+            } catch (error) {
               updateOpState({
                 exitCode: 3,
                 status: 'failed',
