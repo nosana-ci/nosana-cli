@@ -65,14 +65,16 @@ export class DockerProvider extends BasicProvider implements Provider {
       );
       const opState = flow.state.opStates[opStateIndex];
       if (opState.providerId) {
-        const c = await this.getContainerByName(opState.providerId as string);
+        let container;
+        try {
+          container = this.docker.getContainer(opState.providerId as string);
+        } catch (error) {
+          updateOpState({ providerId: null });
+        }
 
         // when node is shutted down before the container started, it won't find the container
         // clear providerId so that it will be ran again
-        if (!c) {
-          updateOpState({ providerId: null });
-        } else {
-          const container = this.docker.getContainer(c.Id);
+        if (container) {
           const containerInfo = await container.inspect();
 
           // Create streams and wait for it to finish
@@ -99,7 +101,7 @@ export class DockerProvider extends BasicProvider implements Provider {
               );
             } catch (e) {
               console.error(
-                chalk.red(`Error handling log streams for ${c.Id}`, e),
+                chalk.red(`Error handling log streams for ${container.id}`, e),
               );
             }
 
@@ -117,6 +119,8 @@ export class DockerProvider extends BasicProvider implements Provider {
               operationResults,
             });
           }
+        } else {
+          updateOpState({ providerId: null });
         }
       }
       if (!opState.providerId) {
@@ -469,10 +473,9 @@ export class DockerProvider extends BasicProvider implements Provider {
     await new Promise<void>(async (resolve, reject) => {
       // TODO: now made with retries, check if there's a better solution..
       if (!this.isDockerContainer(container)) {
-        const c = await this.getContainerByName(container);
-        if (c) {
-          container = this.docker.getContainer(c.Id);
-        } else {
+        try {
+          container = this.docker.getContainer(container);
+        } catch (error) {
           if (retries && retries > 0) {
             await sleep(1);
             await this.handleLogStreams(container, callback, retries - 1);
@@ -598,28 +601,6 @@ export class DockerProvider extends BasicProvider implements Provider {
   }
 
   /****************
-   *   Getters   *
-   ****************/
-  protected async getContainerByName(
-    name: string,
-  ): Promise<Docker.ContainerInfo | undefined> {
-    const opts = {
-      limit: 1,
-      filters: `{"name": ["${name}"]}`,
-    };
-
-    return new Promise(async (resolve, reject) => {
-      await this.docker.listContainers(opts, (err, containers) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(containers && containers[0]);
-        }
-      });
-    });
-  }
-
-  /****************
    *   Helpers   *
    ****************/
   protected async pullImage(image: string) {
@@ -685,16 +666,13 @@ export class DockerProvider extends BasicProvider implements Provider {
   private async stopAndRemoveContainer(providerId: string) {
     if (providerId) {
       try {
-        const c = await this.getContainerByName(providerId);
-        if (c) {
-          const container = this.docker.getContainer(c.Id);
-          const containerInfo = await container.inspect();
-          if (containerInfo.State.Running) {
-            // await container.stop();
-            await container.kill();
-          } else {
-            await container.remove();
-          }
+        const container = this.docker.getContainer(providerId);
+        const containerInfo = await container.inspect();
+        if (containerInfo.State.Running) {
+          // await container.stop();
+          await container.kill();
+        } else {
+          await container.remove();
         }
       } catch (err: any) {
         // console.error(
