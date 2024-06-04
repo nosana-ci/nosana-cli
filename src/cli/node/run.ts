@@ -43,8 +43,6 @@ export async function runJob(
   process.on('SIGINT', onShutdown);
   process.on('SIGTERM', onShutdown);
 
-  const nodeName = 'laurens';
-
   switch (options.provider) {
     case 'podman':
       provider = new PodmanProvider(options.podman, options.config);
