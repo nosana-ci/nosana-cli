@@ -702,6 +702,7 @@ export async function startNode(
                     if (
                       isRunExpired(run!, marketAccount?.jobTimeout as number)
                     ) {
+                      clearInterval(expireInterval);
                       await provider.stopFlow(flowId);
                     }
                   }
