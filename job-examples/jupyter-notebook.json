@@ -1,0 +1,22 @@
+{
+  "version": "0.1",
+  "type": "container",
+  "meta": {
+    "trigger": "cli"
+  },
+  "ops": [
+    {
+      "type": "container/run",
+      "id": "jupyter-notebook",
+      "args": {
+        "cmd": [
+          "bash -c ",
+          "source /etc/bash.bashrc && jupyter notebook --notebook-dir=/tf --ip 0.0.0.0 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password=''"
+        ],
+        "expose": 8888,
+        "image": "tensorflow/tensorflow:latest-gpu-jupyter",
+        "gpu": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "version": "0.1",
+  "type": "container",
+  "meta": { "trigger": "cli" },
+  "ops": [
+    {
+      "type": "container/run",
+      "id": "tinyllama",
+      "args": {
+        "cmd": "'There once was a hawk called Vicky'",
+        "image": "docker.io/jeisses/tinyllama:v2",
+        "gpu": true
+      }
+    }
+  ]
+}

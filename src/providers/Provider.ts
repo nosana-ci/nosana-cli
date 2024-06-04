@@ -40,6 +40,7 @@ export interface OperationArgsMap {
         dest: string;
       },
     ];
+    expose?: number;
     gpu?: boolean;
     work_dir?: string;
     output?: string;

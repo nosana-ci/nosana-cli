@@ -6,7 +6,7 @@ import { run, getJob, download, upload } from './cli/job/index.js';
 import { view, startNode, runJob, runBenchmark } from './cli/node/index.js';
 const program: Command = new Command();
 
-const VERSION: string = '0.2.0';
+const VERSION: string = '0.3.0';
 console.log(figlet.textSync('Nosana'));
 
 const rpcOption = new Option('--rpc <url>', 'RPC node to use');

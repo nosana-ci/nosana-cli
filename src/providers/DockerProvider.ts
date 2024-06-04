@@ -135,6 +135,16 @@ export class DockerProvider extends BasicProvider implements Provider {
             chalk.red(`Cannot pull image ${op.args.image}: `) + error,
           );
         }
+        if (op.args.expose) {
+          const frpcImage = 'docker.io/laurensv/nosana-frpc';
+          try {
+            await this.pullImage(frpcImage);
+          } catch (error: any) {
+            throw new Error(
+              chalk.red(`Cannot pull image ${frpcImage}: `) + error,
+            );
+          }
+        }
 
         await this.executeCmd(
           op.args,
@@ -579,6 +589,9 @@ export class DockerProvider extends BasicProvider implements Provider {
         await this.stopAndRemoveContainer(
           flow.state.opStates[i].providerId as string,
         );
+        await this.stopAndRemoveContainer(
+          ('frpc-' + flow.state.opStates[i].providerId) as string,
+        );
       }
     }
 
@@ -596,6 +609,14 @@ export class DockerProvider extends BasicProvider implements Provider {
           // );
         }
       }
+    }
+    try {
+      await this.docker.pruneNetworks();
+    } catch (error: any) {
+      // console.error(
+      //   chalk.red('couldnt remove networks'),
+      //   error.message ? error.message : error,
+      // );
     }
     super.finishFlow(flowId, status);
   }
@@ -669,7 +690,6 @@ export class DockerProvider extends BasicProvider implements Provider {
         const container = this.docker.getContainer(providerId);
         const containerInfo = await container.inspect();
         if (containerInfo.State.Running) {
-          // await container.stop();
           await container.kill();
         } else {
           await container.remove();

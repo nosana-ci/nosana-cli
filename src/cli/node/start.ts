@@ -18,6 +18,7 @@ import {
   Provider,
   JobDefinition,
   FlowState,
+  OperationArgsMap,
 } from '../../providers/Provider.js';
 import 'rpc-websockets/dist/lib/client.js';
 import {
@@ -689,6 +690,23 @@ export async function startNode(
             ) {
               // check if expired every minute
               const expireInterval = setInterval(async () => {
+                const flow = provider.getFlow(flowId);
+                if (flow) {
+                  const isFlowExposed =
+                    flow.jobDefinition.ops.map(
+                      (op) =>
+                        op.type === 'container/run' &&
+                        (op.args as OperationArgsMap['container/run']).expose,
+                    ).length > 0;
+                  if (isFlowExposed) {
+                    if (
+                      isRunExpired(run!, marketAccount?.jobTimeout as number)
+                    ) {
+                      clearInterval(expireInterval);
+                      await provider.stopFlow(flowId);
+                    }
+                  }
+                }
                 if (
                   isRunExpired(
                     run!,

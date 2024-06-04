@@ -7,11 +7,11 @@
   "ops": [
     {
       "type": "container/run",
-      "id": "gpu",
+      "id": "nginx",
       "args": {
-        "cmd": ["nvidia-smi -L"],
-        "image": "ubuntu",
-        "gpu": true
+        "cmd": [],
+        "image": "nginx",
+        "expose": 80
       }
     }
   ]

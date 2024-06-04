@@ -19,6 +19,7 @@
           "ollama run llama2 'hello world'"
         ],
         "entrypoint": ["sh"],
+        "expose": 11434,
         "image": "docker.io/ollama/ollama",
         "gpu": true
       }

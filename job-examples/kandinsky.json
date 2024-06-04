@@ -1,0 +1,19 @@
+{
+  "version": "0.1",
+  "type": "container",
+  "meta": {
+    "trigger": "cli"
+  },
+  "ops": [
+    {
+      "type": "container/run",
+      "id": "run-kandinsky2",
+      "args": {
+        "cmd": [],
+        "image": "r8.im/kasumi-1/kandinsky-2@sha256:373fa540ae197fc89f0679ed835bc4524152956d4f3027580244e10b09d6d3a5",
+        "gpu": true,
+        "expose": 5000
+      }
+    }
+  ]
+}
