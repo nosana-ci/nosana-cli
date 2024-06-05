@@ -239,6 +239,14 @@ export class PodmanProvider extends DockerProvider {
             'Cannot start frpc container: ' + (await start.json()).message,
           );
         }
+        this.eventEmitter.emit('newLog', {
+          type: 'info',
+          log: chalk.cyan(
+            `Exposing service at ${chalk.bold(
+              `https://${flowId}.${config.frp.serverAddr}`,
+            )}`,
+          ),
+        });
       } else {
         throw new Error(
           'Cannot create frpc container' + (await create.json()).message,

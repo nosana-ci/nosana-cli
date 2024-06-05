@@ -4,6 +4,7 @@ import {
   Flow,
   JobDefinition,
   FlowState,
+  OperationArgsMap,
 } from '../../providers/Provider.js';
 import chalk from 'chalk';
 import ora from 'ora';
@@ -75,16 +76,26 @@ export async function runJob(
   let result: Partial<FlowState> | null = null;
   try {
     flow = provider.run(jobDefinition);
+    const isFlowExposed =
+      jobDefinition.ops.map(
+        (op) =>
+          op.type === 'container/run' &&
+          (op.args as OperationArgsMap['container/run']).expose,
+      ).length > 0;
     result = await provider.waitForFlowFinish(
       flow.id,
       (event: { log: string; type: string }) => {
         if (!handlingSigInt) {
           if (event.type === 'info') {
             console.log(event.log);
-          } else if (event.type === 'stdout') {
-            process.stdout.write(event.log);
           } else {
-            process.stderr.write(event.log);
+            if (!isFlowExposed) {
+              if (event.type === 'stdout') {
+                process.stdout.write(event.log);
+              } else {
+                process.stderr.write(event.log);
+              }
+            }
           }
         }
       },
