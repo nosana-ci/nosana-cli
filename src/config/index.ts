@@ -9,6 +9,6 @@ export type configType = {
 };
 export const config: configType = (
   await import(
-    `./config/${process.env.APP_ENV || process.env.NODE_ENV || 'production'}.js`
+    `./${process.env.APP_ENV || process.env.NODE_ENV || 'production'}.js`
   )
 ).config;
