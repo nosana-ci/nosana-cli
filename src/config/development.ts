@@ -1,4 +1,4 @@
-import { configType } from '../config';
+import { configType } from '.';
 
 export const config: configType = {
   backendUrl: process?.env?.BACKEND_URL || 'http://localhost:3000/api',

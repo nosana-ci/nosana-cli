@@ -141,6 +141,7 @@ export class BasicProvider implements Provider {
     });
     try {
       // run operations
+      let stopFlow: boolean = false;
       for (let i = 0; i < flow.jobDefinition.ops.length; i++) {
         const op = flow.jobDefinition.ops[i];
         let opState: OpState = flow.state.opStates[i];
@@ -158,16 +159,25 @@ export class BasicProvider implements Provider {
             if (!operationTypeFunction) {
               throw new Error(`no support for operation type ${op.type}`);
             }
-            0;
             opState = await new Promise<OpState>(async (resolve, reject) => {
               // when flow is being stopped, resolve promise
-              this.eventEmitter.on('startStopFlow', (id) => {
+              this.eventEmitter.on('stopFlowEvent', async (id) => {
                 if (id === flowId) {
-                  const stoppedOpState = updateOpState({
-                    status: 'stopped',
-                    endTime: Date.now(),
-                  });
-                  resolve(stoppedOpState);
+                  stopFlow = true;
+                  // If after 30 second the stopFlowOperation call didn't
+                  // stop the operation: forcefully stop
+                  setTimeout(() => {
+                    const opState = this.db.data.flows[
+                      flowId
+                    ].state.opStates.find(
+                      (opState) => opState.operationId === op.id,
+                    );
+                    resolve(opState!);
+                  }, 30000);
+
+                  // This call should stop the operation, making sure
+                  // `operationTypeFunction` returns within 30 seconds.
+                  await this.stopFlowOperation(flowId, op);
                 }
               });
               try {
@@ -186,7 +196,7 @@ export class BasicProvider implements Provider {
                 reject(error);
               }
             });
-            this.eventEmitter.removeAllListeners('startStopFlow');
+            this.eventEmitter.removeAllListeners('stopFlowEvent');
           } catch (error: any) {
             updateOpState({
               exitCode: 2,
@@ -203,14 +213,14 @@ export class BasicProvider implements Provider {
               (opState) => opState.operationId === op.id,
             )!.status = 'failed';
             this.db.write();
-            this.eventEmitter.removeAllListeners('startStopFlow');
+            this.eventEmitter.removeAllListeners('stopFlowEvent');
             break;
           }
         }
         if (opState) {
-          // Stop running when operation failed or when we stopped the operation
+          // Stop running when operation failed or when we stopped the flow
           if (opState.status === 'failed') break;
-          else if (opState.status === 'stopped') break;
+          else if (stopFlow) break;
         }
       }
     } catch (error: any) {
@@ -234,6 +244,24 @@ export class BasicProvider implements Provider {
    */
   public async healthy(throwError: Boolean = true): Promise<Boolean> {
     return true;
+  }
+
+  public async stopFlowOperation(
+    flowId: string,
+    op: Operation<any>,
+  ): Promise<OpState> {
+    const opState = this.db.data.flows[flowId].state.opStates.find(
+      (opState) => opState.operationId === op.id,
+    );
+    if (!opState) throw new Error('could not find opState');
+    if (opState.status === 'running') {
+      opState.status = 'stopped';
+    }
+    if (!opState.endTime) {
+      opState.endTime = Date.now();
+    }
+    this.db.write();
+    return opState;
   }
 
   /**
@@ -297,7 +325,7 @@ export class BasicProvider implements Provider {
     this.db.write();
   }
   public async stopFlow(flowId: string): Promise<void> {
-    this.eventEmitter.emit('startStopFlow', flowId);
+    this.eventEmitter.emit('stopFlowEvent', flowId);
   }
 
   public async clearOldFlows(): Promise<void> {

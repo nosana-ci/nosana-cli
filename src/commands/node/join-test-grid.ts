@@ -14,8 +14,8 @@ import { input, confirm } from '@inquirer/prompts';
 import { PodmanProvider } from '../../providers/PodmanProvider.js';
 import { Client } from '@nosana/sdk';
 import { getSDK } from '../../services/sdk.js';
-import { config } from '../../config.js';
-import benchmark from '../../benchmark.json' assert { type: 'json' };
+import { config } from '../../config/index.js';
+import benchmark from '../../static/benchmark.json' assert { type: 'json' };
 
 let flow: Flow | undefined;
 let provider: Provider;

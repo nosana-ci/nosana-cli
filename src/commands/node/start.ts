@@ -29,9 +29,9 @@ import {
 } from '@solana/web3.js';
 import { EMPTY_ADDRESS } from '../../services/jobs.js';
 import { PodmanProvider } from '../../providers/PodmanProvider.js';
-import { config } from '../../config.js';
+import { config } from '../../config/index.js';
 import { fetch, setGlobalDispatcher, Agent } from 'undici';
-import benchmarkGPU from '../../benchmark-gpu.json' assert { type: 'json' };
+import benchmarkGPU from '../../static/benchmark-gpu.json' assert { type: 'json' };
 import { CudaCheckResponse } from './types.js';
 
 setGlobalDispatcher(new Agent({ connect: { timeout: 150_000 } }));

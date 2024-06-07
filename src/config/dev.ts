@@ -1,4 +1,4 @@
-import { configType } from '../config';
+import { configType } from '.';
 
 export const config: configType = {
   backendUrl:

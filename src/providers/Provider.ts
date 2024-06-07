@@ -110,6 +110,10 @@ export abstract class Provider {
   abstract continueFlow(flowId: string): Flow | Promise<Flow>;
   abstract clearFlow(flowId: string): Promise<void>;
   abstract stopFlow(flowId: string): Promise<void>;
+  abstract stopFlowOperation(
+    flowId: string,
+    op: Operation<any>,
+  ): Promise<OpState>;
   abstract finishFlow(flowId: string, status?: string): void;
   abstract waitForFlowFinish(
     id: string,

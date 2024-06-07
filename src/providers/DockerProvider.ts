@@ -8,15 +8,32 @@ import {
   OperationResults,
   Log,
 } from './Provider.js';
-import Docker, { Container, MountType } from 'dockerode';
+import Docker, {
+  Container,
+  ContainerCreateOptions,
+  MountType,
+} from 'dockerode';
 import stream from 'stream';
 import { parse } from 'shell-quote';
 import { BasicProvider } from './BasicProvider.js';
 import { sleep } from '../generic/utils.js';
 import { getSDK } from '../services/sdk.js';
 import { extractResultsFromLogs } from './utils/extractResultsFromLogs.js';
-import ora from 'ora';
-import { u } from 'tar';
+import { config } from '../config/index.js';
+
+export type RunContainerArgs = {
+  name?: string;
+  networks?: { [key: string]: {} };
+  cmd?: string[];
+  gpu?: boolean;
+  volumes?: Array<{
+    dest: string;
+    name: string;
+  }>;
+  env?: { [key: string]: string };
+  work_dir?: string;
+  entrypoint?: string | string[];
+};
 
 export class DockerProvider extends BasicProvider implements Provider {
   protected docker: Docker;
@@ -268,47 +285,17 @@ export class DockerProvider extends BasicProvider implements Provider {
       const flow = this.getFlow(flowId) as Flow;
       const parsedcmd = parse(cmd);
 
-      const name = [...Array(32)]
-        .map(() => Math.random().toString(36)[2])
-        .join('');
-      updateOpState({ providerId: name });
-
-      // const logs: OpState['logs'] = [];
-
-      this.handleLogStreams(
-        name,
-        (data: { log: string; type: 'stdin' | 'stdout' | 'stderr' }) => {
-          this.eventEmitter.emit('newLog', {
-            type: data.type,
-            log: data.log,
-          });
-          // logs.push({
-          //   type: data.type,
-          //   log: data.log,
-          // });
-          // updateOpState({ logs });
-        },
-        3,
-      ).catch((e) => {
-        console.error(chalk.red(`Error handling log streams for ${name}`, e));
-      });
-
       // create volume mount array
       const volumes = [];
       if (opArgs.volumes && opArgs.volumes.length > 0) {
         for (let i = 0; i < opArgs.volumes.length; i++) {
           const volume = opArgs.volumes[i];
           volumes.push({
-            Target: volume.dest,
-            Source: flowId + '-' + volume.name,
-            Type: 'volume' as MountType,
-            ReadOnly: false,
+            dest: volume.dest,
+            name: flowId + '-' + volume.name,
           });
         }
       }
-
-      // pass stream, but we are not using it, as we are using handleLogStreams
-      const emptyStream = new stream.PassThrough();
 
       // check for global & local options
       const work_dir =
@@ -325,60 +312,142 @@ export class DockerProvider extends BasicProvider implements Provider {
           ? opArgs.entrypoint
           : flow.jobDefinition.global.entrypoint;
 
-      const devices =
-        opArgs.gpu ||
-        (flow.jobDefinition.global && flow.jobDefinition.global.gpu)
-          ? [
-              {
-                Count: -1,
-                Driver: 'nvidia',
-                Capabilities: [['gpu']],
-              },
-            ]
-          : [];
-
       const globalEnv =
         flow.jobDefinition.global && flow.jobDefinition.global.env
           ? flow.jobDefinition.global.env
           : {};
-      const vars = [];
-      for (const [key, value] of Object.entries({
-        ...globalEnv,
-        ...opArgs.env,
-      })) {
-        vars.push(`${key}=${value}`);
-      }
-
       this.eventEmitter.emit('newLog', {
         type: 'info',
-        log: chalk.cyan('Running in container'),
+        log: chalk.cyan('Starting container'),
       });
-
-      return await this.docker
-        .run(opArgs.image, parsedcmd as string[], emptyStream, {
+      const name = flowId + '-' + flow.state.opStates[opStateIndex].operationId;
+      await this.docker.createNetwork({ Name: name });
+      const networks: { [key: string]: {} } = {};
+      networks[name] = {};
+      const container: Container = await this.runContainer(
+        opArgs.image ? opArgs.image : flow.jobDefinition.global?.image!,
+        {
           name,
-          Tty: false,
-          Env: vars,
-          Entrypoint: entrypoint,
-          HostConfig: {
-            Mounts: volumes,
-            DeviceRequests: devices,
+          cmd: parsedcmd as string[],
+          env: {
+            ...globalEnv,
+            ...opArgs.env,
           },
-          WorkingDir: work_dir,
-        })
-        .then(async ([res, container]) => {
-          await this.finishOpContainerRun({
-            container,
-            updateOpState,
-            operationResults,
-          });
-          emptyStream.end();
-          resolve(flow.state.opStates[opStateIndex]);
-        })
-        .catch((error) => {
-          reject(error);
+          networks,
+          gpu:
+            opArgs.gpu ||
+            (flow.jobDefinition.global && flow.jobDefinition.global.gpu),
+          entrypoint,
+          work_dir,
+          volumes,
+        },
+      );
+      updateOpState({ providerId: container.id });
+      this.eventEmitter.emit('newLog', {
+        type: 'info',
+        log: chalk.cyan('Running container ' + container.id),
+      });
+      if (opArgs.expose) {
+        await this.runContainer('docker.io/laurensv/nosana-frpc', {
+          name: 'frpc-' + name,
+          cmd: ['-c', '/etc/frp/frpc.toml'],
+          networks,
+          env: {
+            FRP_SERVER_ADDR: config.frp.serverAddr,
+            FRP_SERVER_PORT: config.frp.serverPort.toString(),
+            FRP_NAME: name,
+            FRP_LOCAL_IP: name,
+            FRP_LOCAL_PORT: opArgs.expose.toString(),
+            FRP_CUSTOM_DOMAIN: flowId + '.' + config.frp.serverAddr,
+          },
         });
+        this.eventEmitter.emit('newLog', {
+          type: 'info',
+          log: chalk.cyan(
+            `Exposing service at ${chalk.bold(
+              `https://${flowId}.${config.frp.serverAddr}`,
+            )}`,
+          ),
+        });
+      }
+      await container.wait();
+      await this.finishOpContainerRun({
+        container,
+        updateOpState,
+        operationResults,
+      });
+      resolve(flow.state.opStates[opStateIndex]);
     });
+  }
+
+  public async runContainer(
+    image: string,
+    {
+      name,
+      networks,
+      cmd,
+      gpu,
+      volumes,
+      env,
+      work_dir,
+      entrypoint,
+    }: RunContainerArgs,
+  ): Promise<Container> {
+    const devices = gpu
+      ? [
+          {
+            Count: -1,
+            Driver: 'nvidia',
+            Capabilities: [['gpu']],
+          },
+        ]
+      : [];
+    const dockerVolumes = [];
+    if (volumes && volumes.length > 0) {
+      for (let i = 0; i < volumes.length; i++) {
+        const volume = volumes[i];
+        dockerVolumes.push({
+          Target: volume.dest,
+          Source: volume.name,
+          Type: 'volume' as MountType,
+          ReadOnly: false,
+        });
+      }
+    }
+    const vars: string[] = [];
+    if (env) {
+      for (const [key, value] of Object.entries(env)) {
+        vars.push(`${key}=${value}`);
+      }
+    }
+    const optsc: ContainerCreateOptions = {
+      name: name,
+      Hostname: '',
+      User: '',
+      AttachStdin: false,
+      AttachStdout: true,
+      AttachStderr: true,
+      Tty: false,
+      OpenStdin: false,
+      StdinOnce: false,
+      Env: vars,
+      Cmd: cmd,
+      Image: image,
+      WorkingDir: work_dir,
+      Entrypoint: entrypoint,
+      NetworkingConfig: {
+        EndpointsConfig: networks,
+      },
+      HostConfig: {
+        Mounts: dockerVolumes,
+        NetworkMode: 'bridge',
+        DeviceRequests: devices,
+      },
+    };
+
+    const container = await this.docker.createContainer(optsc);
+    await container.start();
+    return container;
   }
 
   protected hookPreRun(flow: Flow): Flow {
@@ -430,6 +499,26 @@ export class DockerProvider extends BasicProvider implements Provider {
       }
     }
     return flow;
+  }
+
+  public async stopFlowOperation(
+    flowId: string,
+    op: Operation<any>,
+  ): Promise<OpState> {
+    const opState = this.db.data.flows[flowId].state.opStates.find(
+      (opState) => opState.operationId === op.id,
+    );
+    if (!opState) throw new Error('could not find opState');
+    if (opState.providerId) {
+      const container = this.docker.getContainer(opState.providerId);
+      try {
+        await container.stop();
+      } catch (e) {
+        // Couldn't stop container
+      }
+    }
+
+    return opState;
   }
 
   /**
@@ -589,9 +678,9 @@ export class DockerProvider extends BasicProvider implements Provider {
         await this.stopAndRemoveContainer(
           flow.state.opStates[i].providerId as string,
         );
-        await this.stopAndRemoveContainer(
-          ('frpc-' + flow.state.opStates[i].providerId) as string,
-        );
+        const frpcName =
+          'frpc-' + flowId + '-' + flow.state.opStates[i].operationId;
+        await this.stopAndRemoveContainer(frpcName);
       }
     }
 
