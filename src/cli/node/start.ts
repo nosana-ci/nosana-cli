@@ -168,8 +168,7 @@ export async function startNode(
       throw e;
     }
     // benchmark
-    let gpus: Array<string> = [];
-    gpus = await runBenchmark();
+    let gpus = await runBenchmark();
 
     try {
       spinner = ora(chalk.cyan('Matching GPU to correct market')).start();
@@ -831,10 +830,8 @@ export async function startNode(
   jobLoop(true);
 }
 
-const runBenchmark = async (
-  printDetailed: boolean = true,
-): Promise<Array<string>> => {
-  let gpus: Array<string> = [];
+const runBenchmark = async (printDetailed: boolean = true): Promise<string> => {
+  let gpus: string;
   try {
     /****************
      * Benchmark *
@@ -894,15 +891,7 @@ const runBenchmark = async (
         throw new Error('GPU benchmark returned with no devices');
       }
 
-      for (const { index, name, uuid, results } of devices) {
-        const sum = results.reduce((a, b) => a + b, 0);
-
-        if (sum / (index + 1) !== 55) {
-          throw new Error(`GPU logic test failed`);
-        }
-
-        gpus.push(`GPU ${index}: ${name} (UUID: ${uuid})`);
-      }
+      gpus = result.opStates[0].logs[0]!.log!;
 
       if (!result.opStates[1].logs)
         throw new Error(`Can't find disk space output`);
