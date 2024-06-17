@@ -521,8 +521,6 @@ export async function startNode(
     }
   };
   await healthCheck(true);
-
-  return;
   /****************
    *   Job Loop   *
    ****************/
