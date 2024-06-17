@@ -1,6 +1,6 @@
 import { Command } from 'commander';
 import { Client, Job, KeyWallet, Market, Run } from '@nosana/sdk';
-import { getSDK } from '../../services/sdk.js';
+import { getRawTransaction, getSDK } from '../../services/sdk.js';
 import chalk from 'chalk';
 import ora, { type Ora } from 'ora';
 import { sleep, clearLine } from '../../generic/utils.js';
@@ -11,7 +11,8 @@ import {
   NodeStats,
   getNodeStats,
   isRunExpired,
-  runBenchmark
+  runBenchmark,
+  healthCheck,
 } from '../../services/nodes.js';
 import { NotQueuedError } from '../../generic/errors.js';
 import { DockerProvider } from '../../providers/DockerProvider.js';
@@ -28,7 +29,6 @@ import {
   Transaction,
   VersionedTransaction,
 } from '@solana/web3.js';
-import { EMPTY_ADDRESS } from '../../services/jobs.js';
 import { PodmanProvider } from '../../providers/PodmanProvider.js';
 import { config } from '../../config.js';
 import { fetch, setGlobalDispatcher, Agent } from 'undici';
@@ -385,149 +385,32 @@ export async function startNode(
   /****************
    * Health Check *
    ****************/
-  const healthCheck = async (printDetailed: boolean = true) => {
-    if (printDetailed) {
-      spinner = ora(chalk.cyan('Checking SOL balance')).start();
-    } else {
-      spinner = ora(chalk.cyan('Health checks')).start();
-      // only run benchmark when it isnt first run of healthCheck as it already ran on start
-      await runBenchmark(provider, spinner, printDetailed);
-    }
-    let stats: NodeStats | null = null;
-    try {
-      stats = await getNodeStats(node);
-    } catch (e) {
-      spinner.warn(
-        'Could not check SOL balance, make sure you have enough SOL',
-      );
-    }
-    if (stats) {
-      if (stats.sol / 1e9 < 0.005) {
-        spinner.fail(chalk.red.bold('Not enough SOL balance'));
-        throw new Error(
-          `SOL balance ${
-            stats.sol / 1e9
-          } should be 0.005 or higher. Send some SOL to your node address ${chalk.cyan(
-            node,
-          )} `,
-        );
-      }
-      if (printDetailed) {
-        spinner.succeed(
-          chalk.green(`Sol balance: ${chalk.bold(stats.sol / 1e9)}`),
-        );
-      }
-    }
-    if (printDetailed) {
-      spinner = ora(chalk.cyan('Checking provider health')).start();
-    }
-    try {
-      await provider.healthy();
-    } catch (error) {
-      spinner.fail(
-        chalk.red(`${chalk.bold(options.provider)} provider not healthy`),
-      );
-      throw error;
-    }
-    switch (options.provider) {
-      case 'docker':
-      default:
-        if (printDetailed) {
-          spinner.succeed(
-            chalk.green(`Podman is running on ${chalk.bold(options.podman)}`),
-          );
-        }
-        break;
-    }
+  await healthCheck({
+    node,
+    provider,
+    spinner,
+    market,
+    marketAccount,
+    nft,
+    options,
+  });
 
-    try {
-      // create NOS ATA if it doesn't exists
-      await nosana.solana.createNosAta(node);
-    } catch (error) {
-      throw error;
-    }
-
-    let stake;
-    try {
-      if (printDetailed) {
-        spinner = ora(chalk.cyan('Checking stake account')).start();
-      }
-      stake = await nosana.stake.get(node);
-    } catch (error: any) {
-      if (error.message && error.message.includes('Account does not exist')) {
-        spinner.text = chalk.cyan('Creating stake account');
-        // If no stake account: create empty stake account
-        await nosana.stake.create(new PublicKey(node), 0, 14);
-        await sleep(2);
-        stake = await nosana.stake.get(node);
-      } else {
-        throw error;
-      }
-    }
-    if (printDetailed) {
-      spinner.succeed(
-        chalk.green(
-          `Stake found with ${chalk.bold(stake.amount / 1e6)} NOS staked`,
-        ),
-      );
-    }
-    try {
-      if (
-        marketAccount!.nodeAccessKey.toString() === EMPTY_ADDRESS.toString()
-      ) {
-        if (printDetailed) {
-          spinner.succeed(chalk.green(`Open market ${chalk.bold(market)}`));
-        }
-      } else {
-        if (printDetailed) {
-          spinner.text = chalk.cyan(
-            `Checking required access key for market ${chalk.bold(market)}`,
-          );
-        }
-        const nftFromChain = await nosana.solana.getNftFromCollection(
-          node,
-          marketAccount?.nodeAccessKey.toString() as string,
-        );
-        if (nftFromChain) {
-          nft = nftFromChain;
-          if (printDetailed) {
-            spinner.succeed(
-              chalk.green(
-                `Found access key ${chalk.bold(nft)} for market ${chalk.bold(
-                  market,
-                )}`,
-              ),
-            );
-          }
-        } else {
-          if (!nft) {
-            throw new Error('Could not find access key');
-          }
-          spinner.succeed(
-            chalk.yellow(
-              `Could not find key on-chain, trying access key ${chalk.bold(
-                nft,
-              )} for market ${chalk.bold(market)}`,
-            ),
-          );
-        }
-      }
-    } catch (e: any) {
-      spinner.fail(chalk.red(`Denied access to market ${chalk.bold(market)}`));
-      throw e;
-    }
-    if (!printDetailed) {
-      spinner.succeed('Health checks passed');
-    }
-  };
-  await healthCheck(true);
   /****************
    *   Job Loop   *
    ****************/
   const jobLoop = async (firstRun: Boolean = false): Promise<void> => {
     try {
       if (!firstRun) {
-        await healthCheck(false);
+        await healthCheck({
+          node,
+          provider,
+          spinner,
+          market,
+          marketAccount,
+          nft,
+          options,
+          printDetailed: false,
+        });
       }
       spinner = ora(chalk.cyan('Checking existing runs')).start();
 
@@ -827,15 +710,3 @@ export async function startNode(
   };
   jobLoop(true);
 }
-
-const getRawTransaction = async (
-  encodedTransaction: Uint8Array,
-): Promise<Transaction | VersionedTransaction> => {
-  let recoveredTransaction: Transaction | VersionedTransaction;
-  try {
-    recoveredTransaction = Transaction.from(encodedTransaction);
-  } catch (error) {
-    recoveredTransaction = VersionedTransaction.deserialize(encodedTransaction);
-  }
-  return recoveredTransaction;
-};

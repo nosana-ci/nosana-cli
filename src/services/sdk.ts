@@ -4,7 +4,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import 'rpc-websockets/dist/lib/client.js';
-import { Keypair, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { Keypair, LAMPORTS_PER_SOL, Transaction, VersionedTransaction } from '@solana/web3.js';
 import { colors } from '../generic/utils.js';
 import { config as envConfig } from '../config.js';
 import chalk from 'chalk';
@@ -133,3 +133,15 @@ export async function setSDK(
 export function getSDK() {
   return nosana;
 }
+
+export const getRawTransaction = async (
+  encodedTransaction: Uint8Array,
+): Promise<Transaction | VersionedTransaction> => {
+  let recoveredTransaction: Transaction | VersionedTransaction;
+  try {
+    recoveredTransaction = Transaction.from(encodedTransaction);
+  } catch (error) {
+    recoveredTransaction = VersionedTransaction.deserialize(encodedTransaction);
+  }
+  return recoveredTransaction;
+};
