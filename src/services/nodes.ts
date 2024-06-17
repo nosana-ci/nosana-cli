@@ -3,6 +3,14 @@ import { getSDK } from './sdk.js';
 import 'rpc-websockets/dist/lib/client.js';
 import { ClientSubscriptionId, PublicKey, TokenAmount } from '@solana/web3.js';
 import { NotQueuedError } from '../generic/errors.js';
+import benchmarkGPU from '../benchmark-gpu.json' assert { type: 'json' };
+import { CudaCheckResponse } from '../cli/node/types.js';
+import { FlowState, Provider } from '../providers/Provider.js';
+import chalk from 'chalk';
+import ora, { type Ora } from 'ora';
+
+// 25gb
+const MIN_DISK_SPACE = 25000;
 
 export type NodeStats = {
   sol: number;
@@ -167,4 +175,120 @@ export const checkQueued = async (
       return market;
     }
   }
+};
+
+export const runBenchmark = async (provider: Provider, spinner: Ora, printDetailed: boolean = true): Promise<string> => {
+  let gpus: string;
+  try {
+    /****************
+     * Benchmark *
+     ****************/
+    // @ts-expect-error todo fix
+    const jobDefinition: JobDefinition = benchmarkGPU;
+    let result: Partial<FlowState> | null;
+    // spinner = ora(chalk.cyan('Running benchmark')).start();
+    if (printDetailed) {
+      console.log(chalk.cyan('Running benchmark'));
+    }
+    // Create new flow
+    const flow = provider.run(jobDefinition);
+    result = await provider.waitForFlowFinish(
+      flow.id,
+      (event: { log: string; type: string }) => {
+        if (printDetailed) {
+          if (event.type === 'info') {
+            if (spinner && spinner.isSpinning) {
+              spinner.succeed();
+            }
+            if (
+              event.log.includes('Creating volume') ||
+              event.log.includes('Pulling image')
+            ) {
+              spinner = ora(event.log).start();
+            } else {
+              console.log(event.log);
+            }
+          } else if (event.type === 'stdout') {
+            process.stdout.write(event.log);
+          } else {
+            process.stderr.write(event.log);
+          }
+        }
+      },
+    );
+    if (spinner && spinner.isSpinning) {
+      spinner.succeed();
+    }
+    if (
+      result &&
+      result.status === 'success' &&
+      result.opStates &&
+      result.opStates[0] &&
+      result.opStates[1]
+    ) {
+      // GPU
+      if (!result.opStates[0].logs)
+        throw new Error('Cannot find GPU benchmark output');
+
+      const { devices } = JSON.parse(
+        result.opStates[0].logs[0].log!,
+      ) as CudaCheckResponse;
+
+      if (!devices) {
+        throw new Error('GPU benchmark returned with no devices');
+      }
+
+      gpus = result.opStates[0].logs[0]!.log!;
+
+      if (!result.opStates[1].logs)
+        throw new Error(`Can't find disk space output`);
+
+      // Disk space
+      for (let i = 0; i < result.opStates[1].logs.length; i++) {
+        let ds = result.opStates[1].logs[i];
+        if (ds.log) {
+          // in MB
+          const availableDiskSpace = parseInt(ds.log);
+          if (MIN_DISK_SPACE > availableDiskSpace) {
+            throw new Error(
+              `Not enough disk space available, found ${
+                availableDiskSpace / 1000
+              } GB available. Needs minimal ${MIN_DISK_SPACE / 1000} GB.`,
+            );
+          }
+        } else {
+          throw new Error(`Can't find disk space output`);
+        }
+      }
+    } else if (result && result.status === 'failed' && result.opStates) {
+      const output = [];
+
+      if (result.opStates[0]) {
+        const { error } = JSON.parse(
+          result.opStates[0].logs[0].log!,
+        ) as CudaCheckResponse;
+
+        if (error) {
+          output.push(
+            `GPU benchmark failed, please ensure your NVidia Cuda runtime drivers are up to date and your NVidia Container Toolkit is correctly configured.`,
+          );
+        }
+
+        output.push(result.opStates[0].logs);
+      }
+
+      if (result.opStates[1]) {
+        output.push(result.opStates[1].logs);
+      }
+      throw output;
+    } else {
+      throw 'Cant find results';
+    }
+  } catch (e: any) {
+    console.error(
+      chalk.red('Something went wrong while detecting hardware', e),
+    );
+    throw e;
+  }
+  return gpus;
 };
