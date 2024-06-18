@@ -8,8 +8,6 @@ import {
   getRun,
   checkQueued,
   waitForRun,
-  NodeStats,
-  getNodeStats,
   isRunExpired,
   runBenchmark,
   healthCheck,
@@ -26,7 +24,6 @@ import 'rpc-websockets/dist/lib/client.js';
 import {
   BlockheightBasedTransactionConfirmationStrategy,
   PublicKey,
-  Transaction,
   VersionedTransaction,
 } from '@solana/web3.js';
 import { PodmanProvider } from '../../providers/PodmanProvider.js';
@@ -166,7 +163,6 @@ export async function startNode(
     }
     // benchmark
     let gpus = await runBenchmark(provider, spinner);
-    console.log('gpus', gpus);
 
     try {
       spinner = ora(chalk.cyan('Matching GPU to correct market')).start();
