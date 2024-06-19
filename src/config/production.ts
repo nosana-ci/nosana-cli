@@ -14,5 +14,5 @@ export const config: configType = {
       : 7000,
   },
   // 25GB
-  minDiskSpace: 25000
+  minDiskSpace: 25000,
 };
