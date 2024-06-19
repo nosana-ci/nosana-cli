@@ -12,4 +12,6 @@ export const config: configType = {
       ? parseInt(process?.env?.FRP_SERVER_PORT)
       : 7000,
   },
+  // 25GB
+  minDiskSpace: 25000
 };

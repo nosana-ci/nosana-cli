@@ -10,9 +10,7 @@ import chalk from 'chalk';
 import ora, { type Ora } from 'ora';
 import { sleep } from '../generic/utils.js';
 import { EMPTY_ADDRESS } from './jobs.js';
-
-// 25gb
-const MIN_DISK_SPACE = 25000;
+import { config } from '../config.js';
 
 export type NodeStats = {
   sol: number;
@@ -255,11 +253,11 @@ export const runBenchmark = async (
         if (ds.log) {
           // in MB
           const availableDiskSpace = parseInt(ds.log);
-          if (MIN_DISK_SPACE > availableDiskSpace) {
+          if (config.minDiskSpace > availableDiskSpace) {
             throw new Error(
               `Not enough disk space available, found ${
                 availableDiskSpace / 1000
-              } GB available. Needs minimal ${MIN_DISK_SPACE / 1000} GB.`,
+              } GB available. Needs minimal ${config.minDiskSpace / 1000} GB.`,
             );
           }
         } else {
