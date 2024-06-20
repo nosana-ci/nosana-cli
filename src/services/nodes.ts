@@ -28,7 +28,7 @@ export type HealthCheckArgs = {
   nft?: PublicKey | undefined;
   options: { [key: string]: any };
   printDetailed?: boolean;
-}
+};
 
 export const getNodeStats = async (
   node: PublicKey | string,
@@ -330,21 +330,17 @@ export const healthCheck = async ({
     spinner.warn('Could not check SOL balance, make sure you have enough SOL');
   }
   if (stats) {
-    const solBalance = stats.sol / 1e9
+    const solBalance = stats.sol / 1e9;
     if (solBalance < 0.005) {
       spinner.fail(chalk.red.bold('Not enough SOL balance'));
       throw new Error(
-        `SOL balance ${
-          solBalance
-        } should be 0.005 or higher. Send some SOL to your node address ${chalk.cyan(
+        `SOL balance ${solBalance} should be 0.005 or higher. Send some SOL to your node address ${chalk.cyan(
           node,
         )} `,
       );
     }
     if (printDetailed) {
-      spinner.succeed(
-        chalk.green(`Sol balance: ${chalk.bold(solBalance)}`),
-      );
+      spinner.succeed(chalk.green(`Sol balance: ${chalk.bold(solBalance)}`));
     }
   }
   if (printDetailed) {
