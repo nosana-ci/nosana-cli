@@ -1,6 +1,7 @@
 import { Command } from 'commander';
+
+import { download } from '../../actions/job';
 import { networkOption, rpcOption } from '../sharedOptions';
-import { download } from '../../job';
 
 export const downloadJobCommand = new Command('download')
   .description('Download an external artifact from IPFS to specified path')

@@ -1,6 +1,6 @@
 import { Command, Option } from 'commander';
 
-import { startNode } from '../../node';
+import { startNode } from '../../actions/node';
 import { networkOption, rpcOption, walletOption } from '../sharedOptions';
 
 export const startNodeCommand = new Command('start')

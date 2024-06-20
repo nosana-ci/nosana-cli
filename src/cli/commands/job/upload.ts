@@ -1,6 +1,6 @@
 import { Command } from 'commander';
 
-import { upload } from '../../job';
+import { upload } from '../../actions/job';
 import { networkOption, rpcOption } from '../sharedOptions';
 
 export const uploadJobCommand = new Command('upload')

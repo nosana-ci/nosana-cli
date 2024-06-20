@@ -1,6 +1,7 @@
 import { Command, Option } from 'commander';
+
+import { runBenchmark } from '../../actions/node';
 import { networkOption, rpcOption, walletOption } from '../sharedOptions';
-import { runBenchmark } from '../../node';
 
 export const joinTestGridCommand = new Command('join-test-grid')
   .addOption(

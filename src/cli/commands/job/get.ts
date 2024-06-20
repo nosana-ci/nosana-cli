@@ -1,6 +1,6 @@
 import { Command, Option } from 'commander';
 
-import { getJob } from '../../job';
+import { getJob } from '../../actions/job';
 import { networkOption, rpcOption } from '../sharedOptions';
 
 export const getJobCommand = new Command('get')

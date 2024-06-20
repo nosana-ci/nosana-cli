@@ -3,7 +3,7 @@ import figlet from 'figlet';
 import { Command, Option } from 'commander';
 
 import { setSDK } from './services/sdk';
-import { startCLI } from './cli/startCli';
+import { startCLI } from './cli';
 import { jobCommand } from './cli/commands/job';
 import { nodeCommand } from './cli/commands/node';
 

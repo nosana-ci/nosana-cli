@@ -1,6 +1,6 @@
 import { Command } from 'commander';
 
-import { view } from '../../node';
+import { view } from '../../actions/node';
 import { networkOption, rpcOption } from '../sharedOptions';
 
 export const viewNodeCommand = new Command('view')
