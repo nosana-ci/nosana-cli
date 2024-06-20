@@ -4,7 +4,7 @@ import 'rpc-websockets/dist/lib/client.js';
 import { ClientSubscriptionId, PublicKey, TokenAmount } from '@solana/web3.js';
 import { NotQueuedError } from '../generic/errors.js';
 import benchmarkGPU from '../benchmark-gpu.json' assert { type: 'json' };
-import { CudaCheckResponse } from '../cli/node/types.js';
+import { CudaCheckResponse } from '../types/cudaCheck';
 import { FlowState, JobDefinition, Provider } from '../providers/Provider.js';
 import chalk from 'chalk';
 import ora, { type Ora } from 'ora';

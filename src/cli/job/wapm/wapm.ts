@@ -17,6 +17,7 @@ const WAPM_GRAPHQL_QUERY = `query shellGetCommandQuery($command: String!) {
   }
 }`;
 
+// THIS FUNCTION IS NOT USED CAN IT BE DELETED?
 export const getWAPMUrlForCommandName = async (commandName: string) => {
   const fetchResponse = await fetch('https://registry.wasmer.io/graphql', {
     method: 'POST',

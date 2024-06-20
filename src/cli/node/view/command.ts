@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 
-import { view } from '../../actions/node';
-import { networkOption, rpcOption } from '../sharedOptions';
+import { view } from './action';
+import { networkOption, rpcOption } from '../../sharedOptions';
 
 export const viewNodeCommand = new Command('view')
   .command('view')

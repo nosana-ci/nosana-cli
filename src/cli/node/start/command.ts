@@ -1,7 +1,7 @@
 import { Command, Option } from 'commander';
 
-import { startNode } from '../../actions/node';
-import { networkOption, rpcOption, walletOption } from '../sharedOptions';
+import { startNode } from './action';
+import { networkOption, rpcOption, walletOption } from '../../sharedOptions';
 
 export const startNodeCommand = new Command('start')
   .argument('[market]', 'market address')

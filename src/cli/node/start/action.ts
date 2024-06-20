@@ -1,9 +1,27 @@
+import chalk from 'chalk';
 import { Command } from 'commander';
 import { Client, Job, KeyWallet, Market, Run } from '@nosana/sdk';
-import { getRawTransaction, getSDK } from '../../services/sdk.js';
-import chalk from 'chalk';
+import { fetch, setGlobalDispatcher, Agent } from 'undici';
 import ora, { type Ora } from 'ora';
-import { sleep, clearLine } from '../../generic/utils.js';
+import 'rpc-websockets/dist/lib/client.js';
+
+import { config } from '../../../config.js';
+import { sleep, clearLine } from '../../../generic/utils.js';
+import { NotQueuedError } from '../../../generic/errors.js';
+import { DockerProvider } from '../../../providers/DockerProvider.js';
+import {
+  Provider,
+  JobDefinition,
+  FlowState,
+  OperationArgsMap,
+} from '../../../providers/Provider.js';
+import {
+  BlockheightBasedTransactionConfirmationStrategy,
+  PublicKey,
+  VersionedTransaction,
+} from '@solana/web3.js';
+import { PodmanProvider } from '../../../providers/PodmanProvider.js';
+import { getRawTransaction, getSDK } from '../../../services/sdk.js';
 import {
   getRun,
   checkQueued,
@@ -11,24 +29,7 @@ import {
   isRunExpired,
   runBenchmark,
   healthCheck,
-} from '../../services/nodes.js';
-import { NotQueuedError } from '../../generic/errors.js';
-import { DockerProvider } from '../../providers/DockerProvider.js';
-import {
-  Provider,
-  JobDefinition,
-  FlowState,
-  OperationArgsMap,
-} from '../../providers/Provider.js';
-import 'rpc-websockets/dist/lib/client.js';
-import {
-  BlockheightBasedTransactionConfirmationStrategy,
-  PublicKey,
-  VersionedTransaction,
-} from '@solana/web3.js';
-import { PodmanProvider } from '../../providers/PodmanProvider.js';
-import { config } from '../../config.js';
-import { fetch, setGlobalDispatcher, Agent } from 'undici';
+} from '../../../services/nodes.js';
 
 setGlobalDispatcher(new Agent({ connect: { timeout: 150_000 } }));
 

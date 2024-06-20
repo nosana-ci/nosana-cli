@@ -1,15 +1,16 @@
-import { Client } from '@nosana/sdk';
-import { getSDK } from '../../services/sdk.js';
-import { getJob } from './get.js';
 import fs from 'node:fs';
+import chalk from 'chalk';
 import { randomUUID } from 'crypto';
-import { colors } from '../../generic/utils.js';
+import { Client } from '@nosana/sdk';
 import { IValidation } from 'typia';
+
+import { getJob } from '../get/action.js';
+import { colors } from '../../../generic/utils.js';
+import { getSDK } from '../../../services/sdk.js';
 import {
   JobDefinition,
   validateJobDefinition,
-} from '../../providers/Provider.js';
-import chalk from 'chalk';
+} from '../../../providers/Provider.js';
 
 export async function run(
   command: Array<string>,

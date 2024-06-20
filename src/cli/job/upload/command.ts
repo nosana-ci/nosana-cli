@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 
-import { upload } from '../../actions/job';
-import { networkOption, rpcOption } from '../sharedOptions';
+import { upload } from './action';
+import { networkOption, rpcOption } from '../../sharedOptions';
 
 export const uploadJobCommand = new Command('upload')
   .description('Upload a file to IPFS')

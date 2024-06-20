@@ -4,8 +4,8 @@ import { Command, Option } from 'commander';
 
 import { setSDK } from './services/sdk';
 import { startCLI } from './cli';
-import { jobCommand } from './cli/commands/job';
-import { nodeCommand } from './cli/commands/node';
+import { jobCommand } from './cli/job';
+import { nodeCommand } from './cli/node';
 
 const program: Command = new Command();
 

@@ -1,11 +1,12 @@
+import fs from 'fs';
+import tar from 'tar';
+import zlib from 'zlib';
+import { Readable } from 'stream';
 import { Command } from 'commander';
 import { Client } from '@nosana/sdk';
-import { getSDK } from '../../services/sdk.js';
-import zlib from 'zlib';
-import tar from 'tar';
-import { Readable } from 'stream';
-import fs from 'fs';
-import { colors } from '../../generic/utils.js';
+
+import { getSDK } from '../../../services/sdk';
+import { colors } from '../../../generic/utils';
 
 export async function download(
   ipfshash: string,
