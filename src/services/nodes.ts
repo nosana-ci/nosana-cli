@@ -5,7 +5,7 @@ import { ClientSubscriptionId, PublicKey, TokenAmount } from '@solana/web3.js';
 import { NotQueuedError } from '../generic/errors.js';
 import benchmarkGPU from '../benchmark-gpu.json' assert { type: 'json' };
 import { CudaCheckResponse } from '../cli/node/types.js';
-import { FlowState, Provider } from '../providers/Provider.js';
+import { FlowState, JobDefinition, Provider } from '../providers/Provider.js';
 import chalk from 'chalk';
 import ora, { type Ora } from 'ora';
 import { sleep } from '../generic/utils.js';
@@ -18,6 +18,17 @@ export type NodeStats = {
   stake: number;
   nfts: Array<PublicKey>;
 };
+
+export type HealthCheckArgs = {
+  node: string;
+  provider: Provider;
+  spinner: Ora;
+  market: string;
+  marketAccount: Market | null;
+  nft?: PublicKey | undefined;
+  options: { [key: string]: any };
+  printDetailed?: boolean;
+}
 
 export const getNodeStats = async (
   node: PublicKey | string,
@@ -187,15 +198,12 @@ export const runBenchmark = async (
     /****************
      * Benchmark *
      ****************/
-    // @ts-expect-error todo fix
-    const jobDefinition: JobDefinition = benchmarkGPU;
     let result: Partial<FlowState> | null;
-    // spinner = ora(chalk.cyan('Running benchmark')).start();
     if (printDetailed) {
       console.log(chalk.cyan('Running benchmark'));
     }
     // Create new flow
-    const flow = provider.run(jobDefinition);
+    const flow = provider.run(benchmarkGPU as JobDefinition);
     result = await provider.waitForFlowFinish(
       flow.id,
       (event: { log: string; type: string }) => {
@@ -306,16 +314,7 @@ export const healthCheck = async ({
   nft,
   options,
   printDetailed = true,
-}: {
-  node: string;
-  provider: Provider;
-  spinner: Ora;
-  market: string;
-  marketAccount: Market | null;
-  nft?: PublicKey | undefined;
-  options: { [key: string]: any };
-  printDetailed?: boolean;
-}) => {
+}: HealthCheckArgs) => {
   const nosana: Client = getSDK();
   if (printDetailed) {
     spinner = ora(chalk.cyan('Checking SOL balance')).start();
@@ -331,11 +330,12 @@ export const healthCheck = async ({
     spinner.warn('Could not check SOL balance, make sure you have enough SOL');
   }
   if (stats) {
-    if (stats.sol / 1e9 < 0.005) {
+    const solBalance = stats.sol / 1e9
+    if (solBalance < 0.005) {
       spinner.fail(chalk.red.bold('Not enough SOL balance'));
       throw new Error(
         `SOL balance ${
-          stats.sol / 1e9
+          solBalance
         } should be 0.005 or higher. Send some SOL to your node address ${chalk.cyan(
           node,
         )} `,
@@ -343,7 +343,7 @@ export const healthCheck = async ({
     }
     if (printDetailed) {
       spinner.succeed(
-        chalk.green(`Sol balance: ${chalk.bold(stats.sol / 1e9)}`),
+        chalk.green(`Sol balance: ${chalk.bold(solBalance)}`),
       );
     }
   }
@@ -358,15 +358,11 @@ export const healthCheck = async ({
     );
     throw error;
   }
-  switch (options.provider) {
-    case 'docker':
-    default:
-      if (printDetailed) {
-        spinner.succeed(
-          chalk.green(`Podman is running on ${chalk.bold(options.podman)}`),
-        );
-      }
-      break;
+
+  if (printDetailed) {
+    spinner.succeed(
+      chalk.green(`Podman is running on ${chalk.bold(options.podman)}`),
+    );
   }
 
   try {

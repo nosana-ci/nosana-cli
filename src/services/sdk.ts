@@ -142,11 +142,9 @@ export function getSDK() {
 export const getRawTransaction = async (
   encodedTransaction: Uint8Array,
 ): Promise<Transaction | VersionedTransaction> => {
-  let recoveredTransaction: Transaction | VersionedTransaction;
   try {
-    recoveredTransaction = Transaction.from(encodedTransaction);
+    return Transaction.from(encodedTransaction);
   } catch (error) {
-    recoveredTransaction = VersionedTransaction.deserialize(encodedTransaction);
+    return VersionedTransaction.deserialize(encodedTransaction);
   }
-  return recoveredTransaction;
 };

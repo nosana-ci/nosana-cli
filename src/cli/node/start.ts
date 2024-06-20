@@ -364,7 +364,7 @@ export async function startNode(
     spinner.succeed('Got access key for market: ' + market);
   }
 
-  let marketAccount: Market | null = null;
+  let marketAccount: Market;
   try {
     spinner = ora(chalk.cyan('Retrieving market')).start();
     marketAccount = await nosana.jobs.getMarket(market);
