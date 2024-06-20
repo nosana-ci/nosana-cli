@@ -405,7 +405,7 @@ export const healthCheck = async ({
       }
       const nftFromChain = await nosana.solana.getNftFromCollection(
         node,
-        marketAccount?.nodeAccessKey.toString() as string,
+        marketAccount!.nodeAccessKey.toString(),
       );
       if (nftFromChain) {
         nft = nftFromChain;
