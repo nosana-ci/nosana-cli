@@ -4,6 +4,7 @@ import { runBenchmark } from './action';
 import { networkOption, rpcOption, walletOption } from '../../sharedOptions';
 
 export const joinTestGridCommand = new Command('join-test-grid')
+  .description('Join Test Grid Devnet Job')
   .addOption(
     new Option(
       '--provider <provider>',
@@ -34,5 +35,4 @@ export const joinTestGridCommand = new Command('join-test-grid')
     ).default('~/.nosana/'),
   )
   .addOption(new Option('--no-airdrop', 'no airdrop on devnet'))
-  .description('Join Test Grid Devnet Job')
   .action(runBenchmark);

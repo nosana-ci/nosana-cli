@@ -3,11 +3,11 @@ import { Client } from '@nosana/sdk';
 import { PublicKey } from '@solana/web3.js';
 import 'rpc-websockets/dist/lib/client.js';
 
-import { download } from '../download/action.js';
-import { clearLine, colors } from '../../../generic/utils.js';
+import { download } from '../download/action';
+import { clearLine, colors } from '../../../generic/utils';
 import { OpState } from '../../../providers/Provider.js';
-import { getSDK } from '../../../services/sdk.js';
-import { waitForJobCompletion } from '../../../services/jobs.js';
+import { getSDK } from '../../../services/sdk';
+import { waitForJobCompletion } from '../../../services/jobs';
 
 export async function getJob(
   jobAddress: string,

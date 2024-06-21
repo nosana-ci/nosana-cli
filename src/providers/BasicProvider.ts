@@ -18,8 +18,15 @@ import { IValidation } from 'typia';
 import { CronJob } from 'cron';
 import { sleep } from '../generic/utils.js';
 
-type FlowsDb = {
+type NodeDb = {
   flows: { [key: string]: Flow };
+  images: { [key: string]: ImageHistory };
+};
+
+type ImageHistory = {
+  image: string;
+  lastUsed: Date;
+  usage: number;
 };
 
 type OpFunction = (
@@ -30,7 +37,7 @@ type OpFunction = (
 ) => Promise<OpState>;
 
 export class BasicProvider implements Provider {
-  protected db: LowSync<FlowsDb>;
+  protected db: LowSync<NodeDb>;
   protected eventEmitter: EventEmitter = new EventEmitter();
   protected supportedOps: { [key: string]: OpFunction } = {};
   public clearFlowsCronJob: CronJob = new CronJob(
@@ -48,8 +55,9 @@ export class BasicProvider implements Provider {
       configLocation = configLocation.replace('~', os.homedir());
     }
     fs.mkdirSync(configLocation, { recursive: true });
-    this.db = JSONFileSyncPreset<FlowsDb>(`${configLocation}/flows.json`, {
+    this.db = JSONFileSyncPreset<NodeDb>(`${configLocation}/flows.json`, {
       flows: {},
+      images: {},
     });
   }
   /**

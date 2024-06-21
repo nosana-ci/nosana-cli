@@ -10,8 +10,8 @@ import {
   Transaction,
   VersionedTransaction,
 } from '@solana/web3.js';
-import { colors } from '../generic/utils.js';
-import { config as envConfig } from '../config.js';
+import { colors } from '../generic/utils';
+import { getConfig } from '../config';
 import chalk from 'chalk';
 
 let nosana: Client;
@@ -23,6 +23,7 @@ export async function setSDK(
   keyfile: string,
   airdrop: boolean = false,
 ): Promise<Client> {
+  const envConfig = await getConfig();
   const config: ClientConfig = {
     solana: {
       priority_fee: 100000,

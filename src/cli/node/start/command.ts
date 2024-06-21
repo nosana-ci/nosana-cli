@@ -4,6 +4,7 @@ import { startNode } from './action';
 import { networkOption, rpcOption, walletOption } from '../../sharedOptions';
 
 export const startNodeCommand = new Command('start')
+  .description('Start Nosana Node')
   .argument('[market]', 'market address')
   .addOption(networkOption)
   .addOption(rpcOption)
@@ -25,5 +26,4 @@ export const startNodeCommand = new Command('start')
       'Config path (to store the flows database and other config)',
     ).default('~/.nosana/'),
   )
-  .description('Start Nosana Node')
   .action(startNode);

@@ -4,13 +4,13 @@ import { randomUUID } from 'crypto';
 import { Client } from '@nosana/sdk';
 import { IValidation } from 'typia';
 
-import { getJob } from '../get/action.js';
-import { colors } from '../../../generic/utils.js';
-import { getSDK } from '../../../services/sdk.js';
+import { getJob } from '../get/action';
+import { colors } from '../../../generic/utils';
+import { getSDK } from '../../../services/sdk';
 import {
   JobDefinition,
   validateJobDefinition,
-} from '../../../providers/Provider.js';
+} from '../../../providers/Provider';
 
 export async function run(
   command: Array<string>,
