@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "allowJs": true,
     "target": "ES2021",
     "module": "ESNext",
     "moduleResolution": "node",
@@ -19,8 +20,7 @@
     "strictNullChecks": true
   },
   "ts-node": {
-    "esm": true,
-    "experimentalSpecifierResolution": "node"
+    "esm": true
   },
   "include": ["src/**/*"]
 }
