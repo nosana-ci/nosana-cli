@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { DockerProvider } from './DockerProvider.js';
+import { DockerProvider } from './DockerProvider';
 import {
   Flow,
   OpState,
@@ -7,8 +7,8 @@ import {
   OperationResults,
 } from './Provider.js';
 import { parse } from 'shell-quote';
-import { ifStringCastToArray } from '../generic/utils.js';
-import { config } from '../config.js';
+import { ifStringCastToArray } from '../generic/utils';
+import { config } from '../config';
 
 export class PodmanProvider extends DockerProvider {
   private apiUrl: string;

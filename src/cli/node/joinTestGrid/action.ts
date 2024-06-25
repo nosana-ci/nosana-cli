@@ -4,18 +4,19 @@ import { Client } from '@nosana/sdk';
 import ora, { Ora } from 'ora';
 import { IValidation } from 'typia';
 
-import { config } from '../../../config.js';
-import benchmark from '../../../benchmark.json' assert { type: 'json' };
-import { DockerProvider } from '../../../providers/DockerProvider.js';
+import { config } from '../../../config';
+// TODO: re-add assertion, removed due to ts-jest config - assert { type: 'json' }
+import benchmark from '../../../benchmark.json';
+import { DockerProvider } from '../../../providers/DockerProvider';
 import {
   Provider,
   Flow,
   JobDefinition,
   validateJobDefinition,
   FlowState,
-} from '../../../providers/Provider.js';
-import { PodmanProvider } from '../../../providers/PodmanProvider.js';
-import { getSDK } from '../../../services/sdk.js';
+} from '../../../providers/Provider';
+import { PodmanProvider } from '../../../providers/PodmanProvider';
+import { getSDK } from '../../../services/sdk';
 
 let flow: Flow | undefined;
 let provider: Provider;

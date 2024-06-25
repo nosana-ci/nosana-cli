@@ -8,7 +8,7 @@ import {
   validateJobDefinition,
   Operation,
   OperationResults,
-} from './Provider.js';
+} from './Provider';
 import fs from 'fs';
 import os from 'os';
 import { JSONFileSyncPreset } from 'lowdb/node';
@@ -16,7 +16,7 @@ import { LowSync } from 'lowdb/lib';
 import EventEmitter from 'events';
 import { IValidation } from 'typia';
 import { CronJob } from 'cron';
-import { sleep } from '../generic/utils.js';
+import { sleep } from '../generic/utils';
 
 type NodeDb = {
   flows: { [key: string]: Flow };

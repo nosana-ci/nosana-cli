@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 import { Client } from '@nosana/sdk';
 
-import { colors } from '../../../generic/utils.js';
-import { getSDK } from '../../../services/sdk.js';
+import { colors } from '../../../generic/utils';
+import { getSDK } from '../../../services/sdk';
 
 export async function upload(
   file: string,

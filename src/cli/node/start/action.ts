@@ -3,25 +3,25 @@ import { Command } from 'commander';
 import { Client, Job, KeyWallet, Market, Run } from '@nosana/sdk';
 import { fetch, setGlobalDispatcher, Agent } from 'undici';
 import ora, { type Ora } from 'ora';
-import 'rpc-websockets/dist/lib/client.js';
-
-import { config } from '../../../config.js';
-import { sleep, clearLine } from '../../../generic/utils.js';
-import { NotQueuedError } from '../../../generic/errors.js';
-import { DockerProvider } from '../../../providers/DockerProvider.js';
-import {
-  Provider,
-  JobDefinition,
-  FlowState,
-  OperationArgsMap,
-} from '../../../providers/Provider.js';
 import {
   BlockheightBasedTransactionConfirmationStrategy,
   PublicKey,
   VersionedTransaction,
 } from '@solana/web3.js';
-import { PodmanProvider } from '../../../providers/PodmanProvider.js';
-import { getRawTransaction, getSDK } from '../../../services/sdk.js';
+import 'rpc-websockets/dist/lib/client.js';
+
+import { config } from '../../../config';
+import { sleep, clearLine } from '../../../generic/utils';
+import { NotQueuedError } from '../../../generic/errors';
+import { DockerProvider } from '../../../providers/DockerProvider';
+import {
+  Provider,
+  JobDefinition,
+  FlowState,
+  OperationArgsMap,
+} from '../../../providers/Provider';
+import { PodmanProvider } from '../../../providers/PodmanProvider';
+import { getRawTransaction, getSDK } from '../../../services/sdk';
 import {
   getRun,
   checkQueued,
@@ -29,7 +29,7 @@ import {
   isRunExpired,
   runBenchmark,
   healthCheck,
-} from '../../../services/nodes.js';
+} from '../../../services/nodes';
 
 setGlobalDispatcher(new Agent({ connect: { timeout: 150_000 } }));
 

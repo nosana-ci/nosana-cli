@@ -7,16 +7,14 @@ import {
   OperationArgsMap,
   OperationResults,
   Log,
-} from './Provider.js';
+} from './Provider';
 import Docker, { Container, MountType } from 'dockerode';
 import stream from 'stream';
 import { parse } from 'shell-quote';
-import { BasicProvider } from './BasicProvider.js';
-import { sleep } from '../generic/utils.js';
-import { getSDK } from '../services/sdk.js';
-import { extractResultsFromLogs } from './utils/extractResultsFromLogs.js';
-import ora from 'ora';
-import { u } from 'tar';
+import { BasicProvider } from './BasicProvider';
+import { sleep } from '../generic/utils';
+import { getSDK } from '../services/sdk';
+import { extractResultsFromLogs } from './utils/extractResultsFromLogs';
 
 export class DockerProvider extends BasicProvider implements Provider {
   protected docker: Docker;

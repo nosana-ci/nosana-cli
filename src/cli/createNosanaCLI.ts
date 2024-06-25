@@ -10,7 +10,7 @@ export const createNosanaCLI = (version: string) =>
     .description('Nosana CLI')
     .version(version)
     .configureHelp({ showGlobalOptions: true })
-    .hook('preAction', async (thisCommand, actionCommand) => {
+    .hook('preAction', async (_, actionCommand) => {
       const opts = actionCommand.optsWithGlobals();
       let market = opts.market;
       if (opts.network) {
