@@ -47,6 +47,7 @@ program
 program
   .command('address')
   .addOption(walletOption)
+  .addOption(networkOption)
   .description('Print your public key address')
   .action(getAddress);
 

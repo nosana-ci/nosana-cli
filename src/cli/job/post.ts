@@ -5,8 +5,11 @@ import fs from 'node:fs';
 import { randomUUID } from 'crypto';
 import { colors } from '../../generic/utils.js';
 import { IValidation } from 'typia';
+import { config } from '../../config.js';
 import {
   JobDefinition,
+  Operation,
+  OperationArgsMap,
   validateJobDefinition,
 } from '../../providers/Provider.js';
 import chalk from 'chalk';
@@ -120,7 +123,7 @@ export async function run(
   );
 
   const solBalance = getSolBalance();
-  if (solBalance < 0.003 * 1e9) {
+  if (solBalance < 0.005 * 1e9) {
     throw new Error(
       chalk.red(
         `Minimum of ${chalk.bold(
@@ -168,8 +171,23 @@ export async function run(
     console.error(chalk.red("Couldn't post job"));
     throw e;
   }
-  console.log('job posted!', response);
+  console.log(`job posted with tx ${chalk.cyan(response.tx)}!`);
+  const isExposed =
+    json_flow.ops.map(
+      (op: Operation<any>) =>
+        op.type === 'container/run' &&
+        (op.args as OperationArgsMap['container/run']).expose,
+    ).length > 0;
   await sleep(3);
+  if (isExposed) {
+    console.log(
+      chalk.cyan(
+        `Service exposed at ${chalk.bold(
+          `https://${response.run}.${config.frp.serverAddr}`,
+        )}`,
+      ),
+    );
+  }
   await getJob(response.job, options, undefined);
 
   if (!(options.wait || options.download)) {

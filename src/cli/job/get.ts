@@ -7,6 +7,8 @@ import { PublicKey } from '@solana/web3.js';
 import { waitForJobCompletion } from '../../services/jobs.js';
 import { clearLine, colors } from '../../generic/utils.js';
 import { OpState } from '../../providers/Provider.js';
+import ora from 'ora';
+import chalk from 'chalk';
 
 export async function getJob(
   jobAddress: string,
@@ -45,19 +47,19 @@ export async function getJob(
     console.log(
       `Price:\t\t${colors.CYAN}${job.price / 1e6} NOS/s${colors.RESET}`,
     );
-
+    console.log(
+      `Status:\t\t${job.state === 'COMPLETED' ? colors.GREEN : colors.CYAN}${
+        job.state
+      }${colors.RESET}`,
+    );
     if (
       (options.wait || options.download) &&
       job.state !== 'COMPLETED' &&
       job.state !== 'STOPPED'
     ) {
-      console.log(
-        `Status:\t\t${job.state === 'COMPLETED' ? colors.GREEN : colors.CYAN}${
-          job.state
-        }${colors.RESET}`,
-      );
-
+      const spinner = ora(chalk.cyan(`Waiting for job to complete`)).start();
       job = await waitForJobCompletion(new PublicKey(jobAddress));
+      spinner.succeed();
       clearLine();
     }
 
