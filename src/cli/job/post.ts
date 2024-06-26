@@ -127,7 +127,7 @@ export async function run(
     throw new Error(
       chalk.red(
         `Minimum of ${chalk.bold(
-          '0.003',
+          '0.005',
         )} SOL needed: SOL available ${chalk.bold(
           (solBalance / 1e9).toFixed(4),
         )}`,
