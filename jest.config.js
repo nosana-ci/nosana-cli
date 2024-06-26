@@ -16,6 +16,7 @@ export default {
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
+  modulePathIgnorePatterns: ['<rootDir>/dist/'],
   extensionsToTreatAsEsm: ['.ts'],
   transformIgnorePatterns: [
     'node_modules/(?!@nosana|ora|cli-cursor|restore-cursor|log-symbols|is-unicode-supported|strip-ansi|ansi-regex|string-width|get-east-asian-width|is-interactive|stdin-discarder|lowdb|steno|chalk/.*)',
