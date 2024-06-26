@@ -1,3 +1,4 @@
+import fs from 'fs';
 import chalk from 'chalk';
 import { input, confirm } from '@inquirer/prompts';
 import { Client } from '@nosana/sdk';
@@ -5,8 +6,6 @@ import ora, { Ora } from 'ora';
 import { IValidation } from 'typia';
 
 import { config } from '../../../config.js';
-// TODO: re-add assertion, removed due to ts-jest config - assert { type: 'json' }
-import benchmark from '../../../benchmark.json';
 import { DockerProvider } from '../../../providers/DockerProvider.js';
 import {
   Provider,
@@ -72,8 +71,10 @@ export async function runBenchmark(options: { [key: string]: any }) {
     throw error;
   }
 
-  // @ts-expect-error todo fix
-  const jobDefinition: JobDefinition = benchmark;
+  const jobDefinition = JSON.parse(
+    fs.readFileSync('../../../benchmark.json', 'utf8'),
+  ) as JobDefinition;
+
   let result: Partial<FlowState> | null;
 
   const validation: IValidation<JobDefinition> =
