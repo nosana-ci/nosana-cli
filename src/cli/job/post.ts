@@ -174,7 +174,7 @@ export async function run(
 
   if (!(options.wait || options.download)) {
     console.log(
-      `\nrun ${colors.CYAN}nosana job get ${response.job}${colors.RESET} to retrieve job and result`,
+      `\nrun ${colors.CYAN}nosana job get ${response.job} --network ${options.network}${colors.RESET} to retrieve job and result`,
     );
   }
 }
