@@ -182,7 +182,7 @@ export async function run(
   if (isExposed) {
     console.log(
       chalk.cyan(
-        `Service exposed at ${chalk.bold(
+        `Service will be exposed at ${chalk.bold(
           `https://${response.run}.${config.frp.serverAddr}`,
         )}`,
       ),
