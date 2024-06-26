@@ -12,9 +12,17 @@ describe('createNosanaCLI', () => {
     expect(_version).toBe('0.0.1');
   });
 
+  it('should have only two commands', () => {
+    expect(CLI.commands.length).toBe(2);
+  });
+
   it.each([['job', 'node']])('should have %s command', (command) => {
     // @ts-ignore
     expect(CLI.commands.map((command) => command._name)).toContain(command);
+  });
+
+  it('should have only two options', () => {
+    expect(CLI.options.length).toBe(2);
   });
 
   it.each([
