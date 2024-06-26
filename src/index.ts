@@ -12,7 +12,7 @@ console.log(figlet.textSync('Nosana'));
 
 const rpcOption = new Option('--rpc <url>', 'RPC node to use');
 const networkOption = new Option('-n, --network <network>', 'network to run on')
-  .default('devnet')
+  .default('mainnet')
   .choices(['devnet', 'mainnet']);
 
 const walletOption = new Option(
