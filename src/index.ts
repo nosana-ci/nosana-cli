@@ -3,6 +3,7 @@ import figlet from 'figlet';
 import { Command, Option } from 'commander';
 import { setSDK } from './services/sdk.js';
 import { run, getJob, download, upload } from './cli/job/index.js';
+import { getAddress } from './cli/other/index.js';
 import { view, startNode, runJob, runBenchmark } from './cli/node/index.js';
 const program: Command = new Command();
 
@@ -27,7 +28,7 @@ program
   .hook('preAction', async (thisCommand, actionCommand) => {
     const opts = actionCommand.optsWithGlobals();
     let market = opts.market;
-    if (opts.network) {
+    if (opts.network || opts.wallet) {
       await setSDK(
         opts.network,
         opts.rpc,
@@ -42,6 +43,12 @@ program
       .default('debug')
       .choices(['info', 'none', 'debug', 'trace']),
   );
+
+program
+  .command('address')
+  .addOption(walletOption)
+  .description('Print your public key address')
+  .action(getAddress);
 
 const job: Command = program.command('job');
 job

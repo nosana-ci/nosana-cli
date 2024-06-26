@@ -86,8 +86,9 @@ export async function setSDK(
       nosana = new Client(network, wallet, config);
     }
   }
-
-  console.log(`Network:\t${colors.GREEN}${network}${colors.RESET}`);
+  if (network) {
+    console.log(`Network:\t${colors.GREEN}${network}${colors.RESET}`);
+  }
   if (keyfile) {
     const solBalance = await nosana.solana.getSolBalance();
     const nosBalance = await nosana.solana.getNosBalance();
