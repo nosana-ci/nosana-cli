@@ -44,7 +44,6 @@ export async function runJob(
   };
   process.on('SIGINT', onShutdown);
   process.on('SIGTERM', onShutdown);
-
   switch (options.provider) {
     case 'podman':
       provider = new PodmanProvider(options.podman, options.config);
@@ -64,10 +63,15 @@ export async function runJob(
     throw error;
   }
   switch (options.provider) {
+    case 'podman':
+      spinner.succeed(
+        chalk.green(`Podman is running on ${chalk.bold(options.podman)}`),
+      );
+      break;
     case 'docker':
     default:
       spinner.succeed(
-        chalk.green(`Podman is running on ${chalk.bold(options.podman)}`),
+        chalk.green(`Docker is running on ${chalk.bold(options.podman)}`),
       );
       break;
   }
