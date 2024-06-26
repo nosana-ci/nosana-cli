@@ -1,7 +1,11 @@
 import { Command, Option } from 'commander';
 
-import { run } from './action';
-import { networkOption, rpcOption, walletOption } from '../../sharedOptions';
+import { run } from './action.js';
+import {
+  networkOption,
+  rpcOption,
+  walletOption,
+} from '../../sharedOptions/index.js';
 
 export const postJobCommand = new Command('post')
   .description('Create a job to run by Nosana Runners')

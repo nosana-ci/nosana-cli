@@ -1,6 +1,6 @@
 import figlet from 'figlet';
 
-import { createNosanaCLI } from './createNosanaCli';
+import { createNosanaCLI } from './createNosanaCli.js';
 
 export async function startCLI(version: string) {
   const cli = createNosanaCLI(version);

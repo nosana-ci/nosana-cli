@@ -1,4 +1,10 @@
 import chalk from 'chalk';
+import Docker, { Container, MountType } from 'dockerode';
+import stream from 'stream';
+import { parse } from 'shell-quote';
+
+import { BasicProvider } from './BasicProvider.js';
+import { sleep } from '../generic/utils.js';
 import {
   Operation,
   Provider,
@@ -7,14 +13,9 @@ import {
   OperationArgsMap,
   OperationResults,
   Log,
-} from './Provider';
-import Docker, { Container, MountType } from 'dockerode';
-import stream from 'stream';
-import { parse } from 'shell-quote';
-import { BasicProvider } from './BasicProvider';
-import { sleep } from '../generic/utils';
-import { getSDK } from '../services/sdk';
-import { extractResultsFromLogs } from './utils/extractResultsFromLogs';
+} from './Provider.js';
+import { getSDK } from '../services/sdk.js';
+import { extractResultsFromLogs } from './utils/extractResultsFromLogs.js';
 
 export class DockerProvider extends BasicProvider implements Provider {
   protected docker: Docker;

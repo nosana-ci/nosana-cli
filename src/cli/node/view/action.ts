@@ -3,11 +3,11 @@ import { Command } from 'commander';
 import { Client, Market, Run } from '@nosana/sdk';
 import ora from 'ora';
 
-import { getJob } from '../../job/get/action';
-import { NotQueuedError } from '../../../generic/errors';
-import { sleep, clearLine } from '../../../generic/utils';
-import { getSDK } from '../../../services/sdk';
-import { getRun, checkQueued, waitForRun } from '../../../services/nodes';
+import { getJob } from '../../job/get/action.js';
+import { NotQueuedError } from '../../../generic/errors.js';
+import { sleep, clearLine } from '../../../generic/utils.js';
+import { getSDK } from '../../../services/sdk.js';
+import { getRun, checkQueued, waitForRun } from '../../../services/nodes.js';
 
 export async function view(
   node: string,

@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 
-import { view } from './action';
-import { networkOption, rpcOption } from '../../sharedOptions';
+import { view } from './action.js';
+import { networkOption, rpcOption } from '../../sharedOptions/index.js';
 
 export const viewNodeCommand = new Command('view')
   .description('View Nosana Node')

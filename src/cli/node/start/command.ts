@@ -1,7 +1,11 @@
 import { Command, Option } from 'commander';
 
-import { startNode } from './action';
-import { networkOption, rpcOption, walletOption } from '../../sharedOptions';
+import { startNode } from './action.js';
+import {
+  networkOption,
+  rpcOption,
+  walletOption,
+} from '../../sharedOptions/index.js';
 
 export const startNodeCommand = new Command('start')
   .description('Start Nosana Node')

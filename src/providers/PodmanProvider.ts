@@ -1,14 +1,15 @@
 import chalk from 'chalk';
-import { DockerProvider } from './DockerProvider';
+import { parse } from 'shell-quote';
+
+import { DockerProvider } from './DockerProvider.js';
 import {
   Flow,
   OpState,
   OperationArgsMap,
   OperationResults,
 } from './Provider.js';
-import { parse } from 'shell-quote';
-import { ifStringCastToArray } from '../generic/utils';
-import { config } from '../config';
+import { ifStringCastToArray } from '../generic/utils.js';
+import { config } from '../config.js';
 
 export class PodmanProvider extends DockerProvider {
   private apiUrl: string;

@@ -5,8 +5,8 @@ import { Readable } from 'stream';
 import { Command } from 'commander';
 import { Client } from '@nosana/sdk';
 
-import { getSDK } from '../../../services/sdk';
-import { colors } from '../../../generic/utils';
+import { getSDK } from '../../../services/sdk.js';
+import { colors } from '../../../generic/utils.js';
 
 export async function download(
   ipfshash: string,

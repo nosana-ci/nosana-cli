@@ -1,7 +1,11 @@
 import { Command, Option } from 'commander';
 
-import { runBenchmark } from './action';
-import { networkOption, rpcOption, walletOption } from '../../sharedOptions';
+import { runBenchmark } from './action.js';
+import {
+  networkOption,
+  rpcOption,
+  walletOption,
+} from '../../sharedOptions/index.js';
 
 export const joinTestGridCommand = new Command('join-test-grid')
   .description('Join Test Grid Devnet Job')

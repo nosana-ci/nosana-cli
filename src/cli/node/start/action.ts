@@ -10,18 +10,18 @@ import {
 } from '@solana/web3.js';
 import 'rpc-websockets/dist/lib/client.js';
 
-import { config } from '../../../config';
-import { sleep, clearLine } from '../../../generic/utils';
-import { NotQueuedError } from '../../../generic/errors';
-import { DockerProvider } from '../../../providers/DockerProvider';
+import { config } from '../../../config.js';
+import { sleep, clearLine } from '../../../generic/utils.js';
+import { NotQueuedError } from '../../../generic/errors.js';
+import { DockerProvider } from '../../../providers/DockerProvider.js';
 import {
   Provider,
   JobDefinition,
   FlowState,
   OperationArgsMap,
-} from '../../../providers/Provider';
-import { PodmanProvider } from '../../../providers/PodmanProvider';
-import { getRawTransaction, getSDK } from '../../../services/sdk';
+} from '../../../providers/Provider.js';
+import { PodmanProvider } from '../../../providers/PodmanProvider.js';
+import { getRawTransaction, getSDK } from '../../../services/sdk.js';
 import {
   getRun,
   checkQueued,
@@ -29,7 +29,7 @@ import {
   isRunExpired,
   runBenchmark,
   healthCheck,
-} from '../../../services/nodes';
+} from '../../../services/nodes.js';
 
 setGlobalDispatcher(new Agent({ connect: { timeout: 150_000 } }));
 

@@ -1,6 +1,6 @@
 import { Command, Option } from 'commander';
 
-import { runJob } from './action';
+import { runJob } from './action.js';
 
 export const runNodeCommand = new Command('run')
   .description('Run Job Definition File')

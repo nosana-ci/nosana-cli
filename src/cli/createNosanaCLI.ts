@@ -1,8 +1,8 @@
 import { Command, Option } from 'commander';
 
-import { jobCommand } from './job';
-import { nodeCommand } from './node';
-import { setSDK } from '../services/sdk';
+import { jobCommand } from './job/index.js';
+import { nodeCommand } from './node/index.js';
+import { setSDK } from '../services/sdk.js';
 
 export const createNosanaCLI = (version: string) =>
   new Command()

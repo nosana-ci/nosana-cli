@@ -3,15 +3,15 @@ import chalk from 'chalk';
 import ora from 'ora';
 import util from 'util';
 
-import { DockerProvider } from '../../../providers/DockerProvider';
+import { DockerProvider } from '../../../providers/DockerProvider.js';
 import {
   Provider,
   Flow,
   JobDefinition,
   FlowState,
   OperationArgsMap,
-} from '../../../providers/Provider';
-import { PodmanProvider } from '../../../providers/PodmanProvider';
+} from '../../../providers/Provider.js';
+import { PodmanProvider } from '../../../providers/PodmanProvider.js';
 
 let flow: Flow | undefined;
 let provider: Provider;
