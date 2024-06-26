@@ -1,5 +1,5 @@
-import { Client } from '@nosana/sdk';
-import { getSDK } from '../../services/sdk.js';
+import { Client, sleep } from '@nosana/sdk';
+import { getNosBalance, getSDK, getSolBalance } from '../../services/sdk.js';
 import { getJob } from './get.js';
 import fs from 'node:fs';
 import { randomUUID } from 'crypto';
@@ -119,21 +119,57 @@ export async function run(
     nosana.solana.config.market_address,
   );
 
+  const solBalance = getSolBalance();
+  if (solBalance < 0.003 * 1e9) {
+    throw new Error(
+      chalk.red(
+        `Minimum of ${chalk.bold(
+          '0.003',
+        )} SOL needed: SOL available ${chalk.bold(
+          (solBalance / 1e9).toFixed(4),
+        )}`,
+      ),
+    );
+  }
+
+  // @ts-ignore
+  const nosNeeded = (parseInt(market.jobPrice) / 1e6) * market.jobTimeout;
+  const nosBalance = getNosBalance();
+  if (
+    nosNeeded > 0 &&
+    (!nosBalance || !nosBalance.uiAmount || nosBalance.uiAmount < nosNeeded)
+  ) {
+    throw new Error(
+      chalk.red(
+        `Not enough NOS: NOS available ${chalk.bold(
+          nosBalance ? nosBalance.uiAmount?.toFixed(4) : 0,
+        )}, NOS needed: ${chalk.bold(nosNeeded.toFixed(4))}`,
+      ),
+    );
+  }
+
   console.log(
     `posting job to market ${colors.CYAN}${
       nosana.solana.config.market_address
     }${colors.RESET} for price ${colors.YELLOW}${
       // @ts-ignore
       parseInt(market.jobPrice) / 1e6
-    } NOS/s${colors.RESET}`,
+    } NOS/s${colors.RESET} (total: ${nosNeeded.toFixed(4)} NOS)`,
   );
 
   await nosana.jobs.setAccounts();
   if (market.jobPrice == 0) {
     nosana.jobs.accounts!.user = nosana.jobs.accounts!.vault;
   }
-  const response = await nosana.jobs.list(ipfsHash);
+  let response;
+  try {
+    response = await nosana.jobs.list(ipfsHash);
+  } catch (e) {
+    console.error(chalk.red("Couldn't post job"));
+    throw e;
+  }
   console.log('job posted!', response);
+  await sleep(3);
   await getJob(response.job, options, undefined);
 
   if (!(options.wait || options.download)) {

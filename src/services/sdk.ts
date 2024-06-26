@@ -7,6 +7,7 @@ import 'rpc-websockets/dist/lib/client.js';
 import {
   Keypair,
   LAMPORTS_PER_SOL,
+  TokenAmount,
   Transaction,
   VersionedTransaction,
 } from '@solana/web3.js';
@@ -15,6 +16,7 @@ import { config as envConfig } from '../config.js';
 import chalk from 'chalk';
 
 let nosana: Client;
+let nosBalance: TokenAmount | undefined, solBalance: number;
 
 export async function setSDK(
   network: string,
@@ -70,28 +72,40 @@ export async function setSDK(
     )) as Uint8Array;
     const base64Signature = Buffer.from(signature).toString('base64');
     const node = nosana.solana.wallet.publicKey.toString();
-    const response = await fetch(`${envConfig.backendUrl}/rpc`, {
-      method: 'GET',
-      headers: {
-        Authorization: `${node}:${base64Signature}`,
-        'Content-Type': 'application/json',
-      },
-    });
-    const rpcFromBackend = await response.json();
-    if (response.status !== 200) {
-      console.log(chalk.red('Could not retrieve RPC'));
-      throw new Error(rpcFromBackend.message);
-    } else {
+    try {
+      const response = await fetch(`${envConfig.backendUrl}/rpc`, {
+        method: 'GET',
+        headers: {
+          Authorization: `${node}:${base64Signature}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      const rpcFromBackend = await response.json();
+      if (response.status !== 200) {
+        console.log(
+          chalk.yellow(
+            'Using default solana RPC. Some commands might not work, please provide your own with the --rpc option',
+          ),
+        );
+        // throw new Error(rpcFromBackend.message);
+      }
       config.solana!.network = rpcFromBackend.url;
       nosana = new Client(network, wallet, config);
+    } catch (e) {
+      console.log(
+        chalk.yellow(
+          'Using default solana RPC. Some commands might not work, please provide your own with the --rpc option',
+        ),
+      );
+      // throw e;
     }
   }
   if (network) {
     console.log(`Network:\t${colors.GREEN}${network}${colors.RESET}`);
   }
   if (keyfile) {
-    const solBalance = await nosana.solana.getSolBalance();
-    const nosBalance = await nosana.solana.getNosBalance();
+    solBalance = await nosana.solana.getSolBalance();
+    nosBalance = await nosana.solana.getNosBalance();
 
     console.log(
       `Wallet:\t\t${colors.GREEN}${nosana.solana.wallet.publicKey.toString()}${
@@ -138,6 +152,13 @@ export async function setSDK(
 }
 export function getSDK() {
   return nosana;
+}
+
+export function getNosBalance() {
+  return nosBalance;
+}
+export function getSolBalance() {
+  return solBalance;
 }
 
 export const getRawTransaction = async (

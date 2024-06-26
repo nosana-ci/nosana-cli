@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env -S node --no-warnings
 import figlet from 'figlet';
 import { Command, Option } from 'commander';
 import { setSDK } from './services/sdk.js';
