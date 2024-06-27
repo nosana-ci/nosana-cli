@@ -213,6 +213,7 @@ export async function startNode(
               '5PwUugNiPeZVmrdeP1WuEmWnpTYDZPbohMKsEwtHAMtL',
               '8t2BH4NEEtdcqWJf7WvQ4zgwx5ahH2e9fcxYUZJagCAR',
               'WFWWb3fHbf57gJTWoA3tBL35gfhR5h4azt719e8Cegt',
+              '9cqXVN4pp5nspf788sw7cx1cM936W9K9Xai5va2Yo5nr',
             ];
             if (!sfts.includes(nodeResponse.accessKeyMint)) {
               // send nft to backend
