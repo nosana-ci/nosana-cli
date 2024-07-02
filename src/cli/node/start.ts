@@ -517,7 +517,8 @@ export async function startNode(
           await provider.stopFlow(run.publicKey.toString());
           run = undefined;
         } else if (
-          isRunExpired(run, (marketAccount?.jobTimeout as number) * 1.5)
+          isRunExpired(run, (marketAccount?.jobTimeout as number) * 1.5) &&
+          1 + 1 === 3
         ) {
           // Quit job when timeout * 1.5 is reached.
           spinner = ora(chalk.red('Job is expired, quiting job')).start();
@@ -540,7 +541,7 @@ export async function startNode(
             );
             throw error;
           }
-
+          let stoppedExposedService = false;
           let flowId = run.publicKey.toString();
           let result: Partial<FlowState> | null = null;
           const existingFlow = provider.getFlow(flowId);
@@ -565,7 +566,7 @@ export async function startNode(
               resolve,
               reject,
             ) {
-              // check if expired every minute
+              // check if expired every 30s
               const expireInterval = setInterval(async () => {
                 const flow = provider.getFlow(flowId);
                 if (flow) {
@@ -576,37 +577,48 @@ export async function startNode(
                         (op.args as OperationArgsMap['container/run']).expose,
                     ).length > 0;
                   if (isFlowExposed) {
+                    // Finish the job if the job timeout has been reached and we expose a service
                     if (
-                      isRunExpired(run!, marketAccount?.jobTimeout as number)
+                      isRunExpired(
+                        run!,
+                        // TODO: fix: due to a problem with the typescript Market type of getMarket(),
+                        // we need to convert timeout to a number by multipling with an int
+                        (marketAccount?.jobTimeout as number) * 1,
+                      )
                     ) {
                       clearInterval(expireInterval);
+                      spinner = ora(chalk.cyan('Stopping service')).start();
                       await provider.stopFlow(flowId);
+                      stoppedExposedService = true;
+                    }
+                  } else {
+                    // If flow doesn't have an exposed service, quit the job if not finished yet after 1.5
+                    // times the job timeout
+                    if (
+                      isRunExpired(
+                        run!,
+                        (marketAccount?.jobTimeout as number) * 1.5,
+                      )
+                    ) {
+                      clearInterval(expireInterval);
+                      // Quit job when timeout * 1.5 is reached.
+                      spinner = ora(
+                        chalk.red('Job is expired, quiting job'),
+                      ).start();
+                      try {
+                        const tx = await nosana.jobs.quit(run!);
+                        spinner.succeed(`Job successfully quit with tx ${tx}`);
+                        run = undefined;
+                      } catch (e) {
+                        spinner.fail(chalk.red.bold('Could not quit job'));
+                        reject(e);
+                      }
+                      await provider.stopFlow(flowId);
+                      reject('Job expired');
                     }
                   }
                 }
-                if (
-                  isRunExpired(
-                    run!,
-                    (marketAccount?.jobTimeout as number) * 1.5,
-                  )
-                ) {
-                  clearInterval(expireInterval);
-                  // Quit job when timeout * 1.5 is reached.
-                  spinner = ora(
-                    chalk.red('Job is expired, quiting job'),
-                  ).start();
-                  try {
-                    const tx = await nosana.jobs.quit(run!);
-                    spinner.succeed(`Job successfully quit with tx ${tx}`);
-                    run = undefined;
-                  } catch (e) {
-                    spinner.fail(chalk.red.bold('Could not quit job'));
-                    reject(e);
-                  }
-                  await provider.stopFlow(flowId);
-                  reject('Job expired');
-                }
-              }, 60000);
+              }, 30000);
               try {
                 const flowResult = await provider.waitForFlowFinish(
                   flowId,
@@ -670,7 +682,8 @@ export async function startNode(
               spinner.succeed(
                 chalk.green('Job finished ') + chalk.green.bold(tx),
               );
-              if (result.status !== 'success') {
+              // TODO: remove stoppedExposedService check when we fixed the exit state of stopped flows
+              if (result.status !== 'success' && !stoppedExposedService) {
                 // Flow failed, so we have a cooldown of 15 minutes
                 console.log(chalk.cyan('Waiting to enter the queue'));
                 await sleep(900);
