@@ -1,14 +1,17 @@
+import { Client, sleep } from '@nosana/sdk';
+
 import fs from 'node:fs';
 import chalk from 'chalk';
 import { randomUUID } from 'crypto';
-import { Client } from '@nosana/sdk';
 import { IValidation } from 'typia';
 
 import { getJob } from '../get/action.js';
 import { colors } from '../../../generic/utils.js';
-import { getSDK } from '../../../services/sdk.js';
+import { getNosBalance, getSDK, getSolBalance } from '../../services/sdk.js';
 import {
   JobDefinition,
+  Operation,
+  OperationArgsMap,
   validateJobDefinition,
 } from '../../../providers/Provider.js';
 
@@ -120,26 +123,77 @@ export async function run(
     nosana.solana.config.market_address,
   );
 
+  const solBalance = getSolBalance();
+  if (solBalance < 0.005 * 1e9) {
+    throw new Error(
+      chalk.red(
+        `Minimum of ${chalk.bold(
+          '0.005',
+        )} SOL needed: SOL available ${chalk.bold(
+          (solBalance / 1e9).toFixed(4),
+        )}`,
+      ),
+    );
+  }
+
+  // @ts-ignore
+  const nosNeeded = (parseInt(market.jobPrice) / 1e6) * market.jobTimeout;
+  const nosBalance = getNosBalance();
+  if (
+    nosNeeded > 0 &&
+    (!nosBalance || !nosBalance.uiAmount || nosBalance.uiAmount < nosNeeded)
+  ) {
+    throw new Error(
+      chalk.red(
+        `Not enough NOS: NOS available ${chalk.bold(
+          nosBalance ? nosBalance.uiAmount?.toFixed(4) : 0,
+        )}, NOS needed: ${chalk.bold(nosNeeded.toFixed(4))}`,
+      ),
+    );
+  }
+
   console.log(
     `posting job to market ${colors.CYAN}${
       nosana.solana.config.market_address
     }${colors.RESET} for price ${colors.YELLOW}${
       // @ts-ignore
       parseInt(market.jobPrice) / 1e6
-    } NOS/s${colors.RESET}`,
+    } NOS/s${colors.RESET} (total: ${nosNeeded.toFixed(4)} NOS)`,
   );
 
   await nosana.jobs.setAccounts();
   if (market.jobPrice == 0) {
     nosana.jobs.accounts!.user = nosana.jobs.accounts!.vault;
   }
-  const response = await nosana.jobs.list(ipfsHash);
-  console.log('job posted!', response);
+  let response;
+  try {
+    response = await nosana.jobs.list(ipfsHash);
+  } catch (e) {
+    console.error(chalk.red("Couldn't post job"));
+    throw e;
+  }
+  console.log(`job posted with tx ${chalk.cyan(response.tx)}!`);
+  const isExposed =
+    json_flow.ops.map(
+      (op: Operation<any>) =>
+        op.type === 'container/run' &&
+        (op.args as OperationArgsMap['container/run']).expose,
+    ).length > 0;
+  await sleep(3);
+  if (isExposed) {
+    console.log(
+      chalk.cyan(
+        `Service will be exposed at ${chalk.bold(
+          `https://${response.run}.${config.frp.serverAddr}`,
+        )}`,
+      ),
+    );
+  }
   await getJob(response.job, options, undefined);
 
   if (!(options.wait || options.download)) {
     console.log(
-      `\nrun ${colors.CYAN}nosana job get ${response.job}${colors.RESET} to retrieve job and result`,
+      `\nrun ${colors.CYAN}nosana job get ${response.job} --network ${options.network}${colors.RESET} to retrieve job and result`,
     );
   }
 }
