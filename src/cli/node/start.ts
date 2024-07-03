@@ -571,7 +571,7 @@ export async function startNode(
                 const flow = provider.getFlow(flowId);
                 if (flow) {
                   const isFlowExposed =
-                    flow.jobDefinition.ops.map(
+                    flow.jobDefinition.ops.filter(
                       (op) =>
                         op.type === 'container/run' &&
                         (op.args as OperationArgsMap['container/run']).expose,
