@@ -1,3 +1,9 @@
+import dotenv from 'dotenv';
+
+dotenv.config({
+  path: `.env.${process.env.APP_ENV || process.env.NODE_ENV || 'production'}`,
+});
+
 export type configType = {
   backendUrl: string;
   backendSolanaAddress: string;
@@ -8,8 +14,6 @@ export type configType = {
   };
   minDiskSpace: number;
 };
-
-// TODO: Correct process.env types
 
 export const config: configType = {
   backendUrl: process.env.BACKEND_URL!,
