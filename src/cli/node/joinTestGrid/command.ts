@@ -24,7 +24,7 @@ export const joinTestGridCommand = new Command('join-test-grid')
     ).default('http://localhost:8080'),
   )
   .addOption(walletOption)
-  .addOption(networkOption)
+  .addOption(networkOption.default('devnet'))
   .addOption(rpcOption)
   .addOption(
     new Option(
