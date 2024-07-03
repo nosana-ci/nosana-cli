@@ -94,7 +94,7 @@ export async function runJob(
   try {
     flow = provider.run(jobDefinition);
     const isFlowExposed =
-      jobDefinition.ops.map(
+      jobDefinition.ops.filter(
         (op) =>
           op.type === 'container/run' &&
           (op.args as OperationArgsMap['container/run']).expose,
