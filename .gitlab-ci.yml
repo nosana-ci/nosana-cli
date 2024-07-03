@@ -26,6 +26,7 @@ npm test:
   image: node:20.11.1
   stage: test
   script:
+    - npm ci
     - npm run test:coverage
   rules:
     - if: $CI_MERGE_REQUEST_ID
