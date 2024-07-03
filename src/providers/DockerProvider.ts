@@ -86,6 +86,11 @@ export class DockerProvider extends BasicProvider implements Provider {
       if (opState.providerId) {
         try {
           container = this.docker.getContainer(opState.providerId as string);
+          try {
+            await this.streamingLogs(container);
+          } catch (e) {
+            // console.error(e);
+          }
         } catch (error) {
           updateOpState({ providerId: null });
         }
@@ -305,7 +310,7 @@ export class DockerProvider extends BasicProvider implements Provider {
     try {
       await this.streamingLogs(container);
     } catch (e) {
-      console.error(e);
+      // console.error(e);
     }
     if (opArgs.expose) {
       await this.runContainer('docker.io/laurensv/nosana-frpc', {
