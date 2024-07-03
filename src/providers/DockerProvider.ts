@@ -16,7 +16,6 @@ import Docker, {
 import stream from 'stream';
 import { parse } from 'shell-quote';
 import { BasicProvider } from './BasicProvider.js';
-import { sleep } from '../generic/utils.js';
 import { getSDK } from '../services/sdk.js';
 import { extractResultsFromLogs } from './utils/extractResultsFromLogs.js';
 import { config } from '../config/index.js';
@@ -118,7 +117,7 @@ export class DockerProvider extends BasicProvider implements Provider {
           }
         }
 
-        container = await this.executeCmd(
+        container = await this.runOpContainerRun(
           op.args,
           flowId,
           opStateIndex,
@@ -218,13 +217,15 @@ export class DockerProvider extends BasicProvider implements Provider {
   }
 
   /**
-   * Perform docker.run for given cmd, return logs
+   * Create the containers neccesary for a container/run operation.
+   * Returns the main container
    * @param opArgs
    * @param flowId
    * @param opStateIndex
+   * @param updateOpState
    * @returns
    */
-  async executeCmd(
+  async runOpContainerRun(
     opArgs: OperationArgsMap['container/run'],
     flowId: string,
     opStateIndex: number,
@@ -745,8 +746,4 @@ export class DockerProvider extends BasicProvider implements Provider {
 
     return output;
   };
-
-  private isDockerContainer(obj: any): obj is Docker.Container {
-    return obj.modem !== undefined;
-  }
 }

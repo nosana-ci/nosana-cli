@@ -9,6 +9,9 @@ export class PodmanProvider extends DockerProvider {
     super(podman, configLocation);
     this.apiUrl = `${this.protocol}://${this.host}:${this.port}/v4.5.0/libpod`;
   }
+
+  // Docker API is not compatible when creating/starting a container with GPU support
+  // in podman. Therefore we use the libpod API to create and start the container.
   public async runContainer(
     image: string,
     {
@@ -55,7 +58,7 @@ export class PodmanProvider extends DockerProvider {
       body: JSON.stringify(options),
     });
 
-    // start container and handle logs
+    // start container
     if (create.status === 201) {
       const createResult = await create.json();
 
