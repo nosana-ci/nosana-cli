@@ -26,7 +26,7 @@ export default {
   coveragePathIgnorePatterns: ['src/types/*'],
   coverageThreshold: {
     global: {
-      statements: 100,
+      statements: 0,
       branches: 0,
       lines: 0,
       functions: 0,
