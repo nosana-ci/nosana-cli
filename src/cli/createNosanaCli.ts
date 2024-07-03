@@ -3,6 +3,7 @@ import { Command, Option } from 'commander';
 import { jobCommand } from './job/index.js';
 import { nodeCommand } from './node/index.js';
 import { setSDK } from '../services/sdk.js';
+import { walletCommand } from './wallet/command.js';
 
 export const createNosanaCLI = (version: string) =>
   new Command()
@@ -13,7 +14,7 @@ export const createNosanaCLI = (version: string) =>
     .hook('preAction', async (_, actionCommand) => {
       const opts = actionCommand.optsWithGlobals();
       let market = opts.market;
-      if (opts.network) {
+      if (opts.network || opts.wallet) {
         await setSDK(
           opts.network,
           opts.rpc,
@@ -29,4 +30,5 @@ export const createNosanaCLI = (version: string) =>
         .choices(['info', 'none', 'debug', 'trace']),
     )
     .addCommand(jobCommand)
-    .addCommand(nodeCommand);
+    .addCommand(nodeCommand)
+    .addCommand(walletCommand);

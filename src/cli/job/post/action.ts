@@ -7,7 +7,7 @@ import { IValidation } from 'typia';
 
 import { getJob } from '../get/action.js';
 import { colors } from '../../../generic/utils.js';
-import { getNosBalance, getSDK, getSolBalance } from '../../services/sdk.js';
+import { getNosBalance, getSDK, getSolBalance } from '../../../services/sdk.js';
 import {
   JobDefinition,
   Operation,

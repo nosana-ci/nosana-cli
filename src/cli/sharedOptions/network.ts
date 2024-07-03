@@ -4,5 +4,5 @@ export const networkOption = new Option(
   '-n, --network <network>',
   'network to run on',
 )
-  .default('devnet')
+  .default('mainnet')
   .choices(['devnet', 'mainnet']);
