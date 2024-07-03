@@ -9,7 +9,7 @@ describe('createNosanaCLI', () => {
 
     expect(_name).toBe('nosana');
     expect(_description).toBe('Nosana CLI');
-    expect(_version).toBe('0.0.1');
+    expect(_version).toBe('0.0.2');
   });
 
   it('should have only two commands', () => {
