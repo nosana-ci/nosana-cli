@@ -1,13 +1,14 @@
-import { Client, Market, Run } from '@nosana/sdk';
-import { getSDK } from './sdk.js';
-import 'rpc-websockets/dist/lib/client.js';
-import { ClientSubscriptionId, PublicKey, TokenAmount } from '@solana/web3.js';
-import { NotQueuedError } from '../generic/errors.js';
-import benchmarkGPU from '../benchmark-gpu.json' assert { type: 'json' };
-import { CudaCheckResponse } from '../types/cudaCheck';
-import { FlowState, JobDefinition, Provider } from '../providers/Provider.js';
+import fs from 'fs';
 import chalk from 'chalk';
 import ora, { type Ora } from 'ora';
+import { Client, Market, Run } from '@nosana/sdk';
+import { ClientSubscriptionId, PublicKey, TokenAmount } from '@solana/web3.js';
+import 'rpc-websockets/dist/lib/client.js';
+
+import { NotQueuedError } from '../generic/errors.js';
+import { CudaCheckResponse } from '../types/cudaCheck.js';
+import { FlowState, JobDefinition, Provider } from '../providers/Provider.js';
+import { getSDK } from './sdk.js';
 import { sleep } from '../generic/utils.js';
 import { EMPTY_ADDRESS } from './jobs.js';
 import { config } from '../config.js';
@@ -202,8 +203,13 @@ export const runBenchmark = async (
     if (printDetailed) {
       console.log(chalk.cyan('Running benchmark'));
     }
+
+    const benchmarkGPU = JSON.parse(
+      fs.readFileSync('../benchmark-gpu.json', 'utf8'),
+    ) as JobDefinition;
+
     // Create new flow
-    const flow = provider.run(benchmarkGPU as JobDefinition);
+    const flow = provider.run(benchmarkGPU);
     result = await provider.waitForFlowFinish(
       flow.id,
       (event: { log: string; type: string }) => {

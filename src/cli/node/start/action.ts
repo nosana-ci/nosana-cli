@@ -3,6 +3,11 @@ import { Command } from 'commander';
 import { Client, Job, KeyWallet, Market, Run } from '@nosana/sdk';
 import { fetch, setGlobalDispatcher, Agent } from 'undici';
 import ora, { type Ora } from 'ora';
+import {
+  BlockheightBasedTransactionConfirmationStrategy,
+  PublicKey,
+  VersionedTransaction,
+} from '@solana/web3.js';
 import 'rpc-websockets/dist/lib/client.js';
 
 import { config } from '../../../config.js';
@@ -15,11 +20,6 @@ import {
   FlowState,
   OperationArgsMap,
 } from '../../../providers/Provider.js';
-import {
-  BlockheightBasedTransactionConfirmationStrategy,
-  PublicKey,
-  VersionedTransaction,
-} from '@solana/web3.js';
 import { PodmanProvider } from '../../../providers/PodmanProvider.js';
 import { getRawTransaction, getSDK } from '../../../services/sdk.js';
 import {

@@ -1,8 +1,9 @@
 import { Command, Option } from 'commander';
 
-import { runJob } from './action';
+import { runJob } from './action.js';
 
 export const runNodeCommand = new Command('run')
+  .description('Run Job Definition File')
   .argument('<job-definition-file>', 'Job Definition File')
   .addOption(
     new Option(
@@ -24,5 +25,4 @@ export const runNodeCommand = new Command('run')
       'Podman/Docker connection URI',
     ).default('http://localhost:8080'),
   )
-  .description('Run Job Definition File')
   .action(runJob);

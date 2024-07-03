@@ -1,7 +1,8 @@
-import { Wallet } from '@coral-xyz/anchor';
-import { Client, ClientConfig } from '@nosana/sdk';
 import fs from 'fs';
 import os from 'os';
+import chalk from 'chalk';
+import { Wallet } from '@coral-xyz/anchor';
+import { Client, ClientConfig } from '@nosana/sdk';
 import path from 'path';
 import 'rpc-websockets/dist/lib/client.js';
 import {
@@ -10,9 +11,9 @@ import {
   Transaction,
   VersionedTransaction,
 } from '@solana/web3.js';
+
 import { colors } from '../generic/utils.js';
 import { config as envConfig } from '../config.js';
-import chalk from 'chalk';
 
 let nosana: Client;
 

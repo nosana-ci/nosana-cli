@@ -1,4 +1,6 @@
 import chalk from 'chalk';
+import { parse } from 'shell-quote';
+
 import { DockerProvider } from './DockerProvider.js';
 import {
   Flow,
@@ -6,7 +8,6 @@ import {
   OperationArgsMap,
   OperationResults,
 } from './Provider.js';
-import { parse } from 'shell-quote';
 import { ifStringCastToArray } from '../generic/utils.js';
 import { config } from '../config.js';
 

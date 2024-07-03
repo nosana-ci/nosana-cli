@@ -1,9 +1,9 @@
 import { Command, program } from 'commander';
 
-import { joinTestGridCommand } from './joinTestGrid/command';
-import { runNodeCommand } from './run/command';
-import { startNodeCommand } from './start/command';
-import { viewNodeCommand } from './view/command';
+import { joinTestGridCommand } from './joinTestGrid/command.js';
+import { runNodeCommand } from './run/command.js';
+import { startNodeCommand } from './start/command.js';
+import { viewNodeCommand } from './view/command.js';
 
 export const nodeCommand: Command = program
   .command('node')

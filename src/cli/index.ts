@@ -1,10 +1,16 @@
-import { Command } from 'commander';
+import figlet from 'figlet';
 
-export async function startCLI(program: Command) {
+import { createNosanaCLI } from './createNosanaCli.js';
+
+export async function startCLI(version: string) {
+  const cli = createNosanaCLI(version);
+
   try {
-    await program.parseAsync(process.argv);
+    console.log(figlet.textSync('Nosana'));
+
+    await cli.parseAsync(process.argv);
   } catch (e: any) {
-    const logLevel: string = program.getOptionValue('log');
+    const logLevel: string = cli.getOptionValue('log');
     if (logLevel === 'debug') {
       console.error(e.message ? e.message : e);
     } else if (logLevel === 'trace') {

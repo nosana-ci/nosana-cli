@@ -13,7 +13,7 @@ variables:
   REG_REPOSITORY: nosana/nosana-cli
 
 npm prettier:
-  image: node:18.18.0
+  image: node:20.11.1
   stage: test
   script:
     - npm ci
@@ -22,8 +22,18 @@ npm prettier:
     - if: $CI_MERGE_REQUEST_ID
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
+npm test:
+  image: node:20.11.1
+  stage: test
+  script:
+    - npm ci
+    - npm run test:coverage
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
 npm publish:
-  image: node:18.18.0
+  image: node:20.11.1
   stage: deploy
   script:
     - sed -i "s/0.0.0/${CI_COMMIT_TAG:1}/" package.json
