@@ -1,6 +1,6 @@
 import { Command } from 'commander';
 import { Client, Job, KeyWallet, Market, Run } from '@nosana/sdk';
-import { getSDK } from '../../services/sdk.js';
+import { getRawTransaction, getSDK } from '../../services/sdk.js';
 import chalk from 'chalk';
 import ora, { type Ora } from 'ora';
 import { sleep, clearLine } from '../../generic/utils.js';
@@ -8,9 +8,9 @@ import {
   getRun,
   checkQueued,
   waitForRun,
-  NodeStats,
-  getNodeStats,
   isRunExpired,
+  runBenchmark,
+  healthCheck,
 } from '../../services/nodes.js';
 import { NotQueuedError } from '../../generic/errors.js';
 import { DockerProvider } from '../../providers/DockerProvider.js';
@@ -24,15 +24,11 @@ import 'rpc-websockets/dist/lib/client.js';
 import {
   BlockheightBasedTransactionConfirmationStrategy,
   PublicKey,
-  Transaction,
   VersionedTransaction,
 } from '@solana/web3.js';
-import { EMPTY_ADDRESS } from '../../services/jobs.js';
 import { PodmanProvider } from '../../providers/PodmanProvider.js';
 import { config } from '../../config/index.js';
 import { fetch, setGlobalDispatcher, Agent } from 'undici';
-import benchmarkGPU from '../../static/benchmark-gpu.json' assert { type: 'json' };
-import { CudaCheckResponse } from './types.js';
 
 setGlobalDispatcher(new Agent({ connect: { timeout: 150_000 } }));
 
@@ -40,8 +36,6 @@ let provider: Provider;
 let run: Run | void;
 let selectedMarket: Market | void;
 let spinner: Ora;
-// 25gb
-const MIN_DISK_SPACE = 25000;
 
 export async function startNode(
   market: string,
@@ -168,8 +162,7 @@ export async function startNode(
       throw e;
     }
     // benchmark
-    let gpus: Array<string> = [];
-    gpus = await runBenchmark();
+    let gpus = await runBenchmark(provider, spinner);
 
     try {
       spinner = ora(chalk.cyan('Matching GPU to correct market')).start();
@@ -220,6 +213,7 @@ export async function startNode(
               '5PwUugNiPeZVmrdeP1WuEmWnpTYDZPbohMKsEwtHAMtL',
               '8t2BH4NEEtdcqWJf7WvQ4zgwx5ahH2e9fcxYUZJagCAR',
               'WFWWb3fHbf57gJTWoA3tBL35gfhR5h4azt719e8Cegt',
+              '9cqXVN4pp5nspf788sw7cx1cM936W9K9Xai5va2Yo5nr',
             ];
             if (!sfts.includes(nodeResponse.accessKeyMint)) {
               // send nft to backend
@@ -371,7 +365,7 @@ export async function startNode(
     spinner.succeed('Got access key for market: ' + market);
   }
 
-  let marketAccount: Market | null = null;
+  let marketAccount: Market;
   try {
     spinner = ora(chalk.cyan('Retrieving market')).start();
     marketAccount = await nosana.jobs.getMarket(market);
@@ -388,149 +382,32 @@ export async function startNode(
   /****************
    * Health Check *
    ****************/
-  const healthCheck = async (printDetailed: boolean = true) => {
-    if (printDetailed) {
-      spinner = ora(chalk.cyan('Checking SOL balance')).start();
-    } else {
-      spinner = ora(chalk.cyan('Health checks')).start();
-      // only run benchmark when it isnt first run of healthCheck as it already ran on start
-      await runBenchmark(printDetailed);
-    }
-    let stats: NodeStats | null = null;
-    try {
-      stats = await getNodeStats(node);
-    } catch (e) {
-      spinner.warn(
-        'Could not check SOL balance, make sure you have enough SOL',
-      );
-    }
-    if (stats) {
-      if (stats.sol / 1e9 < 0.005) {
-        spinner.fail(chalk.red.bold('Not enough SOL balance'));
-        throw new Error(
-          `SOL balance ${
-            stats.sol / 1e9
-          } should be 0.005 or higher. Send some SOL to your node address ${chalk.cyan(
-            node,
-          )} `,
-        );
-      }
-      if (printDetailed) {
-        spinner.succeed(
-          chalk.green(`Sol balance: ${chalk.bold(stats.sol / 1e9)}`),
-        );
-      }
-    }
-    if (printDetailed) {
-      spinner = ora(chalk.cyan('Checking provider health')).start();
-    }
-    try {
-      await provider.healthy();
-    } catch (error) {
-      spinner.fail(
-        chalk.red(`${chalk.bold(options.provider)} provider not healthy`),
-      );
-      throw error;
-    }
-    switch (options.provider) {
-      case 'docker':
-      default:
-        if (printDetailed) {
-          spinner.succeed(
-            chalk.green(`Podman is running on ${chalk.bold(options.podman)}`),
-          );
-        }
-        break;
-    }
+  await healthCheck({
+    node,
+    provider,
+    spinner,
+    market,
+    marketAccount,
+    nft,
+    options,
+  });
 
-    try {
-      // create NOS ATA if it doesn't exists
-      await nosana.solana.createNosAta(node);
-    } catch (error) {
-      throw error;
-    }
-
-    let stake;
-    try {
-      if (printDetailed) {
-        spinner = ora(chalk.cyan('Checking stake account')).start();
-      }
-      stake = await nosana.stake.get(node);
-    } catch (error: any) {
-      if (error.message && error.message.includes('Account does not exist')) {
-        spinner.text = chalk.cyan('Creating stake account');
-        // If no stake account: create empty stake account
-        await nosana.stake.create(new PublicKey(node), 0, 14);
-        await sleep(2);
-        stake = await nosana.stake.get(node);
-      } else {
-        throw error;
-      }
-    }
-    if (printDetailed) {
-      spinner.succeed(
-        chalk.green(
-          `Stake found with ${chalk.bold(stake.amount / 1e6)} NOS staked`,
-        ),
-      );
-    }
-    try {
-      if (
-        marketAccount!.nodeAccessKey.toString() === EMPTY_ADDRESS.toString()
-      ) {
-        if (printDetailed) {
-          spinner.succeed(chalk.green(`Open market ${chalk.bold(market)}`));
-        }
-      } else {
-        if (printDetailed) {
-          spinner.text = chalk.cyan(
-            `Checking required access key for market ${chalk.bold(market)}`,
-          );
-        }
-        const nftFromChain = await nosana.solana.getNftFromCollection(
-          node,
-          marketAccount?.nodeAccessKey.toString() as string,
-        );
-        if (nftFromChain) {
-          nft = nftFromChain;
-          if (printDetailed) {
-            spinner.succeed(
-              chalk.green(
-                `Found access key ${chalk.bold(nft)} for market ${chalk.bold(
-                  market,
-                )}`,
-              ),
-            );
-          }
-        } else {
-          if (!nft) {
-            throw new Error('Could not find access key');
-          }
-          spinner.succeed(
-            chalk.yellow(
-              `Could not find key on-chain, trying access key ${chalk.bold(
-                nft,
-              )} for market ${chalk.bold(market)}`,
-            ),
-          );
-        }
-      }
-    } catch (e: any) {
-      spinner.fail(chalk.red(`Denied access to market ${chalk.bold(market)}`));
-      throw e;
-    }
-    if (!printDetailed) {
-      spinner.succeed('Health checks passed');
-    }
-  };
-  await healthCheck(true);
   /****************
    *   Job Loop   *
    ****************/
   const jobLoop = async (firstRun: Boolean = false): Promise<void> => {
     try {
       if (!firstRun) {
-        await healthCheck(false);
+        await healthCheck({
+          node,
+          provider,
+          spinner,
+          market,
+          marketAccount,
+          nft,
+          options,
+          printDetailed: false,
+        });
       }
       spinner = ora(chalk.cyan('Checking existing runs')).start();
 
@@ -640,7 +517,8 @@ export async function startNode(
           await provider.stopFlow(run.publicKey.toString());
           run = undefined;
         } else if (
-          isRunExpired(run, (marketAccount?.jobTimeout as number) * 1.5)
+          isRunExpired(run, (marketAccount?.jobTimeout as number) * 1.5) &&
+          1 + 1 === 3
         ) {
           // Quit job when timeout * 1.5 is reached.
           spinner = ora(chalk.red('Job is expired, quiting job')).start();
@@ -663,7 +541,7 @@ export async function startNode(
             );
             throw error;
           }
-
+          let stoppedExposedService = false;
           let flowId = run.publicKey.toString();
           let result: Partial<FlowState> | null = null;
           const existingFlow = provider.getFlow(flowId);
@@ -688,7 +566,7 @@ export async function startNode(
               resolve,
               reject,
             ) {
-              // check if expired every minute
+              // check if expired every 30s
               const expireInterval = setInterval(async () => {
                 const flow = provider.getFlow(flowId);
                 if (flow) {
@@ -699,37 +577,48 @@ export async function startNode(
                         (op.args as OperationArgsMap['container/run']).expose,
                     ).length > 0;
                   if (isFlowExposed) {
+                    // Finish the job if the job timeout has been reached and we expose a service
                     if (
-                      isRunExpired(run!, marketAccount?.jobTimeout as number)
+                      isRunExpired(
+                        run!,
+                        // TODO: fix: due to a problem with the typescript Market type of getMarket(),
+                        // we need to convert timeout to a number by multipling with an int
+                        (marketAccount?.jobTimeout as number) * 1,
+                      )
                     ) {
                       clearInterval(expireInterval);
+                      spinner = ora(chalk.cyan('Stopping service')).start();
                       await provider.stopFlow(flowId);
+                      stoppedExposedService = true;
+                    }
+                  } else {
+                    // If flow doesn't have an exposed service, quit the job if not finished yet after 1.5
+                    // times the job timeout
+                    if (
+                      isRunExpired(
+                        run!,
+                        (marketAccount?.jobTimeout as number) * 1.5,
+                      )
+                    ) {
+                      clearInterval(expireInterval);
+                      // Quit job when timeout * 1.5 is reached.
+                      spinner = ora(
+                        chalk.red('Job is expired, quiting job'),
+                      ).start();
+                      try {
+                        const tx = await nosana.jobs.quit(run!);
+                        spinner.succeed(`Job successfully quit with tx ${tx}`);
+                        run = undefined;
+                      } catch (e) {
+                        spinner.fail(chalk.red.bold('Could not quit job'));
+                        reject(e);
+                      }
+                      await provider.stopFlow(flowId);
+                      reject('Job expired');
                     }
                   }
                 }
-                if (
-                  isRunExpired(
-                    run!,
-                    (marketAccount?.jobTimeout as number) * 1.5,
-                  )
-                ) {
-                  clearInterval(expireInterval);
-                  // Quit job when timeout * 1.5 is reached.
-                  spinner = ora(
-                    chalk.red('Job is expired, quiting job'),
-                  ).start();
-                  try {
-                    const tx = await nosana.jobs.quit(run!);
-                    spinner.succeed(`Job successfully quit with tx ${tx}`);
-                    run = undefined;
-                  } catch (e) {
-                    spinner.fail(chalk.red.bold('Could not quit job'));
-                    reject(e);
-                  }
-                  await provider.stopFlow(flowId);
-                  reject('Job expired');
-                }
-              }, 60000);
+              }, 30000);
               try {
                 const flowResult = await provider.waitForFlowFinish(
                   flowId,
@@ -793,7 +682,8 @@ export async function startNode(
               spinner.succeed(
                 chalk.green('Job finished ') + chalk.green.bold(tx),
               );
-              if (result.status !== 'success') {
+              // TODO: remove stoppedExposedService check when we fixed the exit state of stopped flows
+              if (result.status !== 'success' && !stoppedExposedService) {
                 // Flow failed, so we have a cooldown of 15 minutes
                 console.log(chalk.cyan('Waiting to enter the queue'));
                 await sleep(900);
@@ -830,141 +720,3 @@ export async function startNode(
   };
   jobLoop(true);
 }
-
-const runBenchmark = async (
-  printDetailed: boolean = true,
-): Promise<Array<string>> => {
-  let gpus: Array<string> = [];
-  try {
-    /****************
-     * Benchmark *
-     ****************/
-    // @ts-expect-error todo fix
-    const jobDefinition: JobDefinition = benchmarkGPU;
-    let result: Partial<FlowState> | null;
-    // spinner = ora(chalk.cyan('Running benchmark')).start();
-    if (printDetailed) {
-      console.log(chalk.cyan('Running benchmark'));
-    }
-    // Create new flow
-    const flow = provider.run(jobDefinition);
-    result = await provider.waitForFlowFinish(
-      flow.id,
-      (event: { log: string; type: string }) => {
-        if (printDetailed) {
-          if (event.type === 'info') {
-            if (spinner && spinner.isSpinning) {
-              spinner.succeed();
-            }
-            if (
-              event.log.includes('Creating volume') ||
-              event.log.includes('Pulling image')
-            ) {
-              spinner = ora(event.log).start();
-            } else {
-              console.log(event.log);
-            }
-          } else if (event.type === 'stdout') {
-            process.stdout.write(event.log);
-          } else {
-            process.stderr.write(event.log);
-          }
-        }
-      },
-    );
-    if (spinner && spinner.isSpinning) {
-      spinner.succeed();
-    }
-    if (
-      result &&
-      result.status === 'success' &&
-      result.opStates &&
-      result.opStates[0] &&
-      result.opStates[1]
-    ) {
-      // GPU
-      if (!result.opStates[0].logs)
-        throw new Error('Cannot find GPU benchmark output');
-
-      const { devices } = JSON.parse(
-        result.opStates[0].logs[0].log!,
-      ) as CudaCheckResponse;
-
-      if (!devices) {
-        throw new Error('GPU benchmark returned with no devices');
-      }
-
-      for (const { index, name, uuid, results } of devices) {
-        const sum = results.reduce((a, b) => a + b, 0);
-
-        if (sum / (index + 1) !== 55) {
-          throw new Error(`GPU logic test failed`);
-        }
-
-        gpus.push(`GPU ${index}: ${name} (UUID: ${uuid})`);
-      }
-
-      if (!result.opStates[1].logs)
-        throw new Error(`Can't find disk space output`);
-
-      // Disk space
-      for (let i = 0; i < result.opStates[1].logs.length; i++) {
-        let ds = result.opStates[1].logs[i];
-        if (ds.log) {
-          // in MB
-          const availableDiskSpace = parseInt(ds.log);
-          if (MIN_DISK_SPACE > availableDiskSpace) {
-            throw new Error(
-              `Not enough disk space available, found ${
-                availableDiskSpace / 1000
-              } GB available. Needs minimal ${MIN_DISK_SPACE / 1000} GB.`,
-            );
-          }
-        } else {
-          throw new Error(`Can't find disk space output`);
-        }
-      }
-    } else if (result && result.status === 'failed' && result.opStates) {
-      const output = [];
-
-      if (result.opStates[0]) {
-        const { error } = JSON.parse(
-          result.opStates[0].logs[0].log!,
-        ) as CudaCheckResponse;
-
-        if (error) {
-          output.push(
-            `GPU benchmark failed, please ensure your NVidia Cuda runtime drivers are up to date and your NVidia Container Toolkit is correctly configured.`,
-          );
-        }
-
-        output.push(result.opStates[0].logs);
-      }
-
-      if (result.opStates[1]) {
-        output.push(result.opStates[1].logs);
-      }
-      throw output;
-    } else {
-      throw 'Cant find results';
-    }
-  } catch (e: any) {
-    console.error(
-      chalk.red('Something went wrong while detecting hardware', e),
-    );
-    throw e;
-  }
-  return gpus;
-};
-
-const getRawTransaction = async (
-  encodedTransaction: Uint8Array,
-): Promise<Transaction | VersionedTransaction> => {
-  let recoveredTransaction: Transaction | VersionedTransaction;
-  try {
-    recoveredTransaction = Transaction.from(encodedTransaction);
-  } catch (error) {
-    recoveredTransaction = VersionedTransaction.deserialize(encodedTransaction);
-  }
-  return recoveredTransaction;
-};

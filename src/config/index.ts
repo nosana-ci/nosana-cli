@@ -6,6 +6,7 @@ export type configType = {
     serverAddr: string;
     serverPort: number;
   };
+  minDiskSpace: number;
 };
 export const config: configType = (
   await import(

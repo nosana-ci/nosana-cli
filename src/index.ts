@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env -S node --no-warnings
 import figlet from 'figlet';
 import { Command, Option } from 'commander';
 import { setSDK } from './services/sdk.js';
@@ -9,6 +9,7 @@ import {
   runJob,
   runBenchmark,
 } from './commands/node/index.js';
+import { getAddress } from './commands/other/index.js';
 const program: Command = new Command();
 
 const VERSION: string = '0.3.1';
@@ -16,7 +17,7 @@ console.log(figlet.textSync('Nosana'));
 
 const rpcOption = new Option('--rpc <url>', 'RPC node to use');
 const networkOption = new Option('-n, --network <network>', 'network to run on')
-  .default('devnet')
+  .default('mainnet')
   .choices(['devnet', 'mainnet']);
 
 const walletOption = new Option(
@@ -32,7 +33,7 @@ program
   .hook('preAction', async (thisCommand, actionCommand) => {
     const opts = actionCommand.optsWithGlobals();
     let market = opts.market;
-    if (opts.network) {
+    if (opts.network || opts.wallet) {
       await setSDK(
         opts.network,
         opts.rpc,
@@ -47,6 +48,13 @@ program
       .default('debug')
       .choices(['info', 'none', 'debug', 'trace']),
   );
+
+program
+  .command('address')
+  .addOption(walletOption)
+  .addOption(networkOption)
+  .description('Print your public key address')
+  .action(getAddress);
 
 const job: Command = program.command('job');
 job
