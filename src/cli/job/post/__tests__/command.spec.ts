@@ -30,7 +30,7 @@ describe('postJobCommand', () => {
   });
 
   it.each([
-    ['--network', '-n', 'devnet'],
+    ['--network', '-n', 'mainnet'],
     ['--rpc', undefined, undefined],
     ['--airdrop', undefined, true],
     ['--no-airdrop', undefined, undefined],

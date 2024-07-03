@@ -30,7 +30,7 @@ describe('uploadJobCommand', () => {
   });
 
   it.each([
-    ['--network', '-n', 'devnet'],
+    ['--network', '-n', 'mainnet'],
     ['--rpc', undefined, undefined],
   ])('should have %s option', (long, short, defaultValue) => {
     const option = uploadJobCommand.options.find((i) => i.long === long);

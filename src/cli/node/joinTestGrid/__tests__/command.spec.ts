@@ -28,7 +28,7 @@ describe('joinTestGridCommand', () => {
     ['--provider', undefined, 'podman'],
     ['--podman', '--docker', 'http://localhost:8080'],
     ['--wallet', '-w', '~/.nosana/nosana_key.json'],
-    ['--network', '-n', 'devnet'],
+    ['--network', '-n', 'mainnet'],
     ['--rpc', undefined, undefined],
     ['--airdrop', undefined, true],
     ['--config', '-c', '~/.nosana/'],

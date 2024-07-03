@@ -30,7 +30,7 @@ describe('startNodeCommand', () => {
   });
 
   it.each([
-    ['--network', '-n', 'devnet'],
+    ['--network', '-n', 'mainnet'],
     ['--rpc', undefined, undefined],
     ['--wallet', '-w', '~/.nosana/nosana_key.json'],
     ['--provider', undefined, 'podman'],

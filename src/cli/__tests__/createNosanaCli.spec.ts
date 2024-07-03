@@ -13,10 +13,10 @@ describe('createNosanaCLI', () => {
   });
 
   it('should have only two commands', () => {
-    expect(CLI.commands.length).toBe(2);
+    expect(CLI.commands.length).toBe(3);
   });
 
-  it.each([['job', 'node']])('should have %s command', (command) => {
+  it.each([['job', 'node', 'wallet']])('should have %s command', (command) => {
     // @ts-ignore
     expect(CLI.commands.map((command) => command._name)).toContain(command);
   });

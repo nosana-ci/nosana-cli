@@ -30,7 +30,7 @@ describe('viewNodeCommand', () => {
   });
 
   it.each([
-    ['--network', '-n', 'devnet'],
+    ['--network', '-n', 'mainnet'],
     ['--rpc', undefined, undefined],
   ])('should have %s option', (long, short, defaultValue) => {
     const option = viewNodeCommand.options.find((i) => i.long === long);
