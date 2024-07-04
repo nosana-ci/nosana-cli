@@ -2,14 +2,9 @@
 import figlet from 'figlet';
 import { Command, Option } from 'commander';
 import { setSDK } from './services/sdk.js';
-import { run, getJob, download, upload } from './commands/job/index.js';
-import {
-  view,
-  startNode,
-  runJob,
-  runBenchmark,
-} from './commands/node/index.js';
-import { getAddress } from './commands/other/index.js';
+import { run, getJob, download, upload } from './cli/job/index.js';
+import { view, startNode, runJob, runBenchmark } from './cli/node/index.js';
+import { getAddress } from './cli/other/index.js';
 const program: Command = new Command();
 
 const VERSION: string = '0.3.1';
