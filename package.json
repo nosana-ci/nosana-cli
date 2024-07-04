@@ -64,7 +64,6 @@
     "dotenv": "^16.4.5",
     "figlet": "^1.6.0",
     "lowdb": "^7.0.1",
-    "node-fetch": "^3.3.2",
     "ora": "^8.0.1",
     "rpc-websockets": "7.9.0",
     "shell-quote": "^1.8.1",
