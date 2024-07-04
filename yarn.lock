@@ -4836,7 +4836,12 @@ tr46@~0.0.3:
   resolved "https://registry.npmjs.org/tr46/-/tr46-0.0.3.tgz"
   integrity sha512-N3WMsuqV66lT30CrXNbEjx4GEwlow3v6rr4mCcv6prnfwhS01rkgyFdjPNBYd9br7LpXV1+Emh01fHnq2Gdgrw==
 
-ts-jest@^29.1.5:
+ts-jest-mock-import-meta@^1.2.0:
+  version "1.2.0"
+  resolved "https://registry.npmjs.org/ts-jest-mock-import-meta/-/ts-jest-mock-import-meta-1.2.0.tgz"
+  integrity sha512-r2+TH6d8LHBXqLTXjJh1KfTZoMvGV0hdn9gwickNVcwS2Co2/mewGjj0XDVEPLg5MVfZVHUFQ9O09anURA3KCw==
+
+ts-jest@^29.1.5, ts-jest@>=20.0.0:
   version "29.1.5"
   resolved "https://registry.npmjs.org/ts-jest/-/ts-jest-29.1.5.tgz"
   integrity sha512-UuClSYxM7byvvYfyWdFI+/2UxMmwNyJb0NPkZPQE2hew3RurV7l7zURgOHAd/1I1ZdPpe3GUsXNXAcN8TFKSIg==

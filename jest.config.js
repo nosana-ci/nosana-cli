@@ -1,3 +1,5 @@
+import { before } from 'node:test';
+
 /** @type {import('ts-jest').JestConfigWithTsJest} */
 export default {
   preset: 'ts-jest/presets/js-with-ts-esm',
@@ -10,6 +12,16 @@ export default {
         useESM: true,
         supportsDynamicImport: true,
         tsconfig: 'tsconfig.json',
+        diagnostics: {
+          ignoreCodes: [1343],
+        },
+        astTransformers: {
+          before: [
+            {
+              path: 'node_modules/ts-jest-mock-import-meta',
+            },
+          ],
+        },
       },
     ],
   },

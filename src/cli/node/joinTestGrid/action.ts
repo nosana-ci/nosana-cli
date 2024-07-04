@@ -1,4 +1,6 @@
 import fs from 'fs';
+import { dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
 import chalk from 'chalk';
 import { input, confirm } from '@inquirer/prompts';
 import { Client } from '@nosana/sdk';
@@ -71,8 +73,10 @@ export async function runBenchmark(options: { [key: string]: any }) {
     throw error;
   }
 
+  const modulePath = dirname(fileURLToPath(import.meta.url));
+
   const jobDefinition = JSON.parse(
-    fs.readFileSync('../../../benchmark.json', 'utf8'),
+    fs.readFileSync(resolve(modulePath, '../../../benchmark-gpu.json'), 'utf8'),
   ) as JobDefinition;
 
   let result: Partial<FlowState> | null;
