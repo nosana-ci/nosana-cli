@@ -3,7 +3,7 @@ import { Command, Option } from 'commander';
 import { jobCommand } from './job/index.js';
 import { nodeCommand } from './node/index.js';
 import { setSDK } from '../services/sdk.js';
-import { walletCommand } from './wallet/command.js';
+import { addressCommand } from './address/command.js';
 
 export const createNosanaCLI = (version: string) =>
   new Command()
@@ -31,4 +31,4 @@ export const createNosanaCLI = (version: string) =>
     )
     .addCommand(jobCommand)
     .addCommand(nodeCommand)
-    .addCommand(walletCommand);
+    .addCommand(addressCommand);

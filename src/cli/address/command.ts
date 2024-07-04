@@ -4,7 +4,7 @@ import { getAddress } from './action.js';
 import { networkOption } from '../sharedOptions/network.js';
 import { walletOption } from '../sharedOptions/wallet.js';
 
-export const walletCommand: Command = program
+export const addressCommand: Command = program
   .command('address')
   .description('Print your public key address')
   .addOption(walletOption)
