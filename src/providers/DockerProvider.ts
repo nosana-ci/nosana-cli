@@ -19,7 +19,7 @@ import Docker, {
 } from 'dockerode';
 import { getSDK } from '../services/sdk.js';
 import { extractResultsFromLogs } from './utils/extractResultsFromLogs.js';
-import { config } from '../generic/config.js';
+import { config } from '../config/index.js';
 
 export type RunContainerArgs = {
   name?: string;

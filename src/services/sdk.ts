@@ -14,7 +14,7 @@ import {
 } from '@solana/web3.js';
 
 import { colors } from '../generic/utils.js';
-import { config as envConfig } from '../generic/config.js';
+import { config as envConfig } from '../config/index.js';
 
 let nosana: Client;
 let nosBalance: TokenAmount | undefined, solBalance: number;

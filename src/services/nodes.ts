@@ -13,7 +13,7 @@ import { FlowState, JobDefinition, Provider } from '../providers/Provider.js';
 import { getSDK } from './sdk.js';
 import { sleep } from '../generic/utils.js';
 import { EMPTY_ADDRESS } from './jobs.js';
-import { config } from '../generic/config.js';
+import { config } from '../config/index.js';
 
 export type NodeStats = {
   sol: number;
