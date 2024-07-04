@@ -1,7 +1,8 @@
 import { Client, Job, mapJob } from '@nosana/sdk';
-import { getSDK } from './sdk.js';
 import 'rpc-websockets/dist/lib/client.js';
 import { ClientSubscriptionId, PublicKey } from '@solana/web3.js';
+
+import { getSDK } from './sdk.js';
 
 export const EMPTY_ADDRESS = new PublicKey('11111111111111111111111111111111');
 
@@ -10,7 +11,7 @@ export const waitForJobCompletion = async (
 ): Promise<Job> => {
   const nosana: Client = getSDK();
   await nosana.jobs.loadNosanaJobs();
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const subscriptionId: ClientSubscriptionId =
       nosana.jobs.connection!.onAccountChange(
         jobAddress,

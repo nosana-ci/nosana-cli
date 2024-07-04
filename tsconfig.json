@@ -1,10 +1,12 @@
 {
   "compilerOptions": {
+    "allowJs": true,
     "target": "ES2021",
     "module": "ESNext",
     "moduleResolution": "node",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
+    "allowImportingTsExtensions": false,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "skipLibCheck": true,
@@ -20,7 +22,8 @@
   },
   "ts-node": {
     "esm": true,
-    "experimentalSpecifierResolution": "node"
+    "target": "ES2021",
+    "module": "ESNext"
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*", "src/benchmark-gpu.json", "src/benchmark.json"]
 }
