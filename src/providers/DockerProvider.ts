@@ -1,4 +1,8 @@
 import chalk from 'chalk';
+import stream from 'stream';
+import { parse } from 'shell-quote';
+
+import { BasicProvider } from './BasicProvider.js';
 import {
   Operation,
   Provider,
@@ -13,12 +17,9 @@ import Docker, {
   ContainerCreateOptions,
   MountType,
 } from 'dockerode';
-import stream from 'stream';
-import { parse } from 'shell-quote';
-import { BasicProvider } from './BasicProvider.js';
 import { getSDK } from '../services/sdk.js';
 import { extractResultsFromLogs } from './utils/extractResultsFromLogs.js';
-import { config } from '../config/index.js';
+import { config } from '../generic/config.js';
 
 export type RunContainerArgs = {
   name?: string;
