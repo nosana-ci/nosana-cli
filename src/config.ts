@@ -1,7 +1,14 @@
 import dotenv from 'dotenv';
+import { dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
+
+const modulePath = dirname(fileURLToPath(import.meta.url));
 
 dotenv.config({
-  path: `.env.${process.env.APP_ENV || process.env.NODE_ENV || 'production'}`,
+  path: resolve(
+    modulePath,
+    `.env.${process.env.APP_ENV || process.env.NODE_ENV || 'production'}`,
+  ),
 });
 
 export type configType = {
