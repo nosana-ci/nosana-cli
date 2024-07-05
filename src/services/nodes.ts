@@ -209,7 +209,10 @@ export const runBenchmark = async (
     const modulePath = dirname(fileURLToPath(import.meta.url));
 
     const benchmarkGPU = JSON.parse(
-      fs.readFileSync(resolve(modulePath, '../benchmark-gpu.json'), 'utf8'),
+      fs.readFileSync(
+        resolve(modulePath, '../static/benchmark-gpu.json'),
+        'utf8',
+      ),
     ) as JobDefinition;
 
     // Create new flow

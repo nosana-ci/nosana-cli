@@ -76,7 +76,10 @@ export async function runBenchmark(options: { [key: string]: any }) {
   const modulePath = dirname(fileURLToPath(import.meta.url));
 
   const jobDefinition = JSON.parse(
-    fs.readFileSync(resolve(modulePath, '../../../benchmark.json'), 'utf8'),
+    fs.readFileSync(
+      resolve(modulePath, '../../../static/benchmark.json'),
+      'utf8',
+    ),
   ) as JobDefinition;
 
   let result: Partial<FlowState> | null;
