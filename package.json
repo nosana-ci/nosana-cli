@@ -3,12 +3,12 @@
   "version": "0.0.0",
   "description": "",
   "bin": {
-    "nosana": "./dist/index.js"
+    "nosana": "./dist/src/index.js"
   },
   "type": "module",
   "scripts": {
     "dev": "npx cross-env APP_ENV=development ts-node src/index.ts",
-    "build": "npm run prepare && tsc && cp ./src/config/.env.production ./dist/config/.env.production",
+    "build": "npm run prepare && tsc && cp .env.production ./dist/",
     "test": "APP_ENV=development jest --watch",
     "test:coverage": "APP_ENV=development jest --coverage",
     "publish:public": "npm run build && npm publish --access public",

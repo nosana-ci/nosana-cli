@@ -7,7 +7,7 @@ const modulePath = dirname(fileURLToPath(import.meta.url));
 dotenv.config({
   path: resolve(
     modulePath,
-    `.env.${process.env.APP_ENV || process.env.NODE_ENV || 'production'}`,
+    `../../.env.${process.env.APP_ENV || process.env.NODE_ENV || 'production'}`,
   ),
 });
 

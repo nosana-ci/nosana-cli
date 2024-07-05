@@ -21,7 +21,7 @@ import {
 } from '../../../providers/Provider.js';
 import { PodmanProvider } from '../../../providers/PodmanProvider.js';
 import { getRawTransaction, getSDK } from '../../../services/sdk.js';
-import { config } from '../../../config/index.js';
+import { config } from '../../../generic/config.js';
 import {
   getRun,
   checkQueued,
