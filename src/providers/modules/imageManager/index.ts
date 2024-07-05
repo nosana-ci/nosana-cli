@@ -43,15 +43,16 @@ export function createImageManager(
   };
 
   /**
-   * Remove all dangaling unrequired images
+   * Remove all dangaling unrequired images not used within the last 24hours
    *  @returns Promise
    */
   const removeDangalingImages = async (): Promise<void> => {
     for (const [image, history] of Object.entries(db.data.images)) {
       if (!market_required_images.includes(image)) {
-        const hoursSinceLastUsed = Math.abs(
-          new Date(history.lastUsed).getTime() - new Date().getTime(),
-        );
+        const hoursSinceLastUsed =
+          Math.abs(
+            new Date(history.lastUsed).getTime() - new Date().getTime(),
+          ) / 36e5;
 
         if (hoursSinceLastUsed > 24) {
           try {
