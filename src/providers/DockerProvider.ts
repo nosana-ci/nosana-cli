@@ -1,10 +1,8 @@
 import chalk from 'chalk';
-import Docker, { Container, MountType } from 'dockerode';
 import stream from 'stream';
 import { parse } from 'shell-quote';
 
 import { BasicProvider } from './BasicProvider.js';
-import { sleep } from '../generic/utils.js';
 import {
   Operation,
   Provider,
@@ -12,10 +10,31 @@ import {
   Flow,
   OperationArgsMap,
   OperationResults,
+  ProviderEvents,
   Log,
 } from './Provider.js';
+import Docker, {
+  Container,
+  ContainerCreateOptions,
+  MountType,
+} from 'dockerode';
 import { getSDK } from '../services/sdk.js';
 import { extractResultsFromLogs } from './utils/extractResultsFromLogs.js';
+import { config } from '../generic/config.js';
+
+export type RunContainerArgs = {
+  name?: string;
+  networks?: { [key: string]: {} };
+  cmd?: string[];
+  gpu?: boolean;
+  volumes?: Array<{
+    dest: string;
+    name: string;
+  }>;
+  env?: { [key: string]: string };
+  work_dir?: string;
+  entrypoint?: string | string[];
+};
 
 export class DockerProvider extends BasicProvider implements Provider {
   protected docker: Docker;
@@ -63,62 +82,17 @@ export class DockerProvider extends BasicProvider implements Provider {
         (opState) => op.id === opState.operationId,
       );
       const opState = flow.state.opStates[opStateIndex];
+      let container: Container | undefined;
+      // Check if we already have a container running for this operation
       if (opState.providerId) {
-        let container;
         try {
           container = this.docker.getContainer(opState.providerId as string);
-        } catch (error) {
-          updateOpState({ providerId: null });
-        }
-
-        // when node is shutted down before the container started, it won't find the container
-        // clear providerId so that it will be ran again
-        if (container) {
-          const containerInfo = await container.inspect();
-
-          // Create streams and wait for it to finish
-          if (containerInfo.State.Running) {
-            // wait for log streams to finish, handle new logs with callback
-            try {
-              // const logs: OpState['logs'] = [];
-              await this.handleLogStreams(
-                container,
-                (data: {
-                  log: string;
-                  type: 'stdin' | 'stdout' | 'stderr';
-                }) => {
-                  this.eventEmitter.emit('newLog', {
-                    type: data.type,
-                    log: data.log,
-                  });
-                  // logs.push({
-                  //   type: data.type,
-                  //   log: data.log,
-                  // });
-                  // updateOpState({ logs });
-                },
-              );
-            } catch (e) {
-              console.error(
-                chalk.red(`Error handling log streams for ${container.id}`, e),
-              );
-            }
-
-            await this.finishOpContainerRun({
-              container,
-              updateOpState,
-              containerInfo,
-              operationResults,
-            });
-          } else if (containerInfo.State.Status === 'exited') {
-            await this.finishOpContainerRun({
-              container,
-              updateOpState,
-              containerInfo,
-              operationResults,
-            });
+          try {
+            await this.streamingLogs(container);
+          } catch (e) {
+            // console.error(e);
           }
-        } else {
+        } catch (error) {
           updateOpState({ providerId: null });
         }
       }
@@ -145,13 +119,20 @@ export class DockerProvider extends BasicProvider implements Provider {
           }
         }
 
-        await this.executeCmd(
+        container = await this.runOpContainerRun(
           op.args,
           flowId,
           opStateIndex,
           updateOpState,
-          operationResults,
         );
+      }
+      if (container) {
+        await container.wait();
+        await this.finishOpContainerRun({
+          container,
+          updateOpState,
+          operationResults,
+        });
       }
 
       return opState;
@@ -171,7 +152,7 @@ export class DockerProvider extends BasicProvider implements Provider {
         (opState) => op.id === opState.operationId,
       );
       const opState = flow.state.opStates[opStateIndex];
-      this.eventEmitter.emit('newLog', {
+      this.eventEmitter.emit(ProviderEvents.NEW_LOG, {
         type: 'info',
         log: chalk.cyan(`- Creating volume ${chalk.bold(op.args.name)}`),
       });
@@ -238,146 +219,196 @@ export class DockerProvider extends BasicProvider implements Provider {
   }
 
   /**
-   * Perform docker.run for given cmd, return logs
+   * Create the containers neccesary for a container/run operation.
+   * Returns the main container
    * @param opArgs
    * @param flowId
    * @param opStateIndex
+   * @param updateOpState
    * @returns
    */
-  async executeCmd(
+  async runOpContainerRun(
     opArgs: OperationArgsMap['container/run'],
     flowId: string,
     opStateIndex: number,
     updateOpState: Function,
-    operationResults: OperationResults | undefined,
-  ): Promise<OpState> {
-    return await new Promise<OpState>(async (resolve, reject) => {
-      let cmd = '';
-      if (Array.isArray(opArgs.cmd)) {
-        for (let i = 0; i < opArgs.cmd.length; i++) {
-          if (i === 0) {
-            cmd += opArgs.cmd[i];
-          } else {
-            cmd += "'" + opArgs.cmd[i] + "'";
-          }
+  ): Promise<Container> {
+    let cmd = '';
+    if (Array.isArray(opArgs.cmd)) {
+      for (let i = 0; i < opArgs.cmd.length; i++) {
+        if (i === 0) {
+          cmd += opArgs.cmd[i];
+        } else {
+          cmd += "'" + opArgs.cmd[i] + "'";
         }
-      } else {
-        cmd = opArgs.cmd;
       }
-      const flow = this.getFlow(flowId) as Flow;
-      const parsedcmd = parse(cmd);
+    } else {
+      cmd = opArgs.cmd;
+    }
+    const flow = this.getFlow(flowId) as Flow;
+    const parsedcmd = parse(cmd);
 
-      const name = [...Array(32)]
-        .map(() => Math.random().toString(36)[2])
-        .join('');
-      updateOpState({ providerId: name });
+    // create volume mount array
+    const volumes = [];
+    if (opArgs.volumes && opArgs.volumes.length > 0) {
+      for (let i = 0; i < opArgs.volumes.length; i++) {
+        const volume = opArgs.volumes[i];
+        volumes.push({
+          dest: volume.dest,
+          name: flowId + '-' + volume.name,
+        });
+      }
+    }
 
-      // const logs: OpState['logs'] = [];
+    // check for global & local options
+    const work_dir =
+      opArgs.work_dir ||
+      !flow.jobDefinition.global ||
+      !flow.jobDefinition.global.work_dir
+        ? opArgs.work_dir
+        : flow.jobDefinition.global.work_dir;
 
-      this.handleLogStreams(
+    const entrypoint =
+      opArgs.entrypoint ||
+      !flow.jobDefinition.global ||
+      !flow.jobDefinition.global.entrypoint
+        ? opArgs.entrypoint
+        : flow.jobDefinition.global.entrypoint;
+
+    const globalEnv =
+      flow.jobDefinition.global && flow.jobDefinition.global.env
+        ? flow.jobDefinition.global.env
+        : {};
+    this.eventEmitter.emit(ProviderEvents.NEW_LOG, {
+      type: 'info',
+      log: chalk.cyan('Starting container'),
+    });
+    const name = flowId + '-' + flow.state.opStates[opStateIndex].operationId;
+    await this.docker.createNetwork({ Name: name });
+    const networks: { [key: string]: {} } = {};
+    networks[name] = {};
+    const container: Container = await this.runContainer(
+      opArgs.image ? opArgs.image : flow.jobDefinition.global?.image!,
+      {
         name,
-        (data: { log: string; type: 'stdin' | 'stdout' | 'stderr' }) => {
-          this.eventEmitter.emit('newLog', {
-            type: data.type,
-            log: data.log,
-          });
-          // logs.push({
-          //   type: data.type,
-          //   log: data.log,
-          // });
-          // updateOpState({ logs });
+        cmd: parsedcmd as string[],
+        env: {
+          ...globalEnv,
+          ...opArgs.env,
         },
-        3,
-      ).catch((e) => {
-        console.error(chalk.red(`Error handling log streams for ${name}`, e));
+        networks,
+        gpu:
+          opArgs.gpu ||
+          (flow.jobDefinition.global && flow.jobDefinition.global.gpu),
+        entrypoint,
+        work_dir,
+        volumes,
+      },
+    );
+    updateOpState({ providerId: container.id });
+    this.eventEmitter.emit(ProviderEvents.NEW_LOG, {
+      type: 'info',
+      log: chalk.cyan('Running container ' + container.id),
+    });
+    try {
+      await this.streamingLogs(container);
+    } catch (e) {
+      // console.error(e);
+    }
+    if (opArgs.expose) {
+      await this.runContainer('docker.io/laurensv/nosana-frpc', {
+        name: 'frpc-' + name,
+        cmd: ['-c', '/etc/frp/frpc.toml'],
+        networks,
+        env: {
+          FRP_SERVER_ADDR: config.frp.serverAddr,
+          FRP_SERVER_PORT: config.frp.serverPort.toString(),
+          FRP_NAME: name,
+          FRP_LOCAL_IP: name,
+          FRP_LOCAL_PORT: opArgs.expose.toString(),
+          FRP_CUSTOM_DOMAIN: flowId + '.' + config.frp.serverAddr,
+        },
       });
+      this.eventEmitter.emit(ProviderEvents.NEW_LOG, {
+        type: 'info',
+        log: chalk.cyan(
+          `Exposing service at ${chalk.bold(
+            `https://${flowId}.${config.frp.serverAddr}`,
+          )}`,
+        ),
+      });
+    }
+    return container;
+  }
 
-      // create volume mount array
-      const volumes = [];
-      if (opArgs.volumes && opArgs.volumes.length > 0) {
-        for (let i = 0; i < opArgs.volumes.length; i++) {
-          const volume = opArgs.volumes[i];
-          volumes.push({
-            Target: volume.dest,
-            Source: flowId + '-' + volume.name,
-            Type: 'volume' as MountType,
-            ReadOnly: false,
-          });
-        }
+  public async runContainer(
+    image: string,
+    {
+      name,
+      networks,
+      cmd,
+      gpu,
+      volumes,
+      env,
+      work_dir,
+      entrypoint,
+    }: RunContainerArgs,
+  ): Promise<Container> {
+    const devices = gpu
+      ? [
+          {
+            Count: -1,
+            Driver: 'nvidia',
+            Capabilities: [['gpu']],
+          },
+        ]
+      : [];
+    const dockerVolumes = [];
+    if (volumes && volumes.length > 0) {
+      for (let i = 0; i < volumes.length; i++) {
+        const volume = volumes[i];
+        dockerVolumes.push({
+          Target: volume.dest,
+          Source: volume.name,
+          Type: 'volume' as MountType,
+          ReadOnly: false,
+        });
       }
-
-      // pass stream, but we are not using it, as we are using handleLogStreams
-      const emptyStream = new stream.PassThrough();
-
-      // check for global & local options
-      const work_dir =
-        opArgs.work_dir ||
-        !flow.jobDefinition.global ||
-        !flow.jobDefinition.global.work_dir
-          ? opArgs.work_dir
-          : flow.jobDefinition.global.work_dir;
-
-      const entrypoint =
-        opArgs.entrypoint ||
-        !flow.jobDefinition.global ||
-        !flow.jobDefinition.global.entrypoint
-          ? opArgs.entrypoint
-          : flow.jobDefinition.global.entrypoint;
-
-      const devices =
-        opArgs.gpu ||
-        (flow.jobDefinition.global && flow.jobDefinition.global.gpu)
-          ? [
-              {
-                Count: -1,
-                Driver: 'nvidia',
-                Capabilities: [['gpu']],
-              },
-            ]
-          : [];
-
-      const globalEnv =
-        flow.jobDefinition.global && flow.jobDefinition.global.env
-          ? flow.jobDefinition.global.env
-          : {};
-      const vars = [];
-      for (const [key, value] of Object.entries({
-        ...globalEnv,
-        ...opArgs.env,
-      })) {
+    }
+    const vars: string[] = [];
+    if (env) {
+      for (const [key, value] of Object.entries(env)) {
         vars.push(`${key}=${value}`);
       }
+    }
+    const optsc: ContainerCreateOptions = {
+      name: name,
+      Hostname: '',
+      User: '',
+      AttachStdin: false,
+      AttachStdout: true,
+      AttachStderr: true,
+      Tty: false,
+      OpenStdin: false,
+      StdinOnce: false,
+      Env: vars,
+      Cmd: cmd,
+      Image: image,
+      WorkingDir: work_dir,
+      Entrypoint: entrypoint,
+      NetworkingConfig: {
+        EndpointsConfig: networks,
+      },
+      HostConfig: {
+        Mounts: dockerVolumes,
+        NetworkMode: 'bridge',
+        DeviceRequests: devices,
+      },
+    };
 
-      this.eventEmitter.emit('newLog', {
-        type: 'info',
-        log: chalk.cyan('Running in container'),
-      });
-
-      return await this.docker
-        .run(opArgs.image, parsedcmd as string[], emptyStream, {
-          name,
-          Tty: false,
-          Env: vars,
-          Entrypoint: entrypoint,
-          HostConfig: {
-            Mounts: volumes,
-            DeviceRequests: devices,
-          },
-          WorkingDir: work_dir,
-        })
-        .then(async ([res, container]) => {
-          await this.finishOpContainerRun({
-            container,
-            updateOpState,
-            operationResults,
-          });
-          emptyStream.end();
-          resolve(flow.state.opStates[opStateIndex]);
-        })
-        .catch((error) => {
-          reject(error);
-        });
-    });
+    const container = await this.docker.createContainer(optsc);
+    await container.start();
+    return container;
   }
 
   protected hookPreRun(flow: Flow): Flow {
@@ -431,6 +462,26 @@ export class DockerProvider extends BasicProvider implements Provider {
     return flow;
   }
 
+  public async stopFlowOperation(
+    flowId: string,
+    op: Operation<any>,
+  ): Promise<OpState> {
+    const opState = this.db.data.flows[flowId].state.opStates.find(
+      (opState) => opState.operationId === op.id,
+    );
+    if (!opState) throw new Error('could not find opState');
+    if (opState.providerId) {
+      const container = this.docker.getContainer(opState.providerId);
+      try {
+        await container.stop();
+      } catch (e) {
+        // Couldn't stop container
+      }
+    }
+
+    return opState;
+  }
+
   /**
    * Finish container run, extract results and update opState
    * @param container
@@ -474,83 +525,6 @@ export class DockerProvider extends BasicProvider implements Provider {
     updateOpState(updatedOpState);
   }
 
-  protected async handleLogStreams(
-    container: Docker.Container | string,
-    callback: Function,
-    retries?: number,
-  ) {
-    await new Promise<void>(async (resolve, reject) => {
-      // TODO: now made with retries, check if there's a better solution..
-      if (!this.isDockerContainer(container)) {
-        try {
-          container = this.docker.getContainer(container);
-        } catch (error) {
-          if (retries && retries > 0) {
-            await sleep(1);
-            await this.handleLogStreams(container, callback, retries - 1);
-          } else {
-            reject('Could not find container');
-          }
-        }
-      }
-      let checkContainerInterval: NodeJS.Timeout | undefined = undefined;
-      if (this.isDockerContainer(container)) {
-        const stdoutStream = new stream.PassThrough();
-        const stderrStream = new stream.PassThrough();
-
-        stderrStream.on('data', (chunk: Buffer) => {
-          callback({
-            type: 'stderr',
-            log: chunk.toString(),
-          });
-        });
-
-        stdoutStream.on('data', (chunk: Buffer) => {
-          callback({
-            type: 'stdout',
-            log: chunk.toString(),
-          });
-        });
-
-        const logStream = await container.logs({
-          stdout: true,
-          stderr: true,
-          follow: true,
-        });
-        container.modem.demuxStream(logStream, stdoutStream, stderrStream);
-
-        logStream.on('end', async () => {
-          stdoutStream.end();
-          stderrStream.end();
-          clearInterval(checkContainerInterval);
-          resolve();
-        });
-        // Check if container is still running (in case we missed the logStream `end` event) every 30s
-        checkContainerInterval = setInterval(async () => {
-          try {
-            const containerInfo = await (container as Container).inspect();
-            // Create streams and wait for it to finish
-            if (
-              containerInfo.State.Status !== 'created' &&
-              containerInfo.State.Status !== 'running'
-            ) {
-              stdoutStream.end();
-              stderrStream.end();
-              clearInterval(checkContainerInterval);
-              resolve();
-            }
-          } catch (e) {
-            clearInterval(checkContainerInterval);
-            resolve();
-          }
-        }, 30000);
-      } else {
-        clearInterval(checkContainerInterval);
-        reject('Could not find container');
-      }
-    });
-  }
-
   public async finishFlow(
     flowId: string,
     status?: string | undefined,
@@ -588,9 +562,9 @@ export class DockerProvider extends BasicProvider implements Provider {
         await this.stopAndRemoveContainer(
           flow.state.opStates[i].providerId as string,
         );
-        await this.stopAndRemoveContainer(
-          ('frpc-' + flow.state.opStates[i].providerId) as string,
-        );
+        const frpcName =
+          'frpc-' + flowId + '-' + flow.state.opStates[i].operationId;
+        await this.stopAndRemoveContainer(frpcName);
       }
     }
 
@@ -624,7 +598,7 @@ export class DockerProvider extends BasicProvider implements Provider {
    *   Helpers   *
    ****************/
   protected async pullImage(image: string) {
-    this.eventEmitter.emit('newLog', {
+    this.eventEmitter.emit(ProviderEvents.NEW_LOG, {
       type: 'info',
       log: chalk.cyan(`Pulling image ${chalk.bold(image)}`),
     });
@@ -701,6 +675,40 @@ export class DockerProvider extends BasicProvider implements Provider {
     }
   }
 
+  private async streamingLogs(container: Container) {
+    const stdoutStream = new stream.PassThrough();
+    const stderrStream = new stream.PassThrough();
+
+    stderrStream.on('data', (chunk: Buffer) => {
+      this.eventEmitter.emit(ProviderEvents.NEW_LOG, {
+        type: 'stderr',
+        log: chunk.toString(),
+      });
+    });
+    stdoutStream.on('data', (chunk: Buffer) => {
+      this.eventEmitter.emit(ProviderEvents.NEW_LOG, {
+        type: 'stdout',
+        log: chunk.toString(),
+      });
+    });
+    try {
+      const logStream = await container.logs({
+        stdout: true,
+        stderr: true,
+        follow: true,
+      });
+      container.modem.demuxStream(logStream, stdoutStream, stderrStream);
+      logStream.on('end', async () => {
+        stdoutStream.end();
+        stderrStream.end();
+      });
+    } catch (e) {
+      stdoutStream.end();
+      stderrStream.end();
+      throw e;
+    }
+  }
+
   /**
    * input: log Buffer, output stdout & stderr strings
    * @param buffer
@@ -740,8 +748,4 @@ export class DockerProvider extends BasicProvider implements Provider {
 
     return output;
   };
-
-  private isDockerContainer(obj: any): obj is Docker.Container {
-    return obj.modem !== undefined;
-  }
 }

@@ -12,6 +12,7 @@ import {
   OperationArgsMap,
 } from '../../../providers/Provider.js';
 import { PodmanProvider } from '../../../providers/PodmanProvider.js';
+// import { api } from '../../../services/api.js';
 
 let flow: Flow | undefined;
 let provider: Provider;
@@ -44,7 +45,6 @@ export async function runJob(
   };
   process.on('SIGINT', onShutdown);
   process.on('SIGTERM', onShutdown);
-
   switch (options.provider) {
     case 'podman':
       provider = new PodmanProvider(options.podman, options.config);
@@ -64,13 +64,30 @@ export async function runJob(
     throw error;
   }
   switch (options.provider) {
-    case 'docker':
-    default:
+    case 'podman':
       spinner.succeed(
         chalk.green(`Podman is running on ${chalk.bold(options.podman)}`),
       );
       break;
+    case 'docker':
+    default:
+      spinner.succeed(
+        chalk.green(`Docker is running on ${chalk.bold(options.podman)}`),
+      );
+      break;
   }
+  // spinner = ora(chalk.cyan('Starting API')).start();
+  // try {
+  //   const port = await api.start();
+  //   spinner.succeed(
+  //     chalk.green(
+  //       `API is running on ${chalk.bold(`http://localhost:${port}`)}`,
+  //     ),
+  //   );
+  // } catch (error) {
+  //   spinner.fail(chalk.red(`Could not start API`));
+  //   throw error;
+  // }
   const jobDefinition: JobDefinition = JSON.parse(
     fs.readFileSync(jobDefinitionFile, 'utf8'),
   );

@@ -10,7 +10,6 @@ import {
 } from '@solana/web3.js';
 import 'rpc-websockets/dist/lib/client.js';
 
-import { config } from '../../../config.js';
 import { sleep, clearLine } from '../../../generic/utils.js';
 import { NotQueuedError } from '../../../generic/errors.js';
 import { DockerProvider } from '../../../providers/DockerProvider.js';
@@ -22,6 +21,7 @@ import {
 } from '../../../providers/Provider.js';
 import { PodmanProvider } from '../../../providers/PodmanProvider.js';
 import { getRawTransaction, getSDK } from '../../../services/sdk.js';
+import { config } from '../../../generic/config.js';
 import {
   getRun,
   checkQueued,

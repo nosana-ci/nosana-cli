@@ -3,12 +3,12 @@
   "version": "0.0.0",
   "description": "",
   "bin": {
-    "nosana": "./dist/index.js"
+    "nosana": "./dist/src/index.js"
   },
   "type": "module",
   "scripts": {
     "dev": "npx cross-env APP_ENV=development ts-node src/index.ts",
-    "build": "npm run prepare && tsc && cp .env.production ./dist/.env.production",
+    "build": "npm run prepare && tsc && cp .env.production ./dist/",
     "test": "APP_ENV=development jest --watch",
     "test:coverage": "APP_ENV=development jest --coverage",
     "publish:public": "npm run build && npm publish --access public",
@@ -57,10 +57,12 @@
     "@inquirer/prompts": "^4.3.0",
     "@nosana/sdk": "^0.3.24",
     "@solana/web3.js": "^1.78.0",
+    "@types/express": "^4.17.21",
     "chalk": "^5.3.0",
     "commander": "^11.0.0",
     "cron": "^3.1.6",
     "dockerode": "^4.0.2",
+    "express": "^4.19.2",
     "dotenv": "^16.4.5",
     "figlet": "^1.6.0",
     "lowdb": "^7.0.1",

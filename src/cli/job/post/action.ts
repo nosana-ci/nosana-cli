@@ -4,8 +4,7 @@ import fs from 'node:fs';
 import chalk from 'chalk';
 import { randomUUID } from 'crypto';
 import { IValidation } from 'typia';
-
-import { config } from '../../../config.js';
+import { config } from '../../../generic/config.js';
 import { getJob } from '../get/action.js';
 import { colors } from '../../../generic/utils.js';
 import { getNosBalance, getSDK, getSolBalance } from '../../../services/sdk.js';

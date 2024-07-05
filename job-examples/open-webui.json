@@ -10,7 +10,11 @@
       "id": "open-webui",
       "args": {
         "cmd": [],
-        "image": "ghcr.io/open-webui/open-webui:main",
+        "env": {
+          "WEBUI_AUTH": "False",
+          "WEBUI_NAME": "Nosana Chat"
+        },
+        "image": "ghcr.io/open-webui/open-webui:ollama",
         "gpu": true,
         "expose": 8080
       }

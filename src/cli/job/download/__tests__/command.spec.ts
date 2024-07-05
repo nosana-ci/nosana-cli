@@ -2,7 +2,7 @@ import { downloadJobCommand } from '../command';
 
 import { download } from '../action';
 
-jest.mock('../action.ts', () => ({
+jest.mock('../action', () => ({
   download: jest.fn(),
 }));
 

@@ -13,7 +13,7 @@ import { FlowState, JobDefinition, Provider } from '../providers/Provider.js';
 import { getSDK } from './sdk.js';
 import { sleep } from '../generic/utils.js';
 import { EMPTY_ADDRESS } from './jobs.js';
-import { config } from '../config.js';
+import { config } from '../generic/config.js';
 
 export type NodeStats = {
   sol: number;
@@ -209,7 +209,10 @@ export const runBenchmark = async (
     const modulePath = dirname(fileURLToPath(import.meta.url));
 
     const benchmarkGPU = JSON.parse(
-      fs.readFileSync(resolve(modulePath, '../benchmark-gpu.json'), 'utf8'),
+      fs.readFileSync(
+        resolve(modulePath, '../static/benchmark-gpu.json'),
+        'utf8',
+      ),
     ) as JobDefinition;
 
     // Create new flow

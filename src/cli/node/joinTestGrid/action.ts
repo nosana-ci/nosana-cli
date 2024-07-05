@@ -7,7 +7,6 @@ import { Client } from '@nosana/sdk';
 import ora, { Ora } from 'ora';
 import { IValidation } from 'typia';
 
-import { config } from '../../../config.js';
 import { DockerProvider } from '../../../providers/DockerProvider.js';
 import {
   Provider,
@@ -17,6 +16,7 @@ import {
   FlowState,
 } from '../../../providers/Provider.js';
 import { PodmanProvider } from '../../../providers/PodmanProvider.js';
+import { config } from '../../../generic/config.js';
 import { getSDK } from '../../../services/sdk.js';
 
 let flow: Flow | undefined;
@@ -76,7 +76,10 @@ export async function runBenchmark(options: { [key: string]: any }) {
   const modulePath = dirname(fileURLToPath(import.meta.url));
 
   const jobDefinition = JSON.parse(
-    fs.readFileSync(resolve(modulePath, '../../../benchmark.json'), 'utf8'),
+    fs.readFileSync(
+      resolve(modulePath, '../../../static/benchmark.json'),
+      'utf8',
+    ),
   ) as JobDefinition;
 
   let result: Partial<FlowState> | null;
