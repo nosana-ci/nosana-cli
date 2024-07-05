@@ -1,7 +1,4 @@
 import chalk from 'chalk';
-import fs from 'fs';
-import os from 'os';
-import { JSONFileSyncPreset } from 'lowdb/node';
 import { LowSync } from 'lowdb';
 import EventEmitter from 'events';
 import { IValidation } from 'typia';
@@ -18,14 +15,14 @@ import {
   OperationResults,
 } from './Provider.js';
 import { sleep } from '../generic/utils.js';
+import { createDB, DB } from './modules/db/index.js';
 
-type NodeDb = {
+export type NodeDb = {
   flows: { [key: string]: Flow };
   images: { [key: string]: ImageHistory };
 };
 
 type ImageHistory = {
-  image: string;
   lastUsed: Date;
   usage: number;
 };
@@ -39,6 +36,7 @@ type OpFunction = (
 
 export class BasicProvider implements Provider {
   protected db: LowSync<NodeDb>;
+
   protected eventEmitter: EventEmitter = new EventEmitter();
   protected supportedOps: { [key: string]: OpFunction } = {};
   public clearFlowsCronJob: CronJob = new CronJob(
@@ -51,16 +49,13 @@ export class BasicProvider implements Provider {
   );
 
   constructor(configLocation: string) {
-    // Create or read database
-    if (configLocation && configLocation[0] === '~') {
-      configLocation = configLocation.replace('~', os.homedir());
-    }
-    fs.mkdirSync(configLocation, { recursive: true });
-    this.db = JSONFileSyncPreset<NodeDb>(`${configLocation}/flows.json`, {
-      flows: {},
-      images: {},
-    });
+    // Load subModules using JS Factory
+    // this.db = createDB(configLocation);
+
+    // Load subModules using JS Classes
+    this.db = new DB(configLocation).db;
   }
+
   /**
    * Main run
    * @param jobDefinition

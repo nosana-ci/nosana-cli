@@ -1,6 +1,12 @@
 import chalk from 'chalk';
 import stream from 'stream';
 import { parse } from 'shell-quote';
+import { sleep } from '@nosana/sdk';
+import Docker, {
+  Container,
+  ContainerCreateOptions,
+  MountType,
+} from 'dockerode';
 
 import { BasicProvider } from './BasicProvider.js';
 import {
@@ -12,14 +18,10 @@ import {
   OperationResults,
   Log,
 } from './Provider.js';
-import Docker, {
-  Container,
-  ContainerCreateOptions,
-  MountType,
-} from 'dockerode';
+import { config } from '../generic/config.js';
+import { createImageManager } from './modules/imageManager/index.js';
 import { getSDK } from '../services/sdk.js';
 import { extractResultsFromLogs } from './utils/extractResultsFromLogs.js';
-import { config } from '../generic/config.js';
 
 export type RunContainerArgs = {
   name?: string;
@@ -37,6 +39,7 @@ export type RunContainerArgs = {
 
 export class DockerProvider extends BasicProvider implements Provider {
   protected docker: Docker;
+  protected imageManager;
   protected host: string;
   protected port: string;
   protected protocol: string;
@@ -64,6 +67,8 @@ export class DockerProvider extends BasicProvider implements Provider {
       port: this.port,
       protocol: this.protocol as 'https' | 'http' | 'ssh' | undefined,
     });
+
+    this.imageManager = createImageManager(this.db, this.docker);
 
     /**
      * Run operation and return results
@@ -117,6 +122,9 @@ export class DockerProvider extends BasicProvider implements Provider {
             );
           }
         }
+
+        // Allow file locks to reset - hopefully will reduce image not known issue
+        await sleep(3);
 
         container = await this.runOpContainerRun(
           op.args,
@@ -583,6 +591,7 @@ export class DockerProvider extends BasicProvider implements Provider {
       }
     }
     try {
+      await this.imageManager.removeDangalingImages();
       await this.docker.pruneNetworks();
     } catch (error: any) {
       // console.error(
@@ -601,7 +610,11 @@ export class DockerProvider extends BasicProvider implements Provider {
       type: 'info',
       log: chalk.cyan(`Pulling image ${chalk.bold(image)}`),
     });
+
+    this.imageManager.setImage(image);
+
     const images = await this.docker.listImages();
+
     if (!image.includes(':')) image += ':latest';
     for (var i = 0, len = images.length; i < len; i++) {
       if (
@@ -619,14 +632,19 @@ export class DockerProvider extends BasicProvider implements Provider {
         return true;
       }
     }
+
     return await new Promise((resolve, reject): any =>
       this.docker.pull(image, (err: any, stream: any) => {
         if (err) {
           reject(err);
         } else {
-          this.docker.modem.followProgress(stream, onFinished, onProgress);
+          this.docker.modem.followProgress(
+            stream,
+            (err: any, output: any) => onFinished(err, output),
+            onProgress,
+          );
         }
-        function onFinished(err: any, output: any) {
+        async function onFinished(err: any, _: any) {
           if (!err) {
             resolve(true);
             return;
