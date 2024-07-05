@@ -1,7 +1,6 @@
 import chalk from 'chalk';
 import { Command } from 'commander';
 import { Client, Job, KeyWallet, Market, Run } from '@nosana/sdk';
-import { fetch, setGlobalDispatcher, Agent } from 'undici';
 import ora, { type Ora } from 'ora';
 import {
   BlockheightBasedTransactionConfirmationStrategy,
@@ -30,8 +29,6 @@ import {
   runBenchmark,
   healthCheck,
 } from '../../../services/nodes.js';
-
-setGlobalDispatcher(new Agent({ connect: { timeout: 150_000 } }));
 
 let provider: Provider;
 let run: Run | void;
