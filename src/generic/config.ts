@@ -19,9 +19,14 @@ export type configType = {
     serverAddr: string;
     serverPort: number;
   };
+  api: {
+    port: number;
+  };
   minDiskSpace: number;
 };
 
+// TODO: either check if all the env variables are actually set or move the default values to
+// this file when they are not yet set..
 export const config: configType = {
   backendUrl: process.env.BACKEND_URL!,
   backendSolanaAddress: process.env.BACKEND_SOLANA_ADDRESS!,
@@ -29,6 +34,9 @@ export const config: configType = {
   frp: {
     serverAddr: process.env.FRP_SERVER_ADDRESS!,
     serverPort: parseInt(process.env.FRP_SERVER_PORT!),
+  },
+  api: {
+    port: parseInt(process.env.API_PORT!),
   },
   minDiskSpace: parseInt(process.env.MIN_DISK_SPACE!),
 };
