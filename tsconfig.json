@@ -25,10 +25,5 @@
     "target": "ES2021",
     "module": "ESNext"
   },
-  "include": [
-    "src/**/*",
-    "src/benchmark-gpu.json",
-    "src/benchmark.json",
-    "package.json"
-  ]
+  "include": ["src/**/*", "src/static/*.json", "package.json"]
 }
