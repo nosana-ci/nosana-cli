@@ -1,6 +1,3 @@
-import fs from 'fs';
-import { dirname, resolve } from 'path';
-import { fileURLToPath } from 'url';
 import chalk from 'chalk';
 import ora, { type Ora } from 'ora';
 import { Client, Market, Run } from '@nosana/sdk';
@@ -14,6 +11,8 @@ import { getSDK } from './sdk.js';
 import { sleep } from '../generic/utils.js';
 import { EMPTY_ADDRESS } from './jobs.js';
 import { config } from '../generic/config.js';
+
+import benchmarkGPU from '../static/benchmark-gpu.json' assert { type: 'json' };
 
 export type NodeStats = {
   sol: number;
@@ -206,17 +205,8 @@ export const runBenchmark = async (
       console.log(chalk.cyan('Running benchmark'));
     }
 
-    const modulePath = dirname(fileURLToPath(import.meta.url));
-
-    const benchmarkGPU = JSON.parse(
-      fs.readFileSync(
-        resolve(modulePath, '../static/benchmark-gpu.json'),
-        'utf8',
-      ),
-    ) as JobDefinition;
-
     // Create new flow
-    const flow = provider.run(benchmarkGPU);
+    const flow = provider.run(benchmarkGPU as JobDefinition);
     result = await provider.waitForFlowFinish(
       flow.id,
       (event: { log: string; type: string }) => {
