@@ -43,7 +43,7 @@ export function createImageManager(
   };
 
   /**
-   * Remove all dangaling unrequired images not used within the last 24hours
+   * Remove all dangling un-required images not used within the last 24hours
    *  @returns Promise
    */
   const removeDanglingImages = async (): Promise<void> => {
