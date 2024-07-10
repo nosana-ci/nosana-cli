@@ -8,7 +8,7 @@ type CorrectedImageInfo = ImageInfo & { Names: string[] };
 
 export type ImageManager = {
   setImage: (image: string) => void;
-  removeDangalingImages: () => Promise<void>;
+  removeDanglingImages: () => Promise<void>;
 };
 
 /**
@@ -27,7 +27,7 @@ export function createImageManager(
   ];
 
   /**
-   * Removes previously used images from the image db
+   * Removes previously used images that are no longer cached from the image db
    * @returns Promise
    */
   const resyncImagesDB = async (): Promise<void> => {
@@ -46,7 +46,7 @@ export function createImageManager(
    * Remove all dangaling unrequired images not used within the last 24hours
    *  @returns Promise
    */
-  const removeDangalingImages = async (): Promise<void> => {
+  const removeDanglingImages = async (): Promise<void> => {
     for (const [image, history] of Object.entries(db.data.images)) {
       if (!market_required_images.includes(image)) {
         const hoursSinceLastUsed =
@@ -59,7 +59,9 @@ export function createImageManager(
             await docker.getImage(image).remove({ force: true });
             delete db.data.images[image];
           } catch (err) {
-            chalk.red(`Could not remove dangagling image: ${image}. ${err}`);
+            chalk.red(
+              `Could not remove removeDanglingImages image: ${image}. ${err}`,
+            );
           }
         }
       }
@@ -85,6 +87,6 @@ export function createImageManager(
 
   return {
     setImage: handleSetImage,
-    removeDangalingImages,
+    removeDanglingImages,
   };
 }
