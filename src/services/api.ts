@@ -1,7 +1,8 @@
 import express, { Request, Response } from 'express';
+import { config } from '../generic/config.js';
 
 const app = express();
-const port = process.env.API_PORT ? parseInt(process.env.API_PORT) : 3123;
+const port = config.api.port;
 app.get('/', (req: Request, res: Response) => {
   res.send('Hello, TypeScript Express!');
 });

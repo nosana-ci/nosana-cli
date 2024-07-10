@@ -103,6 +103,12 @@ export type OpState = {
 export const validateJobDefinition =
   typia.createValidateEquals<JobDefinition>();
 
+export const ProviderEvents: { [key: string]: string } = {
+  STOP_FLOW: 'stopFlowEvent',
+  FLOW_FINISHED: 'flowFinished',
+  NEW_LOG: 'newLog',
+};
+
 export abstract class Provider {
   abstract run(JobDefinition: JobDefinition, flowStateId?: string): Flow;
   abstract healthy(): Promise<Boolean>;

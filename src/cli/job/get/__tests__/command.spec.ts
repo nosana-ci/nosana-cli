@@ -2,7 +2,7 @@ import { getJobCommand } from '../command';
 
 import { getJob } from '../action';
 
-jest.mock('../action.js', () => ({
+jest.mock('../action', () => ({
   getJob: jest.fn(),
 }));
 

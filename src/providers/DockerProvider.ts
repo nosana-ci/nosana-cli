@@ -16,6 +16,7 @@ import {
   Flow,
   OperationArgsMap,
   OperationResults,
+  ProviderEvents,
   Log,
 } from './Provider.js';
 import { config } from '../generic/config.js';
@@ -159,7 +160,7 @@ export class DockerProvider extends BasicProvider implements Provider {
         (opState) => op.id === opState.operationId,
       );
       const opState = flow.state.opStates[opStateIndex];
-      this.eventEmitter.emit('newLog', {
+      this.eventEmitter.emit(ProviderEvents.NEW_LOG, {
         type: 'info',
         log: chalk.cyan(`- Creating volume ${chalk.bold(op.args.name)}`),
       });
@@ -286,7 +287,7 @@ export class DockerProvider extends BasicProvider implements Provider {
       flow.jobDefinition.global && flow.jobDefinition.global.env
         ? flow.jobDefinition.global.env
         : {};
-    this.eventEmitter.emit('newLog', {
+    this.eventEmitter.emit(ProviderEvents.NEW_LOG, {
       type: 'info',
       log: chalk.cyan('Starting container'),
     });
@@ -313,7 +314,7 @@ export class DockerProvider extends BasicProvider implements Provider {
       },
     );
     updateOpState({ providerId: container.id });
-    this.eventEmitter.emit('newLog', {
+    this.eventEmitter.emit(ProviderEvents.NEW_LOG, {
       type: 'info',
       log: chalk.cyan('Running container ' + container.id),
     });
@@ -336,7 +337,7 @@ export class DockerProvider extends BasicProvider implements Provider {
           FRP_CUSTOM_DOMAIN: flowId + '.' + config.frp.serverAddr,
         },
       });
-      this.eventEmitter.emit('newLog', {
+      this.eventEmitter.emit(ProviderEvents.NEW_LOG, {
         type: 'info',
         log: chalk.cyan(
           `Exposing service at ${chalk.bold(
@@ -606,7 +607,7 @@ export class DockerProvider extends BasicProvider implements Provider {
    *   Helpers   *
    ****************/
   protected async pullImage(image: string) {
-    this.eventEmitter.emit('newLog', {
+    this.eventEmitter.emit(ProviderEvents.NEW_LOG, {
       type: 'info',
       log: chalk.cyan(`Pulling image ${chalk.bold(image)}`),
     });
@@ -697,13 +698,13 @@ export class DockerProvider extends BasicProvider implements Provider {
     const stderrStream = new stream.PassThrough();
 
     stderrStream.on('data', (chunk: Buffer) => {
-      this.eventEmitter.emit('newLog', {
+      this.eventEmitter.emit(ProviderEvents.NEW_LOG, {
         type: 'stderr',
         log: chunk.toString(),
       });
     });
     stdoutStream.on('data', (chunk: Buffer) => {
-      this.eventEmitter.emit('newLog', {
+      this.eventEmitter.emit(ProviderEvents.NEW_LOG, {
         type: 'stdout',
         log: chunk.toString(),
       });
