@@ -1,10 +1,13 @@
 import fs from 'fs';
-
-import { DB } from '../../db';
-import { createImageManager } from '../';
-import { DockerodeMock } from '../../../../tests/MockDockerode';
 import { LowSync } from 'lowdb/lib';
+
+import { createImageManager } from '../';
 import { NodeDb } from '../../../BasicProvider';
+import { DB } from '../../db';
+import {
+  CorrectedImageInfo,
+  DockerodeMock,
+} from '../../../../tests/MockDockerode';
 
 jest.mock('fs');
 jest.useFakeTimers().setSystemTime(new Date('2024-06-10'));
@@ -117,7 +120,7 @@ describe('createImageManager', () => {
 
       expect(mock_db.data.images).toEqual(initial_db_images);
 
-      expect(dockerImages.map((x) => x.Names)).toEqual([
+      expect(dockerImages.map((x) => (x as CorrectedImageInfo).Names)).toEqual([
         ['docker.io/ubuntu'],
         ['registry.hub.docker.com/nosana/stats:v1.0.4'],
       ]);
@@ -127,7 +130,7 @@ describe('createImageManager', () => {
 
       dockerImages = await mock_dockerode.listImages();
 
-      expect(dockerImages.map((x) => x.Names)).toEqual([
+      expect(dockerImages.map((x) => (x as CorrectedImageInfo).Names)).toEqual([
         ['registry.hub.docker.com/nosana/stats:v1.0.4'],
       ]);
     });
