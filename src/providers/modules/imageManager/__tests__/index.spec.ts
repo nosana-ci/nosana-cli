@@ -24,14 +24,8 @@ const initial_db_images = {
 };
 
 const setup = (images: string[] = [], setInitialDB = true) => {
-  const mock_dockerode = new DockerodeMock();
+  const mock_dockerode = new DockerodeMock(images);
   const mock_db: LowSync<NodeDb> = new DB('').db;
-
-  if (images) {
-    for (const img of images) {
-      mock_dockerode.addMockImage([img]);
-    }
-  }
 
   if (setInitialDB) {
     mock_db.data.images = { ...initial_db_images };
