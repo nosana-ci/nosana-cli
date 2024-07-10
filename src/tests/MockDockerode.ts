@@ -5,14 +5,8 @@ type CorrectedImageInfo = ImageInfo & { Names: string[] };
 export class DockerodeMock extends Dockerode {
   private images: CorrectedImageInfo[] = [];
 
-  constructor(images?: string[]) {
-    super(undefined);
-
-    if (images) {
-      for (const img of images) {
-        this.addMockImage([img]);
-      }
-    }
+  constructor() {
+    super();
   }
 
   resetMock() {
