@@ -46,7 +46,6 @@ export class DockerodeMock extends Dockerode {
       push: jest.fn(),
       remove: (_: {}) => {
         return new Promise((resolve) => {
-          console.log('remove', name);
           this.images = this.images.filter((x) => !x.Names.includes(name));
           resolve(true);
         });
