@@ -6,8 +6,8 @@ export class DockerodeMock extends Dockerode {
   private images: CorrectedImageInfo[] = [];
 
   constructor(images?: string[]) {
-    // @ts-ignore
-    super();
+    super(undefined);
+
     if (images) {
       for (const img of images) {
         this.addMockImage([img]);
