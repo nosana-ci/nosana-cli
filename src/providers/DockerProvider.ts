@@ -593,7 +593,6 @@ export class DockerProvider extends BasicProvider implements Provider {
       }
     }
     try {
-      await this.imageManager.removeDanglingImages();
       await this.docker.pruneNetworks();
     } catch (error: any) {
       // console.error(

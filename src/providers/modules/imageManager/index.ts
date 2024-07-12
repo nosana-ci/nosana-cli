@@ -9,7 +9,6 @@ type CorrectedImageInfo = ImageInfo & { Names: string[] };
 export type ImageManager = {
   setImage: (image: string) => void;
   resyncImagesDB: () => Promise<void>;
-  removeDanglingImages: () => Promise<void>;
 };
 
 /**
@@ -34,21 +33,13 @@ export function createImageManager(
   const resyncImagesDB = async (): Promise<void> => {
     const savedImages = (await docker.listImages()) as CorrectedImageInfo[];
 
-    for (const image of Object.keys(db.data.images)) {
+    for (const [image, history] of Object.entries(db.data.images)) {
+      // Removes previously used images that are no longer cached from the image db
       if (savedImages.findIndex((x) => x.Names.includes(image)) === -1) {
         delete db.data.images[image];
+        continue;
       }
-    }
 
-    db.write();
-  };
-
-  /**
-   * Remove all dangling un-required images not used within the last 24hours
-   *  @returns Promise
-   */
-  const removeDanglingImages = async (): Promise<void> => {
-    for (const [image, history] of Object.entries(db.data.images)) {
       if (!market_required_images.includes(image)) {
         const hoursSinceLastUsed =
           Math.abs(
@@ -87,6 +78,5 @@ export function createImageManager(
   return {
     setImage,
     resyncImagesDB,
-    removeDanglingImages,
   };
 }

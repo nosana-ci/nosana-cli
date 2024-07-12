@@ -57,8 +57,32 @@ describe('createImageManager', () => {
         },
       });
 
-      expect(im.removeDanglingImages).toBeDefined();
       expect(im.setImage).toBeDefined();
+    });
+
+    it('should only remove none required expired images from db and docker', async () => {
+      const { mock_db, mock_dockerode } = setup([
+        'docker.io/ubuntu',
+        'registry.hub.docker.com/nosana/stats:v1.0.4',
+      ]);
+
+      let dockerImages = await mock_dockerode.listImages();
+
+      expect(mock_db.data.images).toEqual(initial_db_images);
+
+      expect(dockerImages.map((x) => (x as CorrectedImageInfo).Names)).toEqual([
+        ['docker.io/ubuntu'],
+        ['registry.hub.docker.com/nosana/stats:v1.0.4'],
+      ]);
+
+      const im = createImageManager(mock_db, mock_dockerode);
+      await im.resyncImagesDB();
+
+      dockerImages = await mock_dockerode.listImages();
+
+      expect(dockerImages.map((x) => (x as CorrectedImageInfo).Names)).toEqual([
+        ['registry.hub.docker.com/nosana/stats:v1.0.4'],
+      ]);
     });
   });
 
@@ -103,33 +127,6 @@ describe('createImageManager', () => {
       expect(mock_db.data.images).toEqual({
         ubuntu: { lastUsed: new Date('2024-06-11'), usage: 2 },
       });
-    });
-  });
-
-  describe('removeDanglingImages', () => {
-    it('should only remove none required expired images from db and docker', async () => {
-      const { mock_db, mock_dockerode } = setup([
-        'docker.io/ubuntu',
-        'registry.hub.docker.com/nosana/stats:v1.0.4',
-      ]);
-
-      let dockerImages = await mock_dockerode.listImages();
-
-      expect(mock_db.data.images).toEqual(initial_db_images);
-
-      expect(dockerImages.map((x) => (x as CorrectedImageInfo).Names)).toEqual([
-        ['docker.io/ubuntu'],
-        ['registry.hub.docker.com/nosana/stats:v1.0.4'],
-      ]);
-
-      const im = createImageManager(mock_db, mock_dockerode);
-      await im.removeDanglingImages();
-
-      dockerImages = await mock_dockerode.listImages();
-
-      expect(dockerImages.map((x) => (x as CorrectedImageInfo).Names)).toEqual([
-        ['registry.hub.docker.com/nosana/stats:v1.0.4'],
-      ]);
     });
   });
 });
