@@ -8,6 +8,7 @@ type CorrectedImageInfo = ImageInfo & { Names: string[] };
 
 export type ImageManager = {
   setImage: (image: string) => void;
+  resyncImagesDB: () => Promise<void>;
   removeDanglingImages: () => Promise<void>;
 };
 
@@ -74,7 +75,7 @@ export function createImageManager(
    * Set image usage data in db
    * @returns
    */
-  const handleSetImage = (image: string): void => {
+  const setImage = (image: string): void => {
     db.data.images[image] = {
       lastUsed: new Date(),
       usage: db.data.images[image] ? db.data.images[image].usage + 1 : 1,
@@ -83,10 +84,9 @@ export function createImageManager(
     db.write();
   };
 
-  resyncImagesDB();
-
   return {
-    setImage: handleSetImage,
+    setImage,
+    resyncImagesDB,
     removeDanglingImages,
   };
 }

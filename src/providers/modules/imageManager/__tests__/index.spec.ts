@@ -40,23 +40,26 @@ describe('createImageManager', () => {
     (fs.mkdirSync as jest.Mock).mockImplementation(jest.fn());
   });
 
-  it('should sync images db on creation and return helper functions', async () => {
-    const { mock_db, mock_dockerode } = setup([
-      'registry.hub.docker.com/nosana/stats:v1.0.4',
-    ]);
-    expect(mock_db.data.images).toEqual(initial_db_images);
+  describe('resyncImagesDB', () => {
+    it('should sync images db on creation and return helper functions', async () => {
+      const { mock_db, mock_dockerode } = setup([
+        'registry.hub.docker.com/nosana/stats:v1.0.4',
+      ]);
+      expect(mock_db.data.images).toEqual(initial_db_images);
 
-    const im = await createImageManager(mock_db, mock_dockerode);
+      const im = await createImageManager(mock_db, mock_dockerode);
+      await im.resyncImagesDB();
 
-    expect(mock_db.data.images).toEqual({
-      'registry.hub.docker.com/nosana/stats:v1.0.4': {
-        lastUsed: new Date('2024-07-09T14:50:58.800Z'),
-        usage: 1,
-      },
+      expect(mock_db.data.images).toEqual({
+        'registry.hub.docker.com/nosana/stats:v1.0.4': {
+          lastUsed: new Date('2024-07-09T14:50:58.800Z'),
+          usage: 1,
+        },
+      });
+
+      expect(im.removeDanglingImages).toBeDefined();
+      expect(im.setImage).toBeDefined();
     });
-
-    expect(im.removeDanglingImages).toBeDefined();
-    expect(im.setImage).toBeDefined();
   });
 
   describe('setImage', () => {

@@ -210,6 +210,7 @@ export class DockerProvider extends BasicProvider implements Provider {
     try {
       const info = await this.docker.info();
       if (typeof info === 'object' && info !== null && info.ID) {
+        await this.imageManager.resyncImagesDB();
         return true;
       } else {
         if (throwError) {
