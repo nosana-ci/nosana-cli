@@ -39,7 +39,5 @@ export class DB {
       images: {},
       flows: {},
     });
-
-    this.db.write();
   }
 }

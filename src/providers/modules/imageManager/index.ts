@@ -69,7 +69,7 @@ export function createImageManager(
   const setImage = (image: string): void => {
     db.data.images[image] = {
       lastUsed: new Date(),
-      usage: db.data.images[image] ? db.data.images[image].usage + 1 : 1,
+      usage: db.data.images[image]?.usage + 1 || 1,
     };
 
     db.write();
