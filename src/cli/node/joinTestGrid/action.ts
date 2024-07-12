@@ -1,6 +1,3 @@
-import fs from 'fs';
-import { dirname, resolve } from 'path';
-import { fileURLToPath } from 'url';
 import chalk from 'chalk';
 import { input, confirm } from '@inquirer/prompts';
 import { Client } from '@nosana/sdk';
@@ -18,6 +15,8 @@ import {
 import { PodmanProvider } from '../../../providers/PodmanProvider.js';
 import { config } from '../../../generic/config.js';
 import { getSDK } from '../../../services/sdk.js';
+
+import jobDefinition from '../../../static/benchmark.json' assert { type: 'json' };
 
 let flow: Flow | undefined;
 let provider: Provider;
@@ -73,19 +72,11 @@ export async function runBenchmark(options: { [key: string]: any }) {
     throw error;
   }
 
-  const modulePath = dirname(fileURLToPath(import.meta.url));
-
-  const jobDefinition = JSON.parse(
-    fs.readFileSync(
-      resolve(modulePath, '../../../static/benchmark.json'),
-      'utf8',
-    ),
-  ) as JobDefinition;
-
   let result: Partial<FlowState> | null;
 
-  const validation: IValidation<JobDefinition> =
-    validateJobDefinition(jobDefinition);
+  const validation: IValidation<JobDefinition> = validateJobDefinition(
+    jobDefinition as JobDefinition,
+  );
   spinner.stop();
   let answers;
   if (!validation.success) {
@@ -128,7 +119,7 @@ export async function runBenchmark(options: { [key: string]: any }) {
     }
     console.log(chalk.cyan('Running benchmark'));
     // Create new flow
-    flow = provider.run(jobDefinition);
+    flow = provider.run(jobDefinition as JobDefinition);
     result = await provider.waitForFlowFinish(
       flow.id,
       (log: { log: string; type: string }) => {
