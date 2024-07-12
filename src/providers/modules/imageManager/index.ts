@@ -3,6 +3,7 @@ import Dockerode, { ImageInfo } from 'dockerode';
 import { LowSync } from 'lowdb/lib';
 
 import { NodeDb } from '../../BasicProvider';
+import { x } from 'tar';
 
 type CorrectedImageInfo = ImageInfo & { Names: string[] };
 
@@ -35,7 +36,12 @@ export function createImageManager(
 
     for (const [image, history] of Object.entries(db.data.images)) {
       // Removes previously used images that are no longer cached from the image db
-      if (savedImages.findIndex((x) => x.Names.includes(image)) === -1) {
+      if (
+        savedImages.findIndex(({ Names, Labels }, index) => {
+          if (!Names.includes(image) || Labels[image] === undefined) return -1;
+          return index;
+        })
+      ) {
         delete db.data.images[image];
         continue;
       }
@@ -67,6 +73,8 @@ export function createImageManager(
    * @returns
    */
   const setImage = (image: string): void => {
+    console.log(db.data.images);
+
     db.data.images[image] = {
       lastUsed: new Date(),
       usage: db.data.images[image]?.usage + 1 || 1,
