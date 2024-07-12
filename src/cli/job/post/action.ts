@@ -12,6 +12,7 @@ import {
   JobDefinition,
   Operation,
   OperationArgsMap,
+  OperationType,
   validateJobDefinition,
 } from '../../../providers/Provider.js';
 
@@ -175,7 +176,7 @@ export async function run(
   console.log(`job posted with tx ${chalk.cyan(response.tx)}!`);
   const isExposed =
     json_flow.ops.map(
-      (op: Operation<any>) =>
+      (op: Operation<OperationType>) =>
         op.type === 'container/run' &&
         (op.args as OperationArgsMap['container/run']).expose,
     ).length > 0;

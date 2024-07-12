@@ -14,6 +14,8 @@ import { getSDK } from './sdk.js';
 import { sleep } from '../generic/utils.js';
 import { EMPTY_ADDRESS } from './jobs.js';
 import { config } from '../generic/config.js';
+import { PodmanProvider } from '../providers/PodmanProvider.js';
+import { DockerProvider } from '../providers/DockerProvider.js';
 
 export type NodeStats = {
   sol: number;
@@ -32,6 +34,169 @@ export type HealthCheckArgs = {
   options: { [key: string]: any };
   printDetailed?: boolean;
 };
+
+export class NosanaNode {
+  public provider: Provider;
+  public sdk: Client;
+  public address: string;
+
+  constructor(
+    client: Client,
+    providerName = 'podman',
+    providerUrl = 'http://localhost:8080',
+    configLocation = '~/.nosana/',
+  ) {
+    switch (providerName) {
+      case 'podman':
+        this.provider = new PodmanProvider(providerUrl, configLocation);
+        break;
+      case 'docker':
+      default:
+        this.provider = new DockerProvider(providerUrl, configLocation);
+        break;
+    }
+    this.sdk = client;
+    this.address = this.sdk.solana.provider!.wallet.publicKey.toString();
+  }
+
+  public async healthCheck({
+    node,
+    provider,
+    spinner,
+    market,
+    marketAccount,
+    nft,
+    options,
+    printDetailed = true,
+  }: HealthCheckArgs) {
+    if (printDetailed) {
+      spinner = ora(chalk.cyan('Checking SOL balance')).start();
+    } else {
+      spinner = ora(chalk.cyan('Health checks')).start();
+      // only run benchmark when it isnt first run of healthCheck as it already ran on start
+      await runBenchmark(provider, spinner, printDetailed);
+    }
+    let stats: NodeStats | null = null;
+    try {
+      stats = await getNodeStats(node);
+    } catch (e) {
+      spinner.warn(
+        'Could not check SOL balance, make sure you have enough SOL',
+      );
+    }
+    if (stats) {
+      const solBalance = stats.sol / 1e9;
+      if (solBalance < 0.005) {
+        spinner.fail(chalk.red.bold('Not enough SOL balance'));
+        throw new Error(
+          `SOL balance ${solBalance} should be 0.005 or higher. Send some SOL to your node address ${chalk.cyan(
+            node,
+          )} `,
+        );
+      }
+      if (printDetailed) {
+        spinner.succeed(chalk.green(`Sol balance: ${chalk.bold(solBalance)}`));
+      }
+    }
+    if (printDetailed) {
+      spinner = ora(chalk.cyan('Checking provider health')).start();
+    }
+    try {
+      await provider.healthy();
+    } catch (error) {
+      spinner.fail(
+        chalk.red(`${chalk.bold(options.provider)} provider not healthy`),
+      );
+      throw error;
+    }
+
+    if (printDetailed) {
+      spinner.succeed(
+        chalk.green(`Podman is running on ${chalk.bold(options.podman)}`),
+      );
+    }
+
+    try {
+      // create NOS ATA if it doesn't exists
+      await this.sdk.solana.createNosAta(node);
+    } catch (error) {
+      throw error;
+    }
+
+    let stake;
+    try {
+      if (printDetailed) {
+        spinner = ora(chalk.cyan('Checking stake account')).start();
+      }
+      stake = await this.sdk.stake.get(node);
+    } catch (error: any) {
+      if (error.message && error.message.includes('Account does not exist')) {
+        spinner.text = chalk.cyan('Creating stake account');
+        // If no stake account: create empty stake account
+        await this.sdk.stake.create(new PublicKey(node), 0, 14);
+        await sleep(2);
+        stake = await this.sdk.stake.get(node);
+      } else {
+        throw error;
+      }
+    }
+    if (printDetailed) {
+      spinner.succeed(
+        chalk.green(
+          `Stake found with ${chalk.bold(stake.amount / 1e6)} NOS staked`,
+        ),
+      );
+    }
+    try {
+      if (
+        marketAccount!.nodeAccessKey.toString() === EMPTY_ADDRESS.toString()
+      ) {
+        if (printDetailed) {
+          spinner.succeed(chalk.green(`Open market ${chalk.bold(market)}`));
+        }
+      } else {
+        if (printDetailed) {
+          spinner.text = chalk.cyan(
+            `Checking required access key for market ${chalk.bold(market)}`,
+          );
+        }
+        const nftFromChain = await this.sdk.solana.getNftFromCollection(
+          node,
+          marketAccount!.nodeAccessKey.toString(),
+        );
+        if (nftFromChain) {
+          nft = nftFromChain;
+          if (printDetailed) {
+            spinner.succeed(
+              chalk.green(
+                `Found access key ${chalk.bold(nft)} for market ${chalk.bold(
+                  market,
+                )}`,
+              ),
+            );
+          }
+        } else {
+          if (!nft) {
+            throw new Error('Could not find access key');
+          }
+          spinner.succeed(
+            chalk.yellow(
+              `Could not find key on-chain, trying access key ${chalk.bold(
+                nft,
+              )} for market ${chalk.bold(market)}`,
+            ),
+          );
+        }
+      }
+    } catch (e: any) {
+      spinner.fail(chalk.red(`Denied access to market ${chalk.bold(market)}`));
+      throw e;
+    }
+    if (!printDetailed) {
+      spinner.succeed('Health checks passed');
+    }
+  }
+}
 
 export const getNodeStats = async (
   node: PublicKey | string,
@@ -316,139 +481,4 @@ export const runBenchmark = async (
     throw e;
   }
   return gpus;
-};
-
-export const healthCheck = async ({
-  node,
-  provider,
-  spinner,
-  market,
-  marketAccount,
-  nft,
-  options,
-  printDetailed = true,
-}: HealthCheckArgs) => {
-  const nosana: Client = getSDK();
-  if (printDetailed) {
-    spinner = ora(chalk.cyan('Checking SOL balance')).start();
-  } else {
-    spinner = ora(chalk.cyan('Health checks')).start();
-    // only run benchmark when it isnt first run of healthCheck as it already ran on start
-    await runBenchmark(provider, spinner, printDetailed);
-  }
-  let stats: NodeStats | null = null;
-  try {
-    stats = await getNodeStats(node);
-  } catch (e) {
-    spinner.warn('Could not check SOL balance, make sure you have enough SOL');
-  }
-  if (stats) {
-    const solBalance = stats.sol / 1e9;
-    if (solBalance < 0.005) {
-      spinner.fail(chalk.red.bold('Not enough SOL balance'));
-      throw new Error(
-        `SOL balance ${solBalance} should be 0.005 or higher. Send some SOL to your node address ${chalk.cyan(
-          node,
-        )} `,
-      );
-    }
-    if (printDetailed) {
-      spinner.succeed(chalk.green(`Sol balance: ${chalk.bold(solBalance)}`));
-    }
-  }
-  if (printDetailed) {
-    spinner = ora(chalk.cyan('Checking provider health')).start();
-  }
-  try {
-    await provider.healthy();
-  } catch (error) {
-    spinner.fail(
-      chalk.red(`${chalk.bold(options.provider)} provider not healthy`),
-    );
-    throw error;
-  }
-
-  if (printDetailed) {
-    spinner.succeed(
-      chalk.green(`Podman is running on ${chalk.bold(options.podman)}`),
-    );
-  }
-
-  try {
-    // create NOS ATA if it doesn't exists
-    await nosana.solana.createNosAta(node);
-  } catch (error) {
-    throw error;
-  }
-
-  let stake;
-  try {
-    if (printDetailed) {
-      spinner = ora(chalk.cyan('Checking stake account')).start();
-    }
-    stake = await nosana.stake.get(node);
-  } catch (error: any) {
-    if (error.message && error.message.includes('Account does not exist')) {
-      spinner.text = chalk.cyan('Creating stake account');
-      // If no stake account: create empty stake account
-      await nosana.stake.create(new PublicKey(node), 0, 14);
-      await sleep(2);
-      stake = await nosana.stake.get(node);
-    } else {
-      throw error;
-    }
-  }
-  if (printDetailed) {
-    spinner.succeed(
-      chalk.green(
-        `Stake found with ${chalk.bold(stake.amount / 1e6)} NOS staked`,
-      ),
-    );
-  }
-  try {
-    if (marketAccount!.nodeAccessKey.toString() === EMPTY_ADDRESS.toString()) {
-      if (printDetailed) {
-        spinner.succeed(chalk.green(`Open market ${chalk.bold(market)}`));
-      }
-    } else {
-      if (printDetailed) {
-        spinner.text = chalk.cyan(
-          `Checking required access key for market ${chalk.bold(market)}`,
-        );
-      }
-      const nftFromChain = await nosana.solana.getNftFromCollection(
-        node,
-        marketAccount!.nodeAccessKey.toString(),
-      );
-      if (nftFromChain) {
-        nft = nftFromChain;
-        if (printDetailed) {
-          spinner.succeed(
-            chalk.green(
-              `Found access key ${chalk.bold(nft)} for market ${chalk.bold(
-                market,
-              )}`,
-            ),
-          );
-        }
-      } else {
-        if (!nft) {
-          throw new Error('Could not find access key');
-        }
-        spinner.succeed(
-          chalk.yellow(
-            `Could not find key on-chain, trying access key ${chalk.bold(
-              nft,
-            )} for market ${chalk.bold(market)}`,
-          ),
-        );
-      }
-    }
-  } catch (e: any) {
-    spinner.fail(chalk.red(`Denied access to market ${chalk.bold(market)}`));
-    throw e;
-  }
-  if (!printDetailed) {
-    spinner.succeed('Health checks passed');
-  }
 };

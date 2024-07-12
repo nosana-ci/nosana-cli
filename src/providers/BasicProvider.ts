@@ -17,6 +17,7 @@ import {
   Operation,
   OperationResults,
   ProviderEvents,
+  OperationType,
 } from './Provider.js';
 import { sleep } from '../generic/utils.js';
 
@@ -258,7 +259,7 @@ export class BasicProvider implements Provider {
 
   public async stopFlowOperation(
     flowId: string,
-    op: Operation<any>,
+    op: Operation<OperationType>,
   ): Promise<OpState> {
     const opState = this.db.data.flows[flowId].state.opStates.find(
       (opState) => opState.operationId === op.id,

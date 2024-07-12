@@ -118,7 +118,7 @@ export abstract class Provider {
   abstract stopFlow(flowId: string): Promise<void>;
   abstract stopFlowOperation(
     flowId: string,
-    op: Operation<any>,
+    op: Operation<OperationType>,
   ): Promise<OpState>;
   abstract finishFlow(flowId: string, status?: string): void;
   abstract waitForFlowFinish(

@@ -12,6 +12,7 @@ import {
   OperationResults,
   ProviderEvents,
   Log,
+  OperationType,
 } from './Provider.js';
 import Docker, {
   Container,
@@ -464,7 +465,7 @@ export class DockerProvider extends BasicProvider implements Provider {
 
   public async stopFlowOperation(
     flowId: string,
-    op: Operation<any>,
+    op: Operation<OperationType>,
   ): Promise<OpState> {
     const opState = this.db.data.flows[flowId].state.opStates.find(
       (opState) => opState.operationId === op.id,
