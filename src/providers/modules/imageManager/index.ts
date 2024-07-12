@@ -40,7 +40,7 @@ export function createImageManager(
         savedImages.findIndex(({ Names, Labels }, index) => {
           if (!Names.includes(image) || Labels[image] === undefined) return -1;
           return index;
-        })
+        }) === -1
       ) {
         delete db.data.images[image];
         continue;
