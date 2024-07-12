@@ -73,8 +73,6 @@ export function createImageManager(
    * @returns
    */
   const setImage = (image: string): void => {
-    console.log(db.data.images);
-
     db.data.images[image] = {
       lastUsed: new Date(),
       usage: db.data.images[image]?.usage + 1 || 1,
