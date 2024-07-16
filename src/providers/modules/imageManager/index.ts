@@ -3,7 +3,6 @@ import Dockerode, { ImageInfo } from 'dockerode';
 import { LowSync } from 'lowdb/lib';
 
 import { NodeDb } from '../../BasicProvider';
-import { x } from 'tar';
 
 type CorrectedImageInfo = ImageInfo & { Names: string[] };
 
