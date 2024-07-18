@@ -251,6 +251,14 @@ export class BasicProvider implements Provider {
     return true;
   }
 
+  public async updateMarketRequiredResources(_: string): Promise<void> {
+    return new Promise(() => {
+      throw new Error(
+        'updateMarketRequiredResources is not implamented within the basic provider',
+      );
+    });
+  }
+
   public async stopFlowOperation(
     flowId: string,
     op: Operation<any>,

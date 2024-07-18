@@ -23,6 +23,7 @@ import { config } from '../generic/config.js';
 import { createImageManager } from './modules/imageManager/index.js';
 import { getSDK } from '../services/sdk.js';
 import { extractResultsFromLogs } from './utils/extractResultsFromLogs.js';
+import { dockerPromisePull } from './utils/dockerPromisePull.js';
 
 export type RunContainerArgs = {
   name?: string;
@@ -603,6 +604,10 @@ export class DockerProvider extends BasicProvider implements Provider {
     super.finishFlow(flowId, status);
   }
 
+  async updateMarketRequiredResources(market: string): Promise<void> {
+    await this.imageManager.fetchMarketRequiredImages(market);
+  }
+
   /****************
    *   Helpers   *
    ****************/
@@ -634,29 +639,7 @@ export class DockerProvider extends BasicProvider implements Provider {
       }
     }
 
-    return await new Promise((resolve, reject): any =>
-      this.docker.pull(image, (err: any, stream: any) => {
-        if (err) {
-          reject(err);
-        } else {
-          this.docker.modem.followProgress(
-            stream,
-            (err: any, output: any) => onFinished(err, output),
-            onProgress,
-          );
-        }
-        async function onFinished(err: any, _: any) {
-          if (!err) {
-            resolve(true);
-            return;
-          }
-          reject(err);
-        }
-        function onProgress(event: any) {
-          // TODO: multiple progress bars happening at the same time, how do we show this?
-        }
-      }),
-    );
+    await dockerPromisePull(image, this.docker);
   }
 
   /**

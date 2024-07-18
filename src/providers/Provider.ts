@@ -127,4 +127,5 @@ export abstract class Provider {
   ): Promise<FlowState | null>;
   abstract clearOldFlows(): Promise<void>;
   public clearFlowsCronJob?: CronJob;
+  abstract updateMarketRequiredResources(market: string): Promise<void>;
 }
