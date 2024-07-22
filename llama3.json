@@ -1,0 +1,28 @@
+{
+  "version": "0.0.1",
+  "type": "container",
+  "meta": {
+    "trigger": "cli"
+  },
+  "ops": [
+    {
+      "type": "container/run",
+      "id": "ollama",
+      "args": {
+        "cmd": [
+          "-c ",
+          "echo starting ollama;",
+          "ollama serve > /dev/null 2>&1 & sleep 1;",
+          "echo pulling llama3 70b;",
+          "ollama pull llama3:70b > /dev/null 2>&1;",
+          "echo running llama3 task;",
+          "ollama run llama3:70b 'Prompt 1'",
+          "ollama run llama3:70b 'Prompt 2'"
+        ],
+        "entrypoint": ["sh"],
+        "image": "docker.io/ollama/ollama",
+        "gpu": true
+      }
+    }
+  ]
+}
