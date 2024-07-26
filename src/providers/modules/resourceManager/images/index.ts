@@ -1,12 +1,13 @@
 import ora from 'ora';
 import chalk from 'chalk';
-import Dockerode, { ImageInfo } from 'dockerode';
+import { ImageInfo } from 'dockerode';
 import { LowSync } from 'lowdb/lib';
 
-import { NodeDb } from '../../BasicProvider.js';
+import { NodeDb } from '../../../BasicProvider.js';
 import { getMarketRequiredImages } from './helpers/getMarketRequiredImages.js';
 import { hasDockerImage } from './helpers/hasDockerImage.js';
-import { dockerPromisePull } from '../../utils/dockerPromisePull.js';
+import { DockerExtended } from '../../../../docker/index.js';
+import { hoursSinceDate } from '../utils/hoursSinceDate.js';
 
 type CorrectedImageInfo = ImageInfo & { Names: string[] };
 
@@ -17,14 +18,14 @@ export type ImageManager = {
 };
 
 /**
- * Creates Image Manager Module
+ * Creates Image Manager Sub-module
  * @param db
  * @param docker
  * @returns
  */
 export function createImageManager(
   db: LowSync<NodeDb>,
-  docker: Dockerode,
+  docker: DockerExtended,
 ): ImageManager {
   let market_address: string;
   let market_required_images: string[] = [];
@@ -34,23 +35,21 @@ export function createImageManager(
     market_required_images = await getMarketRequiredImages(market);
     const savedImages = (await docker.listImages()) as CorrectedImageInfo[];
 
-    console.log(chalk.cyan('Checking market resource requirments'));
-
     for (const image of market_required_images) {
       if (!hasDockerImage(image, savedImages)) {
         const spinner = ora(
           chalk.cyan(`Pulling image ${chalk.bold(image)}`),
         ).start();
         try {
-          await dockerPromisePull(image, docker);
+          await docker.dockerPromisePull(image);
         } catch (error: any) {
           throw new Error(chalk.red(`Cannot pull image ${image}: `) + error);
         }
+
+        setImage(image);
         spinner.succeed();
       }
     }
-
-    console.log(chalk.green('Fetched market all required resources'));
   };
 
   /**
@@ -63,27 +62,26 @@ export function createImageManager(
     }
     const savedImages = (await docker.listImages()) as CorrectedImageInfo[];
 
-    for (const [image, history] of Object.entries(db.data.images)) {
+    for (const [image, { lastUsed }] of Object.entries(
+      db.data.resources.images,
+    )) {
       if (!hasDockerImage(image, savedImages)) {
-        delete db.data.images[image];
+        delete db.data.resources.images[image];
         continue;
       }
 
-      if (market_address && !market_required_images.includes(image)) {
-        const hoursSinceLastUsed =
-          Math.abs(
-            new Date(history.lastUsed).getTime() - new Date().getTime(),
-          ) / 36e5;
+      if (market_address && market_required_images.includes(image)) continue;
 
-        if (hoursSinceLastUsed > 24) {
-          try {
-            await docker.getImage(image).remove({ force: true });
-            delete db.data.images[image];
-          } catch (err) {
-            chalk.red(
-              `Could not remove removeDanglingImages image: ${image}. ${err}`,
-            );
-          }
+      const hoursSinceLastUsed = hoursSinceDate(new Date(lastUsed));
+
+      if (hoursSinceLastUsed > 24) {
+        try {
+          await docker.getImage(image).remove({ force: true });
+          delete db.data.resources.images[image];
+        } catch (err) {
+          chalk.red(
+            `Could not remove removeDanglingImages image: ${image}. ${err}`,
+          );
         }
       }
     }
@@ -96,9 +94,9 @@ export function createImageManager(
    * @returns
    */
   const setImage = (image: string): void => {
-    db.data.images[image] = {
+    db.data.resources.images[image] = {
       lastUsed: new Date(),
-      usage: db.data.images[image]?.usage + 1 || 1,
+      usage: db.data.resources.images[image]?.usage + 1 || 1,
     };
 
     db.write();

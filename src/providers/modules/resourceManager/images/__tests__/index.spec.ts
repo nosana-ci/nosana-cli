@@ -1,13 +1,13 @@
 import fs from 'fs';
 import { LowSync } from 'lowdb/lib';
 
-import { createImageManager } from '../';
-import { NodeDb } from '../../../BasicProvider';
-import { DB } from '../../db';
+import { createImageManager } from '..';
+import { NodeDb } from '../../../../BasicProvider';
+import { DB } from '../../../db';
 import {
   CorrectedImageInfo,
   DockerodeMock,
-} from '../../../../tests/MockDockerode';
+} from '../../../../../tests/MockDockerode';
 
 jest.mock('fs');
 jest.useFakeTimers().setSystemTime(new Date('2024-06-10'));

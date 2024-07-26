@@ -20,10 +20,10 @@ import {
   Log,
 } from './Provider.js';
 import { config } from '../generic/config.js';
-import { createImageManager } from './modules/imageManager/index.js';
 import { getSDK } from '../services/sdk.js';
 import { extractResultsFromLogs } from './utils/extractResultsFromLogs.js';
-import { dockerPromisePull } from './utils/dockerPromisePull.js';
+import { createResourceManager } from './modules/resourceManager/index.js';
+import { DockerExtended } from '../docker/index.js';
 
 export type RunContainerArgs = {
   name?: string;
@@ -40,8 +40,8 @@ export type RunContainerArgs = {
 };
 
 export class DockerProvider extends BasicProvider implements Provider {
-  protected docker: Docker;
-  protected imageManager;
+  protected docker: DockerExtended;
+  protected resourceManager;
   protected host: string;
   protected port: string;
   protected protocol: string;
@@ -64,13 +64,13 @@ export class DockerProvider extends BasicProvider implements Provider {
     this.host = serverUri.hostname;
     this.port = serverUri.port;
     this.protocol = protocol;
-    this.docker = new Docker({
+    this.docker = new DockerExtended({
       host: this.host,
       port: this.port,
       protocol: this.protocol as 'https' | 'http' | 'ssh' | undefined,
     });
 
-    this.imageManager = createImageManager(this.db, this.docker);
+    this.resourceManager = createResourceManager(this.db, this.docker);
 
     /**
      * Run operation and return results
@@ -211,7 +211,7 @@ export class DockerProvider extends BasicProvider implements Provider {
     try {
       const info = await this.docker.info();
       if (typeof info === 'object' && info !== null && info.ID) {
-        await this.imageManager.resyncImagesDB();
+        await this.resourceManager.resyncResourcesDB();
         return true;
       } else {
         if (throwError) {
@@ -605,7 +605,7 @@ export class DockerProvider extends BasicProvider implements Provider {
   }
 
   async updateMarketRequiredResources(market: string): Promise<void> {
-    await this.imageManager.fetchMarketRequiredImages(market);
+    await this.resourceManager.fetchMarketRequiredResources(market);
   }
 
   /****************
@@ -617,7 +617,7 @@ export class DockerProvider extends BasicProvider implements Provider {
       log: chalk.cyan(`Pulling image ${chalk.bold(image)}`),
     });
 
-    this.imageManager.setImage(image);
+    this.resourceManager.images.setImage(image);
 
     const images = await this.docker.listImages();
 
@@ -639,7 +639,7 @@ export class DockerProvider extends BasicProvider implements Provider {
       }
     }
 
-    await dockerPromisePull(image, this.docker);
+    await this.docker.dockerPromisePull(image);
   }
 
   /**

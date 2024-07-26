@@ -16,7 +16,10 @@ export function createDB(configLocation: string): LowSync<NodeDb> {
   fs.mkdirSync(configLocation, { recursive: true });
 
   _db = JSONFileSyncPreset<NodeDb>(`${configLocation}/nosana_db.json`, {
-    images: {},
+    resources: {
+      images: {},
+      volumes: {},
+    },
     flows: {},
   });
 
@@ -36,7 +39,10 @@ export class DB {
     fs.mkdirSync(configLocation, { recursive: true });
 
     this.db = JSONFileSyncPreset<NodeDb>(`${configLocation}/nosana_db.json`, {
-      images: {},
+      resources: {
+        images: {},
+        volumes: {},
+      },
       flows: {},
     });
   }
