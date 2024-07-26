@@ -5,7 +5,6 @@ import { NodeDb } from '../../BasicProvider';
 import { createImageManager } from './images';
 import { createVolumeManager } from './volumes';
 import { DockerExtended } from '../../../docker';
-import ora from 'ora';
 
 export function createResourceManager(
   db: LowSync<NodeDb>,
