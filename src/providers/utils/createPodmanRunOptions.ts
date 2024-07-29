@@ -38,7 +38,7 @@ export function createPodmanRunOptions(
 
       if (source) {
         mounts.push({
-          Target: resource.dest,
+          Target: resource.target,
           Source: source,
           Type: 'volume',
           ReadOnly: true,

@@ -1,8 +1,9 @@
-import Dockerode, { Image, ImageInfo } from 'dockerode';
+import { Image, ImageInfo } from 'dockerode';
+import { DockerExtended } from '../docker';
 
 export type CorrectedImageInfo = ImageInfo & { Names: string[] };
 
-export class DockerodeMock extends Dockerode {
+export class DockerodeMock extends DockerExtended {
   private images: CorrectedImageInfo[] = [];
 
   constructor(images?: string[]) {

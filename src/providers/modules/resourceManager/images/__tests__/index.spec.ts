@@ -28,7 +28,7 @@ const setup = (images: string[] = [], setInitialDB = true) => {
   const mock_db: LowSync<NodeDb> = new DB('').db;
 
   if (setInitialDB) {
-    mock_db.data.images = { ...initial_db_images };
+    mock_db.data.resources.images = { ...initial_db_images };
     mock_db.write();
   }
 
@@ -45,12 +45,12 @@ describe('createImageManager', () => {
       const { mock_db, mock_dockerode } = setup([
         'registry.hub.docker.com/nosana/stats:v1.0.4',
       ]);
-      expect(mock_db.data.images).toEqual(initial_db_images);
+      expect(mock_db.data.resources.images).toEqual(initial_db_images);
 
       const im = await createImageManager(mock_db, mock_dockerode);
       await im.resyncImagesDB();
 
-      expect(mock_db.data.images).toEqual({
+      expect(mock_db.data.resources.images).toEqual({
         'registry.hub.docker.com/nosana/stats:v1.0.4': {
           lastUsed: new Date('2024-07-09T14:50:58.800Z'),
           usage: 1,
@@ -68,7 +68,7 @@ describe('createImageManager', () => {
 
       let dockerImages = await mock_dockerode.listImages();
 
-      expect(mock_db.data.images).toEqual(initial_db_images);
+      expect(mock_db.data.resources.images).toEqual(initial_db_images);
 
       expect(dockerImages.map((x) => (x as CorrectedImageInfo).Names)).toEqual([
         ['docker.io/ubuntu'],
@@ -95,11 +95,11 @@ describe('createImageManager', () => {
 
       const im = createImageManager(mock_db, mock_dockerode);
 
-      expect(mock_db.data.images).toEqual({});
+      expect(mock_db.data.resources.images).toEqual({});
 
       im.setImage('ubuntu');
 
-      expect(mock_db.data.images).toEqual({
+      expect(mock_db.data.resources.images).toEqual({
         ubuntu: { lastUsed: new Date('2024-06-10'), usage: 1 },
       });
     });
@@ -110,13 +110,13 @@ describe('createImageManager', () => {
         false,
       );
 
-      mock_db.data.images = {
+      mock_db.data.resources.images = {
         ubuntu: { lastUsed: new Date('2024-06-10'), usage: 1 },
       };
       mock_db.write();
 
       const im = createImageManager(mock_db, mock_dockerode);
-      expect(mock_db.data.images).toEqual({
+      expect(mock_db.data.resources.images).toEqual({
         ubuntu: { lastUsed: new Date('2024-06-10'), usage: 1 },
       });
 
@@ -124,7 +124,7 @@ describe('createImageManager', () => {
 
       im.setImage('ubuntu');
 
-      expect(mock_db.data.images).toEqual({
+      expect(mock_db.data.resources.images).toEqual({
         ubuntu: { lastUsed: new Date('2024-06-11'), usage: 2 },
       });
     });

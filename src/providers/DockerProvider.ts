@@ -430,7 +430,7 @@ export class DockerProvider extends BasicProvider implements Provider {
 
         if (source) {
           dockerVolumes.push({
-            Target: resource.dest,
+            Target: resource.target,
             Source: source,
             Type: 'volume',
             ReadOnly: true,
