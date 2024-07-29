@@ -1,14 +1,22 @@
+import fs from 'fs';
 import { LowSync } from 'lowdb/lib';
+
 import { DockerodeMock } from '../../../tests/MockDockerode';
 import { createResourceManager } from '../../modules/resourceManager';
 import { createPodmanRunOptions } from '../createPodmanRunOptions';
 import { NodeDb } from '../../BasicProvider';
 import { DB } from '../../modules/db';
 
+jest.mock('fs');
+
 describe('createPodmanRunOptions', () => {
   const mock_dockerode = new DockerodeMock();
   const mock_db: LowSync<NodeDb> = new DB('').db;
   const mock_resourceManager = createResourceManager(mock_db, mock_dockerode);
+
+  beforeAll(() => {
+    (fs.mkdirSync as jest.Mock).mockImplementation(jest.fn());
+  });
 
   it('should return podman run options from given image and args', () => {
     expect(
