@@ -12,12 +12,11 @@
         "cmd": [],
         "image": "docker.io/ollama/ollama",
         "gpu": false,
-        "env": { "OLLAMA_MODELS": "/models" },
         "expose": 11434,
         "remoteResources": [
           {
             "bucket": "s3://nosana-llama3.1",
-            "target": "/models"
+            "target": "/root/.ollama/models"
           }
         ]
       }

@@ -38,8 +38,13 @@ export class DockerExtended extends Dockerode {
     // TODO: check again database and volumes to see if it already exists
     // TODO: if exists we could add a sync feature to ensure it will reflect any changes
     try {
-      // Create the volume
-      const volumeName = (await this.createVolume()).Name;
+      // Create the volume// Create the volume
+      let volumeName: string;
+      const response = await this.createVolume();
+
+      // @ts-ignore **PODMAN returns name not Name**
+      if (response.name) volumeName = response.name;
+      else volumeName = response.Name;
 
       // Create S3 helper container with the new volume mounted
       const container = await this.createContainer(

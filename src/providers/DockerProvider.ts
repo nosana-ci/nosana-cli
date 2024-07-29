@@ -130,6 +130,16 @@ export class DockerProvider extends BasicProvider implements Provider {
         }
 
         if (op.args.remoteResources) {
+          const s3HelperImage = 'docker.io/matthammond962/s3-helper';
+
+          try {
+            await this.pullImage(s3HelperImage);
+          } catch (error) {
+            throw new Error(
+              chalk.red(`Cannot pull image ${s3HelperImage}: `) + error,
+            );
+          }
+
           for (const resource of op.args.remoteResources) {
             const resourceExists =
               await this.resourceManager.volumeManager.hasVolume(
@@ -146,6 +156,7 @@ export class DockerProvider extends BasicProvider implements Provider {
 
             try {
               const volumeName = await this.docker.createRemoteVolume(resource);
+
               this.resourceManager.volumeManager.setVolume(
                 resource.bucket,
                 volumeName,
@@ -349,6 +360,7 @@ export class DockerProvider extends BasicProvider implements Provider {
         entrypoint,
         work_dir,
         volumes,
+        remoteResources: opArgs.remoteResources,
       },
     );
     updateOpState({ providerId: container.id });
@@ -424,6 +436,7 @@ export class DockerProvider extends BasicProvider implements Provider {
     }
 
     if (remoteResources && remoteResources.length > 0) {
+      console.log(remoteResources);
       remoteResources.forEach((resource) => {
         const source = this.resourceManager.volumeManager.getVolume(
           resource.bucket,
