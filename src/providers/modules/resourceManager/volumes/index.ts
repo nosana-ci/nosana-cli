@@ -2,11 +2,12 @@ import chalk from 'chalk';
 import { LowSync } from 'lowdb/lib';
 import ora from 'ora';
 
-import { NodeDb } from '../../../BasicProvider';
-import { DockerExtended } from '../../../../docker';
-import { getMarketRequiredVolumes } from './helpers/getMarketRequiredVolume';
-import { hasDockerVolume } from './helpers/hasDockerVolume';
-import { hoursSinceDate } from '../utils/hoursSinceDate';
+import { NodeDb } from '../../../BasicProvider.js';
+import { DockerExtended } from '../../../../docker/index.js';
+import { getMarketRequiredVolumes } from './helpers/getMarketRequiredVolume.js';
+import { hasDockerVolume } from './helpers/hasDockerVolume.js';
+import { hoursSinceDate } from '../utils/hoursSinceDate.js';
+import { S3Resource } from '../../../../types/resources.js';
 
 /**
  * Creates Volume Manager Sub-module

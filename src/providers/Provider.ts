@@ -2,6 +2,8 @@
 import { CronJob } from 'cron';
 import typia from 'typia';
 
+import { S3Resource } from '../types/resources.js';
+
 /************************
  * Job Definition Types *
  ************************/

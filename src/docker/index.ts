@@ -1,5 +1,7 @@
 import Dockerode from 'dockerode';
-import { createS3HelperOpts } from './definition/s3HelperOpts';
+
+import { S3Resource } from '../types/resources.js';
+import { createS3HelperOpts } from './definition/s3HelperOpts.js';
 
 export class DockerExtended extends Dockerode {
   async dockerPromisePull(image: string) {

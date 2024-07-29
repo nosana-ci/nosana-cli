@@ -26,6 +26,7 @@ import { extractResultsFromLogs } from './utils/extractResultsFromLogs.js';
 import { createResourceManager } from './modules/resourceManager/index.js';
 import { DockerExtended } from '../docker/index.js';
 import ora from 'ora';
+import { S3Resource } from '../types/resources.js';
 
 export type RunContainerArgs = {
   name?: string;

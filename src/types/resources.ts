@@ -1,4 +1,4 @@
-type S3Resource = {
+export type S3Resource = {
   bucket: string;
   target: string;
   IAM?: {

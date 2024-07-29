@@ -1,10 +1,10 @@
 import chalk from 'chalk';
 import { LowSync } from 'lowdb/lib';
 
-import { NodeDb } from '../../BasicProvider';
-import { createImageManager } from './images';
-import { createVolumeManager } from './volumes';
-import { DockerExtended } from '../../../docker';
+import { NodeDb } from '../../BasicProvider.js';
+import { createImageManager } from './images/index.js';
+import { createVolumeManager } from './volumes/index.js';
+import { DockerExtended } from '../../../docker/index.js';
 
 export type ResourceManager = {
   resyncResourcesDB: () => Promise<void>;

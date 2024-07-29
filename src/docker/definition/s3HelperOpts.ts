@@ -1,5 +1,7 @@
 import { ContainerCreateOptions } from 'dockerode';
 
+import { S3Resource } from '../../types/resources.js';
+
 export const createS3HelperOpts = (
   volumeName: string,
   s3: S3Resource,
@@ -15,7 +17,7 @@ export const createS3HelperOpts = (
   Env: s3.IAM
     ? [
         `ACCESS_KEY_ID=${s3.IAM.ACCESS_KEY_ID}`,
-        `SECERT_ACCESS_KEY=${s3.IAM.SECRET_ACCESS_KEY}`,
+        `SECRET_ACCESS_KEY=${s3.IAM.SECRET_ACCESS_KEY}`,
       ]
     : undefined,
   HostConfig: {
