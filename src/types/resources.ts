@@ -1,7 +1,8 @@
 type S3Resource = {
   bucket: string;
-  credinatials?: {
+  dest: string;
+  IAM?: {
     ACCESS_KEY_ID: string;
-    SECERT_ACCESS_KEY: string;
+    SECRET_ACCESS_KEY: string;
   };
 };

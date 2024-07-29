@@ -42,7 +42,8 @@ export function createVolumeManager(
           setVolume(resource.bucket, volumeName);
         } catch (err) {
           throw new Error(
-            chalk.red(`Cannt pull remote resource ${resource.bucket}:\n`) + err,
+            chalk.red(`Cannot pull remote resource ${resource.bucket}:\n`) +
+              err,
           );
         }
 
@@ -95,6 +96,41 @@ export function createVolumeManager(
   };
 
   /**
+   * Return volume from volume db
+   * @param resourceName
+   * @returns string | undefined
+   */
+  const getVolume = (resourceName: string): string | undefined => {
+    return db.data.resources.volumes[resourceName]?.volume;
+  };
+
+  /**
+   * Verifies DB volume exists
+   * @param resourceName
+   * @returns Promise<boolean>
+   */
+  const hasVolume = async (resourceName: string): Promise<boolean> => {
+    let result: boolean;
+    const volume = getVolume(resourceName);
+
+    if (!volume) return false;
+
+    try {
+      const vol = await docker.getVolume(volume);
+      result = vol ? true : false;
+    } catch (_) {
+      result = false;
+    }
+
+    if (!result) {
+      delete db.data.resources.volumes[resourceName];
+      db.write();
+    }
+
+    return result;
+  };
+
+  /**
    * Sets volume history in db
    * @param bucket
    * @param volume
@@ -110,6 +146,8 @@ export function createVolumeManager(
   };
 
   return {
+    getVolume,
+    hasVolume,
     setVolume,
     resyncResourcesDB,
     fetchMarketRequiredVolumes,

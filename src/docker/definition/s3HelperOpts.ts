@@ -12,10 +12,10 @@ export const createS3HelperOpts = (
   StdinOnce: false,
   Cmd: ['index.js', s3.bucket],
   Image: 'docker.io/matthammond962/s3-helper',
-  Env: s3.credinatials
+  Env: s3.IAM
     ? [
-        `ACCESS_KEY_ID=${s3.credinatials.ACCESS_KEY_ID}`,
-        `SECERT_ACCESS_KEY=${s3.credinatials.SECERT_ACCESS_KEY}`,
+        `ACCESS_KEY_ID=${s3.IAM.ACCESS_KEY_ID}`,
+        `SECERT_ACCESS_KEY=${s3.IAM.SECRET_ACCESS_KEY}`,
       ]
     : undefined,
   HostConfig: {

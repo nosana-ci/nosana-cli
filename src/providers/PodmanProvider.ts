@@ -34,7 +34,9 @@ export class PodmanProvider extends DockerProvider {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(createPodmanRunOptions(image, args)),
+        body: JSON.stringify(
+          createPodmanRunOptions(image, args, this.resourceManager),
+        ),
       });
 
       // start container

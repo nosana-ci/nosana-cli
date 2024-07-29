@@ -5,6 +5,7 @@ import { sleep } from '@nosana/sdk';
 import Docker, {
   Container,
   ContainerCreateOptions,
+  MountSettings,
   MountType,
 } from 'dockerode';
 
@@ -24,6 +25,7 @@ import { getSDK } from '../services/sdk.js';
 import { extractResultsFromLogs } from './utils/extractResultsFromLogs.js';
 import { createResourceManager } from './modules/resourceManager/index.js';
 import { DockerExtended } from '../docker/index.js';
+import ora from 'ora';
 
 export type RunContainerArgs = {
   name?: string;
@@ -37,6 +39,7 @@ export type RunContainerArgs = {
   env?: { [key: string]: string };
   work_dir?: string;
   entrypoint?: string | string[];
+  remoteResources?: S3Resource[];
 };
 
 export class DockerProvider extends BasicProvider implements Provider {
@@ -122,6 +125,38 @@ export class DockerProvider extends BasicProvider implements Provider {
             throw new Error(
               chalk.red(`Cannot pull image ${frpcImage}: `) + error,
             );
+          }
+        }
+
+        if (op.args.remoteResources) {
+          for (const resource of op.args.remoteResources) {
+            const resourceExists =
+              await this.resourceManager.volumeManager.hasVolume(
+                resource.bucket,
+              );
+
+            if (resourceExists) continue;
+
+            const spinner = ora(
+              chalk.cyan(
+                `Fetching remote resource ${chalk.bold(resource.bucket)}`,
+              ),
+            ).start();
+
+            try {
+              const volumeName = await this.docker.createRemoteVolume(resource);
+              this.resourceManager.volumeManager.setVolume(
+                resource.bucket,
+                volumeName,
+              );
+            } catch (err) {
+              throw new Error(
+                chalk.red(`Cannot pull remote resource ${resource.bucket}:\n`) +
+                  err,
+              );
+            }
+
+            spinner.succeed();
           }
         }
 
@@ -362,6 +397,7 @@ export class DockerProvider extends BasicProvider implements Provider {
       env,
       work_dir,
       entrypoint,
+      remoteResources,
     }: RunContainerArgs,
   ): Promise<Container> {
     const devices = gpu
@@ -373,18 +409,40 @@ export class DockerProvider extends BasicProvider implements Provider {
           },
         ]
       : [];
-    const dockerVolumes = [];
+    const dockerVolumes: MountSettings[] = [];
     if (volumes && volumes.length > 0) {
       for (let i = 0; i < volumes.length; i++) {
         const volume = volumes[i];
         dockerVolumes.push({
           Target: volume.dest,
           Source: volume.name,
-          Type: 'volume' as MountType,
+          Type: 'volume',
           ReadOnly: false,
         });
       }
     }
+
+    if (remoteResources && remoteResources.length > 0) {
+      remoteResources.forEach((resource) => {
+        const source = this.resourceManager.volumeManager.getVolume(
+          resource.bucket,
+        );
+
+        if (source) {
+          dockerVolumes.push({
+            Target: resource.dest,
+            Source: source,
+            Type: 'volume',
+            ReadOnly: true,
+          });
+        } else {
+          throw new Error(
+            `Remote resource volume not found: ${resource.bucket}`,
+          );
+        }
+      });
+    }
+
     const vars: string[] = [];
     if (env) {
       for (const [key, value] of Object.entries(env)) {

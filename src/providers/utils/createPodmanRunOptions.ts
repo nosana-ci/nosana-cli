@@ -1,5 +1,6 @@
-import { type RunContainerArgs } from '../DockerProvider.js';
+import { DockerProvider, type RunContainerArgs } from '../DockerProvider.js';
 import { ifStringCastToArray } from '../../generic/utils.js';
+import { ResourceManager } from '../modules/resourceManager/index.js';
 
 const GPU_DEVICE = [
   {
@@ -7,16 +8,46 @@ const GPU_DEVICE = [
   },
 ];
 
+type Mount = {
+  Target: string;
+  Source: string;
+  Type: 'volume';
+  ReadOnly: true;
+};
+
 /**
  * Takes image and args and return podman run options
  * @param image
  * @param args
  * @returns
  */
-export function createPodmanRunOptions(image: string, args: RunContainerArgs) {
+export function createPodmanRunOptions(
+  image: string,
+  args: RunContainerArgs,
+  resourceManager: ResourceManager,
+) {
   const { name, networks, cmd, gpu, volumes, env, work_dir, entrypoint } = args;
 
   const devices = gpu ? GPU_DEVICE : [];
+
+  const mounts: Mount[] = [];
+
+  if (args.remoteResources && args.remoteResources.length > 0) {
+    args.remoteResources.forEach((resource) => {
+      const source = resourceManager.volumeManager.getVolume(resource.bucket);
+
+      if (source) {
+        mounts.push({
+          Target: resource.dest,
+          Source: source,
+          Type: 'volume',
+          ReadOnly: true,
+        });
+      } else {
+        throw new Error(`Remote resource volume not found: ${resource.bucket}`);
+      }
+    });
+  }
 
   return {
     image,
@@ -33,5 +64,6 @@ export function createPodmanRunOptions(image: string, args: RunContainerArgs) {
     create_working_dir: true,
     cgroups_mode: 'disabled',
     work_dir,
+    ...(mounts.length > 0 ? { mounts } : undefined),
   };
 }

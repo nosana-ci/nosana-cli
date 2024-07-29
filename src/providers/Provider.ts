@@ -48,6 +48,7 @@ export interface OperationArgsMap {
     env?: {
       [key: string]: string;
     };
+    remoteResources?: S3Resource[];
   };
   'container/create-volume': {
     name: string;
