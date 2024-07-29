@@ -9,9 +9,10 @@ const GPU_DEVICE = [
 ];
 
 type Mount = {
-  Destination: string;
-  Source: string;
-  Type: 'volume';
+  destination: string;
+  source: string;
+  type: 'volume';
+  options: string[];
 };
 
 /**
@@ -37,9 +38,10 @@ export function createPodmanRunOptions(
 
       if (source) {
         mounts.push({
-          Destination: resource.target,
-          Source: source,
-          Type: 'volume',
+          destination: resource.target,
+          source: source,
+          type: 'volume',
+          options: ['ro'],
         });
       } else {
         throw new Error(`Remote resource volume not found: ${resource.bucket}`);
