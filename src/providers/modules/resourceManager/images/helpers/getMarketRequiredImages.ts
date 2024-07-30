@@ -2,7 +2,7 @@ import { apiClient } from '../../../../../api/client.js';
 
 export async function getMarketRequiredImages(id: string): Promise<string[]> {
   const { data, error } = await apiClient.GET(
-    '/api/market/{id}/required-images',
+    '/api/markets/{id}/required-images',
     {
       params: {
         path: {
