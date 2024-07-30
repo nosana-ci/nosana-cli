@@ -2,7 +2,7 @@
 import { CronJob } from 'cron';
 import typia from 'typia';
 
-import { S3Resource } from '../types/resources.js';
+import { Resource } from '../types/resources.js';
 
 /************************
  * Job Definition Types *
@@ -50,7 +50,7 @@ export interface OperationArgsMap {
     env?: {
       [key: string]: string;
     };
-    remoteResources?: S3Resource[];
+    remoteResources?: Resource[];
   };
   'container/create-volume': {
     name: string;

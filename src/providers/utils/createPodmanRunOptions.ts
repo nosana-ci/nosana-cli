@@ -1,4 +1,4 @@
-import { DockerProvider, type RunContainerArgs } from '../DockerProvider.js';
+import { type RunContainerArgs } from '../DockerProvider.js';
 import { ifStringCastToArray } from '../../generic/utils.js';
 import { ResourceManager } from '../modules/resourceManager/index.js';
 
@@ -34,7 +34,7 @@ export function createPodmanRunOptions(
 
   if (args.remoteResources && args.remoteResources.length > 0) {
     args.remoteResources.forEach((resource) => {
-      const source = resourceManager.volumeManager.getVolume(resource.bucket);
+      const source = resourceManager.volumeManager.getVolume(resource.url);
 
       if (source) {
         mounts.push({
@@ -44,7 +44,7 @@ export function createPodmanRunOptions(
           options: ['ro'],
         });
       } else {
-        throw new Error(`Remote resource volume not found: ${resource.bucket}`);
+        throw new Error(`Remote resource volume not found: ${resource.url}`);
       }
     });
   }

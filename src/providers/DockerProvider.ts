@@ -26,7 +26,7 @@ import { extractResultsFromLogs } from './utils/extractResultsFromLogs.js';
 import { createResourceManager } from './modules/resourceManager/index.js';
 import { DockerExtended } from '../docker/index.js';
 import ora from 'ora';
-import { S3Resource } from '../types/resources.js';
+import { Resource } from '../types/resources.js';
 
 export type RunContainerArgs = {
   name?: string;
@@ -40,7 +40,7 @@ export type RunContainerArgs = {
   env?: { [key: string]: string };
   work_dir?: string;
   entrypoint?: string | string[];
-  remoteResources?: S3Resource[];
+  remoteResources?: Resource[];
 };
 
 export class DockerProvider extends BasicProvider implements Provider {
@@ -142,15 +142,13 @@ export class DockerProvider extends BasicProvider implements Provider {
 
           for (const resource of op.args.remoteResources) {
             const resourceExists =
-              await this.resourceManager.volumeManager.hasVolume(
-                resource.bucket,
-              );
+              await this.resourceManager.volumeManager.hasVolume(resource.url);
 
             if (resourceExists) continue;
 
             const spinner = ora(
               chalk.cyan(
-                `Fetching remote resource ${chalk.bold(resource.bucket)}`,
+                `Fetching remote resource ${chalk.bold(resource.url)}`,
               ),
             ).start();
 
@@ -158,12 +156,12 @@ export class DockerProvider extends BasicProvider implements Provider {
               const volumeName = await this.docker.createRemoteVolume(resource);
 
               this.resourceManager.volumeManager.setVolume(
-                resource.bucket,
+                resource.url,
                 volumeName,
               );
             } catch (err) {
               throw new Error(
-                chalk.red(`Cannot pull remote resource ${resource.bucket}:\n`) +
+                chalk.red(`Cannot pull remote resource ${resource.url}:\n`) +
                   err,
               );
             }
@@ -439,7 +437,7 @@ export class DockerProvider extends BasicProvider implements Provider {
       console.log(remoteResources);
       remoteResources.forEach((resource) => {
         const source = this.resourceManager.volumeManager.getVolume(
-          resource.bucket,
+          resource.url,
         );
 
         if (source) {
@@ -450,9 +448,7 @@ export class DockerProvider extends BasicProvider implements Provider {
             ReadOnly: true,
           });
         } else {
-          throw new Error(
-            `Remote resource volume not found: ${resource.bucket}`,
-          );
+          throw new Error(`Remote resource volume not found: ${resource.url}`);
         }
       });
     }

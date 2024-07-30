@@ -4,7 +4,6 @@ import { ImageInfo } from 'dockerode';
 import { LowSync } from 'lowdb/lib';
 
 import { NodeDb } from '../../../BasicProvider.js';
-import { getMarketRequiredImages } from './helpers/getMarketRequiredImages.js';
 import { hasDockerImage } from './helpers/hasDockerImage.js';
 import { DockerExtended } from '../../../../docker/index.js';
 import { hoursSinceDate } from '../utils/hoursSinceDate.js';
@@ -14,7 +13,7 @@ type CorrectedImageInfo = ImageInfo & { Names: string[] };
 export type ImageManager = {
   setImage: (image: string) => void;
   resyncImagesDB: () => Promise<void>;
-  fetchMarketRequiredImages: (market: string) => Promise<void>;
+  pullMarketRequiredImages: (required_images: string[]) => Promise<void>;
 };
 
 /**
@@ -27,12 +26,12 @@ export function createImageManager(
   db: LowSync<NodeDb>,
   docker: DockerExtended,
 ): ImageManager {
-  let market_address: string;
   let market_required_images: string[] = [];
 
-  const fetchMarketRequiredImages = async (market: string): Promise<void> => {
-    market_address = market;
-    market_required_images = await getMarketRequiredImages(market);
+  const pullMarketRequiredImages = async (
+    required_images: string[],
+  ): Promise<void> => {
+    market_required_images = required_images;
     const savedImages = (await docker.listImages()) as CorrectedImageInfo[];
 
     for (const image of market_required_images) {
@@ -57,9 +56,6 @@ export function createImageManager(
    * @returns Promise
    */
   const resyncImagesDB = async (): Promise<void> => {
-    if (market_address) {
-      await fetchMarketRequiredImages(market_address);
-    }
     const savedImages = (await docker.listImages()) as CorrectedImageInfo[];
 
     for (const [image, { lastUsed }] of Object.entries(
@@ -70,7 +66,7 @@ export function createImageManager(
         continue;
       }
 
-      if (market_address && market_required_images.includes(image)) continue;
+      if (market_required_images.includes(image)) continue;
 
       const hoursSinceLastUsed = hoursSinceDate(new Date(lastUsed));
 
@@ -105,6 +101,6 @@ export function createImageManager(
   return {
     setImage,
     resyncImagesDB,
-    fetchMarketRequiredImages,
+    pullMarketRequiredImages,
   };
 }

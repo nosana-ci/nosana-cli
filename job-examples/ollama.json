@@ -15,7 +15,8 @@
         "expose": 11434,
         "remoteResources": [
           {
-            "bucket": "s3://nosana-llama3.1",
+            "type": "S3",
+            "url": "s3://nosana-llama3.1",
             "target": "/root/.ollama/models"
           }
         ]

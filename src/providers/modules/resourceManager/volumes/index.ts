@@ -4,10 +4,9 @@ import ora from 'ora';
 
 import { NodeDb } from '../../../BasicProvider.js';
 import { DockerExtended } from '../../../../docker/index.js';
-import { getMarketRequiredVolumes } from './helpers/getMarketRequiredVolume.js';
 import { hasDockerVolume } from './helpers/hasDockerVolume.js';
 import { hoursSinceDate } from '../utils/hoursSinceDate.js';
-import { S3Resource } from '../../../../types/resources.js';
+import { RequiredResource } from '../../../../types/resources.js';
 
 /**
  * Creates Volume Manager Sub-module
@@ -19,32 +18,31 @@ export function createVolumeManager(
   db: LowSync<NodeDb>,
   docker: DockerExtended,
 ) {
-  let market_address: string;
-  let market_required_volumes: S3Resource[];
+  let market_required_volumes: RequiredResource[];
 
   /**
    * Fetch market required volumes
    * @param market
    */
-  const fetchMarketRequiredVolumes = async (market: string) => {
-    market_address = market;
-    market_required_volumes = getMarketRequiredVolumes(market);
+  const pullMarketRequiredVolumes = async (
+    remoteResources: RequiredResource[],
+  ) => {
+    market_required_volumes = remoteResources;
 
     const savedVolumes = db.data.resources.volumes;
 
     for (const resource of market_required_volumes) {
-      if (!savedVolumes[resource.bucket]) {
+      if (!savedVolumes[resource.url]) {
         const spinner = ora(
-          chalk.cyan(`Fetching remote resource ${chalk.bold(resource.bucket)}`),
+          chalk.cyan(`Fetching remote resource ${chalk.bold(resource.url)}`),
         ).start();
 
         try {
           const volumeName = await docker.createRemoteVolume(resource);
-          setVolume(resource.bucket, volumeName);
+          setVolume(resource.url, volumeName);
         } catch (err) {
           throw new Error(
-            chalk.red(`Cannot pull remote resource ${resource.bucket}:\n`) +
-              err,
+            chalk.red(`Cannot pull remote resource ${resource.url}:\n`) + err,
           );
         }
 
@@ -60,10 +58,6 @@ export function createVolumeManager(
    * @return Promise
    */
   const resyncResourcesDB = async (): Promise<void> => {
-    if (market_address) {
-      await fetchMarketRequiredVolumes(market_address);
-    }
-
     const savedVolumes = (await docker.listVolumes()).Volumes;
 
     for (const [resource, { volume, lastUsed }] of Object.entries(
@@ -75,9 +69,7 @@ export function createVolumeManager(
       }
 
       if (
-        market_address &&
-        market_required_volumes.findIndex((vol) => vol.bucket === resource) !==
-          -1
+        market_required_volumes.findIndex((vol) => vol.url === resource) !== -1
       )
         continue;
 
@@ -151,6 +143,6 @@ export function createVolumeManager(
     hasVolume,
     setVolume,
     resyncResourcesDB,
-    fetchMarketRequiredVolumes,
+    pullMarketRequiredVolumes,
   };
 }

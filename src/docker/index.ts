@@ -1,6 +1,6 @@
 import Dockerode from 'dockerode';
 
-import { S3Resource } from '../types/resources.js';
+import { RequiredResource, Resource } from '../types/resources.js';
 import { createS3HelperOpts } from './definition/s3HelperOpts.js';
 
 export class DockerExtended extends Dockerode {
@@ -34,7 +34,9 @@ export class DockerExtended extends Dockerode {
    *
    * @param s3Bucket
    */
-  async createRemoteVolume(resource: S3Resource): Promise<string> {
+  async createRemoteVolume(
+    resource: RequiredResource | Resource,
+  ): Promise<string> {
     // TODO: check again database and volumes to see if it already exists
     // TODO: if exists we could add a sync feature to ensure it will reflect any changes
     try {

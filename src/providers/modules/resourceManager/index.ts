@@ -5,6 +5,7 @@ import { NodeDb } from '../../BasicProvider.js';
 import { createImageManager } from './images/index.js';
 import { createVolumeManager } from './volumes/index.js';
 import { DockerExtended } from '../../../docker/index.js';
+import { apiClient } from '../../../api/client.js';
 
 export type ResourceManager = {
   resyncResourcesDB: () => Promise<void>;
@@ -36,10 +37,22 @@ export function createResourceManager(
   const fetchMarketRequiredResources = async (
     market: string,
   ): Promise<void> => {
-    console.log(chalk.cyan('Checking market resource requirements'));
+    console.log(chalk.cyan('Fetching latest market resource requirements'));
 
-    await imageManager.fetchMarketRequiredImages(market);
-    await volumeManager.fetchMarketRequiredVolumes(market);
+    const { data, error } = await apiClient.GET(
+      '/api/markets/{id}/required-resources',
+      { params: { path: { id: market } } },
+    );
+
+    if (error)
+      throw new Error(
+        `Failed to fetch market resource requirements.\n${error.message}`,
+      );
+
+    await imageManager.pullMarketRequiredImages(data.required_images);
+    await volumeManager.pullMarketRequiredVolumes(
+      data.required_remote_resources,
+    );
 
     console.log(chalk.green('Fetched market all required resources'));
   };
