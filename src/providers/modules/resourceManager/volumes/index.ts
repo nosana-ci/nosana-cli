@@ -19,7 +19,7 @@ export function createVolumeManager(
   db: LowSync<NodeDb>,
   docker: DockerExtended,
 ) {
-  let market_required_volumes: RequiredResource[];
+  let market_required_volumes: RequiredResource[] = [];
 
   /**
    * Fetch market required volumes
@@ -70,7 +70,6 @@ export function createVolumeManager(
       }
 
       if (
-        market_required_volumes &&
         market_required_volumes.findIndex((vol) => vol.url === resource) !== -1
       )
         continue;
