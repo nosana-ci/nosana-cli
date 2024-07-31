@@ -1,43 +1,22 @@
-import fs from 'fs';
-import { LowSync } from 'lowdb/lib';
-
-import { DockerodeMock } from '../../../tests/MockDockerode';
-import { createResourceManager } from '../../modules/resourceManager';
 import { createPodmanRunOptions } from '../createPodmanRunOptions';
-import { NodeDb } from '../../BasicProvider';
-import { DB } from '../../modules/db';
-
-jest.mock('fs');
 
 describe('createPodmanRunOptions', () => {
-  const mock_dockerode = new DockerodeMock();
-  const mock_db: LowSync<NodeDb> = new DB('').db;
-  const mock_resourceManager = createResourceManager(mock_db, mock_dockerode);
-
-  beforeAll(() => {
-    (fs.mkdirSync as jest.Mock).mockImplementation(jest.fn());
-  });
-
   it('should return podman run options from given image and args', () => {
     expect(
-      createPodmanRunOptions(
-        'ubuntu',
-        {
-          name: 'ubuntu-test',
-          cmd: ['echo test'],
-          volumes: [{ dest: 'testDest', name: 'testDestName' }],
-          entrypoint: ['sh'],
-          env: {
-            ENV: 'TEST',
-          },
-          gpu: true,
-          networks: {
-            testNet: 'TEST_NET',
-          },
-          work_dir: 'TEST_DIR',
+      createPodmanRunOptions('ubuntu', {
+        name: 'ubuntu-test',
+        cmd: ['echo test'],
+        volumes: [{ dest: 'testDest', name: 'testDestName' }],
+        entrypoint: ['sh'],
+        env: {
+          ENV: 'TEST',
         },
-        mock_resourceManager,
-      ),
+        gpu: true,
+        networks: {
+          testNet: 'TEST_NET',
+        },
+        work_dir: 'TEST_DIR',
+      }),
     ).toEqual({
       Networks: {
         testNet: 'TEST_NET',
@@ -63,6 +42,7 @@ describe('createPodmanRunOptions', () => {
         {
           dest: 'testDest',
           name: 'testDestName',
+          Options: [],
         },
       ],
       work_dir: 'TEST_DIR',
