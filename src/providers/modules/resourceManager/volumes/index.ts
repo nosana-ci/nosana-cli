@@ -69,6 +69,7 @@ export function createVolumeManager(
       }
 
       if (
+        market_required_volumes &&
         market_required_volumes.findIndex((vol) => vol.url === resource) !== -1
       )
         continue;

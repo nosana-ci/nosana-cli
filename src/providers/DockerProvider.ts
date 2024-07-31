@@ -26,7 +26,6 @@ import { extractResultsFromLogs } from './utils/extractResultsFromLogs.js';
 import { createResourceManager } from './modules/resourceManager/index.js';
 import { DockerExtended } from '../docker/index.js';
 import ora from 'ora';
-import { Resource } from '../types/resources.js';
 
 export type RunContainerArgs = {
   name?: string;
@@ -40,7 +39,6 @@ export type RunContainerArgs = {
   env?: { [key: string]: string };
   work_dir?: string;
   entrypoint?: string | string[];
-  remoteResources?: Resource[];
 };
 
 export class DockerProvider extends BasicProvider implements Provider {
@@ -138,35 +136,6 @@ export class DockerProvider extends BasicProvider implements Provider {
             throw new Error(
               chalk.red(`Cannot pull image ${s3HelperImage}: `) + error,
             );
-          }
-
-          for (const resource of op.args.remoteResources) {
-            const resourceExists =
-              await this.resourceManager.volumeManager.hasVolume(resource.url);
-
-            if (resourceExists) continue;
-
-            const spinner = ora(
-              chalk.cyan(
-                `Fetching remote resource ${chalk.bold(resource.url)}`,
-              ),
-            ).start();
-
-            try {
-              const volumeName = await this.docker.createRemoteVolume(resource);
-
-              this.resourceManager.volumeManager.setVolume(
-                resource.url,
-                volumeName,
-              );
-            } catch (err) {
-              throw new Error(
-                chalk.red(`Cannot pull remote resource ${resource.url}:\n`) +
-                  err,
-              );
-            }
-
-            spinner.succeed();
           }
         }
 
@@ -315,6 +284,41 @@ export class DockerProvider extends BasicProvider implements Provider {
       }
     }
 
+    // Get remote resources and attach as volume
+    if (opArgs.remoteResources) {
+      for (const resource of opArgs.remoteResources) {
+        const resourceExists =
+          await this.resourceManager.volumeManager.hasVolume(resource.url);
+        if (!resourceExists) {
+          const spinner = ora(
+            chalk.cyan(`Fetching remote resource ${chalk.bold(resource.url)}`),
+          ).start();
+
+          try {
+            const volumeName = await this.docker.createRemoteVolume(resource);
+
+            this.resourceManager.volumeManager.setVolume(
+              resource.url,
+              volumeName,
+            );
+            console.log('volumeName', volumeName);
+          } catch (err) {
+            throw new Error(
+              chalk.red(`Cannot pull remote resource ${resource.url}:\n`) + err,
+            );
+          }
+
+          spinner.succeed();
+        }
+        volumes.push({
+          dest: resource.target,
+          name: (await this.resourceManager.volumeManager.getVolume(
+            resource.url,
+          ))!,
+        });
+      }
+    }
+
     // check for global & local options
     const work_dir =
       opArgs.work_dir ||
@@ -358,7 +362,6 @@ export class DockerProvider extends BasicProvider implements Provider {
         entrypoint,
         work_dir,
         volumes,
-        remoteResources: opArgs.remoteResources,
       },
     );
     updateOpState({ providerId: container.id });
@@ -408,7 +411,6 @@ export class DockerProvider extends BasicProvider implements Provider {
       env,
       work_dir,
       entrypoint,
-      remoteResources,
     }: RunContainerArgs,
   ): Promise<Container> {
     const devices = gpu
@@ -431,26 +433,6 @@ export class DockerProvider extends BasicProvider implements Provider {
           ReadOnly: false,
         });
       }
-    }
-
-    if (remoteResources && remoteResources.length > 0) {
-      console.log(remoteResources);
-      remoteResources.forEach((resource) => {
-        const source = this.resourceManager.volumeManager.getVolume(
-          resource.url,
-        );
-
-        if (source) {
-          dockerVolumes.push({
-            Target: resource.target,
-            Source: source,
-            Type: 'volume',
-            ReadOnly: true,
-          });
-        } else {
-          throw new Error(`Remote resource volume not found: ${resource.url}`);
-        }
-      });
     }
 
     const vars: string[] = [];

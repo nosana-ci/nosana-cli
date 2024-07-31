@@ -23,7 +23,6 @@ export class PodmanProvider extends DockerProvider {
     args: RunContainerArgs,
   ): Promise<Container> {
     let error;
-
     // Incase of error, retry 3 times
     for (let i = 0; i < 3; i++) {
       // Sleep between retries to try and let podman image copying finalise
@@ -34,9 +33,7 @@ export class PodmanProvider extends DockerProvider {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(
-          createPodmanRunOptions(image, args, this.resourceManager),
-        ),
+        body: JSON.stringify(createPodmanRunOptions(image, args)),
       });
 
       // start container
