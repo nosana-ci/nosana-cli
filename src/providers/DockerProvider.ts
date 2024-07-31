@@ -35,6 +35,7 @@ export type RunContainerArgs = {
   volumes?: Array<{
     dest: string;
     name: string;
+    readonly?: boolean;
   }>;
   env?: { [key: string]: string };
   work_dir?: string;
@@ -136,6 +137,29 @@ export class DockerProvider extends BasicProvider implements Provider {
             throw new Error(
               chalk.red(`Cannot pull image ${s3HelperImage}: `) + error,
             );
+          }
+          for (const resource of op.args.remoteResources) {
+            const resourceExists =
+              await this.resourceManager.volumeManager.hasVolume(resource.url);
+            if (resourceExists) continue;
+            const spinner = ora(
+              chalk.cyan(
+                `Fetching remote resource ${chalk.bold(resource.url)}`,
+              ),
+            ).start();
+
+            try {
+              await this.resourceManager.volumeManager.createRemoteVolume(
+                resource,
+              );
+            } catch (err) {
+              throw new Error(
+                chalk.red(`Cannot pull remote resource ${resource.url}:\n`) +
+                  err,
+              );
+            }
+
+            spinner.succeed();
           }
         }
 
@@ -287,34 +311,12 @@ export class DockerProvider extends BasicProvider implements Provider {
     // Get remote resources and attach as volume
     if (opArgs.remoteResources) {
       for (const resource of opArgs.remoteResources) {
-        const resourceExists =
-          await this.resourceManager.volumeManager.hasVolume(resource.url);
-        if (!resourceExists) {
-          const spinner = ora(
-            chalk.cyan(`Fetching remote resource ${chalk.bold(resource.url)}`),
-          ).start();
-
-          try {
-            const volumeName = await this.docker.createRemoteVolume(resource);
-
-            this.resourceManager.volumeManager.setVolume(
-              resource.url,
-              volumeName,
-            );
-            console.log('volumeName', volumeName);
-          } catch (err) {
-            throw new Error(
-              chalk.red(`Cannot pull remote resource ${resource.url}:\n`) + err,
-            );
-          }
-
-          spinner.succeed();
-        }
         volumes.push({
           dest: resource.target,
           name: (await this.resourceManager.volumeManager.getVolume(
             resource.url,
           ))!,
+          readonly: true,
         });
       }
     }
@@ -430,7 +432,7 @@ export class DockerProvider extends BasicProvider implements Provider {
           Target: volume.dest,
           Source: volume.name,
           Type: 'volume',
-          ReadOnly: false,
+          ReadOnly: volume.readonly || false,
         });
       }
     }

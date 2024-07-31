@@ -6,6 +6,7 @@ import { createImageManager } from './images/index.js';
 import { createVolumeManager } from './volumes/index.js';
 import { DockerExtended } from '../../../docker/index.js';
 import { apiClient } from '../../../api/client.js';
+import { RequiredResource, Resource } from '../../../types/resources.js';
 
 export type ResourceManager = {
   resyncResourcesDB: () => Promise<void>;
@@ -17,6 +18,9 @@ export type ResourceManager = {
     getVolume: (resource: string) => string | undefined;
     hasVolume: (resource: string) => Promise<boolean>;
     setVolume: (bucket: string, volume: string) => void;
+    createRemoteVolume: (
+      resource: RequiredResource | Resource,
+    ) => Promise<string>;
   };
 };
 
@@ -67,6 +71,7 @@ export function createResourceManager(
       getVolume: volumeManager.getVolume,
       hasVolume: volumeManager.hasVolume,
       setVolume: volumeManager.setVolume,
+      createRemoteVolume: volumeManager.createRemoteVolume,
     },
   };
 }
