@@ -14,7 +14,7 @@ export type ResourceManager = {
   images: {
     setImage: (image: string) => void;
   };
-  volumeManager: {
+  volumes: {
     getVolume: (resource: string) => string | undefined;
     hasVolume: (resource: string) => Promise<boolean>;
     setVolume: (bucket: string, volume: string) => void;
@@ -66,7 +66,7 @@ export function createResourceManager(
     images: {
       setImage: imageManager.setImage,
     },
-    volumeManager: {
+    volumes: {
       getVolume: volumeManager.getVolume,
       hasVolume: volumeManager.hasVolume,
       setVolume: volumeManager.setVolume,

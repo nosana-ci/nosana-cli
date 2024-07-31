@@ -59,10 +59,6 @@ export class BasicProvider implements Provider {
   );
 
   constructor(configLocation: string) {
-    // Load subModules using JS Factory
-    // this.db = createDB(configLocation);
-
-    // Load subModules using JS Classes
     this.db = new DB(configLocation).db;
   }
 

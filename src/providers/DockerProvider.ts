@@ -139,8 +139,9 @@ export class DockerProvider extends BasicProvider implements Provider {
             );
           }
           for (const resource of op.args.resources) {
-            const resourceExists =
-              await this.resourceManager.volumeManager.hasVolume(resource.url);
+            const resourceExists = await this.resourceManager.volumes.hasVolume(
+              resource.url,
+            );
             if (resourceExists) continue;
             const spinner = ora(
               chalk.cyan(
@@ -149,9 +150,7 @@ export class DockerProvider extends BasicProvider implements Provider {
             ).start();
 
             try {
-              await this.resourceManager.volumeManager.createRemoteVolume(
-                resource,
-              );
+              await this.resourceManager.volumes.createRemoteVolume(resource);
             } catch (err) {
               throw new Error(
                 chalk.red(`Cannot pull remote resource ${resource.url}:\n`) +
@@ -311,11 +310,15 @@ export class DockerProvider extends BasicProvider implements Provider {
     // Get remote resources and attach as volume
     if (opArgs.resources) {
       for (const resource of opArgs.resources) {
+        if (
+          (await this.resourceManager.volumes.hasVolume(resource.url)) === false
+        ) {
+          throw new Error(`Missing required resource ${resource.url}.`);
+        }
+
         volumes.push({
           dest: resource.target,
-          name: (await this.resourceManager.volumeManager.getVolume(
-            resource.url,
-          ))!,
+          name: (await this.resourceManager.volumes.getVolume(resource.url))!,
           readonly: true,
         });
       }
