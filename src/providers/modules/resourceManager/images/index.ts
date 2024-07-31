@@ -40,7 +40,7 @@ export function createImageManager(
           chalk.cyan(`Pulling image ${chalk.bold(image)}`),
         ).start();
         try {
-          await docker.dockerPromisePull(image);
+          await docker.promisePull(image);
         } catch (error: any) {
           throw new Error(chalk.red(`Cannot pull image ${image}: `) + error);
         }

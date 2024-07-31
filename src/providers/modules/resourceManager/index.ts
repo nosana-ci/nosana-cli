@@ -33,8 +33,7 @@ export function createResourceManager(
 
   const resyncResourcesDB = async (): Promise<void> => {
     console.log(chalk.cyan('Syncing Resources'));
-    // TODO: Fix .includes error when using docker provider
-    // await imageManager.resyncImagesDB();
+    await imageManager.resyncImagesDB();
     await volumeManager.resyncResourcesDB();
   };
 

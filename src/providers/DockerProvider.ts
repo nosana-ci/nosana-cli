@@ -691,7 +691,7 @@ export class DockerProvider extends BasicProvider implements Provider {
       }
     }
 
-    await this.docker.dockerPromisePull(image);
+    await this.docker.promisePull(image);
   }
 
   /**

@@ -1,7 +1,7 @@
 import Dockerode from 'dockerode';
 
 export class DockerExtended extends Dockerode {
-  async dockerPromisePull(image: string) {
+  async promisePull(image: string) {
     return await new Promise((resolve, reject): any =>
       this.pull(image, (err: any, stream: any) => {
         if (err) {
