@@ -50,7 +50,7 @@ export interface OperationArgsMap {
     env?: {
       [key: string]: string;
     };
-    remoteResources?: Resource[];
+    resources?: Resource[];
   };
   'container/create-volume': {
     name: string;

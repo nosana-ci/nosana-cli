@@ -13,7 +13,7 @@
         "image": "docker.io/ollama/ollama",
         "gpu": false,
         "expose": 11434,
-        "remoteResources": [
+        "resources": [
           {
             "type": "S3",
             "url": "s3://nosana-llama3.1",
