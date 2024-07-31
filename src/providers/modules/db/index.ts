@@ -37,13 +37,21 @@ export class DB {
     }
 
     fs.mkdirSync(configLocation, { recursive: true });
-
+    const resources = {
+      images: {},
+      volumes: {},
+    };
+    const flows = {};
     this.db = JSONFileSyncPreset<NodeDb>(`${configLocation}/nosana_db.json`, {
-      resources: {
-        images: {},
-        volumes: {},
-      },
-      flows: {},
+      resources,
+      flows,
     });
+    if (!this.db.data.resources) {
+      this.db.data.resources = resources;
+    }
+    if (!this.db.data.flows) {
+      this.db.data.flows = flows;
+    }
+    this.db.write();
   }
 }
