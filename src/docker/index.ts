@@ -33,15 +33,19 @@ export class DockerExtended extends Dockerode {
     let imageWithTag = `${image}${!image.includes(':') ? ':latest' : ''}`;
 
     const possible_options = [
+      imageWithTag,
       `docker.io/${imageWithTag}`,
       `docker.io/library/${imageWithTag}`,
       `registry.hub.docker.com//${imageWithTag}`,
       `registry.hub.docker.com/library/${imageWithTag}`,
     ];
 
-    return savedImages.some(({ RepoTags }, index) => {
-      if (RepoTags && RepoTags.some((tag) => possible_options.includes(tag)))
-        return index;
-    });
+    console.log(imageWithTag);
+    console.log(possible_options);
+
+    return savedImages.some(
+      ({ RepoTags }) =>
+        RepoTags && RepoTags.some((tag) => possible_options.includes(tag)),
+    );
   }
 }
