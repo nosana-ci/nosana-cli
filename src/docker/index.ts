@@ -39,11 +39,9 @@ export class DockerExtended extends Dockerode {
       `registry.hub.docker.com/library/${imageWithTag}`,
     ];
 
-    return (
-      savedImages.findIndex(({ RepoTags }, index) => {
-        if (RepoTags && RepoTags.find((tag) => possible_options.includes(tag)))
-          return index;
-      }) !== -1
-    );
+    return savedImages.some(({ RepoTags }, index) => {
+      if (RepoTags && RepoTags.some((tag) => possible_options.includes(tag)))
+        return index;
+    });
   }
 }
