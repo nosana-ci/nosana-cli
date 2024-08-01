@@ -21,7 +21,7 @@ export class DockerodeMock extends DockerExtended {
       Names,
       Id: '',
       ParentId: '',
-      RepoTags: undefined,
+      RepoTags: Names,
       Created: 0,
       Size: 0,
       VirtualSize: 0,

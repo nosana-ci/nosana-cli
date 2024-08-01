@@ -1,14 +1,10 @@
-import ora from 'ora';
 import chalk from 'chalk';
-import { ImageInfo } from 'dockerode';
 import { LowSync } from 'lowdb/lib';
 
 import { NodeDb } from '../../../BasicProvider.js';
 import { DockerExtended } from '../../../../docker/index.js';
 import { hoursSinceDate } from '../utils/hoursSinceDate.js';
 import Logger from '../../logger/index.js';
-
-type CorrectedImageInfo = ImageInfo & { Names: string[] };
 
 export type ImageManager = {
   setImage: (image: string) => void;
@@ -33,8 +29,6 @@ export function createImageManager(
     required_images: string[],
   ): Promise<void> => {
     market_required_images = required_images;
-    const savedImages = (await docker.listImages()) as CorrectedImageInfo[];
-
     for (const image of market_required_images) {
       if (await docker.hasImage(image)) {
         logger.log(chalk.cyan(`Pulling image ${chalk.bold(image)}`));
