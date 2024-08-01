@@ -22,6 +22,7 @@ export function createVolumeManager(
   docker: DockerExtended,
   logger: Logger,
 ) {
+  let fetched = false;
   let market_required_volumes: RequiredResource[] = [];
 
   /**
@@ -62,17 +63,18 @@ export function createVolumeManager(
   const resyncResourcesDB = async (): Promise<void> => {
     const savedVolumes = (await docker.listVolumes()).Volumes;
 
-    for (const [resource, { volume, lastUsed }] of Object.entries(
-      db.data.resources.volumes,
-    )) {
+    for (const [
+      resource,
+      { volume, lastUsed, market_required },
+    ] of Object.entries(db.data.resources.volumes)) {
       if (!hasDockerVolume(volume, savedVolumes)) {
-        console.log(`deleting volume: ${volume}`);
         delete db.data.resources.volumes[resource];
         continue;
       }
 
       if (
-        market_required_volumes.findIndex((vol) => vol.url === resource) !== -1
+        (!fetched && market_required) ||
+        market_required_volumes.some((vol) => vol.url === resource)
       )
         continue;
 
@@ -158,9 +160,14 @@ export function createVolumeManager(
    * @param bucket
    * @param volume
    */
-  const setVolume = (bucket: string, volume: string): void => {
+  const setVolume = (
+    bucket: string,
+    volume: string,
+    market_required = false,
+  ): void => {
     db.data.resources.volumes[bucket] = {
       volume,
+      market_required,
       lastUsed: new Date(),
       usage: db.data.resources.volumes[bucket]?.usage + 1 || 1,
     };

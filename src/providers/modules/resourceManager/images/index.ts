@@ -23,11 +23,13 @@ export function createImageManager(
   docker: DockerExtended,
   logger: Logger,
 ): ImageManager {
+  let fetched = false;
   let market_required_images: string[] = [];
 
   const pullMarketRequiredImages = async (
     required_images: string[],
   ): Promise<void> => {
+    fetched = true;
     market_required_images = required_images;
     for (const image of market_required_images) {
       if (await docker.hasImage(image)) {
@@ -38,7 +40,7 @@ export function createImageManager(
           throw new Error(chalk.red(`Cannot pull image ${image}: `) + error);
         }
 
-        setImage(image);
+        setImage(image, true);
       }
     }
   };
@@ -48,7 +50,7 @@ export function createImageManager(
    * @returns Promise
    */
   const resyncImagesDB = async (): Promise<void> => {
-    for (const [image, { lastUsed }] of Object.entries(
+    for (const [image, { lastUsed, market_required }] of Object.entries(
       db.data.resources.images,
     )) {
       if (!(await docker.hasImage(image))) {
@@ -56,7 +58,11 @@ export function createImageManager(
         continue;
       }
 
-      if (market_required_images.includes(image)) continue;
+      if (
+        (!fetched && market_required) ||
+        market_required_images.includes(image)
+      )
+        continue;
 
       const hoursSinceLastUsed = hoursSinceDate(new Date(lastUsed));
 
@@ -79,8 +85,9 @@ export function createImageManager(
    * Set image usage data in db
    * @returns
    */
-  const setImage = (image: string): void => {
+  const setImage = (image: string, market_required = false): void => {
     db.data.resources.images[image] = {
+      market_required,
       lastUsed: new Date(),
       usage: db.data.resources.images[image]?.usage + 1 || 1,
     };
