@@ -60,7 +60,6 @@ export function createImageManager(
     for (const [image, { lastUsed }] of Object.entries(
       db.data.resources.images,
     )) {
-      console.log({ image, savedImages });
       if (!hasDockerImage(image, savedImages)) {
         delete db.data.resources.images[image];
         continue;

@@ -34,8 +34,8 @@ export function createResourceManager(
   const volumeManager = createVolumeManager(db, docker, logger);
 
   const resyncResourcesDB = async (): Promise<void> => {
-    console.log(chalk.cyan('Syncing Resources'));
-    // await imageManager.resyncImagesDB();
+    logger.log(chalk.cyan('Syncing Resources'));
+    await imageManager.resyncImagesDB();
     await volumeManager.resyncResourcesDB();
   };
 

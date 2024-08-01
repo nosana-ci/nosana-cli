@@ -8,7 +8,10 @@ export function hasDockerImage(
 ): boolean {
   return (
     savedImages.findIndex(({ Names, Labels }, index) => {
-      if (Names.includes(image) || (Labels !== null && Labels[image]))
+      if (
+        (Names && Names.includes(image)) ||
+        (Labels !== null && Labels[image])
+      )
         return index;
     }) !== -1
   );
