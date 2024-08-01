@@ -40,9 +40,6 @@ export class DockerExtended extends Dockerode {
       `registry.hub.docker.com/library/${imageWithTag}`,
     ];
 
-    console.log(imageWithTag);
-    console.log(possible_options);
-
     return savedImages.some(
       ({ RepoTags }) =>
         RepoTags && RepoTags.some((tag) => possible_options.includes(tag)),

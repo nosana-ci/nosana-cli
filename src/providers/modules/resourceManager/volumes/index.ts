@@ -7,8 +7,9 @@ import { DockerExtended } from '../../../../docker/index.js';
 import { hasDockerVolume } from './helpers/hasDockerVolume.js';
 import { hoursSinceDate } from '../utils/hoursSinceDate.js';
 import { RequiredResource, Resource } from '../../../../types/resources.js';
-import { createS3HelperOpts } from '../../../../docker/definition/s3HelperOpts.js';
+import { createS3HelperOpts } from './definition/s3HelperOpts.js';
 import Logger from '../../logger/index.js';
+import { createRemoteDockerVolume } from './helpers/dockerCreateRemoteVolume.js';
 
 /**
  * Creates Volume Manager Sub-module
@@ -65,6 +66,7 @@ export function createVolumeManager(
       db.data.resources.volumes,
     )) {
       if (!hasDockerVolume(volume, savedVolumes)) {
+        console.log(`deleting volume: ${volume}`);
         delete db.data.resources.volumes[resource];
         continue;
       }
@@ -98,35 +100,19 @@ export function createVolumeManager(
   const createRemoteVolume = async (
     resource: RequiredResource | Resource,
   ): Promise<string> => {
-    // TODO: check again database and volumes to see if it already exists
-    // TODO: if exists we could add a sync feature to ensure it will reflect any changes
+    const savedResource = await getVolume(resource.url);
+
+    if (savedResource) {
+      setVolume(resource.url, savedResource);
+      return savedResource;
+    }
+
+    logger.log(chalk.cyan(`Fetching resource ${chalk.bold(resource.url)}`));
+
     try {
-      // Create the volume// Create the volume
-      let volumeName: string;
-      const response = await docker.createVolume();
-
-      // @ts-ignore **PODMAN returns name not Name**
-      if (response.name) volumeName = response.name;
-      else volumeName = response.Name;
-
-      // Create S3 helper container with the new volume mounted
-      const container = await docker.createContainer(
-        createS3HelperOpts(volumeName, resource),
-      );
-      await container.start();
-
-      // Wait until container has finished fetching
-      const { StatusCode } = await container.wait({ condition: 'not-running' });
-      await container.remove({ force: true });
-
-      // If download failed, remove volume
-      if (StatusCode !== 0) {
-        const volume = await docker.getVolume(volumeName);
-        await volume.remove();
-        throw new Error('Cannot fetch resource.');
-      }
-      setVolume(resource.url, volumeName);
-      return volumeName;
+      const volume = await createRemoteDockerVolume(docker, resource);
+      setVolume(resource.url, volume);
+      return volume;
     } catch (err) {
       throw new Error(`Failed to fetch resource\n${err}`);
     }

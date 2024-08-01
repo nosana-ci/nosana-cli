@@ -24,7 +24,7 @@ import { getSDK } from '../services/sdk.js';
 import { extractResultsFromLogs } from './utils/extractResultsFromLogs.js';
 import { createResourceManager } from './modules/resourceManager/index.js';
 import { DockerExtended } from '../docker/index.js';
-import { s3HelperImage } from '../docker/definition/s3HelperOpts.js';
+import { s3HelperImage } from './modules/resourceManager/volumes/definition/s3HelperOpts.js';
 
 export type RunContainerArgs = {
   name?: string;
@@ -140,16 +140,6 @@ export class DockerProvider extends BasicProvider implements Provider {
             );
           }
           for (const resource of op.args.resources) {
-            const resourceExists = await this.resourceManager.volumes.hasVolume(
-              resource.url,
-            );
-            if (resourceExists) continue;
-
-            this.logger.emit(ProviderEvents.NEW_LOG, {
-              type: 'info',
-              log: chalk.cyan(`Fetching resource ${chalk.bold(resource.url)}`),
-            });
-
             try {
               await this.resourceManager.volumes.createRemoteVolume(resource);
             } catch (err) {

@@ -1,6 +1,10 @@
 import { ContainerCreateOptions } from 'dockerode';
 
-import { RequiredResource, Resource, S3Secure } from '../../types/resources.js';
+import {
+  RequiredResource,
+  Resource,
+  S3Secure,
+} from '../../../../../types/resources.js';
 
 export const s3HelperImage = 'docker.io/matthammond962/s3-helper:0.0.1';
 
