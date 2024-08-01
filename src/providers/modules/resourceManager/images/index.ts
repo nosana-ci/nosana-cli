@@ -4,7 +4,6 @@ import { ImageInfo } from 'dockerode';
 import { LowSync } from 'lowdb/lib';
 
 import { NodeDb } from '../../../BasicProvider.js';
-import { hasDockerImage } from './helpers/hasDockerImage.js';
 import { DockerExtended } from '../../../../docker/index.js';
 import { hoursSinceDate } from '../utils/hoursSinceDate.js';
 import Logger from '../../logger/index.js';
@@ -37,7 +36,7 @@ export function createImageManager(
     const savedImages = (await docker.listImages()) as CorrectedImageInfo[];
 
     for (const image of market_required_images) {
-      if (!hasDockerImage(image, savedImages)) {
+      if (await docker.hasImage(image)) {
         logger.log(chalk.cyan(`Pulling image ${chalk.bold(image)}`));
         try {
           await docker.promisePull(image);
@@ -55,12 +54,11 @@ export function createImageManager(
    * @returns Promise
    */
   const resyncImagesDB = async (): Promise<void> => {
-    const savedImages = (await docker.listImages()) as CorrectedImageInfo[];
-
     for (const [image, { lastUsed }] of Object.entries(
       db.data.resources.images,
     )) {
-      if (!hasDockerImage(image, savedImages)) {
+      if (!(await docker.hasImage(image))) {
+        console.log(`deleting ${image}`);
         delete db.data.resources.images[image];
         continue;
       }

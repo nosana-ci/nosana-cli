@@ -5,6 +5,13 @@ import { JSONFileSyncPreset } from 'lowdb/node';
 
 import { NodeDb } from '../../BasicProvider';
 
+const flows = {};
+
+const resources = {
+  images: {},
+  volumes: {},
+};
+
 export class DB {
   public db: LowSync<NodeDb>;
 
@@ -14,21 +21,19 @@ export class DB {
     }
 
     fs.mkdirSync(configLocation, { recursive: true });
-    const resources = {
-      images: {},
-      volumes: {},
-    };
-    const flows = {};
+
     this.db = JSONFileSyncPreset<NodeDb>(`${configLocation}/nosana_db.json`, {
       resources,
       flows,
     });
+
     if (!this.db.data.resources) {
       this.db.data.resources = resources;
     }
     if (!this.db.data.flows) {
       this.db.data.flows = flows;
     }
+
     this.db.write();
   }
 }

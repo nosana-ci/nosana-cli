@@ -26,4 +26,24 @@ export class DockerExtended extends Dockerode {
       }),
     );
   }
+
+  async hasImage(image: string): Promise<boolean> {
+    const savedImages = await this.listImages();
+
+    let imageWithTag = `${image}${!image.includes(':') ? ':latest' : ''}`;
+
+    const possible_options = [
+      `docker.io/${imageWithTag}`,
+      `docker.io/library/${imageWithTag}`,
+      `registry.hub.docker.com//${imageWithTag}`,
+      `registry.hub.docker.com/library/${imageWithTag}`,
+    ];
+
+    return (
+      savedImages.findIndex(({ RepoTags }, index) => {
+        if (RepoTags && RepoTags.find((tag) => possible_options.includes(tag)))
+          return index;
+      }) !== -1
+    );
+  }
 }

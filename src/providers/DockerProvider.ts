@@ -666,34 +666,15 @@ export class DockerProvider extends BasicProvider implements Provider {
    *   Helpers   *
    ****************/
   protected async pullImage(image: string) {
-    this.logger.emit(ProviderEvents.NEW_LOG, {
-      type: 'info',
-      log: chalk.cyan(`Pulling image ${chalk.bold(image)}`),
-    });
-
-    this.resourceManager.images.setImage(image);
-
-    const images = await this.docker.listImages();
-
-    if (!image.includes(':')) image += ':latest';
-    for (var i = 0, len = images.length; i < len; i++) {
-      if (
-        images[i].RepoTags &&
-        (images[i].RepoTags?.indexOf(image) !== -1 ||
-          images[i].RepoTags?.indexOf('docker.io/library/' + image) !== -1 ||
-          images[i].RepoTags?.indexOf('docker.io/' + image) !== -1 ||
-          images[i].RepoTags?.indexOf(
-            'registry.hub.docker.com/library/' + image,
-          ) !== -1 ||
-          images[i].RepoTags?.indexOf('registry.hub.docker.com/' + image) !==
-            -1)
-      ) {
-        // image in cache
-        return true;
-      }
+    if (await this.docker.hasImage(image)) {
+      return true;
     }
 
+    this.logger.log(chalk.cyan(`Pulling image ${chalk.bold(image)}`));
+
     await this.docker.promisePull(image);
+
+    this.resourceManager.images.setImage(image);
   }
 
   /**
