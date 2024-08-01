@@ -58,7 +58,6 @@ export function createImageManager(
       db.data.resources.images,
     )) {
       if (!(await docker.hasImage(image))) {
-        console.log(`deleting ${image}`);
         delete db.data.resources.images[image];
         continue;
       }
