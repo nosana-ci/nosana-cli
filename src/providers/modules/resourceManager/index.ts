@@ -30,19 +30,27 @@ export function createResourceManager(
   docker: DockerExtended,
   logger: Logger,
 ): ResourceManager {
+  let required_market: string;
   const imageManager = createImageManager(db, docker, logger);
   const volumeManager = createVolumeManager(db, docker, logger);
 
   const resyncResourcesDB = async (): Promise<void> => {
     logger.log(chalk.cyan('Syncing Resources'));
+
     await imageManager.resyncImagesDB();
     await volumeManager.resyncResourcesDB();
+
+    if (required_market) {
+      await fetchMarketRequiredResources(required_market);
+    }
   };
 
   const fetchMarketRequiredResources = async (
     market: string,
   ): Promise<void> => {
     logger.log(chalk.cyan('Fetching latest market resource requirements'));
+
+    required_market = market;
 
     const { data, error } = await apiClient.GET(
       '/api/markets/{id}/required-resources',

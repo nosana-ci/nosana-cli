@@ -32,7 +32,7 @@ export function createImageManager(
     fetched = true;
     market_required_images = required_images;
     for (const image of market_required_images) {
-      if (await docker.hasImage(image)) {
+      if (!(await docker.hasImage(image))) {
         logger.log(chalk.cyan(`Pulling image ${chalk.bold(image)}`));
         try {
           await docker.promisePull(image);
