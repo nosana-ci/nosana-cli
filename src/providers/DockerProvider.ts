@@ -6,7 +6,6 @@ import Docker, {
   Container,
   ContainerCreateOptions,
   MountSettings,
-  MountType,
 } from 'dockerode';
 
 import { BasicProvider } from './BasicProvider.js';
@@ -25,7 +24,7 @@ import { getSDK } from '../services/sdk.js';
 import { extractResultsFromLogs } from './utils/extractResultsFromLogs.js';
 import { createResourceManager } from './modules/resourceManager/index.js';
 import { DockerExtended } from '../docker/index.js';
-import ora from 'ora';
+import { s3HelperImage } from '../docker/definition/s3HelperOpts.js';
 
 export type RunContainerArgs = {
   name?: string;
@@ -73,7 +72,11 @@ export class DockerProvider extends BasicProvider implements Provider {
       protocol: this.protocol as 'https' | 'http' | 'ssh' | undefined,
     });
 
-    this.resourceManager = createResourceManager(this.db, this.docker);
+    this.resourceManager = createResourceManager(
+      this.db,
+      this.docker,
+      this.logger,
+    );
 
     /**
      * Run operation and return results
@@ -129,8 +132,6 @@ export class DockerProvider extends BasicProvider implements Provider {
         }
 
         if (op.args.resources) {
-          const s3HelperImage = 'docker.io/matthammond962/s3-helper';
-
           try {
             await this.pullImage(s3HelperImage);
           } catch (error) {
@@ -143,11 +144,11 @@ export class DockerProvider extends BasicProvider implements Provider {
               resource.url,
             );
             if (resourceExists) continue;
-            const spinner = ora(
-              chalk.cyan(
-                `Fetching remote resource ${chalk.bold(resource.url)}`,
-              ),
-            ).start();
+
+            this.logger.emit(ProviderEvents.NEW_LOG, {
+              type: 'info',
+              log: chalk.cyan(`Fetching resource ${chalk.bold(resource.url)}`),
+            });
 
             try {
               await this.resourceManager.volumes.createRemoteVolume(resource);
@@ -157,8 +158,6 @@ export class DockerProvider extends BasicProvider implements Provider {
                   err,
               );
             }
-
-            spinner.succeed();
           }
         }
 
@@ -198,7 +197,7 @@ export class DockerProvider extends BasicProvider implements Provider {
         (opState) => op.id === opState.operationId,
       );
       const opState = flow.state.opStates[opStateIndex];
-      this.eventEmitter.emit(ProviderEvents.NEW_LOG, {
+      this.logger.emit(ProviderEvents.NEW_LOG, {
         type: 'info',
         log: chalk.cyan(`- Creating volume ${chalk.bold(op.args.name)}`),
       });
@@ -343,7 +342,7 @@ export class DockerProvider extends BasicProvider implements Provider {
       flow.jobDefinition.global && flow.jobDefinition.global.env
         ? flow.jobDefinition.global.env
         : {};
-    this.eventEmitter.emit(ProviderEvents.NEW_LOG, {
+    this.logger.emit(ProviderEvents.NEW_LOG, {
       type: 'info',
       log: chalk.cyan('Starting container'),
     });
@@ -370,7 +369,7 @@ export class DockerProvider extends BasicProvider implements Provider {
       },
     );
     updateOpState({ providerId: container.id });
-    this.eventEmitter.emit(ProviderEvents.NEW_LOG, {
+    this.logger.emit(ProviderEvents.NEW_LOG, {
       type: 'info',
       log: chalk.cyan('Running container ' + container.id),
     });
@@ -393,7 +392,7 @@ export class DockerProvider extends BasicProvider implements Provider {
           FRP_CUSTOM_DOMAIN: flowId + '.' + config.frp.serverAddr,
         },
       });
-      this.eventEmitter.emit(ProviderEvents.NEW_LOG, {
+      this.logger.emit(ProviderEvents.NEW_LOG, {
         type: 'info',
         log: chalk.cyan(
           `Exposing service at ${chalk.bold(
@@ -667,7 +666,7 @@ export class DockerProvider extends BasicProvider implements Provider {
    *   Helpers   *
    ****************/
   protected async pullImage(image: string) {
-    this.eventEmitter.emit(ProviderEvents.NEW_LOG, {
+    this.logger.emit(ProviderEvents.NEW_LOG, {
       type: 'info',
       log: chalk.cyan(`Pulling image ${chalk.bold(image)}`),
     });
@@ -736,13 +735,13 @@ export class DockerProvider extends BasicProvider implements Provider {
     const stderrStream = new stream.PassThrough();
 
     stderrStream.on('data', (chunk: Buffer) => {
-      this.eventEmitter.emit(ProviderEvents.NEW_LOG, {
+      this.logger.emit(ProviderEvents.NEW_LOG, {
         type: 'stderr',
         log: chunk.toString(),
       });
     });
     stdoutStream.on('data', (chunk: Buffer) => {
-      this.eventEmitter.emit(ProviderEvents.NEW_LOG, {
+      this.logger.emit(ProviderEvents.NEW_LOG, {
         type: 'stdout',
         log: chunk.toString(),
       });

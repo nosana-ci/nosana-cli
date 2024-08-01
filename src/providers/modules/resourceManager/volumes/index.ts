@@ -8,6 +8,7 @@ import { hasDockerVolume } from './helpers/hasDockerVolume.js';
 import { hoursSinceDate } from '../utils/hoursSinceDate.js';
 import { RequiredResource, Resource } from '../../../../types/resources.js';
 import { createS3HelperOpts } from '../../../../docker/definition/s3HelperOpts.js';
+import Logger from '../../logger/index.js';
 
 /**
  * Creates Volume Manager Sub-module
@@ -18,6 +19,7 @@ import { createS3HelperOpts } from '../../../../docker/definition/s3HelperOpts.j
 export function createVolumeManager(
   db: LowSync<NodeDb>,
   docker: DockerExtended,
+  logger: Logger,
 ) {
   let market_required_volumes: RequiredResource[] = [];
 
@@ -34,9 +36,9 @@ export function createVolumeManager(
 
     for (const resource of market_required_volumes) {
       if (!savedVolumes[resource.url]) {
-        const spinner = ora(
+        logger.log(
           chalk.cyan(`Fetching remote resource ${chalk.bold(resource.url)}`),
-        ).start();
+        );
 
         try {
           const volumeName = await createRemoteVolume(resource);
@@ -46,8 +48,6 @@ export function createVolumeManager(
             chalk.red(`Cannot pull remote resource ${resource.url}:\n`) + err,
           );
         }
-
-        spinner.succeed();
       }
     }
   };
@@ -81,7 +81,9 @@ export function createVolumeManager(
           await docker.getVolume(volume).remove({ force: true });
           delete db.data.resources.volumes[resource];
         } catch (err) {
-          chalk.red(`Could not remove remote resource: ${resource}.\n${err}`);
+          throw new Error(
+            `Could not remove remote resource: ${resource}.\n${err}`,
+          );
         }
       }
     }

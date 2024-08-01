@@ -16,7 +16,7 @@
         "resources": [
           {
             "type": "S3",
-            "url": "s3://nosana-llama3.1",
+            "url": "s3://nos-ai-models-qllsn32u",
             "target": "/root/.ollama/models"
           }
         ]

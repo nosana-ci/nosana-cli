@@ -7,6 +7,7 @@ import { NodeDb } from '../../../BasicProvider.js';
 import { hasDockerImage } from './helpers/hasDockerImage.js';
 import { DockerExtended } from '../../../../docker/index.js';
 import { hoursSinceDate } from '../utils/hoursSinceDate.js';
+import Logger from '../../logger/index.js';
 
 type CorrectedImageInfo = ImageInfo & { Names: string[] };
 
@@ -25,6 +26,7 @@ export type ImageManager = {
 export function createImageManager(
   db: LowSync<NodeDb>,
   docker: DockerExtended,
+  logger: Logger,
 ): ImageManager {
   let market_required_images: string[] = [];
 
@@ -36,9 +38,7 @@ export function createImageManager(
 
     for (const image of market_required_images) {
       if (!hasDockerImage(image, savedImages)) {
-        const spinner = ora(
-          chalk.cyan(`Pulling image ${chalk.bold(image)}`),
-        ).start();
+        logger.log(chalk.cyan(`Pulling image ${chalk.bold(image)}`));
         try {
           await docker.promisePull(image);
         } catch (error: any) {
@@ -46,7 +46,6 @@ export function createImageManager(
         }
 
         setImage(image);
-        spinner.succeed();
       }
     }
   };
@@ -61,6 +60,7 @@ export function createImageManager(
     for (const [image, { lastUsed }] of Object.entries(
       db.data.resources.images,
     )) {
+      console.log({ image, savedImages });
       if (!hasDockerImage(image, savedImages)) {
         delete db.data.resources.images[image];
         continue;
@@ -75,8 +75,8 @@ export function createImageManager(
           await docker.getImage(image).remove({ force: true });
           delete db.data.resources.images[image];
         } catch (err) {
-          chalk.red(
-            `Could not remove removeDanglingImages image: ${image}. ${err}`,
+          throw new Error(
+            `Could not remove removeDanglingImages image: ${image}.\n${err}`,
           );
         }
       }

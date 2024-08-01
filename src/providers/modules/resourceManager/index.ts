@@ -7,6 +7,7 @@ import { createVolumeManager } from './volumes/index.js';
 import { DockerExtended } from '../../../docker/index.js';
 import { apiClient } from '../../../api/client.js';
 import { RequiredResource, Resource } from '../../../types/resources.js';
+import Logger from '../logger/index.js';
 
 export type ResourceManager = {
   resyncResourcesDB: () => Promise<void>;
@@ -27,20 +28,21 @@ export type ResourceManager = {
 export function createResourceManager(
   db: LowSync<NodeDb>,
   docker: DockerExtended,
+  logger: Logger,
 ): ResourceManager {
-  const imageManager = createImageManager(db, docker);
-  const volumeManager = createVolumeManager(db, docker);
+  const imageManager = createImageManager(db, docker, logger);
+  const volumeManager = createVolumeManager(db, docker, logger);
 
   const resyncResourcesDB = async (): Promise<void> => {
     console.log(chalk.cyan('Syncing Resources'));
-    await imageManager.resyncImagesDB();
+    // await imageManager.resyncImagesDB();
     await volumeManager.resyncResourcesDB();
   };
 
   const fetchMarketRequiredResources = async (
     market: string,
   ): Promise<void> => {
-    console.log(chalk.cyan('Fetching latest market resource requirements'));
+    logger.log(chalk.cyan('Fetching latest market resource requirements'));
 
     const { data, error } = await apiClient.GET(
       '/api/markets/{id}/required-resources',
@@ -57,7 +59,7 @@ export function createResourceManager(
       data.required_remote_resources,
     );
 
-    console.log(chalk.green('Fetched market all required resources'));
+    logger.log(chalk.green('Fetched market all required resources'));
   };
 
   return {
