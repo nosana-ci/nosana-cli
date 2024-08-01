@@ -31,7 +31,7 @@ type Resources = {
 type ResourceHistory = {
   lastUsed: Date;
   usage: number;
-  market_required: boolean;
+  required: boolean;
 };
 
 type VolumeResource = ResourceHistory & {

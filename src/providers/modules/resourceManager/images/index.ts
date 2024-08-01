@@ -40,7 +40,7 @@ export function createImageManager(
           throw new Error(chalk.red(`Cannot pull image ${image}: `) + error);
         }
 
-        setImage(image, true);
+        setImage(image);
       }
     }
   };
@@ -50,7 +50,7 @@ export function createImageManager(
    * @returns Promise
    */
   const resyncImagesDB = async (): Promise<void> => {
-    for (const [image, { lastUsed, market_required }] of Object.entries(
+    for (const [image, { lastUsed, required }] of Object.entries(
       db.data.resources.images,
     )) {
       if (!(await docker.hasImage(image))) {
@@ -58,10 +58,7 @@ export function createImageManager(
         continue;
       }
 
-      if (
-        (!fetched && market_required) ||
-        market_required_images.includes(image)
-      )
+      if ((!fetched && required) || market_required_images.includes(image))
         continue;
 
       const hoursSinceLastUsed = hoursSinceDate(new Date(lastUsed));
@@ -82,12 +79,13 @@ export function createImageManager(
   };
 
   /**
-   * Set image usage data in db
-   * @returns
+   * Sets image in nosana db
+   * @param image
+   * @param required
    */
-  const setImage = (image: string, market_required = false): void => {
+  const setImage = (image: string): void => {
     db.data.resources.images[image] = {
-      market_required,
+      required: market_required_images.includes(image),
       lastUsed: new Date(),
       usage: db.data.resources.images[image]?.usage + 1 || 1,
     };

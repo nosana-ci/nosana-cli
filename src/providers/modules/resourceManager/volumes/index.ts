@@ -1,14 +1,12 @@
 import chalk from 'chalk';
 import { LowSync } from 'lowdb/lib';
-import ora from 'ora';
 
+import Logger from '../../logger/index.js';
 import { NodeDb } from '../../../BasicProvider.js';
 import { DockerExtended } from '../../../../docker/index.js';
 import { hasDockerVolume } from './helpers/hasDockerVolume.js';
 import { hoursSinceDate } from '../utils/hoursSinceDate.js';
 import { RequiredResource, Resource } from '../../../../types/resources.js';
-import { createS3HelperOpts } from './definition/s3HelperOpts.js';
-import Logger from '../../logger/index.js';
 import { createRemoteDockerVolume } from './helpers/dockerCreateRemoteVolume.js';
 
 /**
@@ -63,17 +61,16 @@ export function createVolumeManager(
   const resyncResourcesDB = async (): Promise<void> => {
     const savedVolumes = (await docker.listVolumes()).Volumes;
 
-    for (const [
-      resource,
-      { volume, lastUsed, market_required },
-    ] of Object.entries(db.data.resources.volumes)) {
+    for (const [resource, { volume, lastUsed, required }] of Object.entries(
+      db.data.resources.volumes,
+    )) {
       if (!hasDockerVolume(volume, savedVolumes)) {
         delete db.data.resources.volumes[resource];
         continue;
       }
 
       if (
-        (!fetched && market_required) ||
+        (!fetched && required) ||
         market_required_volumes.some((vol) => vol.url === resource)
       )
         continue;
@@ -160,14 +157,10 @@ export function createVolumeManager(
    * @param bucket
    * @param volume
    */
-  const setVolume = (
-    bucket: string,
-    volume: string,
-    market_required = false,
-  ): void => {
+  const setVolume = (bucket: string, volume: string): void => {
     db.data.resources.volumes[bucket] = {
       volume,
-      market_required,
+      required: market_required_volumes.some((vol) => vol.url === bucket),
       lastUsed: new Date(),
       usage: db.data.resources.volumes[bucket]?.usage + 1 || 1,
     };

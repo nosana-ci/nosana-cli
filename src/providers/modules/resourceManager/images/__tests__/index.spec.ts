@@ -17,10 +17,12 @@ const initial_db_images = {
   'docker.io/ubuntu': {
     lastUsed: new Date('2024-06-08'),
     usage: 1,
+    required: false,
   },
   'registry.hub.docker.com/nosana/stats:v1.0.4': {
     lastUsed: new Date('2024-07-09T14:50:58.800Z'),
     usage: 1,
+    required: true,
   },
 };
 
@@ -57,6 +59,7 @@ describe('createImageManager', () => {
         'registry.hub.docker.com/nosana/stats:v1.0.4': {
           lastUsed: new Date('2024-07-09T14:50:58.800Z'),
           usage: 1,
+          required: true,
         },
       });
 
@@ -104,7 +107,7 @@ describe('createImageManager', () => {
       im.setImage('ubuntu');
 
       expect(mock_db.data.resources.images).toEqual({
-        ubuntu: { lastUsed: new Date('2024-06-10'), usage: 1 },
+        ubuntu: { lastUsed: new Date('2024-06-10'), usage: 1, required: false },
       });
     });
 
@@ -115,13 +118,13 @@ describe('createImageManager', () => {
       );
 
       mock_db.data.resources.images = {
-        ubuntu: { lastUsed: new Date('2024-06-10'), usage: 1 },
+        ubuntu: { lastUsed: new Date('2024-06-10'), usage: 1, required: false },
       };
       mock_db.write();
 
       const im = createImageManager(mock_db, mock_dockerode, mock_logger);
       expect(mock_db.data.resources.images).toEqual({
-        ubuntu: { lastUsed: new Date('2024-06-10'), usage: 1 },
+        ubuntu: { lastUsed: new Date('2024-06-10'), usage: 1, required: false },
       });
 
       jest.useFakeTimers().setSystemTime(new Date('2024-06-11'));
@@ -129,7 +132,7 @@ describe('createImageManager', () => {
       im.setImage('ubuntu');
 
       expect(mock_db.data.resources.images).toEqual({
-        ubuntu: { lastUsed: new Date('2024-06-11'), usage: 2 },
+        ubuntu: { lastUsed: new Date('2024-06-11'), usage: 2, required: false },
       });
     });
   });
