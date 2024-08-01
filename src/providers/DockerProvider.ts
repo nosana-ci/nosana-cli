@@ -667,6 +667,8 @@ export class DockerProvider extends BasicProvider implements Provider {
    ****************/
   protected async pullImage(image: string) {
     if (await this.docker.hasImage(image)) {
+      this.resourceManager.images.setImage(image);
+
       return true;
     }
 
