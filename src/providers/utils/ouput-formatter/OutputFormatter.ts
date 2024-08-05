@@ -77,6 +77,17 @@ export class OutputFormatter {
   }
 }
 
+class OutputFormatterFactory {
+  static createFormatter(format: string): OutputFormatter {
+    switch (format.toLowerCase()) {
+      // add more formats here
+      case 'text':
+      default:
+        return new OutputFormatter(new TextOutputFormatter());
+    }
+  }
+}
+
 /**
  * Singleton pattern to ensure a single instance of OutputFormatter.
  * This function selects the appropriate formatter (JSON or Text) based on the input.
@@ -95,7 +106,7 @@ export const outputFormatSelector = (() => {
 
   return (format: string) => {
     if (!instance) {
-      instance = new OutputFormatter(new TextOutputFormatter());
+      instance = OutputFormatterFactory.createFormatter(format);
     }
     return instance;
   };
