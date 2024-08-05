@@ -15,6 +15,7 @@ import {
 
 import { colors } from '../generic/utils.js';
 import { config as envConfig } from '../generic/config.js';
+import { OptionValues } from "commander";
 
 let nosana: Client;
 let nosBalance: TokenAmount | undefined, solBalance: number;
@@ -24,7 +25,7 @@ export async function setSDK(
   rpc: string | undefined,
   market: string | undefined,
   keyfile: string,
-  airdrop: boolean = false,
+  options: OptionValues,
 ): Promise<Client> {
   const config: ClientConfig = {
     solana: {
@@ -125,7 +126,7 @@ export async function setSDK(
       } NOS${colors.RESET}`,
     );
     if (
-      airdrop &&
+      options.airdrop &&
       network.includes('devnet') &&
       solBalance < 0.01 * LAMPORTS_PER_SOL
       // || !nosBalance ||

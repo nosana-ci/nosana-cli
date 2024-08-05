@@ -20,7 +20,7 @@ export const createNosanaCLI = (version: string) =>
           opts.rpc,
           market,
           opts.wallet,
-          actionCommand.opts().airdrop,
+          actionCommand.opts()
         );
       }
     })
