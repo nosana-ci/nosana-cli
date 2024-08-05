@@ -148,10 +148,8 @@ export const jsonOutputEventHandlers = {
 
     execution.logs = []
 
-    for (let k = 0; k < param.opState.logs.length; k++) {
-      const log = param.opState.logs[k];
+    for (const log of param.opState.logs) {
       const sanitizedLog = log.log.endsWith('\n') ? log.log.slice(0, -1) : log.log;
-
       execution.logs.push(sanitizedLog)
     }
 

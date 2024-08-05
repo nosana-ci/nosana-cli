@@ -187,8 +187,7 @@ export const textOutputEventHandlers = {
       }s${colors.RESET}\n`,
     );
 
-    for (let k = 0; k < param.opState.logs.length; k++) {
-      const log = param.opState.logs[k];
+    for (const log of param.opState.logs) {
       const color = log.type === 'stderr' && param.opState.exitCode ? colors.RED : '';
       const sanitizedLog = log.log.endsWith('\n') ? log.log.slice(0, -1) : log.log;
       console.log(`${color}${sanitizedLog}${colors.RESET}`);
