@@ -5,7 +5,7 @@ import { NodeDb } from '../../BasicProvider.js';
 import { createImageManager } from './images/index.js';
 import { createVolumeManager } from './volumes/index.js';
 import { DockerExtended } from '../../../docker/index.js';
-import { apiClient } from '../../../api/client.js';
+import { clientSelector } from '../../../api/client.js';
 import { RequiredResource, Resource } from '../../../types/resources.js';
 import Logger from '../logger/index.js';
 
@@ -52,7 +52,7 @@ export function createResourceManager(
 
     required_market = market;
 
-    const { data, error } = await apiClient.GET(
+    const { data, error } = await clientSelector().GET(
       '/api/markets/{id}/required-resources',
       { params: { path: { id: market } } },
     );
