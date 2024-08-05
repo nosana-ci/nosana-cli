@@ -1,6 +1,4 @@
-import { JsonOutputFormatter } from "./json/JsonOutputFormatter.js";
 import { OutputEvent } from "./outputEvents.js";
-import { TextOutputFormatter } from "./text/TextOutputFormatter.js";
 
 /**
  * Interface defining the structure for output formatter adapters.
@@ -62,7 +60,6 @@ export class OutputFormatter {
     throw new Error(`An error occurred: ${event}`);
   }
 
-
   /**
    * Finalizes the output, performing any necessary cleanup or final steps.
    * 
@@ -77,40 +74,3 @@ export class OutputFormatter {
     this.format.finalize();
   }
 }
-
-class OutputFormatterFactory {
-  static createFormatter(format: string): OutputFormatter {
-    switch (format.toLowerCase()) {
-      // add more formats here
-      case 'json':
-        return new OutputFormatter(new JsonOutputFormatter());
-      case 'text':
-      default:
-        return new OutputFormatter(new TextOutputFormatter());
-    }
-  }
-}
-
-/**
- * Singleton pattern to ensure a single instance of OutputFormatter.
- * This function selects the appropriate formatter (JSON or Text) based on the input.
- * @param {boolean} json - Flag indicating whether to use JSON formatting. If false, uses Text formatting.
- * @returns {OutputFormatter} - The singleton instance of OutputFormatter.
- * 
- * Usage:
- * 
- * ```typescript
- * // To get a Text formatter
- * const textFormatter = outputFormatSelector();
- * ```
- */
-export const outputFormatSelector = (() => {
-  let instance: OutputFormatter | null = null;
-
-  return (format: string) => {
-    if (!instance) {
-      instance = OutputFormatterFactory.createFormatter(format);
-    }
-    return instance;
-  };
-})();
