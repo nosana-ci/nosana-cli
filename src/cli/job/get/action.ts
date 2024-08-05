@@ -10,6 +10,7 @@ import { clearLine, colors } from '../../../generic/utils.js';
 import { OpState } from '../../../providers/Provider.js';
 import { getSDK } from '../../../services/sdk.js';
 import { waitForJobCompletion } from '../../../services/jobs.js';
+import { outputFormatSelector } from "../../../providers/utils/ouput-formatter/OutputFormatter.js";
 
 export async function getJob(
   jobAddress: string,
@@ -19,6 +20,8 @@ export async function getJob(
   cmd: Command | undefined,
 ): Promise<void> {
   const nosana: Client = getSDK();
+  const formatter = outputFormatSelector(options.format)
+
   let job;
   console.log('retrieving job...');
   try {

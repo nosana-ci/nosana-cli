@@ -14,6 +14,7 @@ import {
   OperationArgsMap,
   validateJobDefinition,
 } from '../../../providers/Provider.js';
+import { outputFormatSelector } from "../../../providers/utils/ouput-formatter/OutputFormatter.js";
 
 export async function run(
   command: Array<string>,
@@ -21,6 +22,8 @@ export async function run(
     [key: string]: any;
   },
 ) {
+  const formatter = outputFormatSelector(options.format)
+  
   if (command.length && options.file) {
     console.error(
       `${colors.YELLOW}WARNING: [command] ignored as file flag is already set${colors.RESET}`,

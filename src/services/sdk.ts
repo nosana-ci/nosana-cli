@@ -16,6 +16,7 @@ import {
 import { colors } from '../generic/utils.js';
 import { config as envConfig } from '../generic/config.js';
 import { OptionValues } from "commander";
+import { outputFormatSelector } from "../providers/utils/ouput-formatter/OutputFormatter.js";
 
 let nosana: Client;
 let nosBalance: TokenAmount | undefined, solBalance: number;
@@ -32,6 +33,8 @@ export async function setSDK(
       priority_fee: 100000,
     },
   };
+  const formatter = outputFormatSelector(options.format)
+
   if (market) config.solana!.market_address = market;
 
   let wallet: Wallet | string | Keypair | Iterable<number> | undefined =
