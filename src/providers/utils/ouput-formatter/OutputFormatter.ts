@@ -1,4 +1,5 @@
 import { OutputEvent } from "./outputEvents.js";
+import { TextOutputFormatter } from "./text/TextOutputFormatter.js";
 
 /**
  * Interface defining the structure for output formatter adapters.
@@ -75,3 +76,27 @@ export class OutputFormatter {
     this.format.finalize();
   }
 }
+
+/**
+ * Singleton pattern to ensure a single instance of OutputFormatter.
+ * This function selects the appropriate formatter (JSON or Text) based on the input.
+ * @param {boolean} json - Flag indicating whether to use JSON formatting. If false, uses Text formatting.
+ * @returns {OutputFormatter} - The singleton instance of OutputFormatter.
+ * 
+ * Usage:
+ * 
+ * ```typescript
+ * // To get a Text formatter
+ * const textFormatter = outputFormatSelector();
+ * ```
+ */
+export const outputFormatSelector = (() => {
+  let instance: OutputFormatter | null = null;
+
+  return (format: string) => {
+    if (!instance) {
+      instance = new OutputFormatter(new TextOutputFormatter());
+    }
+    return instance;
+  };
+})();
