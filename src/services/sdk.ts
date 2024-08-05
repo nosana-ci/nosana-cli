@@ -130,10 +130,10 @@ export async function setSDK(
             `Received airdrop of ${colors.CYAN}1 SOL!${colors.RESET}`,
           );
         } else {
-          throw new Error('Couldnt airdrop tokens to your address');
+          formatter.throw(OUTPUT_EVENTS.OUTPUT_AIRDROP_REQUEST_FAILED_ERROR, {})
         }
       } catch (error) {
-        throw new Error('Couldnt airdrop tokens to your address');
+        formatter.throw(OUTPUT_EVENTS.OUTPUT_AIRDROP_REQUEST_FAILED_ERROR, {})
       }
     }
   }

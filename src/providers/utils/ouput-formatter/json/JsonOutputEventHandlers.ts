@@ -94,6 +94,7 @@ export const jsonOutputEventHandlers = {
 
 
   [OUTPUT_EVENTS.OUTPUT_JOB_POSTED_ERROR]: (response: any, param: any) => {
+    response.isError = true
     response.msg = "Couldn't post job";
     response.errors = [param];
     throw response;
@@ -101,6 +102,7 @@ export const jsonOutputEventHandlers = {
 
 
   [OUTPUT_EVENTS.OUTPUT_SOL_BALANCE_LOW_ERROR]: (response: any, param: any) => {
+    response.isError = true
     response.msg = `Minimum of '0.005' SOL needed: SOL available ${param.sol}`;
     response.errors = [`Minimum of '0.005' SOL needed: SOL available ${param.sol}`];
     throw response;
@@ -108,8 +110,47 @@ export const jsonOutputEventHandlers = {
 
 
   [OUTPUT_EVENTS.OUTPUT_NOS_BALANCE_LOW_ERROR]: (response: any, param: any) => {
+    response.isError = true
     response.msg = `Not enough NOS: NOS available ${param.nosBalance}, NOS needed: ${param.nosNeeded}`;
     response.errors = [`Not enough NOS: NOS available ${param.nosBalance}, NOS needed: ${param.nosNeeded}`];
+    throw response;
+  },
+
+
+  [OUTPUT_EVENTS.OUTPUT_AIRDROP_REQUEST_FAILED_ERROR]: (response: any, param: any) => {
+    response.isError = true
+    response.msg = 'Couldnt airdrop tokens to your address';
+    response.errors = ['Couldnt airdrop tokens to your address'];
+    throw response;
+  },
+
+
+  [OUTPUT_EVENTS.OUTPUT_JOB_NOT_FOUND]: (response: any, param: any) => {
+    response.isError = true
+    response.msg = 'Could not retrieve job';
+    response.errors = [param.error];
+  },
+
+
+  [OUTPUT_EVENTS.OUTPUT_CANNOT_LOG_RESULT]: (response: any, param: any) => {
+    response.isError = true
+    response.msg = 'Cannot log results';
+    response.errors = ['Cannot log results'];
+  },
+
+
+  [OUTPUT_EVENTS.OUTPUT_ARTIFACT_SUPPORT_INCOMING_ERROR]: (response: any, param: any) => {
+    response.isError = true
+    response.msg = 'artifact support coming soon!';
+    response.errors = ['artifact support coming soon!'];
+    throw response;
+  },
+  
+
+  [OUTPUT_EVENTS.OUTPUT_JSON_FLOW_TYPE_NOT_SUPPORTED_ERROR]: (response: any, param: any) => {
+    response.isError = true
+    response.msg = `type ${param.type} not supported yet`;
+    response.errors = [`type ${param.type} not supported yet`];
     throw response;
   },
 

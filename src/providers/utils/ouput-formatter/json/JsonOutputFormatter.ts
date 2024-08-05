@@ -12,6 +12,7 @@ export class JsonOutputFormatter implements OutputFormatterAdapter {
   
     events = Object.keys(OUTPUT_EVENTS).reduce((acc, key) => {
       const eventKey = OUTPUT_EVENTS[key as keyof typeof OUTPUT_EVENTS];
+      this.response.isError = false;
       acc[eventKey] = (param: any) => jsonOutputEventHandlers[eventKey](this.response, param);
       return acc;
     }, {} as { [key in OutputEvent]: (param: any) => void });

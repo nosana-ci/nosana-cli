@@ -137,11 +137,36 @@ export const textOutputEventHandlers = {
   },
 
 
+  [OUTPUT_EVENTS.OUTPUT_AIRDROP_REQUEST_FAILED_ERROR]: (param: any) => {
+    throw new Error('Couldnt airdrop tokens to your address');
+  },
+
+
   [OUTPUT_EVENTS.OUTPUT_JOB_POSTED_ERROR]: (param: any) => {
     console.error(chalk.red("Couldn't post job"));
     throw param;
   },
 
+
+  [OUTPUT_EVENTS.OUTPUT_ARTIFACT_SUPPORT_INCOMING_ERROR]: (param: any) => {
+    throw new Error('artifact support coming soon!');
+  },
+
+
+  [OUTPUT_EVENTS.OUTPUT_JSON_FLOW_TYPE_NOT_SUPPORTED_ERROR]: (param: any) => {
+    throw new Error(`type ${param.type} not supported yet`);
+  },
+
+
+  [OUTPUT_EVENTS.OUTPUT_JOB_NOT_FOUND]: (param: any) => {
+    console.error(`${colors.RED}Could not retrieve job\n${colors.RESET}`, param.error);
+  },
+
+
+  [OUTPUT_EVENTS.OUTPUT_CANNOT_LOG_RESULT]: (param: any) => {
+    console.log(`${colors.RED}Cannot log results${colors.RESET}`);
+  },
+  
 
   [OUTPUT_EVENTS.OUTPUT_NODE_URL]: (param: any) => {
     console.log(

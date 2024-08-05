@@ -57,7 +57,8 @@ export async function run(
         };
         break;
       default:
-        throw new Error(`type ${options.type} not supported yet`);
+       formatter.throw(OUTPUT_EVENTS.OUTPUT_JSON_FLOW_TYPE_NOT_SUPPORTED_ERROR, { type: options.type });
+       throw ''; // syntaxtic throw, the function up already throws
     }
 
     if (options.gpu) {
@@ -69,7 +70,8 @@ export async function run(
   }
   const artifactId = 'artifact-' + randomUUID();
   if (options.output) {
-    throw new Error('artifact support coming soon!');
+    formatter.throw(OUTPUT_EVENTS.OUTPUT_ARTIFACT_SUPPORT_INCOMING_ERROR, {});
+    throw ''; // syntaxtic throw, the function up already throws
     const volumeId = randomUUID() + '-volume';
     const createVolumeOp = {
       op: 'container/create-volume',

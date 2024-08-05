@@ -30,7 +30,7 @@ export async function getJob(
     clearLine();
   } catch (e) {
     clearLine();
-    console.error(`${colors.RED}Could not retrieve job\n${colors.RESET}`, e);
+    formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_NOT_FOUND, { error: e })
   }
 
   if (job) {
@@ -183,7 +183,7 @@ export async function getJob(
           }
         }
       } else {
-        console.log(`${colors.RED}Cannot log results${colors.RESET}`);
+       formatter.output(OUTPUT_EVENTS.OUTPUT_CANNOT_LOG_RESULT, {})
       }
     }
   }
