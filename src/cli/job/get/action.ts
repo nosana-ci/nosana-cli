@@ -11,6 +11,7 @@ import { OpState } from '../../../providers/Provider.js';
 import { getSDK } from '../../../services/sdk.js';
 import { waitForJobCompletion } from '../../../services/jobs.js';
 import { outputFormatSelector } from "../../../providers/utils/ouput-formatter/OutputFormatter.js";
+import { OUTPUT_EVENTS } from "../../../providers/utils/ouput-formatter/outputEvents.js";
 
 export async function getJob(
   jobAddress: string,
@@ -33,29 +34,18 @@ export async function getJob(
   }
 
   if (job) {
-    console.log(
-      `Job:\t\t${colors.BLUE}https://explorer.nosana.io/jobs/${jobAddress}${
-        nosana.solana.config.network.includes('devnet') ? '?network=devnet' : ''
-      }${colors.RESET}`,
-    );
-    console.log(
-      `JSON flow:\t${colors.BLUE}${nosana.ipfs.config.gateway}${job.ipfsJob}${colors.RESET}`,
-    );
-    console.log(
-      `Market:\t\t${colors.BLUE}https://explorer.nosana.io/markets/${
-        job.market
-      }${
-        nosana.solana.config.network.includes('devnet') ? '?network=devnet' : ''
-      }${colors.RESET}`,
-    );
-    console.log(
-      `Price:\t\t${colors.CYAN}${job.price / 1e6} NOS/s${colors.RESET}`,
-    );
-    console.log(
-      `Status:\t\t${job.state === 'COMPLETED' ? colors.GREEN : colors.CYAN}${
-        job.state
-      }${colors.RESET}`,
-    );
+    formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_URL, {job_url: `https://explorer.nosana.io/jobs/${jobAddress}${
+      nosana.solana.config.network.includes('devnet') ? '?network=devnet' : ''
+    }`})
+
+    formatter.output(OUTPUT_EVENTS.OUTPUT_JSON_FLOW_URL, {json_flow_url: `${nosana.ipfs.config.gateway}${job.ipfsJob}`})
+    formatter.output(OUTPUT_EVENTS.OUTPUT_MARKET_URL, {market_url: `https://explorer.nosana.io/markets/${job.market}${
+      nosana.solana.config.network.includes('devnet') ? '?network=devnet' : ''
+    }`})
+
+    formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_PRICE, {price: `${job.price / 1e6}`})
+    formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_STATUS, {status: job.state})
+
     if (
       (options.wait || options.download) &&
       job.state !== 'COMPLETED' &&
@@ -68,76 +58,38 @@ export async function getJob(
     }
 
     if (job.state === 'COMPLETED' || job.state === 'STOPPED') {
-      console.log(
-        `Node:\t\t${colors.BLUE}https://explorer.nosana.io/nodes/${job.node}${
+      formatter.output(OUTPUT_EVENTS.OUTPUT_NODE_URL, {
+        url: `https://explorer.nosana.io/nodes/${job.node}${
           nosana.solana.config.network.includes('devnet')
             ? '?network=devnet'
             : ''
-        }${colors.RESET}`,
-      );
+        }`,
+      });
 
       if (job.timeStart) {
-        console.log(
-          `Start Time:\t${colors.CYAN}${new Date(job.timeStart * 1000)}${
-            colors.RESET
-          }`,
-        );
+        formatter.output(OUTPUT_EVENTS.OUTPUT_START_TIME, {date: new Date(job.timeStart * 1000)})
       }
+
       if (job.timeEnd) {
-        console.log(
-          `Duration:\t${colors.CYAN}${job.timeEnd - job.timeStart} seconds${
-            colors.RESET
-          }`,
-        );
-        console.log(
-          `Total Costs:\t${colors.CYAN}${
-            ((job.timeEnd - job.timeStart) * job.price) / 1e6
-          } NOS${colors.RESET}`,
-        );
+        formatter.output(OUTPUT_EVENTS.OUTPUT_DURATION, {duration: job.timeEnd - job.timeStart})
+        formatter.output(OUTPUT_EVENTS.OUTPUT_TOTAL_COST, { cost: ((job.timeEnd - job.timeStart) * job.price) / 1e6 })
       }
-      console.log(
-        `Status:\t\t${job.state === 'COMPLETED' ? colors.GREEN : colors.CYAN}${
-          job.state
-        }${colors.RESET}`,
-      );
+
+      formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_STATUS, { status: job.state })
     }
 
     if (job.state === 'COMPLETED') {
-      console.log(
-        `Result:\t\t${colors.BLUE}${nosana.ipfs.config.gateway}${job.ipfsResult}${colors.RESET}`,
-      );
+      formatter.output(OUTPUT_EVENTS.OUTPUT_RESULT_URL, {url: `${nosana.ipfs.config.gateway}${job.ipfsResult}`})
 
       const ipfsResult = await nosana.ipfs.retrieve(job.ipfsResult);
-
-      console.log('Logs:');
+      formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_LOG_INTRO, {})
 
       const result = ipfsResult.results;
       if (ipfsResult.opStates) {
         // New result format
         for (let i = 0; i < ipfsResult.opStates.length; i++) {
           const opState: OpState = ipfsResult.opStates[i];
-          console.log(
-            `\n${colors.CYAN}- Executed step ${opState.operationId} in ${
-              (opState.endTime! - opState.startTime!) / 1000
-            }s${colors.RESET}`,
-          );
-          let logString = '';
-          for (let k = 0; k < opState.logs.length; k++) {
-            const log = opState.logs[k];
-            const color =
-              log.type === 'stderr' && opState.exitCode ? colors.RED : '';
-            logString += `${color}${log.log}${colors.RESET}`;
-          }
-          console.log(logString);
-          if (opState.status) {
-            console.log(
-              `${
-                opState.exitCode ? colors.RED : colors.GREEN
-              }Exited with status ${opState.status} with code ${
-                opState.exitCode
-              } ${colors.RESET}`,
-            );
-          }
+          formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_EXECUTION, {opState})
         }
       } else if (result) {
         const jsonFlow = await nosana.ipfs.retrieve(job.ipfsJob);
@@ -236,3 +188,4 @@ export async function getJob(
     }
   }
 }
+
