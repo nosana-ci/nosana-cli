@@ -1,23 +1,28 @@
+import { BalanceLowParam, BalanceParam, CannotLogResultParam, DurationParam, IpfsParam, JobExecutionParam, JobLogIntroParam, JobNotFoundErrorParam, JobPostedErrorParam, JobPostingParam, JobPriceParam, JobStatusParam, JobUrlParam, JsonFlowTypeErrorParam, JsonFlowUrlParam, KeyfileParam, MarketUrlParam, NetworkParam, NodeUrlParam, NosBalanceLowParam, OUTPUT_EVENTS, ResultUrlParam, ServiceUrlParam, StartTimeParam, TotalCostParam, TxParam, ErrorParam, WalletParam } from "../outputEvents.js";
+import { OutputEventParams } from "../outputEvents.js";
 import chalk from "chalk";
 import { colors } from '../../../../generic/utils.js';
-import { OUTPUT_EVENTS } from "../outputEvents.js";
 
-export const textOutputEventHandlers = {
-  [OUTPUT_EVENTS.READ_KEYFILE]: (param: any) => {
+type EventHandler<T extends keyof OutputEventParams> = (param: OutputEventParams[T]) => void;
+
+type OutputEventHandlers = {
+  [K in keyof OutputEventParams]: EventHandler<K>;
+};
+
+export const textOutputEventHandlers: OutputEventHandlers = {
+  [OUTPUT_EVENTS.READ_KEYFILE]: (param: KeyfileParam) => {
     console.log(
       `Reading keypair from ${colors.CYAN}${param.keyfile}${colors.RESET}\n`,
     );
   },
 
-
-  [OUTPUT_EVENTS.CREATE_KEYFILE]: (param: any) => {
+  [OUTPUT_EVENTS.CREATE_KEYFILE]: (param: KeyfileParam) => {
     console.log(
       `Creating new keypair and storing it in ${colors.CYAN}${param.keyfile}${colors.RESET}\n`,
     );
   },
 
-
-  [OUTPUT_EVENTS.OUTPUT_BALANCES]: (param: any) => {
+  [OUTPUT_EVENTS.OUTPUT_BALANCES]: (param: BalanceParam) => {
     console.log(
       `SOL balance:\t${colors.GREEN}${param.sol} SOL${colors.RESET}`,
     );
@@ -26,76 +31,51 @@ export const textOutputEventHandlers = {
     );
   },
 
-
-  [OUTPUT_EVENTS.OUTPUT_NETWORK]: (param: any) => {
+  [OUTPUT_EVENTS.OUTPUT_NETWORK]: (param: NetworkParam) => {
     console.log(`Network:\t${colors.GREEN}${param.network}${colors.RESET}`);
   },
 
-
-  [OUTPUT_EVENTS.OUTPUT_WALLET]: (param: any) => {
+  [OUTPUT_EVENTS.OUTPUT_WALLET]: (param: WalletParam) => {
     console.log(
       `Wallet:\t\t${colors.GREEN}${param.publicKey}${colors.RESET}`,
     );
   },
 
-
-  [OUTPUT_EVENTS.OUTPUT_IPFS_UPLOADED]: (param: any) => {
+  [OUTPUT_EVENTS.OUTPUT_IPFS_UPLOADED]: (param: IpfsParam) => {
     console.log(
       `ipfs uploaded:\t${colors.BLUE}${param.ipfsHash}${colors.RESET}`,
     );
   },
 
-
-  [OUTPUT_EVENTS.OUTPUT_SERVICE_URL]: (param: any) => {
+  [OUTPUT_EVENTS.OUTPUT_SERVICE_URL]: (param: ServiceUrlParam) => {
     console.log(
       chalk.cyan(`Service will be exposed at ${chalk.bold(`${param.url}`)}`),
     );
   },
 
-
-  [OUTPUT_EVENTS.OUTPUT_JOB_URL]: (param: any) => {
+  [OUTPUT_EVENTS.OUTPUT_JOB_URL]: (param: JobUrlParam) => {
     console.log(`Job:\t\t${colors.BLUE}${param.job_url}${colors.RESET}`);
   },
 
-
-  [OUTPUT_EVENTS.OUTPUT_JSON_FLOW_URL]: (param: any) => {
+  [OUTPUT_EVENTS.OUTPUT_JSON_FLOW_URL]: (param: JsonFlowUrlParam) => {
     console.log(
       `JSON flow:\t${colors.BLUE}${param.json_flow_url}${colors.RESET}`,
     );
   },
 
-
-  [OUTPUT_EVENTS.OUTPUT_MARKET_URL]: (param: any) => {
+  [OUTPUT_EVENTS.OUTPUT_MARKET_URL]: (param: MarketUrlParam) => {
     console.log(
       `Market:\t\t${colors.BLUE}${param.market_url}${colors.RESET}`,
     );
   },
 
-
-  [OUTPUT_EVENTS.OUTPUT_JOB_PRICE]: (param: any) => {
+  [OUTPUT_EVENTS.OUTPUT_JOB_PRICE]: (param: JobPriceParam) => {
     console.log(
       `Price:\t\t${colors.CYAN}${param.price} NOS/s${colors.RESET}`,
     );
   },
 
-
-  [OUTPUT_EVENTS.OUTPUT_JOB_STATUS]: (param: any) => {
-    console.log(
-      `Status:\t\t${
-        param.status === 'COMPLETED' ? colors.GREEN : colors.CYAN
-      }${param.status}${colors.RESET}`,
-    );
-  },
-
-
-  [OUTPUT_EVENTS.OUTPUT_JOB_POSTING]: (param: any) => {
-    console.log(
-      `posting job to market ${colors.CYAN}${param.market_address}${colors.RESET} for price ${colors.YELLOW}${param.price} NOS/s${colors.RESET} (total: ${param.total} NOS)`,
-    );
-  },
-
-
-  [OUTPUT_EVENTS.OUTPUT_TOTAL_COST]: (param: any) => {
+  [OUTPUT_EVENTS.OUTPUT_TOTAL_COST]: (param: TotalCostParam) => {
     console.log(
       `Total Costs:\t${colors.CYAN}${
         param.cost
@@ -103,19 +83,35 @@ export const textOutputEventHandlers = {
     );
   },
 
+  [OUTPUT_EVENTS.OUTPUT_JOB_STATUS]: (param: JobStatusParam) => {
+    console.log(
+      `Status:\t\t${
+        param.status === 'COMPLETED' ? colors.GREEN : colors.CYAN
+      }${param.status}${colors.RESET}`,
+    );
+  },
 
-  [OUTPUT_EVENTS.OUTPUT_JOB_POSTED_TX]: (param: any) => {
+  [OUTPUT_EVENTS.OUTPUT_JOB_POSTING]: (param: JobPostingParam) => {
+    console.log(
+      `posting job to market ${colors.CYAN}${param.market_address}${colors.RESET} for price ${colors.YELLOW}${param.price} NOS/s${colors.RESET} (total: ${param.total} NOS)`,
+    );
+  },
+
+  [OUTPUT_EVENTS.OUTPUT_JOB_POSTED_TX]: (param: TxParam) => {
     console.log(`job posted with tx ${chalk.cyan(param.tx)}!`);
   },
 
-
-  [OUTPUT_EVENTS.OUTPUT_JOB_VALIDATION_ERROR]: (param: any) => {
-    console.error(param);
+  [OUTPUT_EVENTS.OUTPUT_JOB_VALIDATION_ERROR]: (param: ErrorParam) => {
+    console.error(param.error);
     throw new Error(chalk.red.bold('Job Definition validation failed'));
   },
 
+  [OUTPUT_EVENTS.OUTPUT_JOB_POSTED_ERROR]: (param: JobPostedErrorParam) => {
+    console.error(chalk.red("Couldn't post job"));
+    throw param;
+  },
 
-  [OUTPUT_EVENTS.OUTPUT_SOL_BALANCE_LOW_ERROR]: (param: any) => {
+  [OUTPUT_EVENTS.OUTPUT_SOL_BALANCE_LOW_ERROR]: (param: BalanceLowParam) => {
     throw new Error(
       chalk.red(
         `Minimum of ${chalk.bold(
@@ -125,8 +121,7 @@ export const textOutputEventHandlers = {
     );
   },
 
-
-  [OUTPUT_EVENTS.OUTPUT_NOS_BALANCE_LOW_ERROR]: (param: any) => {
+  [OUTPUT_EVENTS.OUTPUT_NOS_BALANCE_LOW_ERROR]: (param: NosBalanceLowParam) => {
     throw new Error(
       chalk.red(
         `Not enough NOS: NOS available ${chalk.bold(
@@ -136,46 +131,33 @@ export const textOutputEventHandlers = {
     );
   },
 
-
-  [OUTPUT_EVENTS.OUTPUT_AIRDROP_REQUEST_FAILED_ERROR]: (param: any) => {
+  [OUTPUT_EVENTS.OUTPUT_AIRDROP_REQUEST_FAILED_ERROR]: (param: ErrorParam) => {
     throw new Error('Couldnt airdrop tokens to your address');
   },
 
-
-  [OUTPUT_EVENTS.OUTPUT_JOB_POSTED_ERROR]: (param: any) => {
-    console.error(chalk.red("Couldn't post job"));
-    throw param;
-  },
-
-
-  [OUTPUT_EVENTS.OUTPUT_ARTIFACT_SUPPORT_INCOMING_ERROR]: (param: any) => {
-    throw new Error('artifact support coming soon!');
-  },
-
-
-  [OUTPUT_EVENTS.OUTPUT_JSON_FLOW_TYPE_NOT_SUPPORTED_ERROR]: (param: any) => {
-    throw new Error(`type ${param.type} not supported yet`);
-  },
-
-
-  [OUTPUT_EVENTS.OUTPUT_JOB_NOT_FOUND]: (param: any) => {
+  [OUTPUT_EVENTS.OUTPUT_JOB_NOT_FOUND]: (param: JobNotFoundErrorParam) => {
     console.error(`${colors.RED}Could not retrieve job\n${colors.RESET}`, param.error);
   },
 
-
-  [OUTPUT_EVENTS.OUTPUT_CANNOT_LOG_RESULT]: (param: any) => {
+  [OUTPUT_EVENTS.OUTPUT_CANNOT_LOG_RESULT]: (param: CannotLogResultParam) => {
     console.log(`${colors.RED}Cannot log results${colors.RESET}`);
   },
-  
 
-  [OUTPUT_EVENTS.OUTPUT_NODE_URL]: (param: any) => {
+  [OUTPUT_EVENTS.OUTPUT_ARTIFACT_SUPPORT_INCOMING_ERROR]: (param: ErrorParam) => {
+    throw new Error('artifact support coming soon!');
+  },
+  
+  [OUTPUT_EVENTS.OUTPUT_JSON_FLOW_TYPE_NOT_SUPPORTED_ERROR]: (param: JsonFlowTypeErrorParam) => {
+    throw new Error(`type ${param.type} not supported yet`);
+  },
+
+  [OUTPUT_EVENTS.OUTPUT_NODE_URL]: (param: NodeUrlParam) => {
     console.log(
       `Node:\t\t${colors.BLUE}${param.url}${colors.RESET}`,
     );
   },
 
-
-  [OUTPUT_EVENTS.OUTPUT_DURATION]: (param: any) => {
+  [OUTPUT_EVENTS.OUTPUT_DURATION]: (param: DurationParam) => {
     console.log(
       `Duration:\t${colors.CYAN}${param.duration} seconds${
         colors.RESET
@@ -183,8 +165,7 @@ export const textOutputEventHandlers = {
     );
   },
 
-
-  [OUTPUT_EVENTS.OUTPUT_START_TIME]: (param: any) => {
+  [OUTPUT_EVENTS.OUTPUT_START_TIME]: (param: StartTimeParam) => {
     console.log(
       `Start Time:\t${colors.CYAN}${param.date}${
         colors.RESET
@@ -192,20 +173,17 @@ export const textOutputEventHandlers = {
     );
   },
 
-
-  [OUTPUT_EVENTS.OUTPUT_RESULT_URL]: (param: any) => {
+  [OUTPUT_EVENTS.OUTPUT_RESULT_URL]: (param: ResultUrlParam) => {
     console.log(
       `Result:\t\t${colors.BLUE}${param.url}${colors.RESET}`,
     );
   },
 
-
-  [OUTPUT_EVENTS.OUTPUT_JOB_LOG_INTRO]: (param: any) => {
+  [OUTPUT_EVENTS.OUTPUT_JOB_LOG_INTRO]: (param: JobLogIntroParam) => {
     console.log('Logs:');
   },
 
-  
-  [OUTPUT_EVENTS.OUTPUT_JOB_EXECUTION]: (param: any) => {
+  [OUTPUT_EVENTS.OUTPUT_JOB_EXECUTION]: (param: JobExecutionParam) => {
     console.log(
       `\n${colors.CYAN}- Executed step ${param.opState.operationId} in ${
         (param.opState.endTime! - param.opState.startTime!) / 1000
@@ -214,7 +192,7 @@ export const textOutputEventHandlers = {
 
     for (const log of param.opState.logs) {
       const color = log.type === 'stderr' && param.opState.exitCode ? colors.RED : '';
-      const sanitizedLog = log.log.endsWith('\n') ? log.log.slice(0, -1) : log.log;
+      const sanitizedLog = log.log?.endsWith('\n') ? log.log.slice(0, -1) : log.log ?? '';
       console.log(`${color}${sanitizedLog}${colors.RESET}`);
     }
 

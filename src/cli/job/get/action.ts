@@ -44,7 +44,7 @@ export async function getJob(
     }`})
 
     formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_PRICE, {price: `${job.price / 1e6}`})
-    formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_STATUS, {status: job.state})
+    formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_STATUS, {status: `${job.state}`})
 
     if (
       (options.wait || options.download) &&

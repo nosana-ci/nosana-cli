@@ -70,7 +70,7 @@ export async function run(
   }
   const artifactId = 'artifact-' + randomUUID();
   if (options.output) {
-    formatter.throw(OUTPUT_EVENTS.OUTPUT_ARTIFACT_SUPPORT_INCOMING_ERROR, {});
+    formatter.throw(OUTPUT_EVENTS.OUTPUT_ARTIFACT_SUPPORT_INCOMING_ERROR, { error: new Error()});
     throw ''; // syntaxtic throw, the function up already throws
     const volumeId = randomUUID() + '-volume';
     const createVolumeOp = {
@@ -116,7 +116,7 @@ export async function run(
   const validation: IValidation<JobDefinition> =
     validateJobDefinition(json_flow);
   if (!validation.success) {
-    formatter.throw(OUTPUT_EVENTS.OUTPUT_JOB_VALIDATION_ERROR, validation.errors)
+    formatter.throw(OUTPUT_EVENTS.OUTPUT_JOB_VALIDATION_ERROR, { error: validation.errors })
   }
 
   const ipfsHash = await nosana.ipfs.pin(json_flow);
@@ -141,7 +141,7 @@ export async function run(
     formatter.throw(
       OUTPUT_EVENTS.OUTPUT_NOS_BALANCE_LOW_ERROR, 
       { 
-        nosBalance: nosBalance ? nosBalance.uiAmount?.toFixed(4) : 0,
+        nosBalance: nosBalance?.uiAmount?.toFixed(4) ?? '0',
         nosNeeded: nosNeeded.toFixed(4)
       }
     )
@@ -161,7 +161,7 @@ export async function run(
   try {
     response = await nosana.jobs.list(ipfsHash);
   } catch (e) {
-    formatter.throw(OUTPUT_EVENTS.OUTPUT_JOB_POSTED_ERROR, e)
+    formatter.throw(OUTPUT_EVENTS.OUTPUT_JOB_POSTED_ERROR, {error: e})
     throw e;
   }
 

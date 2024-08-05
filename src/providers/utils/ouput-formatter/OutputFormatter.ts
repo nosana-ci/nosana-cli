@@ -1,4 +1,4 @@
-import { OutputEvent } from "./outputEvents.js";
+import { OutputEvent, OutputEventParams } from "./outputEvents.js";
 
 /**
  * Interface defining the structure for output formatter adapters.
@@ -6,7 +6,7 @@ import { OutputEvent } from "./outputEvents.js";
  * for handling various output events and finalizing the output.
  */
 export interface OutputFormatterAdapter {
-  events: { [key in OutputEvent]: (param: any) => void };
+  events: { [key in OutputEvent]: (param: OutputEventParams[key]) => void };
   finalize(): void;
 }
 
@@ -37,7 +37,7 @@ export class OutputFormatter {
    * formatter.output(OUTPUT_EVENTS.EXAMPLE_OUTPUT, { log: { log: 'Job started\n' } });
    * ```
    */
-  public output(event: OutputEvent, param: any) {
+  public output<T extends OutputEvent>(event: T, param: OutputEventParams[T]) {
     this.format.events[event](param);
   }
 
@@ -55,7 +55,7 @@ export class OutputFormatter {
    * formatter.throw(OUTPUT_EVENTS.EXAMPLE_OUTPUT, { error: 'Invalid job definition' });
    * ```
    */
-  public throw(event: OutputEvent, param: any) {
+  public throw<T extends OutputEvent>(event: T, param: OutputEventParams[T]) {
     this.format.events[event](param);
     throw new Error(`An error occurred: ${event}`);
   }

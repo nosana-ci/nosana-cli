@@ -110,7 +110,7 @@ export async function setSDK(
     nosBalance = await nosana.solana.getNosBalance();
 
     formatter.output(OUTPUT_EVENTS.OUTPUT_WALLET, { publicKey: nosana.solana.wallet.publicKey.toString() })
-    formatter.output(OUTPUT_EVENTS.OUTPUT_BALANCES, { nos:  nosBalance ? nosBalance.uiAmount : 0, sol: solBalance / LAMPORTS_PER_SOL })
+    formatter.output(OUTPUT_EVENTS.OUTPUT_BALANCES, { nos: nosBalance?.uiAmount?.toString() ?? '0', sol: solBalance / LAMPORTS_PER_SOL })
 
     if (
       options.airdrop &&
@@ -130,10 +130,10 @@ export async function setSDK(
             `Received airdrop of ${colors.CYAN}1 SOL!${colors.RESET}`,
           );
         } else {
-          formatter.throw(OUTPUT_EVENTS.OUTPUT_AIRDROP_REQUEST_FAILED_ERROR, {})
+          formatter.throw(OUTPUT_EVENTS.OUTPUT_AIRDROP_REQUEST_FAILED_ERROR, { error: new Error()})
         }
       } catch (error) {
-        formatter.throw(OUTPUT_EVENTS.OUTPUT_AIRDROP_REQUEST_FAILED_ERROR, {})
+        formatter.throw(OUTPUT_EVENTS.OUTPUT_AIRDROP_REQUEST_FAILED_ERROR, { error: new Error() })
       }
     }
   }
