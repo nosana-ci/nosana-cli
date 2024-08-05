@@ -15,6 +15,7 @@ import {
   validateJobDefinition,
 } from '../../../providers/Provider.js';
 import { outputFormatSelector } from "../../../providers/utils/ouput-formatter/OutputFormatter.js";
+import { OUTPUT_EVENTS } from "../../../providers/utils/ouput-formatter/outputEvents.js";
 
 export async function run(
   command: Array<string>,
@@ -22,8 +23,9 @@ export async function run(
     [key: string]: any;
   },
 ) {
+
   const formatter = outputFormatSelector(options.format)
-  
+
   if (command.length && options.file) {
     console.error(
       `${colors.YELLOW}WARNING: [command] ignored as file flag is already set${colors.RESET}`,
@@ -112,31 +114,19 @@ export async function run(
   const validation: IValidation<JobDefinition> =
     validateJobDefinition(json_flow);
   if (!validation.success) {
-    console.error(validation.errors);
-    throw new Error(chalk.red.bold('Job Definition validation failed'));
+    formatter.throw(OUTPUT_EVENTS.OUTPUT_JOB_VALIDATION_ERROR, validation.errors)
   }
 
   const ipfsHash = await nosana.ipfs.pin(json_flow);
-  console.log(
-    `ipfs uploaded:\t${colors.BLUE}${nosana.ipfs.config.gateway + ipfsHash}${
-      colors.RESET
-    }`,
-  );
+  formatter.output(OUTPUT_EVENTS.OUTPUT_IPFS_UPLOADED, { ipfsHash })
+
   const market = await nosana.jobs.getMarket(
     nosana.solana.config.market_address,
   );
 
   const solBalance = getSolBalance();
   if (solBalance < 0.005 * 1e9) {
-    throw new Error(
-      chalk.red(
-        `Minimum of ${chalk.bold(
-          '0.005',
-        )} SOL needed: SOL available ${chalk.bold(
-          (solBalance / 1e9).toFixed(4),
-        )}`,
-      ),
-    );
+    formatter.throw(OUTPUT_EVENTS.OUTPUT_SOL_BALANCE_LOW_ERROR, { sol: (solBalance / 1e9).toFixed(4) })
   }
 
   // @ts-ignore
@@ -146,23 +136,20 @@ export async function run(
     nosNeeded > 0 &&
     (!nosBalance || !nosBalance.uiAmount || nosBalance.uiAmount < nosNeeded)
   ) {
-    throw new Error(
-      chalk.red(
-        `Not enough NOS: NOS available ${chalk.bold(
-          nosBalance ? nosBalance.uiAmount?.toFixed(4) : 0,
-        )}, NOS needed: ${chalk.bold(nosNeeded.toFixed(4))}`,
-      ),
-    );
+    formatter.throw(
+      OUTPUT_EVENTS.OUTPUT_NOS_BALANCE_LOW_ERROR, 
+      { 
+        nosBalance: nosBalance ? nosBalance.uiAmount?.toFixed(4) : 0,
+        nosNeeded: nosNeeded.toFixed(4)
+      }
+    )
   }
 
-  console.log(
-    `posting job to market ${colors.CYAN}${
-      nosana.solana.config.market_address
-    }${colors.RESET} for price ${colors.YELLOW}${
-      // @ts-ignore
-      parseInt(market.jobPrice) / 1e6
-    } NOS/s${colors.RESET} (total: ${nosNeeded.toFixed(4)} NOS)`,
-  );
+  formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_POSTING, {
+    market_address: nosana.solana.config.market_address,
+    price: parseInt(market.jobPrice.toString()) / 1e6,
+    total: nosNeeded.toFixed(4),
+  })
 
   await nosana.jobs.setAccounts();
   if (market.jobPrice == 0) {
@@ -172,10 +159,11 @@ export async function run(
   try {
     response = await nosana.jobs.list(ipfsHash);
   } catch (e) {
-    console.error(chalk.red("Couldn't post job"));
+    formatter.throw(OUTPUT_EVENTS.OUTPUT_JOB_POSTED_ERROR, e)
     throw e;
   }
-  console.log(`job posted with tx ${chalk.cyan(response.tx)}!`);
+
+  formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_POSTED_TX, { tx: response.tx })
   const isExposed =
     json_flow.ops.map(
       (op: Operation<any>) =>
@@ -184,13 +172,7 @@ export async function run(
     ).length > 0;
   await sleep(3);
   if (isExposed) {
-    console.log(
-      chalk.cyan(
-        `Service will be exposed at ${chalk.bold(
-          `https://${response.run}.${config.frp.serverAddr}`,
-        )}`,
-      ),
-    );
+    formatter.output(OUTPUT_EVENTS.OUTPUT_SERVICE_URL, { url: `https://${response.run}.${config.frp.serverAddr}` })
   }
   await getJob(response.job, options, undefined);
 
