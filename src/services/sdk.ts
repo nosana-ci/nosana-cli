@@ -17,6 +17,7 @@ import { colors } from '../generic/utils.js';
 import { config as envConfig } from '../generic/config.js';
 import { OptionValues } from "commander";
 import { outputFormatSelector } from "../providers/utils/ouput-formatter/OutputFormatter.js";
+import { OUTPUT_EVENTS } from "../providers/utils/ouput-formatter/outputEvents.js";
 
 let nosana: Client;
 let nosBalance: TokenAmount | undefined, solBalance: number;
@@ -28,13 +29,14 @@ export async function setSDK(
   keyfile: string,
   options: OptionValues,
 ): Promise<Client> {
+
+  const formatter = outputFormatSelector(options.format)
+
   const config: ClientConfig = {
     solana: {
       priority_fee: 100000,
     },
   };
-  const formatter = outputFormatSelector(options.format)
-
   if (market) config.solana!.market_address = market;
 
   let wallet: Wallet | string | Keypair | Iterable<number> | undefined =
@@ -45,16 +47,11 @@ export async function setSDK(
         keyfile = keyfile.replace('~', os.homedir());
       }
       if (fs.existsSync(keyfile)) {
-        console.log(
-          `Reading keypair from ${colors.CYAN}${keyfile}${colors.RESET}\n`,
-        );
+        formatter.output(OUTPUT_EVENTS.READ_KEYFILE,{ keyfile: keyfile})
         const privateKey = fs.readFileSync(keyfile, 'utf8');
         wallet = privateKey;
       } else {
-        console.log(
-          `Creating new keypair and storing it in ${colors.CYAN}${keyfile}${colors.RESET}\n`,
-        );
-
+        formatter.output(OUTPUT_EVENTS.CREATE_KEYFILE,{ keyfile: keyfile})
         const keypair = Keypair.generate();
         fs.mkdirSync(path.dirname(keyfile), { recursive: true });
         fs.writeFileSync(
@@ -106,28 +103,15 @@ export async function setSDK(
     }
   }
   if (network) {
-    console.log(`Network:\t${colors.GREEN}${network}${colors.RESET}`);
+    formatter.output(OUTPUT_EVENTS.OUTPUT_NETWORK, { network })
   }
   if (keyfile) {
     solBalance = await nosana.solana.getSolBalance();
     nosBalance = await nosana.solana.getNosBalance();
 
-    console.log(
-      `Wallet:\t\t${colors.GREEN}${nosana.solana.wallet.publicKey.toString()}${
-        colors.RESET
-      }`,
-    );
+    formatter.output(OUTPUT_EVENTS.OUTPUT_WALLET, { publicKey: nosana.solana.wallet.publicKey.toString() })
+    formatter.output(OUTPUT_EVENTS.OUTPUT_BALANCES, { nos:  nosBalance ? nosBalance.uiAmount : 0, sol: solBalance / LAMPORTS_PER_SOL })
 
-    console.log(
-      `SOL balance:\t${colors.GREEN}${solBalance / LAMPORTS_PER_SOL} SOL${
-        colors.RESET
-      }`,
-    );
-    console.log(
-      `NOS balance:\t${colors.GREEN}${
-        nosBalance ? nosBalance.uiAmount : 0
-      } NOS${colors.RESET}`,
-    );
     if (
       options.airdrop &&
       network.includes('devnet') &&
