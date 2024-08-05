@@ -10,8 +10,8 @@ import { clearLine, colors } from '../../../generic/utils.js';
 import { OpState } from '../../../providers/Provider.js';
 import { getSDK } from '../../../services/sdk.js';
 import { waitForJobCompletion } from '../../../services/jobs.js';
-import { outputFormatSelector } from "../../../providers/utils/ouput-formatter/OutputFormatter.js";
 import { OUTPUT_EVENTS } from "../../../providers/utils/ouput-formatter/outputEvents.js";
+import { outputFormatSelector } from "../../../providers/utils/ouput-formatter/outputFormatSelector.js";
 
 export async function getJob(
   jobAddress: string,

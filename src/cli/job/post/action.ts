@@ -14,8 +14,8 @@ import {
   OperationArgsMap,
   validateJobDefinition,
 } from '../../../providers/Provider.js';
-import { outputFormatSelector } from "../../../providers/utils/ouput-formatter/OutputFormatter.js";
 import { OUTPUT_EVENTS } from "../../../providers/utils/ouput-formatter/outputEvents.js";
+import { outputFormatSelector } from "../../../providers/utils/ouput-formatter/outputFormatSelector.js";
 
 export async function run(
   command: Array<string>,

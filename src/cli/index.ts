@@ -1,7 +1,7 @@
 import figlet from 'figlet';
 
 import { createNosanaCLI } from './createNosanaCli.js';
-import { outputFormatSelector } from "../providers/utils/ouput-formatter/OutputFormatter.js";
+import { outputFormatSelector } from "../providers/utils/ouput-formatter/outputFormatSelector.js";
 
 export async function startCLI(version: string) {
   const cli = createNosanaCLI(version);

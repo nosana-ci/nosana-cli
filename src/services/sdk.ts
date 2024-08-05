@@ -16,8 +16,8 @@ import {
 import { colors } from '../generic/utils.js';
 import { config as envConfig } from '../generic/config.js';
 import { OptionValues } from "commander";
-import { outputFormatSelector } from "../providers/utils/ouput-formatter/OutputFormatter.js";
 import { OUTPUT_EVENTS } from "../providers/utils/ouput-formatter/outputEvents.js";
+import { outputFormatSelector } from "../providers/utils/ouput-formatter/outputFormatSelector.js";
 
 let nosana: Client;
 let nosBalance: TokenAmount | undefined, solBalance: number;
