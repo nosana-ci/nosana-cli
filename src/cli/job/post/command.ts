@@ -6,6 +6,7 @@ import {
   rpcOption,
   walletOption,
 } from '../../sharedOptions/index.js';
+import { formatOption } from "../../sharedOptions/format.js";
 
 export const postJobCommand = new Command('post')
   .description('Create a job to run by Nosana Runners')
@@ -50,9 +51,5 @@ export const postJobCommand = new Command('post')
       'download external artifacts to specified path  (implies --wait)',
     ),
   )
-  .addOption(
-    new Option('--format <type>', 'show result in the specified format')
-      .choices(['text', 'json'])
-      .default('text')
-  )
+  .addOption(formatOption)
   .action(run);

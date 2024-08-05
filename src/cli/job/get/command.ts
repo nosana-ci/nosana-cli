@@ -2,6 +2,7 @@ import { Command, Option } from 'commander';
 
 import { getJob } from './action.js';
 import { networkOption, rpcOption } from '../../sharedOptions/index.js';
+import { formatOption } from "../../sharedOptions/format.js";
 
 export const getJobCommand = new Command('get')
   .description('Get a job and display result')
@@ -17,9 +18,5 @@ export const getJobCommand = new Command('get')
       'download external artifacts to specified path (implies --wait)',
     ),
   )
-  .addOption(
-    new Option('--format <type>', 'show result in the specified format')
-      .choices(['text', 'json'])
-      .default('text')
-  )
+  .addOption(formatOption)
   .action(getJob);
