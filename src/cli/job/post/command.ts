@@ -50,4 +50,9 @@ export const postJobCommand = new Command('post')
       'download external artifacts to specified path  (implies --wait)',
     ),
   )
+  .addOption(
+    new Option('--format <type>', 'show result in the specified format')
+      .choices(['text', 'json'])
+      .default('text')
+  )
   .action(run);
