@@ -1,0 +1,76 @@
+import { JsonOutputFormatter } from '../JsonOutputFormatter.js';
+import { OUTPUT_EVENTS, OutputEventParams } from '../../outputEvents.js';
+import { jsonOutputEventHandlers } from '../JsonOutputEventHandlers.js';
+
+jest.mock('../JsonOutputEventHandlers', () => {
+  return {
+    jsonOutputEventHandlers: {
+      READ_KEYFILE: jest.fn(),
+      CREATE_KEYFILE: jest.fn(),
+      OUTPUT_JOB_URL: jest.fn(),
+      OUTPUT_JSON_FLOW_URL: jest.fn(),
+      OUTPUT_MARKET_URL: jest.fn(),
+      OUTPUT_JOB_PRICE: jest.fn(),
+      OUTPUT_JOB_STATUS: jest.fn(),
+      OUTPUT_JOB_POSTED_ERROR: jest.fn(),
+      OUTPUT_JOB_POSTING: jest.fn(),
+      OUTPUT_NETWORK: jest.fn(),
+      OUTPUT_BALANCES: jest.fn(),
+      OUTPUT_WALLET: jest.fn(),
+      OUTPUT_IPFS_UPLOADED: jest.fn(),
+      OUTPUT_SERVICE_URL: jest.fn(),
+      OUTPUT_JOB_NOT_FOUND: jest.fn(),
+      OUTPUT_CANNOT_LOG_RESULT: jest.fn(),
+      OUTPUT_JOB_VALIDATION_ERROR: jest.fn(),
+      OUTPUT_ARTIFACT_SUPPORT_INCOMING_ERROR: jest.fn(),
+      OUTPUT_JSON_FLOW_TYPE_NOT_SUPPORTED_ERROR: jest.fn(),
+      OUTPUT_SOL_BALANCE_LOW_ERROR: jest.fn(),
+      OUTPUT_NOS_BALANCE_LOW_ERROR: jest.fn(),
+      OUTPUT_AIRDROP_REQUEST_FAILED_ERROR: jest.fn(),
+      OUTPUT_JOB_POSTED_TX: jest.fn(),
+      OUTPUT_NODE_URL: jest.fn(),
+      OUTPUT_DURATION: jest.fn(),
+      OUTPUT_START_TIME: jest.fn(),
+      OUTPUT_RESULT_URL: jest.fn(),
+      OUTPUT_JOB_EXECUTION: jest.fn(),
+      OUTPUT_RETRIVE_JOB_COMMAND: jest.fn(),
+    },
+  };
+});
+
+describe('JsonOutputFormatter', () => {
+  let formatter: JsonOutputFormatter;
+
+  beforeEach(() => {
+    formatter = new JsonOutputFormatter();
+    jest.clearAllMocks();
+  });
+
+  test('should handle events and call the appropriate event handlers', () => {
+    const param = { keyfile: 'test-keyfile' };
+    const event = OUTPUT_EVENTS.READ_KEYFILE;
+
+    formatter.events[event](param);
+    expect(jsonOutputEventHandlers.READ_KEYFILE).toHaveBeenCalledWith(formatter['response'], param);
+  });
+
+  test('should set isError to false initially', () => {
+    const param = { keyfile: 'test-keyfile' };
+    const event = OUTPUT_EVENTS.READ_KEYFILE;
+
+    formatter.events[event](param);
+    expect(formatter['response'].isError).toBe(false);
+  });
+
+  test('should finalize and print JSON response', () => {
+    console.log = jest.fn();
+    const param = { keyfile: 'test-keyfile' };
+    const event = OUTPUT_EVENTS.READ_KEYFILE;
+
+    formatter.events[event](param);
+    formatter.finalize();
+
+    expect(console.log).toHaveBeenCalledWith('\n');
+    expect(console.log).toHaveBeenCalledWith(JSON.stringify(formatter['response'], null, 2));
+  });
+});

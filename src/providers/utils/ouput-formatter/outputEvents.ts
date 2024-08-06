@@ -19,6 +19,7 @@ import { OpState } from "../../Provider.js";
  * Example:
  * [OUTPUT_EVENTS.OUTPUT_NEW_EVENT]: (param: OutputEventParams) => {},
  * 
+ * Step 5: also add the event to MockOutputFormatterAdapter in test folder so the tests can pass
  */
 
 export const OUTPUT_EVENTS = {

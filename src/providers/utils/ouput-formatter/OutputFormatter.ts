@@ -57,7 +57,6 @@ export class OutputFormatter {
    */
   public throw<T extends OutputEvent>(event: T, param: OutputEventParams[T]) {
     this.format.events[event](param);
-    throw new Error(`An error occurred: ${event}`);
   }
 
   /**

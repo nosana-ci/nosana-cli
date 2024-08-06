@@ -4,7 +4,7 @@ import { TextOutputFormatter } from "./text/TextOutputFormatter.js";
 
 export class OutputFormatterFactory {
     static createFormatter(format: string): OutputFormatter {
-      switch (format.toLowerCase()) {
+      switch (format?.toLowerCase() ?? '') {
         // add more formats here
         case 'json':
           return new OutputFormatter(new JsonOutputFormatter());

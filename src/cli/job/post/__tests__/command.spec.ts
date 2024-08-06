@@ -25,8 +25,8 @@ describe('postJobCommand', () => {
     expect(postJobCommand.args[0]).toBe('run command');
   });
 
-  it('should have 13 options', () => {
-    expect(postJobCommand.options.length).toBe(13);
+  it('should have 14 options', () => {
+    expect(postJobCommand.options.length).toBe(14);
   });
 
   it.each([
@@ -43,6 +43,7 @@ describe('postJobCommand', () => {
     ['--file', '-f', undefined],
     ['--file', '-f', undefined],
     ['--wait', undefined, undefined],
+    ['--format', undefined, 'text'],
     ['--download', undefined, undefined],
   ])('should have %s option', (long, short, defaultValue) => {
     const option = postJobCommand.options.find((i) => i.long === long);
