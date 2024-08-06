@@ -1,29 +1,8 @@
+import '../__mocks__/outputFormatter.mock.js'
 import { JsonOutputFormatter } from "../json/JsonOutputFormatter.js";
 import { OutputFormatter } from "../OutputFormatter.js";
 import { OutputFormatterFactory } from "../OutputFormatterFactory.js";
 import { TextOutputFormatter } from "../text/TextOutputFormatter.js";
-
-jest.mock('../json/JsonOutputFormatter', () => {
-  return {
-    JsonOutputFormatter: jest.fn().mockImplementation(() => {
-      return {
-        events: {},
-        finalize: jest.fn(),
-      };
-    }),
-  };
-});
-
-jest.mock('../text/TextOutputFormatter', () => {
-  return {
-    TextOutputFormatter: jest.fn().mockImplementation(() => {
-      return {
-        events: {},
-        finalize: jest.fn(),
-      };
-    }),
-  };
-});
 
 beforeEach(() => {
   jest.clearAllMocks();
