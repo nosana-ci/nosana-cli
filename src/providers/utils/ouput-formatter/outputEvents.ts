@@ -1,5 +1,26 @@
 import { OpState } from "../../Provider.js";
 
+/**
+ * Adding a new Output/Throw Event
+ * 
+ * Step 1: Add the new event name under OUTPUT_EVENTS
+ * Example:
+ * OUTPUT_NEW_EVENT: 'OUTPUT_NEW_EVENT',
+ * 
+ * Step 2: Define parameter types for the new event
+ * Example:
+ * export type NewEventParam = { data: string };
+ * 
+ * Step 3: Add the new event to OutputEventParams
+ * Example:
+ * [OUTPUT_EVENTS.OUTPUT_NEW_EVENT]: NewEventParam;
+ * 
+ * Step 4: Make implementation for this new event on all OutputFormatterAdapter Handlers, Failure to do this will cause errors
+ * Example:
+ * [OUTPUT_EVENTS.OUTPUT_NEW_EVENT]: (param: OutputEventParams) => {},
+ * 
+ */
+
 export const OUTPUT_EVENTS = {
   READ_KEYFILE: 'READ_KEYFILE',
   CREATE_KEYFILE: 'CREATE_KEYFILE',
@@ -35,7 +56,6 @@ export const OUTPUT_EVENTS = {
 
 export type OutputEvent = (typeof OUTPUT_EVENTS)[keyof typeof OUTPUT_EVENTS];
 
-// Define parameter types
 export type KeyfileParam = { keyfile: string };
 export type BalanceParam = { sol: number; nos: string };
 export type NetworkParam = { network: string };

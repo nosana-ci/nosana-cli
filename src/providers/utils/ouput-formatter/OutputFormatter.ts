@@ -31,7 +31,7 @@ export class OutputFormatter {
    * 
    * ```typescript
    * // To get a JSON formatter
-   * const formatter = outputFormatSelector(true);
+   * const formatter = outputFormatSelector('json');
    * 
    * // To output an event
    * formatter.output(OUTPUT_EVENTS.EXAMPLE_OUTPUT, { log: { log: 'Job started\n' } });

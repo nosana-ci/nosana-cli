@@ -4,7 +4,7 @@ import { OutputFormatterFactory } from "./OutputFormatterFactory.js";
 /**
  * Singleton pattern to ensure a single instance of OutputFormatter.
  * This function selects the appropriate formatter (JSON or Text) based on the input.
- * @param {boolean} json - Flag indicating whether to use JSON formatting. If false, uses Text formatting.
+ * @param {string} format - Options indicating whether to use JSON formatting. If text, uses Text formatting.
  * @returns {OutputFormatter} - The singleton instance of OutputFormatter.
  * 
  * Usage:
