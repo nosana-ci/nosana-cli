@@ -28,9 +28,9 @@ export const OUTPUT_EVENTS = {
   OUTPUT_DURATION: 'OUTPUT_DURATION',
   OUTPUT_START_TIME: 'OUTPUT_START_TIME',
   OUTPUT_RESULT_URL: 'OUTPUT_RESULT_URL',
-  OUTPUT_JOB_LOG_INTRO: 'OUTPUT_JOB_LOG_INTRO',
   OUTPUT_JOB_EXECUTION: 'OUTPUT_JOB_EXECUTION',
   OUTPUT_TOTAL_COST: 'OUTPUT_TOTAL_COST',
+  OUTPUT_RETRIVE_JOB_COMMAND: 'OUTPUT_RETRIVE_JOB_COMMAND',
 } as const;
 
 export type OutputEvent = (typeof OUTPUT_EVENTS)[keyof typeof OUTPUT_EVENTS];
@@ -61,7 +61,7 @@ export type NodeUrlParam = { url: string };
 export type DurationParam = { duration: number };
 export type StartTimeParam = { date: Date };
 export type ResultUrlParam = { url: string };
-export type JobLogIntroParam = {};
+export type RetriveJobCommandParam = { job: string, network: string};
 export type JobExecutionParam = {
   opState: OpState;
 };
@@ -95,6 +95,6 @@ export type OutputEventParams = {
   [OUTPUT_EVENTS.OUTPUT_DURATION]: DurationParam;
   [OUTPUT_EVENTS.OUTPUT_START_TIME]: StartTimeParam;
   [OUTPUT_EVENTS.OUTPUT_RESULT_URL]: ResultUrlParam;
-  [OUTPUT_EVENTS.OUTPUT_JOB_LOG_INTRO]: JobLogIntroParam;
   [OUTPUT_EVENTS.OUTPUT_JOB_EXECUTION]: JobExecutionParam;
+  [OUTPUT_EVENTS.OUTPUT_RETRIVE_JOB_COMMAND]: RetriveJobCommandParam;
 };

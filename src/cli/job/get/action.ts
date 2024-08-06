@@ -82,7 +82,6 @@ export async function getJob(
       formatter.output(OUTPUT_EVENTS.OUTPUT_RESULT_URL, {url: `${nosana.ipfs.config.gateway}${job.ipfsResult}`})
 
       const ipfsResult = await nosana.ipfs.retrieve(job.ipfsResult);
-      formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_LOG_INTRO, {})
 
       const result = ipfsResult.results;
       if (ipfsResult.opStates) {

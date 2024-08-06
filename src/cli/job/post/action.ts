@@ -179,8 +179,6 @@ export async function run(
   await getJob(response.job, options, undefined);
 
   if (!(options.wait || options.download)) {
-    console.log(
-      `\nrun ${colors.CYAN}nosana job get ${response.job} --network ${options.network}${colors.RESET} to retrieve job and result`,
-    );
+    formatter.output(OUTPUT_EVENTS.OUTPUT_RETRIVE_JOB_COMMAND, { job: response.job, network: options.network})
   }
 }

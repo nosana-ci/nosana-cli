@@ -1,4 +1,9 @@
-import { BalanceLowParam, BalanceParam, CannotLogResultParam, DurationParam, IpfsParam, JobExecutionParam, JobLogIntroParam, JobNotFoundErrorParam, JobPostedErrorParam, JobPostingParam, JobPriceParam, JobStatusParam, JobUrlParam, JsonFlowTypeErrorParam, JsonFlowUrlParam, KeyfileParam, MarketUrlParam, NetworkParam, NodeUrlParam, NosBalanceLowParam, OUTPUT_EVENTS, ResultUrlParam, ServiceUrlParam, StartTimeParam, TotalCostParam, TxParam, ErrorParam, WalletParam } from "../outputEvents.js";
+import { 
+  BalanceLowParam, BalanceParam, CannotLogResultParam, DurationParam, IpfsParam, JobExecutionParam, 
+  JobNotFoundErrorParam, JobPostedErrorParam, JobPostingParam, JobPriceParam, JobStatusParam, JobUrlParam, JsonFlowTypeErrorParam, 
+  JsonFlowUrlParam, KeyfileParam, MarketUrlParam, NetworkParam, NodeUrlParam, NosBalanceLowParam, OUTPUT_EVENTS, ResultUrlParam, 
+  ServiceUrlParam, StartTimeParam, TotalCostParam, TxParam, ErrorParam, WalletParam, RetriveJobCommandParam 
+} from "../outputEvents.js";
 import { OutputEventParams } from "../outputEvents.js";
 import chalk from "chalk";
 import { colors } from '../../../../generic/utils.js';
@@ -179,11 +184,15 @@ export const textOutputEventHandlers: OutputEventHandlers = {
     );
   },
 
-  [OUTPUT_EVENTS.OUTPUT_JOB_LOG_INTRO]: (param: JobLogIntroParam) => {
-    console.log('Logs:');
+  [OUTPUT_EVENTS.OUTPUT_RETRIVE_JOB_COMMAND]: (param: RetriveJobCommandParam) => {
+    console.log(
+      `\nrun ${colors.CYAN}nosana job get ${param.job} --network ${param.network}${colors.RESET} to retrieve job and result`,
+    );
   },
 
   [OUTPUT_EVENTS.OUTPUT_JOB_EXECUTION]: (param: JobExecutionParam) => {
+    console.log('Logs:');
+
     console.log(
       `\n${colors.CYAN}- Executed step ${param.opState.operationId} in ${
         (param.opState.endTime! - param.opState.startTime!) / 1000

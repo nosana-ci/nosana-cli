@@ -1,4 +1,9 @@
-import { BalanceLowParam, BalanceParam, CannotLogResultParam, DurationParam, IpfsParam, JobExecutionParam, JobLogIntroParam, JobNotFoundErrorParam, JobPostedErrorParam, JobPostingParam, JobPriceParam, JobStatusParam, JobUrlParam, JsonFlowTypeErrorParam, JsonFlowUrlParam, KeyfileParam, MarketUrlParam, NetworkParam, NodeUrlParam, NosBalanceLowParam, OUTPUT_EVENTS, ResultUrlParam, ServiceUrlParam, StartTimeParam, TotalCostParam, TxParam, ErrorParam, WalletParam } from "../outputEvents.js";
+import { 
+  BalanceLowParam, BalanceParam, CannotLogResultParam, DurationParam, IpfsParam, JobExecutionParam, 
+  JobNotFoundErrorParam, JobPostedErrorParam, JobPostingParam, JobPriceParam, JobStatusParam, JobUrlParam, JsonFlowTypeErrorParam, 
+  JsonFlowUrlParam, KeyfileParam, MarketUrlParam, NetworkParam, NodeUrlParam, NosBalanceLowParam, OUTPUT_EVENTS, ResultUrlParam, 
+  ServiceUrlParam, StartTimeParam, TotalCostParam, TxParam, ErrorParam, WalletParam, RetriveJobCommandParam 
+} from "../outputEvents.js";
 import { OutputEventParams } from "../outputEvents.js";
 
 type EventHandler<T extends keyof OutputEventParams> = (response: any, param: OutputEventParams[T]) => void;
@@ -154,7 +159,7 @@ export const jsonOutputEventHandlers: OutputEventHandlers = {
     response.result_url = param.url;
   },
 
-  [OUTPUT_EVENTS.OUTPUT_JOB_LOG_INTRO]: (response: any, param: JobLogIntroParam) => {},
+  [OUTPUT_EVENTS.OUTPUT_RETRIVE_JOB_COMMAND]: (response: any, param: RetriveJobCommandParam) => {},
 
   [OUTPUT_EVENTS.OUTPUT_JOB_EXECUTION]: (response: any, param: JobExecutionParam) => {
     let execution = {} as {
