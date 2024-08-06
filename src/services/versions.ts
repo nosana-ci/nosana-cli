@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 
-import pkg from '../../package.json';
-import { clientSelector } from '../api/client';
+import pkg from '../../package.json' assert { type: 'json' };
+import { clientSelector } from '../api/client.js';
 
 function requiresNewVersion(required: string, current: string): boolean {
   return parseInt(required) > parseInt(current);
@@ -12,6 +12,9 @@ export async function validateCLIVersion() {
 
   const { data, error } = await client.GET(
     '/api/nodes/minimum-required-version',
+    {
+      parseAs: 'text',
+    },
   );
 
   if (error || typeof data !== 'string') {
@@ -28,7 +31,7 @@ export async function validateCLIVersion() {
   ) {
     console.log(
       chalk.red(
-        'A new version of the Nosana cli has been released. Please update you CLI using npm install @nosana/cli.',
+        'A new version of the Nosana cli has been released. Please update your CLI by running npm install -g @nosana/cli.',
       ),
     );
     process.exit(129);
