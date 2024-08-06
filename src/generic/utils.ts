@@ -1,3 +1,6 @@
+import { Console } from 'console';
+import { Transform } from 'stream';
+
 /**
  * Method to pause the process
  * @param seconds Number of seconds to pause
@@ -33,4 +36,30 @@ const colors = {
 const ifStringCastToArray = (value: string | string[]) =>
   typeof value === 'string' ? [value] : value;
 
-export { now, sleep, clearLine, colors, ifStringCastToArray };
+function logTable(data: any) {
+  if (data && data.length > 0) {
+    const ts = new Transform({
+      transform(chunk, enc, cb) {
+        cb(null, chunk);
+      },
+    });
+    const logger = new Console({ stdout: ts });
+    logger.table(data);
+    const table = (ts.read() || '').toString();
+    let result = '';
+    for (let row of table.split(/[\r\n]+/)) {
+      let r = row.replace(/[^┬]*┬/, '┌');
+      r = r.replace(/^├─*┼/, '├');
+      r = r.replace(/│[^│]*/, '');
+      r = r.replace(/^└─*┴/, '└');
+      r = r.replace(/'/g, ' ');
+      result += `${r}\n`;
+    }
+    console.log(result);
+    clearLine();
+  } else {
+    console.log('[]');
+  }
+}
+
+export { logTable, now, sleep, clearLine, colors, ifStringCastToArray };
