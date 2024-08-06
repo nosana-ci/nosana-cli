@@ -8,8 +8,10 @@ function requiresNewVersion(required: string, current: string): boolean {
 }
 
 export async function validateCLIVersion() {
-  const { data, error } = clientSelector().GET(
-    '/api/nodes/minium-required-version',
+  const client = clientSelector();
+
+  const { data, error } = await client.GET(
+    '/api/nodes/minimum-required-version',
   );
 
   if (error || typeof data !== 'string') {
@@ -29,6 +31,6 @@ export async function validateCLIVersion() {
         'A new version of the Nosana cli has been released. Please update you CLI using npm install @nosana/cli.',
       ),
     );
-    process.exit(1);
+    process.exit(129);
   }
 }
