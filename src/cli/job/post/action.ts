@@ -120,7 +120,7 @@ export async function run(
   }
 
   const ipfsHash = await nosana.ipfs.pin(json_flow);
-  formatter.output(OUTPUT_EVENTS.OUTPUT_IPFS_UPLOADED, { ipfsHash })
+  formatter.output(OUTPUT_EVENTS.OUTPUT_IPFS_UPLOADED, { ipfsHash: `${nosana.ipfs.config.gateway + ipfsHash}` })
 
   const market = await nosana.jobs.getMarket(
     nosana.solana.config.market_address,
