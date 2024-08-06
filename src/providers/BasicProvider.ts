@@ -1,9 +1,5 @@
 import chalk from 'chalk';
-import fs from 'fs';
-import os from 'os';
-import { JSONFileSyncPreset } from 'lowdb/node';
 import { LowSync } from 'lowdb';
-import EventEmitter from 'events';
 import { IValidation } from 'typia';
 import { CronJob } from 'cron';
 
@@ -19,16 +15,27 @@ import {
   ProviderEvents,
 } from './Provider.js';
 import { sleep } from '../generic/utils.js';
+import { DB } from './modules/db/index.js';
+import Logger from './modules/logger/index.js';
 
-type NodeDb = {
+export type NodeDb = {
   flows: { [key: string]: Flow };
-  images: { [key: string]: ImageHistory };
+  resources: Resources;
 };
 
-type ImageHistory = {
-  image: string;
+type Resources = {
+  images: { [key: string]: ResourceHistory };
+  volumes: { [key: string]: VolumeResource };
+};
+
+type ResourceHistory = {
   lastUsed: Date;
   usage: number;
+  required: boolean;
+};
+
+type VolumeResource = ResourceHistory & {
+  volume: string;
 };
 
 type OpFunction = (
@@ -40,7 +47,8 @@ type OpFunction = (
 
 export class BasicProvider implements Provider {
   protected db: LowSync<NodeDb>;
-  protected eventEmitter: EventEmitter = new EventEmitter();
+
+  protected logger: Logger = new Logger();
   protected supportedOps: { [key: string]: OpFunction } = {};
   public clearFlowsCronJob: CronJob = new CronJob(
     '0 */12 * * *', // every 12 hours
@@ -52,16 +60,9 @@ export class BasicProvider implements Provider {
   );
 
   constructor(configLocation: string) {
-    // Create or read database
-    if (configLocation && configLocation[0] === '~') {
-      configLocation = configLocation.replace('~', os.homedir());
-    }
-    fs.mkdirSync(configLocation, { recursive: true });
-    this.db = JSONFileSyncPreset<NodeDb>(`${configLocation}/flows.json`, {
-      flows: {},
-      images: {},
-    });
+    this.db = new DB(configLocation).db;
   }
+
   /**
    * Main run
    * @param jobDefinition
@@ -145,7 +146,7 @@ export class BasicProvider implements Provider {
     const flow = this.db.data.flows[flowId];
     // Allow user to attach to events
     await sleep(0.1);
-    this.eventEmitter.emit(ProviderEvents.NEW_LOG, {
+    this.logger.emit(ProviderEvents.NEW_LOG, {
       type: 'info',
       log: chalk.cyan(`Running flow ${chalk.bold(flowId)}`),
     });
@@ -171,7 +172,7 @@ export class BasicProvider implements Provider {
             }
             opState = await new Promise<OpState>(async (resolve, reject) => {
               // when flow is being stopped, resolve promise
-              this.eventEmitter.on(ProviderEvents.STOP_FLOW, async (id) => {
+              this.logger.on(ProviderEvents.STOP_FLOW, async (id) => {
                 if (id === flowId) {
                   stopFlow = true;
                   // If after 30 second the stopFlowOperation call didn't
@@ -191,7 +192,7 @@ export class BasicProvider implements Provider {
                 }
               });
               try {
-                this.eventEmitter.emit(ProviderEvents.NEW_LOG, {
+                this.logger.emit(ProviderEvents.NEW_LOG, {
                   type: 'info',
                   log: chalk.cyan(`Executing step ${chalk.bold(op.id)}`),
                 });
@@ -206,7 +207,7 @@ export class BasicProvider implements Provider {
                 reject(error);
               }
             });
-            this.eventEmitter.removeAllListeners(ProviderEvents.STOP_FLOW);
+            this.logger.removeAllListeners(ProviderEvents.STOP_FLOW);
           } catch (error: any) {
             updateOpState({
               exitCode: 2,
@@ -223,7 +224,7 @@ export class BasicProvider implements Provider {
               (opState) => opState.operationId === op.id,
             )!.status = 'failed';
             this.db.write();
-            this.eventEmitter.removeAllListeners(ProviderEvents.STOP_FLOW);
+            this.logger.removeAllListeners(ProviderEvents.STOP_FLOW);
             break;
           }
         }
@@ -254,6 +255,14 @@ export class BasicProvider implements Provider {
    */
   public async healthy(throwError: Boolean = true): Promise<Boolean> {
     return true;
+  }
+
+  public async updateMarketRequiredResources(_: string): Promise<void> {
+    return new Promise(() => {
+      throw new Error(
+        'updateMarketRequiredResources is not implamented within the basic provider',
+      );
+    });
   }
 
   public async stopFlowOperation(
@@ -292,14 +301,14 @@ export class BasicProvider implements Provider {
       }
 
       if (logCallback) {
-        this.eventEmitter.on(ProviderEvents.NEW_LOG, (info) => {
+        this.logger.on(ProviderEvents.NEW_LOG, (info) => {
           logCallback(info);
         });
       }
 
-      this.eventEmitter.on(ProviderEvents.FLOW_FINISHED, (flow: Flow) => {
-        this.eventEmitter.removeAllListeners(ProviderEvents.FLOW_FINISHED);
-        this.eventEmitter.removeAllListeners(ProviderEvents.NEW_LOG);
+      this.logger.on(ProviderEvents.FLOW_FINISHED, (flow: Flow) => {
+        this.logger.removeAllListeners(ProviderEvents.FLOW_FINISHED);
+        this.logger.removeAllListeners(ProviderEvents.NEW_LOG);
         resolve(flow ? flow.state : null);
       });
     });
@@ -327,7 +336,7 @@ export class BasicProvider implements Provider {
       flow.state.endTime = Date.now();
       this.db.write();
     }
-    this.eventEmitter.emit(ProviderEvents.FLOW_FINISHED, flow);
+    this.logger.emit(ProviderEvents.FLOW_FINISHED, flow);
   }
 
   public async clearFlow(flowId: string): Promise<void> {
@@ -335,7 +344,7 @@ export class BasicProvider implements Provider {
     this.db.write();
   }
   public async stopFlow(flowId: string): Promise<void> {
-    this.eventEmitter.emit(ProviderEvents.STOP_FLOW, flowId);
+    this.logger.emit(ProviderEvents.STOP_FLOW, flowId);
   }
 
   public async clearOldFlows(): Promise<void> {
