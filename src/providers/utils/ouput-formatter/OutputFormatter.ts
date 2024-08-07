@@ -6,8 +6,8 @@ import { OutputEvent, OutputEventParams } from "./outputEvents.js";
  * for handling various output events and finalizing the output.
  */
 export interface OutputFormatterAdapter {
-  events: { [key in OutputEvent]: (param: OutputEventParams[key]) => void };
   finalize(): void;
+  output<T extends keyof OutputEventParams>(event: T, param: OutputEventParams[T]): void;
 }
 
 /**
@@ -38,7 +38,7 @@ export class OutputFormatter {
    * ```
    */
   public output<T extends OutputEvent>(event: T, param: OutputEventParams[T]) {
-    this.format.events[event](param);
+    this.format.output(event, param);
   }
 
   /**
@@ -56,7 +56,7 @@ export class OutputFormatter {
    * ```
    */
   public throw<T extends OutputEvent>(event: T, param: OutputEventParams[T]) {
-    this.format.events[event](param);
+    this.format.output(event, param);
   }
 
   /**

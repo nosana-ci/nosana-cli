@@ -1,6 +1,6 @@
 import outputEventsMock from "../../__mocks__/outputEvents.mock.js";
 import { TextOutputFormatter } from '../TextOutputFormatter.js';
-import { OUTPUT_EVENTS, OutputEvent } from '../../outputEvents.js';
+import { OUTPUT_EVENTS } from '../../outputEvents.js';
 import { textOutputEventHandlers } from '../TextOutputEventHandlers.js';
 
 jest.mock('../TextOutputEventHandlers', () => {
@@ -21,7 +21,7 @@ describe('TextOutputFormatter', () => {
     const param = { keyfile: 'test-keyfile' };
     const event = OUTPUT_EVENTS.READ_KEYFILE;
 
-    formatter.events[event](param);
+    formatter.output(event, param);
     expect(textOutputEventHandlers.READ_KEYFILE).toHaveBeenCalledWith(param);
   });
 

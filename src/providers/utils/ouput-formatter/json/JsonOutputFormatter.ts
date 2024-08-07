@@ -1,4 +1,4 @@
-import { OUTPUT_EVENTS, OutputEvent } from "../outputEvents.js";
+import { OutputEvent, OutputEventParams } from "../outputEvents.js";
 import { OutputFormatterAdapter } from "../OutputFormatter.js";
 import { jsonOutputEventHandlers } from "./JsonOutputEventHandlers.js";
 
@@ -10,11 +10,9 @@ export class JsonOutputFormatter implements OutputFormatterAdapter {
       console.log('\n');
       console.log(JSON.stringify(this.response, null, 2));
     }
-  
-    events = Object.keys(OUTPUT_EVENTS).reduce((acc, key) => {
-      const eventKey = OUTPUT_EVENTS[key as keyof typeof OUTPUT_EVENTS];
+
+    output<T extends OutputEvent>(event: T, param: OutputEventParams[T]) {
       this.response.isError = false;
-      acc[eventKey] = (param: any) => jsonOutputEventHandlers[eventKey](this.response, param);
-      return acc;
-    }, {} as { [key in OutputEvent]: (param: any) => void });
+      jsonOutputEventHandlers[event](this.response, param);
+    }
   }

@@ -21,7 +21,7 @@ describe('JsonOutputFormatter', () => {
     const param = { keyfile: 'test-keyfile' };
     const event = OUTPUT_EVENTS.READ_KEYFILE;
 
-    formatter.events[event](param);
+    formatter.output(event, param);
     expect(jsonOutputEventHandlers.READ_KEYFILE).toHaveBeenCalledWith(formatter['response'], param);
   });
 
@@ -29,7 +29,7 @@ describe('JsonOutputFormatter', () => {
     const param = { keyfile: 'test-keyfile' };
     const event = OUTPUT_EVENTS.READ_KEYFILE;
 
-    formatter.events[event](param);
+    formatter.output(event, param);
     expect(formatter['response'].isError).toBe(false);
   });
 
@@ -38,7 +38,7 @@ describe('JsonOutputFormatter', () => {
     const param = { keyfile: 'test-keyfile' };
     const event = OUTPUT_EVENTS.READ_KEYFILE;
 
-    formatter.events[event](param);
+    formatter.output(event, param);
     formatter.finalize();
 
     expect(console.log).toHaveBeenCalledWith('\n');
