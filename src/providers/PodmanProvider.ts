@@ -1,6 +1,7 @@
-import { DockerProvider, type RunContainerArgs } from './DockerProvider.js';
-import { ifStringCastToArray } from '../generic/utils.js';
 import { Container } from 'dockerode';
+
+import { createPodmanRunOptions } from './utils/createPodmanRunOptions.js';
+import { DockerProvider, type RunContainerArgs } from './DockerProvider.js';
 
 export class PodmanProvider extends DockerProvider {
   private apiUrl: string;
@@ -10,73 +11,55 @@ export class PodmanProvider extends DockerProvider {
     this.apiUrl = `${this.protocol}://${this.host}:${this.port}/v4.5.0/libpod`;
   }
 
-  // Docker API is not compatible when creating/starting a container with GPU support
-  // in podman. Therefore we use the libpod API to create and start the container.
+  /**
+   * Docker API is not compatible when creating/starting a container with GPU support
+   * in podman. Therefore we use the libpod API to create and start the container.
+   * @param image string
+   * @param args RunContainerArgs
+   * @returns Promise Container
+   */
   public async runContainer(
     image: string,
-    {
-      name,
-      networks,
-      cmd,
-      gpu,
-      volumes,
-      env,
-      work_dir,
-      entrypoint,
-    }: RunContainerArgs,
+    args: RunContainerArgs,
   ): Promise<Container> {
-    const devices = gpu
-      ? [
-          {
-            path: 'nvidia.com/gpu=all',
-          },
-        ]
-      : [];
+    let error;
+    // Incase of error, retry 3 times
+    for (let i = 0; i < 3; i++) {
+      // Sleep between retries to try and let podman image copying finalise
+      await new Promise((res) => setTimeout(res, 3000 * i));
 
-    const options = {
-      image,
-      name,
-      command: cmd,
-      volumes,
-      ...(entrypoint
-        ? { entrypoint: ifStringCastToArray(entrypoint) }
-        : undefined),
-      env,
-      devices,
-      netns: { nsmode: 'bridge' },
-      Networks: networks,
-      create_working_dir: true,
-      cgroups_mode: 'disabled',
-      work_dir,
-    };
-    // create container
-    const create = await fetch(`${this.apiUrl}/containers/create`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(options),
-    });
-
-    // start container
-    if (create.status === 201) {
-      const createResult = await create.json();
-
-      const start = await fetch(
-        `${this.apiUrl}/containers/${createResult.Id}/start`,
-        {
-          method: 'POST',
+      const create = await fetch(`${this.apiUrl}/containers/create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      );
-      if (start.status === 204) {
-        const container = this.docker.getContainer(createResult.Id);
-        return container;
-      } else {
-        throw new Error(
-          'Cannot start container: ' + (await start.json()).message,
+        body: JSON.stringify(createPodmanRunOptions(image, args)),
+      });
+
+      // start container
+      if (create.status === 201) {
+        const createResult = await create.json();
+
+        const start = await fetch(
+          `${this.apiUrl}/containers/${createResult.Id}/start`,
+          {
+            method: 'POST',
+          },
         );
+        if (start.status === 204) {
+          const container = this.docker.getContainer(createResult.Id);
+          return container;
+        } else {
+          throw new Error(
+            'Cannot start container: ' + (await start.json()).message,
+          );
+        }
       }
+
+      error = await create.json();
+      if (error.message !== `${image}: image not known`) break;
     }
-    throw new Error('Cannot create container' + (await create.json()).message);
+
+    throw new Error('Cannot create container: ' + error.message);
   }
 }

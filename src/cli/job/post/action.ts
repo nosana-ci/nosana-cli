@@ -16,6 +16,8 @@ import {
 } from '../../../providers/Provider.js';
 import { OUTPUT_EVENTS } from "../../../providers/utils/ouput-formatter/outputEvents.js";
 import { outputFormatSelector } from "../../../providers/utils/ouput-formatter/outputFormatSelector.js";
+import { clientSelector } from '../../../api/client.js';
+import { PublicKey } from '@solana/web3.js';
 
 export async function run(
   command: Array<string>,
@@ -122,6 +124,31 @@ export async function run(
   const ipfsHash = await nosana.ipfs.pin(json_flow);
   formatter.output(OUTPUT_EVENTS.OUTPUT_IPFS_UPLOADED, { ipfsHash: `${nosana.ipfs.config.gateway + ipfsHash}` })
 
+  // check if market is slug or address
+  let type: 'slug' | 'address';
+  try {
+    const regex = new RegExp(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/);
+    if (
+      new PublicKey(nosana.solana.config.market_address) &&
+      nosana.solana.config.market_address.match(regex)
+    ) {
+      type = 'address';
+    } else {
+      type = 'slug';
+    }
+  } catch (e) {
+    type = 'slug';
+  }
+  if (type === 'slug') {
+    const { data: marketResponse, error } = await clientSelector().GET(
+      '/api/markets/{id}/',
+      {
+        params: { path: { id: nosana.solana.config.market_address } },
+      },
+    );
+    if (error) throw new Error(`Failed to fetch market \n${error.message}`);
+    nosana.solana.config.market_address = marketResponse.address;
+  }
   const market = await nosana.jobs.getMarket(
     nosana.solana.config.market_address,
   );

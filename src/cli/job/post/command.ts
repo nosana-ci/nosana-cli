@@ -28,9 +28,10 @@ export const postJobCommand = new Command('post')
     ),
   )
   .addOption(
-    new Option('-m, --market <market>', 'market to use').makeOptionMandatory(
-      true,
-    ),
+    new Option(
+      '-m, --market <market>',
+      'market slug or address',
+    ).makeOptionMandatory(true),
   )
   .addOption(walletOption)
   .addOption(
