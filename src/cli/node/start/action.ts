@@ -359,6 +359,8 @@ export async function startNode(
     spinner.succeed('Got access key for market: ' + market);
   }
 
+  await provider.updateMarketRequiredResources(market);
+
   let marketAccount: Market;
   try {
     spinner = ora(chalk.cyan('Retrieving market')).start();

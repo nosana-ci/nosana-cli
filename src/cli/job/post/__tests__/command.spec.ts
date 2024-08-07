@@ -8,7 +8,7 @@ jest.mock('../action', () => ({
 
 describe('postJobCommand', () => {
   const mock_run_action = jest.fn();
-  const parseArgs = ['node', 'get', 'run command'];
+  const parseArgs = ['node', 'post', '-m id', 'run command'];
 
   beforeEach(() => {
     mock_run_action.mockReset();

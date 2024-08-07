@@ -2,6 +2,8 @@
 import { CronJob } from 'cron';
 import typia from 'typia';
 
+import { Resource } from '../types/resources.js';
+
 /************************
  * Job Definition Types *
  ************************/
@@ -48,6 +50,7 @@ export interface OperationArgsMap {
     env?: {
       [key: string]: string;
     };
+    resources?: Resource[];
   };
   'container/create-volume': {
     name: string;
@@ -127,4 +130,5 @@ export abstract class Provider {
   ): Promise<FlowState | null>;
   abstract clearOldFlows(): Promise<void>;
   public clearFlowsCronJob?: CronJob;
+  abstract updateMarketRequiredResources(market: string): Promise<void>;
 }

@@ -1,6 +1,12 @@
 import chalk from 'chalk';
 import stream from 'stream';
 import { parse } from 'shell-quote';
+import { sleep } from '@nosana/sdk';
+import Docker, {
+  Container,
+  ContainerCreateOptions,
+  MountSettings,
+} from 'dockerode';
 
 import { BasicProvider } from './BasicProvider.js';
 import {
@@ -14,14 +20,12 @@ import {
   Log,
   OperationType,
 } from './Provider.js';
-import Docker, {
-  Container,
-  ContainerCreateOptions,
-  MountType,
-} from 'dockerode';
+import { config } from '../generic/config.js';
 import { getSDK } from '../services/sdk.js';
 import { extractResultsFromLogs } from './utils/extractResultsFromLogs.js';
-import { config } from '../generic/config.js';
+import { createResourceManager } from './modules/resourceManager/index.js';
+import { DockerExtended } from '../docker/index.js';
+import { s3HelperImage } from './modules/resourceManager/volumes/definition/s3HelperOpts.js';
 
 export type RunContainerArgs = {
   name?: string;
@@ -31,6 +35,7 @@ export type RunContainerArgs = {
   volumes?: Array<{
     dest: string;
     name: string;
+    readonly?: boolean;
   }>;
   env?: { [key: string]: string };
   work_dir?: string;
@@ -38,7 +43,8 @@ export type RunContainerArgs = {
 };
 
 export class DockerProvider extends BasicProvider implements Provider {
-  protected docker: Docker;
+  protected docker: DockerExtended;
+  protected resourceManager;
   protected host: string;
   protected port: string;
   protected protocol: string;
@@ -61,11 +67,17 @@ export class DockerProvider extends BasicProvider implements Provider {
     this.host = serverUri.hostname;
     this.port = serverUri.port;
     this.protocol = protocol;
-    this.docker = new Docker({
+    this.docker = new DockerExtended({
       host: this.host,
       port: this.port,
       protocol: this.protocol as 'https' | 'http' | 'ssh' | undefined,
     });
+
+    this.resourceManager = createResourceManager(
+      this.db,
+      this.docker,
+      this.logger,
+    );
 
     /**
      * Run operation and return results
@@ -120,6 +132,29 @@ export class DockerProvider extends BasicProvider implements Provider {
           }
         }
 
+        if (op.args.resources) {
+          try {
+            await this.pullImage(s3HelperImage);
+          } catch (error) {
+            throw new Error(
+              chalk.red(`Cannot pull image ${s3HelperImage}: `) + error,
+            );
+          }
+          for (const resource of op.args.resources) {
+            try {
+              await this.resourceManager.volumes.createRemoteVolume(resource);
+            } catch (err) {
+              throw new Error(
+                chalk.red(`Cannot pull remote resource ${resource.url}:\n`) +
+                  err,
+              );
+            }
+          }
+        }
+
+        // Allow file locks to reset - hopefully will reduce image not known issue
+        await sleep(3);
+
         container = await this.runOpContainerRun(
           op.args,
           flowId,
@@ -153,7 +188,7 @@ export class DockerProvider extends BasicProvider implements Provider {
         (opState) => op.id === opState.operationId,
       );
       const opState = flow.state.opStates[opStateIndex];
-      this.eventEmitter.emit(ProviderEvents.NEW_LOG, {
+      this.logger.emit(ProviderEvents.NEW_LOG, {
         type: 'info',
         log: chalk.cyan(`- Creating volume ${chalk.bold(op.args.name)}`),
       });
@@ -203,6 +238,7 @@ export class DockerProvider extends BasicProvider implements Provider {
     try {
       const info = await this.docker.info();
       if (typeof info === 'object' && info !== null && info.ID) {
+        await this.resourceManager.resyncResourcesDB();
         return true;
       } else {
         if (throwError) {
@@ -261,6 +297,23 @@ export class DockerProvider extends BasicProvider implements Provider {
       }
     }
 
+    // Get remote resources and attach as volume
+    if (opArgs.resources) {
+      for (const resource of opArgs.resources) {
+        if (
+          (await this.resourceManager.volumes.hasVolume(resource.url)) === false
+        ) {
+          throw new Error(`Missing required resource ${resource.url}.`);
+        }
+
+        volumes.push({
+          dest: resource.target,
+          name: (await this.resourceManager.volumes.getVolume(resource.url))!,
+          readonly: true,
+        });
+      }
+    }
+
     // check for global & local options
     const work_dir =
       opArgs.work_dir ||
@@ -280,7 +333,7 @@ export class DockerProvider extends BasicProvider implements Provider {
       flow.jobDefinition.global && flow.jobDefinition.global.env
         ? flow.jobDefinition.global.env
         : {};
-    this.eventEmitter.emit(ProviderEvents.NEW_LOG, {
+    this.logger.emit(ProviderEvents.NEW_LOG, {
       type: 'info',
       log: chalk.cyan('Starting container'),
     });
@@ -307,7 +360,7 @@ export class DockerProvider extends BasicProvider implements Provider {
       },
     );
     updateOpState({ providerId: container.id });
-    this.eventEmitter.emit(ProviderEvents.NEW_LOG, {
+    this.logger.emit(ProviderEvents.NEW_LOG, {
       type: 'info',
       log: chalk.cyan('Running container ' + container.id),
     });
@@ -330,7 +383,7 @@ export class DockerProvider extends BasicProvider implements Provider {
           FRP_CUSTOM_DOMAIN: flowId + '.' + config.frp.serverAddr,
         },
       });
-      this.eventEmitter.emit(ProviderEvents.NEW_LOG, {
+      this.logger.emit(ProviderEvents.NEW_LOG, {
         type: 'info',
         log: chalk.cyan(
           `Exposing service at ${chalk.bold(
@@ -364,18 +417,19 @@ export class DockerProvider extends BasicProvider implements Provider {
           },
         ]
       : [];
-    const dockerVolumes = [];
+    const dockerVolumes: MountSettings[] = [];
     if (volumes && volumes.length > 0) {
       for (let i = 0; i < volumes.length; i++) {
         const volume = volumes[i];
         dockerVolumes.push({
           Target: volume.dest,
           Source: volume.name,
-          Type: 'volume' as MountType,
-          ReadOnly: false,
+          Type: 'volume',
+          ReadOnly: volume.readonly || false,
         });
       }
     }
+
     const vars: string[] = [];
     if (env) {
       for (const [key, value] of Object.entries(env)) {
@@ -595,51 +649,25 @@ export class DockerProvider extends BasicProvider implements Provider {
     super.finishFlow(flowId, status);
   }
 
+  async updateMarketRequiredResources(market: string): Promise<void> {
+    await this.resourceManager.fetchMarketRequiredResources(market);
+  }
+
   /****************
    *   Helpers   *
    ****************/
   protected async pullImage(image: string) {
-    this.eventEmitter.emit(ProviderEvents.NEW_LOG, {
-      type: 'info',
-      log: chalk.cyan(`Pulling image ${chalk.bold(image)}`),
-    });
-    const images = await this.docker.listImages();
-    if (!image.includes(':')) image += ':latest';
-    for (var i = 0, len = images.length; i < len; i++) {
-      if (
-        images[i].RepoTags &&
-        (images[i].RepoTags?.indexOf(image) !== -1 ||
-          images[i].RepoTags?.indexOf('docker.io/library/' + image) !== -1 ||
-          images[i].RepoTags?.indexOf('docker.io/' + image) !== -1 ||
-          images[i].RepoTags?.indexOf(
-            'registry.hub.docker.com/library/' + image,
-          ) !== -1 ||
-          images[i].RepoTags?.indexOf('registry.hub.docker.com/' + image) !==
-            -1)
-      ) {
-        // image in cache
-        return true;
-      }
+    if (await this.docker.hasImage(image)) {
+      this.resourceManager.images.setImage(image);
+
+      return true;
     }
-    return await new Promise((resolve, reject): any =>
-      this.docker.pull(image, (err: any, stream: any) => {
-        if (err) {
-          reject(err);
-        } else {
-          this.docker.modem.followProgress(stream, onFinished, onProgress);
-        }
-        function onFinished(err: any, output: any) {
-          if (!err) {
-            resolve(true);
-            return;
-          }
-          reject(err);
-        }
-        function onProgress(event: any) {
-          // TODO: multiple progress bars happening at the same time, how do we show this?
-        }
-      }),
-    );
+
+    this.logger.log(chalk.cyan(`Pulling image ${chalk.bold(image)}`));
+
+    await this.docker.promisePull(image);
+
+    this.resourceManager.images.setImage(image);
   }
 
   /**
@@ -681,13 +709,13 @@ export class DockerProvider extends BasicProvider implements Provider {
     const stderrStream = new stream.PassThrough();
 
     stderrStream.on('data', (chunk: Buffer) => {
-      this.eventEmitter.emit(ProviderEvents.NEW_LOG, {
+      this.logger.emit(ProviderEvents.NEW_LOG, {
         type: 'stderr',
         log: chunk.toString(),
       });
     });
     stdoutStream.on('data', (chunk: Buffer) => {
-      this.eventEmitter.emit(ProviderEvents.NEW_LOG, {
+      this.logger.emit(ProviderEvents.NEW_LOG, {
         type: 'stdout',
         log: chunk.toString(),
       });

@@ -4,6 +4,7 @@ import { jobCommand } from './job/index.js';
 import { nodeCommand } from './node/index.js';
 import { setSDK } from '../services/sdk.js';
 import { addressCommand } from './address/command.js';
+import { marketCommand } from './market/index.js';
 
 export const createNosanaCLI = (version: string) =>
   new Command()
@@ -31,4 +32,5 @@ export const createNosanaCLI = (version: string) =>
     )
     .addCommand(jobCommand)
     .addCommand(nodeCommand)
-    .addCommand(addressCommand);
+    .addCommand(addressCommand)
+    .addCommand(marketCommand);

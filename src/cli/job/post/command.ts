@@ -26,7 +26,12 @@ export const postJobCommand = new Command('post')
       'specify which folder inside the container you want to upload',
     ),
   )
-  .addOption(new Option('-m, --market <market>', 'market to use'))
+  .addOption(
+    new Option(
+      '-m, --market <market>',
+      'market slug or address',
+    ).makeOptionMandatory(true),
+  )
   .addOption(walletOption)
   .addOption(
     new Option('--type <type>', 'type to run')
