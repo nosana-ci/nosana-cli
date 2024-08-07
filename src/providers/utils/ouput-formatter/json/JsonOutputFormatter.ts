@@ -12,7 +12,6 @@ export class JsonOutputFormatter implements OutputFormatterAdapter {
     }
 
     output<T extends OutputEvent>(event: T, param: OutputEventParams[T]) {
-      this.response.isError = false;
       jsonOutputEventHandlers[event](this.response, param);
     }
   }
