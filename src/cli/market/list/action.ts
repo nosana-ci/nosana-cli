@@ -6,7 +6,9 @@ export async function getMarkets(options: {
   [key: string]: any;
 }): Promise<void> {
   console.log('\nMarkets');
-  const { data: markets, error } = await clientSelector().GET('/api/markets/');
+  const { data: markets, error }: any = await clientSelector().GET(
+    '/api/markets/',
+  );
   if (error) throw new Error(`Failed to fetch markets \n${error.message}`);
 
   const viewTable = markets.map((m: any) => {

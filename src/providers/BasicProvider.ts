@@ -48,8 +48,8 @@ type OpFunction = (
 
 export class BasicProvider implements Provider {
   protected db: LowSync<NodeDb>;
-
-  protected logger: Logger = new Logger();
+  public name: string = 'basic';
+  public logger: Logger = new Logger();
   protected supportedOps: { [key: string]: OpFunction } = {};
   public clearFlowsCronJob: CronJob = new CronJob(
     '0 */12 * * *', // every 12 hours
@@ -60,8 +60,11 @@ export class BasicProvider implements Provider {
     true, // start
   );
 
-  constructor(configLocation: string) {
+  constructor(configLocation: string, logger?: Logger) {
     this.db = new DB(configLocation).db;
+    if (logger) {
+      this.logger = logger;
+    }
   }
 
   /**
@@ -147,10 +150,7 @@ export class BasicProvider implements Provider {
     const flow = this.db.data.flows[flowId];
     // Allow user to attach to events
     await sleep(0.1);
-    this.logger.emit(ProviderEvents.NEW_LOG, {
-      type: 'info',
-      log: chalk.cyan(`Running flow ${chalk.bold(flowId)}`),
-    });
+    this.logger.log(chalk.cyan(`Running flow ${chalk.bold(flowId)}`));
     try {
       // run operations
       let stopFlow: boolean = false;
@@ -193,10 +193,9 @@ export class BasicProvider implements Provider {
                 }
               });
               try {
-                this.logger.emit(ProviderEvents.NEW_LOG, {
-                  type: 'info',
-                  log: chalk.cyan(`Executing step ${chalk.bold(op.id)}`),
-                });
+                this.logger.log(
+                  chalk.cyan(`Executing step ${chalk.bold(op.id)}`),
+                );
                 const finishedOpState = await operationTypeFunction(
                   op,
                   flowId,
@@ -302,14 +301,14 @@ export class BasicProvider implements Provider {
       }
 
       if (logCallback) {
-        this.logger.on(ProviderEvents.NEW_LOG, (info) => {
+        this.logger.on(ProviderEvents.CONTAINER_LOG, (info) => {
           logCallback(info);
         });
       }
 
       this.logger.on(ProviderEvents.FLOW_FINISHED, (flow: Flow) => {
         this.logger.removeAllListeners(ProviderEvents.FLOW_FINISHED);
-        this.logger.removeAllListeners(ProviderEvents.NEW_LOG);
+        this.logger.removeAllListeners(ProviderEvents.CONTAINER_LOG);
         resolve(flow ? flow.state : null);
       });
     });

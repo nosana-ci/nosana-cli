@@ -26,6 +26,7 @@ import { extractResultsFromLogs } from './utils/extractResultsFromLogs.js';
 import { createResourceManager } from './modules/resourceManager/index.js';
 import { DockerExtended } from '../docker/index.js';
 import { s3HelperImage } from './modules/resourceManager/volumes/definition/s3HelperOpts.js';
+import Logger from './modules/logger/index.js';
 
 export type RunContainerArgs = {
   name?: string;
@@ -45,12 +46,13 @@ export type RunContainerArgs = {
 export class DockerProvider extends BasicProvider implements Provider {
   protected docker: DockerExtended;
   protected resourceManager;
-  protected host: string;
-  protected port: string;
-  protected protocol: string;
+  public host: string;
+  public port: string;
+  public protocol: string;
+  public name: string = 'docker';
 
-  constructor(server: string, configLocation: string) {
-    super(configLocation);
+  constructor(server: string, configLocation: string, logger?: Logger) {
+    super(configLocation, logger);
     const serverUri = new URL(
       server.startsWith('http') || server.startsWith('ssh')
         ? server
@@ -188,10 +190,10 @@ export class DockerProvider extends BasicProvider implements Provider {
         (opState) => op.id === opState.operationId,
       );
       const opState = flow.state.opStates[opStateIndex];
-      this.logger.emit(ProviderEvents.NEW_LOG, {
-        type: 'info',
-        log: chalk.cyan(`- Creating volume ${chalk.bold(op.args.name)}`),
-      });
+      this.logger.log(
+        chalk.cyan(`- Creating volume ${chalk.bold(op.args.name)}`),
+        true,
+      );
       updateOpState({
         startTime: Date.now(),
         status: 'running',
@@ -333,10 +335,7 @@ export class DockerProvider extends BasicProvider implements Provider {
       flow.jobDefinition.global && flow.jobDefinition.global.env
         ? flow.jobDefinition.global.env
         : {};
-    this.logger.emit(ProviderEvents.NEW_LOG, {
-      type: 'info',
-      log: chalk.cyan('Starting container'),
-    });
+    this.logger.log(chalk.cyan('Starting container'), true);
     const name = flowId + '-' + flow.state.opStates[opStateIndex].operationId;
     await this.docker.createNetwork({ Name: name });
     const networks: { [key: string]: {} } = {};
@@ -360,10 +359,7 @@ export class DockerProvider extends BasicProvider implements Provider {
       },
     );
     updateOpState({ providerId: container.id });
-    this.logger.emit(ProviderEvents.NEW_LOG, {
-      type: 'info',
-      log: chalk.cyan('Running container ' + container.id),
-    });
+    this.logger.log(chalk.cyan('Running container ' + container.id), true);
     try {
       await this.streamingLogs(container);
     } catch (e) {
@@ -383,14 +379,13 @@ export class DockerProvider extends BasicProvider implements Provider {
           FRP_CUSTOM_DOMAIN: flowId + '.' + config.frp.serverAddr,
         },
       });
-      this.logger.emit(ProviderEvents.NEW_LOG, {
-        type: 'info',
-        log: chalk.cyan(
+      this.logger.log(
+        chalk.cyan(
           `Exposing service at ${chalk.bold(
             `https://${flowId}.${config.frp.serverAddr}`,
           )}`,
         ),
-      });
+      );
     }
     return container;
   }
@@ -709,13 +704,13 @@ export class DockerProvider extends BasicProvider implements Provider {
     const stderrStream = new stream.PassThrough();
 
     stderrStream.on('data', (chunk: Buffer) => {
-      this.logger.emit(ProviderEvents.NEW_LOG, {
+      this.logger.emit(ProviderEvents.CONTAINER_LOG, {
         type: 'stderr',
         log: chunk.toString(),
       });
     });
     stdoutStream.on('data', (chunk: Buffer) => {
-      this.logger.emit(ProviderEvents.NEW_LOG, {
+      this.logger.emit(ProviderEvents.CONTAINER_LOG, {
         type: 'stdout',
         log: chunk.toString(),
       });

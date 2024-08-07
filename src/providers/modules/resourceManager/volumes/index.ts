@@ -38,6 +38,7 @@ export function createVolumeManager(
       if (!savedVolumes[resource.url]) {
         logger.log(
           chalk.cyan(`Fetching remote resource ${chalk.bold(resource.url)}`),
+          true,
         );
 
         try {
@@ -48,6 +49,7 @@ export function createVolumeManager(
             chalk.red(`Cannot pull remote resource ${resource.url}:\n`) + err,
           );
         }
+        logger.succeed();
       }
     }
   };
@@ -106,11 +108,15 @@ export function createVolumeManager(
       return savedResource;
     }
 
-    logger.log(chalk.cyan(`Fetching resource ${chalk.bold(resource.url)}`));
+    logger.log(
+      chalk.cyan(`Fetching resource ${chalk.bold(resource.url)}`),
+      true,
+    );
 
     try {
       const volume = await createRemoteDockerVolume(docker, resource);
       setVolume(resource.url, volume);
+      logger.succeed();
       return volume;
     } catch (err) {
       throw new Error(`Failed to fetch resource\n${err}`);

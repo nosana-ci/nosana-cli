@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import chalk from 'chalk';
-import ora from 'ora';
+import ora, { Ora } from 'ora';
 import util from 'util';
 
 import {
@@ -8,6 +8,7 @@ import {
   JobDefinition,
   FlowState,
   OperationArgsMap,
+  ProviderEvents,
 } from '../../../providers/Provider.js';
 import { NosanaNode } from '../../../services/nodes.js';
 import { Operation, OperationType } from '../../../providers/Provider.js';
@@ -44,13 +45,44 @@ export async function runJob(
   };
   process.on('SIGINT', onShutdown);
   process.on('SIGTERM', onShutdown);
+  let spinner: Ora = ora();
+  let streamingLogs: boolean = false;
   node = new NosanaNode(
     new Client(), // sdk client not used during `node run`
     options.provider,
     options.podman,
     options.config,
   );
-  let spinner = ora(chalk.cyan('Checking provider health')).start();
+  node.logger.on(
+    ProviderEvents.INFO_LOG,
+    (event: { log: string | undefined; type: string; pending: boolean }) => {
+      if (!handlingSigInt) {
+        if (event.type === 'info') {
+          if (spinner && spinner.isSpinning) {
+            spinner.succeed();
+          }
+          if (event.pending && !streamingLogs) {
+            spinner = ora(event.log).start();
+          } else {
+            console.log(event.log);
+          }
+        } else if (event.type === 'fail') {
+          if (spinner && spinner.isSpinning) {
+            spinner.fail(event.log);
+          } else {
+            console.log(event.log);
+          }
+        } else if (event.type === 'success') {
+          if (spinner && spinner.isSpinning) {
+            spinner.succeed(event.log);
+          } else {
+            console.log(event.log);
+          }
+        }
+      }
+    },
+  );
+  spinner = ora(chalk.cyan('Checking provider health')).start();
   try {
     await node.provider.healthy();
   } catch (error) {
@@ -59,19 +91,14 @@ export async function runJob(
     );
     throw error;
   }
-  switch (options.provider) {
-    case 'podman':
-      spinner.succeed(
-        chalk.green(`Podman is running on ${chalk.bold(options.podman)}`),
-      );
-      break;
-    case 'docker':
-    default:
-      spinner.succeed(
-        chalk.green(`Docker is running on ${chalk.bold(options.podman)}`),
-      );
-      break;
-  }
+  spinner.succeed(
+    chalk.green(
+      `${chalk.bold(node.provider.name)} is running on ${chalk.bold(
+        `${node.provider.protocol}://${node.provider.host}:${node.provider.port}`,
+      )}`,
+    ),
+  );
+
   // spinner = ora(chalk.cyan('Starting API')).start();
   // try {
   //   const port = await api.start();
@@ -96,24 +123,20 @@ export async function runJob(
           op.type === 'container/run' &&
           (op.args as OperationArgsMap['container/run']).expose,
       ).length > 0;
+    streamingLogs = true;
     result = await node.provider.waitForFlowFinish(
       flow.id,
       (event: { log: string; type: string }) => {
-        if (!handlingSigInt) {
-          if (event.type === 'info') {
-            console.log(event.log);
+        if (!handlingSigInt && !isFlowExposed) {
+          if (event.type === 'stdout') {
+            process.stdout.write(event.log);
           } else {
-            if (!isFlowExposed) {
-              if (event.type === 'stdout') {
-                process.stdout.write(event.log);
-              } else {
-                process.stderr.write(event.log);
-              }
-            }
+            process.stderr.write(event.log);
           }
         }
       },
     );
+    streamingLogs = false;
     console.log(
       'result: ',
       util.inspect(result, { showHidden: false, depth: null, colors: true }),
