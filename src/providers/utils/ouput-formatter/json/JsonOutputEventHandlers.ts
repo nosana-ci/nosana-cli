@@ -84,8 +84,16 @@ export const jsonOutputEventHandlers: OutputEventHandlers = {
   },
 
   [OUTPUT_EVENTS.OUTPUT_JOB_VALIDATION_ERROR]: (response: any, param: ErrorParam) => {
+    response.isError = true;
     response.msg = 'Job Definition validation failed';
     response.errors = param.error;
+    throw response;
+  },
+
+  [OUTPUT_EVENTS.OUTPUT_FAILED_TO_FETCH_MARKETS_ERROR]: (response: any, param: ErrorParam) => {
+    response.isError = true;
+    response.msg = 'Failed to fetch market';
+    response.errors = [param.error];
     throw response;
   },
 

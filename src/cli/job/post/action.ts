@@ -59,8 +59,7 @@ export async function run(
         };
         break;
       default:
-       formatter.throw(OUTPUT_EVENTS.OUTPUT_JSON_FLOW_TYPE_NOT_SUPPORTED_ERROR, { type: options.type });
-       throw ''; // syntaxtic throw, the function up already throws
+        return formatter.throw(OUTPUT_EVENTS.OUTPUT_JSON_FLOW_TYPE_NOT_SUPPORTED_ERROR, { type: options.type });
     }
 
     if (options.gpu) {
@@ -72,8 +71,8 @@ export async function run(
   }
   const artifactId = 'artifact-' + randomUUID();
   if (options.output) {
-    formatter.throw(OUTPUT_EVENTS.OUTPUT_ARTIFACT_SUPPORT_INCOMING_ERROR, { error: new Error()});
-    throw ''; // syntaxtic throw, the function up already throws
+    return formatter.throw(OUTPUT_EVENTS.OUTPUT_ARTIFACT_SUPPORT_INCOMING_ERROR, { error: new Error()});
+
     const volumeId = randomUUID() + '-volume';
     const createVolumeOp = {
       op: 'container/create-volume',
@@ -118,7 +117,7 @@ export async function run(
   const validation: IValidation<JobDefinition> =
     validateJobDefinition(json_flow);
   if (!validation.success) {
-    formatter.throw(OUTPUT_EVENTS.OUTPUT_JOB_VALIDATION_ERROR, { error: validation.errors })
+    return formatter.throw(OUTPUT_EVENTS.OUTPUT_JOB_VALIDATION_ERROR, { error: validation.errors })
   }
 
   const ipfsHash = await nosana.ipfs.pin(json_flow);
@@ -139,15 +138,24 @@ export async function run(
   } catch (e) {
     type = 'slug';
   }
+
   if (type === 'slug') {
-    const { data: marketResponse, error } = await clientSelector().GET(
-      '/api/markets/{id}/',
-      {
-        params: { path: { id: nosana.solana.config.market_address } },
-      },
-    );
-    if (error) throw new Error(`Failed to fetch market \n${error.message}`);
-    nosana.solana.config.market_address = marketResponse.address;
+    try {
+      const { data: marketResponse, error } = await clientSelector().GET(
+        '/api/markets/{id}/',
+        {
+          params: { path: { id: nosana.solana.config.market_address } },
+        },
+      );
+
+      if (error){
+        return formatter.throw(OUTPUT_EVENTS.OUTPUT_FAILED_TO_FETCH_MARKETS_ERROR, { error })
+      }
+
+      nosana.solana.config.market_address = marketResponse.address;
+    } catch (error) {
+      return formatter.throw(OUTPUT_EVENTS.OUTPUT_FAILED_TO_FETCH_MARKETS_ERROR, { error })
+    }
   }
   const market = await nosana.jobs.getMarket(
     nosana.solana.config.market_address,
@@ -155,7 +163,7 @@ export async function run(
 
   const solBalance = getSolBalance();
   if (solBalance < 0.005 * 1e9) {
-    formatter.throw(OUTPUT_EVENTS.OUTPUT_SOL_BALANCE_LOW_ERROR, { sol: (solBalance / 1e9).toFixed(4) })
+    return formatter.throw(OUTPUT_EVENTS.OUTPUT_SOL_BALANCE_LOW_ERROR, { sol: (solBalance / 1e9).toFixed(4) })
   }
 
   // @ts-ignore
@@ -165,7 +173,7 @@ export async function run(
     nosNeeded > 0 &&
     (!nosBalance || !nosBalance.uiAmount || nosBalance.uiAmount < nosNeeded)
   ) {
-    formatter.throw(
+    return formatter.throw(
       OUTPUT_EVENTS.OUTPUT_NOS_BALANCE_LOW_ERROR, 
       { 
         nosBalance: nosBalance?.uiAmount?.toFixed(4) ?? '0',
@@ -188,8 +196,7 @@ export async function run(
   try {
     response = await nosana.jobs.list(ipfsHash);
   } catch (e) {
-    formatter.throw(OUTPUT_EVENTS.OUTPUT_JOB_POSTED_ERROR, {error: e})
-    throw e;
+    return formatter.throw(OUTPUT_EVENTS.OUTPUT_JOB_POSTED_ERROR, {error: e})
   }
 
   formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_POSTED_TX, { tx: response.tx })

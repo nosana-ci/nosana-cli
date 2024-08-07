@@ -111,6 +111,10 @@ export const textOutputEventHandlers: OutputEventHandlers = {
     throw new Error(chalk.red.bold('Job Definition validation failed'));
   },
 
+  [OUTPUT_EVENTS.OUTPUT_FAILED_TO_FETCH_MARKETS_ERROR]: (param: ErrorParam) => {
+    throw new Error(`Failed to fetch market \n${param.error.message}`);
+  },
+
   [OUTPUT_EVENTS.OUTPUT_JOB_POSTED_ERROR]: (param: JobPostedErrorParam) => {
     console.error(chalk.red("Couldn't post job"));
     throw param;

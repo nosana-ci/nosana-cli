@@ -19,7 +19,7 @@ import { OpState } from "../../Provider.js";
  * Example:
  * [OUTPUT_EVENTS.OUTPUT_NEW_EVENT]: (param: OutputEventParams) => {},
  * 
- * Step 5: also add the event to MockOutputFormatterAdapter in test folder so the tests can pass
+ * Step 5: also add the event to __mock__ so the tests can pass
  */
 
 export const OUTPUT_EVENTS = {
@@ -53,6 +53,7 @@ export const OUTPUT_EVENTS = {
   OUTPUT_JOB_EXECUTION: 'OUTPUT_JOB_EXECUTION',
   OUTPUT_TOTAL_COST: 'OUTPUT_TOTAL_COST',
   OUTPUT_RETRIVE_JOB_COMMAND: 'OUTPUT_RETRIVE_JOB_COMMAND',
+  OUTPUT_FAILED_TO_FETCH_MARKETS_ERROR: 'OUTPUT_FAILED_TO_FETCH_MARKETS_ERROR',
 } as const;
 
 export type OutputEvent = (typeof OUTPUT_EVENTS)[keyof typeof OUTPUT_EVENTS];
@@ -118,4 +119,5 @@ export type OutputEventParams = {
   [OUTPUT_EVENTS.OUTPUT_RESULT_URL]: ResultUrlParam;
   [OUTPUT_EVENTS.OUTPUT_JOB_EXECUTION]: JobExecutionParam;
   [OUTPUT_EVENTS.OUTPUT_RETRIVE_JOB_COMMAND]: RetriveJobCommandParam;
+  [OUTPUT_EVENTS.OUTPUT_FAILED_TO_FETCH_MARKETS_ERROR]: ErrorParam;
 };
