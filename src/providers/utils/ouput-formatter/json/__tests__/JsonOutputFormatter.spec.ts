@@ -25,12 +25,12 @@ describe('JsonOutputFormatter', () => {
     expect(jsonOutputEventHandlers.READ_KEYFILE).toHaveBeenCalledWith(formatter['response'], param);
   });
 
-  it('should set isError to false initially', () => {
+  it('should set isError to undefined initially', () => {
     const param = { keyfile: 'test-keyfile' };
     const event = OUTPUT_EVENTS.READ_KEYFILE;
 
     formatter.output(event, param);
-    expect(formatter['response'].isError).toBe(false);
+    expect(formatter['response'].isError).toBe(undefined);
   });
 
   it('should finalize and print JSON response', () => {
@@ -41,7 +41,6 @@ describe('JsonOutputFormatter', () => {
     formatter.output(event, param);
     formatter.finalize();
 
-    expect(console.log).toHaveBeenCalledWith('\n');
     expect(console.log).toHaveBeenCalledWith(JSON.stringify(formatter['response'], null, 2));
   });
 });

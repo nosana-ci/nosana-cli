@@ -2,14 +2,17 @@ import figlet from 'figlet';
 
 import { createNosanaCLI } from './createNosanaCli.js';
 import { outputFormatSelector } from "../providers/utils/ouput-formatter/outputFormatSelector.js";
+import { OUTPUT_EVENTS } from "../providers/utils/ouput-formatter/outputEvents.js";
+import { outputFormatArgumentParser } from "../providers/utils/ouput-formatter/outputFormatArgumentParser.js";
 
 export async function startCLI(version: string) {
   const cli = createNosanaCLI(version);
 
   try {
-    console.log(figlet.textSync('Nosana'));
-
-    await cli.parseAsync(process.argv);
+    // TODO: little bug here, if the `--format json` is called on a command that does not support it doesn't show the LOGO
+    // meaning it processes the args --format before validating the command options.
+    outputFormatSelector(outputFormatArgumentParser(process.argv)).output(OUTPUT_EVENTS.OUTPUT_HEADER_LOGO, { text: 'Nosana' })
+    await cli.parseAsync(process.argv);  
   } catch (e: any) {
     const logLevel: string = cli.getOptionValue('log');
     if (logLevel === 'debug') {

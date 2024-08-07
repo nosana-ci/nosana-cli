@@ -7,8 +7,7 @@ export class JsonOutputFormatter implements OutputFormatterAdapter {
     private response: JsonResponseType = {};
   
     finalize() {
-      console.log('\n');
-      console.log(JSON.stringify(this.response, null, 2));
+      console.log(`${JSON.stringify(this.response)}`);
     }
 
     output<T extends OutputEvent>(event: T, param: OutputEventParams[T]) {

@@ -3,7 +3,8 @@ import {
   JobNotFoundErrorParam, JobPostedErrorParam, JobPostingParam, JobPriceParam, JobStatusParam, JobUrlParam, JsonFlowTypeErrorParam, 
   JsonFlowUrlParam, KeyfileParam, MarketUrlParam, NetworkParam, NodeUrlParam, NosBalanceLowParam, OUTPUT_EVENTS, ResultUrlParam, 
   ServiceUrlParam, StartTimeParam, TotalCostParam, TxParam, ErrorParam, WalletParam, RetriveJobCommandParam, 
-  ValidationErrorParam
+  ValidationErrorParam,
+  OutputHeaderLogoParam
 } from "../outputEvents.js";
 import { OutputEventParams } from "../outputEvents.js";
 import { JsonResponseType } from "./JsonOutputFormatter.js";
@@ -171,6 +172,8 @@ export const jsonOutputEventHandlers: OutputEventHandlers = {
 
   [OUTPUT_EVENTS.OUTPUT_RETRIVE_JOB_COMMAND]: (response: JsonResponseType, param: RetriveJobCommandParam) => {},
 
+  [OUTPUT_EVENTS.OUTPUT_HEADER_LOGO]: (response: JsonResponseType, param: OutputHeaderLogoParam) => {},
+
   [OUTPUT_EVENTS.OUTPUT_JOB_EXECUTION]: (response: JsonResponseType, param: JobExecutionParam) => {
     let execution = {} as {
       operationId: string | null;
@@ -183,7 +186,7 @@ export const jsonOutputEventHandlers: OutputEventHandlers = {
     execution.logs = [];
 
     for (const log of param.opState.logs) {
-      const sanitizedLog = log.log?.endsWith('\n') ? log.log.slice(0, -1) : log.log ?? '';
+      const sanitizedLog = log.log ?? '';
       execution.logs.push(sanitizedLog);
     }
 

@@ -3,11 +3,13 @@ import {
   JobNotFoundErrorParam, JobPostedErrorParam, JobPostingParam, JobPriceParam, JobStatusParam, JobUrlParam, JsonFlowTypeErrorParam, 
   JsonFlowUrlParam, KeyfileParam, MarketUrlParam, NetworkParam, NodeUrlParam, NosBalanceLowParam, OUTPUT_EVENTS, ResultUrlParam, 
   ServiceUrlParam, StartTimeParam, TotalCostParam, TxParam, ErrorParam, WalletParam, RetriveJobCommandParam, 
-  ValidationErrorParam
+  ValidationErrorParam,
+  OutputHeaderLogoParam
 } from "../outputEvents.js";
 import { OutputEventParams } from "../outputEvents.js";
 import chalk from "chalk";
 import { colors } from '../../../../generic/utils.js';
+import figlet from "figlet";
 
 type EventHandler<T extends keyof OutputEventParams> = (param: OutputEventParams[T]) => void;
 
@@ -195,6 +197,10 @@ export const textOutputEventHandlers: OutputEventHandlers = {
     );
   },
 
+  [OUTPUT_EVENTS.OUTPUT_HEADER_LOGO]: (param: OutputHeaderLogoParam) => {
+    console.log(figlet.textSync(param.text));
+  },
+
   [OUTPUT_EVENTS.OUTPUT_JOB_EXECUTION]: (param: JobExecutionParam) => {
     console.log('Logs:');
 
@@ -206,7 +212,7 @@ export const textOutputEventHandlers: OutputEventHandlers = {
 
     for (const log of param.opState.logs) {
       const color = log.type === 'stderr' && param.opState.exitCode ? colors.RED : '';
-      const sanitizedLog = log.log?.endsWith('\n') ? log.log.slice(0, -1) : log.log ?? '';
+      const sanitizedLog = log.log;
       console.log(`${color}${sanitizedLog}${colors.RESET}`);
     }
 

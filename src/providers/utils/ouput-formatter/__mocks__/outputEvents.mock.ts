@@ -32,6 +32,7 @@ const outputEventsMock = {
     [OUTPUT_EVENTS.OUTPUT_JOB_EXECUTION]: jest.fn(),
     [OUTPUT_EVENTS.OUTPUT_RETRIVE_JOB_COMMAND]: jest.fn(),
     [OUTPUT_EVENTS.OUTPUT_FAILED_TO_FETCH_MARKETS_ERROR]: jest.fn(),
+    [OUTPUT_EVENTS.OUTPUT_HEADER_LOGO]: jest.fn(),
   };
 
   export default outputEventsMock;

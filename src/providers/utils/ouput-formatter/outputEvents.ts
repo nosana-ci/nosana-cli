@@ -55,6 +55,7 @@ export const OUTPUT_EVENTS = {
   OUTPUT_TOTAL_COST: 'OUTPUT_TOTAL_COST',
   OUTPUT_RETRIVE_JOB_COMMAND: 'OUTPUT_RETRIVE_JOB_COMMAND',
   OUTPUT_FAILED_TO_FETCH_MARKETS_ERROR: 'OUTPUT_FAILED_TO_FETCH_MARKETS_ERROR',
+  OUTPUT_HEADER_LOGO: 'OUTPUT_HEADER_LOGO',
 } as const;
 
 export type OutputEvent = (typeof OUTPUT_EVENTS)[keyof typeof OUTPUT_EVENTS];
@@ -81,6 +82,7 @@ export type JobPostedErrorParam = { error: Error };
 export type JsonFlowTypeErrorParam = { type: string };
 export type JobNotFoundErrorParam = { error: Error };
 export type CannotLogResultParam = {};
+export type OutputHeaderLogoParam = { text: string };
 export type NodeUrlParam = { url: string };
 export type DurationParam = { duration: number };
 export type StartTimeParam = { date: Date };
@@ -122,4 +124,5 @@ export type OutputEventParams = {
   [OUTPUT_EVENTS.OUTPUT_JOB_EXECUTION]: JobExecutionParam;
   [OUTPUT_EVENTS.OUTPUT_RETRIVE_JOB_COMMAND]: RetriveJobCommandParam;
   [OUTPUT_EVENTS.OUTPUT_FAILED_TO_FETCH_MARKETS_ERROR]: ErrorParam;
+  [OUTPUT_EVENTS.OUTPUT_HEADER_LOGO]: OutputHeaderLogoParam
 };
