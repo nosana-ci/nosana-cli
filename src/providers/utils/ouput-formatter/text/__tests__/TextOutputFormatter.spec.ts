@@ -17,7 +17,7 @@ describe('TextOutputFormatter', () => {
     jest.clearAllMocks();
   });
 
-  test('should handle events and call the appropriate event handlers', () => {
+  it('should handle events and call the appropriate event handlers', () => {
     const param = { keyfile: 'test-keyfile' };
     const event = OUTPUT_EVENTS.READ_KEYFILE;
 
@@ -25,7 +25,7 @@ describe('TextOutputFormatter', () => {
     expect(textOutputEventHandlers.READ_KEYFILE).toHaveBeenCalledWith(param);
   });
 
-  test('should finalize and not perform any action', () => {
+  it('should finalize and not perform any action', () => {
     formatter.finalize();
   });
 });

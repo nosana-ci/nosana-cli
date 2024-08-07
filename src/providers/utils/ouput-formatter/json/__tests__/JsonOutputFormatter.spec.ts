@@ -17,7 +17,7 @@ describe('JsonOutputFormatter', () => {
     jest.clearAllMocks();
   });
 
-  test('should handle events and call the appropriate event handlers', () => {
+  it('should handle events and call the appropriate event handlers', () => {
     const param = { keyfile: 'test-keyfile' };
     const event = OUTPUT_EVENTS.READ_KEYFILE;
 
@@ -25,7 +25,7 @@ describe('JsonOutputFormatter', () => {
     expect(jsonOutputEventHandlers.READ_KEYFILE).toHaveBeenCalledWith(formatter['response'], param);
   });
 
-  test('should set isError to false initially', () => {
+  it('should set isError to false initially', () => {
     const param = { keyfile: 'test-keyfile' };
     const event = OUTPUT_EVENTS.READ_KEYFILE;
 
@@ -33,7 +33,7 @@ describe('JsonOutputFormatter', () => {
     expect(formatter['response'].isError).toBe(false);
   });
 
-  test('should finalize and print JSON response', () => {
+  it('should finalize and print JSON response', () => {
     console.log = jest.fn();
     const param = { keyfile: 'test-keyfile' };
     const event = OUTPUT_EVENTS.READ_KEYFILE;

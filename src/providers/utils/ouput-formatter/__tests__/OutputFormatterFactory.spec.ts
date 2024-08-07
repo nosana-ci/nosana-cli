@@ -10,19 +10,19 @@ beforeEach(() => {
 });
 
 describe('OutputFormatterFactory', () => {
-  test('should create a JSON formatter', () => {
+  it('should create a JSON formatter', () => {
     const formatter = OutputFormatterFactory.createFormatter('json');
     expect(formatter).toBeInstanceOf(OutputFormatter);
     expect(JsonOutputFormatter).toHaveBeenCalled();
   });
 
-  test('should create a Text formatter by default', () => {
+  it('should create a Text formatter by default', () => {
     const formatter = OutputFormatterFactory.createFormatter('text');
     expect(formatter).toBeInstanceOf(OutputFormatter);
     expect(TextOutputFormatter).toHaveBeenCalled();
   });
 
-  test('should create a Text formatter for unknown format', () => {
+  it('should create a Text formatter for unknown format', () => {
     const formatter = OutputFormatterFactory.createFormatter('unknown');
     expect(formatter).toBeInstanceOf(OutputFormatter);
     expect(TextOutputFormatter).toHaveBeenCalled();

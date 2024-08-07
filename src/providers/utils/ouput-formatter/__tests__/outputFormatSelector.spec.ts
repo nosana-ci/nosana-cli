@@ -9,14 +9,14 @@ describe('outputFormatSelector', () => {
       (outputFormatSelector as any).instance = null;
     });
   
-    test('should return the same instance for multiple calls with JSON format', () => {
+    it('should return the same instance for multiple calls with JSON format', () => {
       const formatter1 = outputFormatSelector('json');
       const formatter2 = outputFormatSelector('json');
       expect(formatter1).toBe(formatter2);
       expect(JsonOutputFormatter).toHaveBeenCalledTimes(1);
     });
   
-    test('should not create a new instance if called again with a different format', () => {
+    it('should not create a new instance if called again with a different format', () => {
       const formatter1 = outputFormatSelector('json');
       const formatter2 = outputFormatSelector('text');
       expect(formatter1).toBe(formatter2);
