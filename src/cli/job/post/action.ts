@@ -71,7 +71,7 @@ export async function run(
   }
   const artifactId = 'artifact-' + randomUUID();
   if (options.output) {
-    return formatter.throw(OUTPUT_EVENTS.OUTPUT_ARTIFACT_SUPPORT_INCOMING_ERROR, { error: new Error()});
+    return formatter.throw(OUTPUT_EVENTS.OUTPUT_ARTIFACT_SUPPORT_INCOMING_ERROR, { error: new Error('artifact support coming soon!')});
 
     const volumeId = randomUUID() + '-volume';
     const createVolumeOp = {
@@ -154,7 +154,7 @@ export async function run(
 
       nosana.solana.config.market_address = marketResponse.address;
     } catch (error) {
-      return formatter.throw(OUTPUT_EVENTS.OUTPUT_FAILED_TO_FETCH_MARKETS_ERROR, { error })
+      return formatter.throw(OUTPUT_EVENTS.OUTPUT_FAILED_TO_FETCH_MARKETS_ERROR, { error: error as Error })
     }
   }
   const market = await nosana.jobs.getMarket(
@@ -196,7 +196,7 @@ export async function run(
   try {
     response = await nosana.jobs.list(ipfsHash);
   } catch (e) {
-    return formatter.throw(OUTPUT_EVENTS.OUTPUT_JOB_POSTED_ERROR, {error: e})
+    return formatter.throw(OUTPUT_EVENTS.OUTPUT_JOB_POSTED_ERROR, {error: e as Error})
   }
 
   formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_POSTED_TX, { tx: response.tx })

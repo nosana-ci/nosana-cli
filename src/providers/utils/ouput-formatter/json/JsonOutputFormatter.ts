@@ -2,8 +2,9 @@ import { OUTPUT_EVENTS, OutputEvent } from "../outputEvents.js";
 import { OutputFormatterAdapter } from "../OutputFormatter.js";
 import { jsonOutputEventHandlers } from "./JsonOutputEventHandlers.js";
 
+export type JsonResponseType = { [key: string]: any };
 export class JsonOutputFormatter implements OutputFormatterAdapter {
-    private response: { [key: string]: any } = {};
+    private response: JsonResponseType = {};
   
     finalize() {
       console.log('\n');
@@ -17,4 +18,3 @@ export class JsonOutputFormatter implements OutputFormatterAdapter {
       return acc;
     }, {} as { [key in OutputEvent]: (param: any) => void });
   }
-

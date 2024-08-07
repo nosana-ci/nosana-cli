@@ -130,10 +130,10 @@ export async function setSDK(
             `Received airdrop of ${colors.CYAN}1 SOL!${colors.RESET}`,
           );
         } else {
-          formatter.throw(OUTPUT_EVENTS.OUTPUT_AIRDROP_REQUEST_FAILED_ERROR, { error: new Error()})
+          formatter.throw(OUTPUT_EVENTS.OUTPUT_AIRDROP_REQUEST_FAILED_ERROR, { error: new Error('Airdrop Request Failed')})
         }
       } catch (error) {
-        formatter.throw(OUTPUT_EVENTS.OUTPUT_AIRDROP_REQUEST_FAILED_ERROR, { error: new Error() })
+        formatter.throw(OUTPUT_EVENTS.OUTPUT_AIRDROP_REQUEST_FAILED_ERROR, { error: error as Error })
       }
     }
   }

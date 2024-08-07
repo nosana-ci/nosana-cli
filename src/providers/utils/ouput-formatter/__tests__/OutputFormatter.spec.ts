@@ -24,10 +24,10 @@ describe('OutputFormatter', () => {
   });
 
   test('should call the appropriate event handler for throw and throw error', () => {
-    const param: OutputEventParams['OUTPUT_JOB_VALIDATION_ERROR'] = { error: new Error('Validation Error') };
+    const param: OutputEventParams['OUTPUT_ARTIFACT_SUPPORT_INCOMING_ERROR'] = { error: new Error('ARTIFACT NOT SUPPORT') };
 
-    expect(() => formatter.throw(OUTPUT_EVENTS.OUTPUT_JOB_VALIDATION_ERROR, param)).toThrow(`Validation Error`);
-    expect(mockAdapter.events[OUTPUT_EVENTS.OUTPUT_JOB_VALIDATION_ERROR]).toHaveBeenCalledWith(param);
+    expect(() => formatter.throw(OUTPUT_EVENTS.OUTPUT_ARTIFACT_SUPPORT_INCOMING_ERROR, param)).toThrow('ARTIFACT NOT SUPPORT');
+    expect(mockAdapter.events[OUTPUT_EVENTS.OUTPUT_ARTIFACT_SUPPORT_INCOMING_ERROR]).toHaveBeenCalledWith(param);
   });
 
   test('should call finalize on the adapter', () => {

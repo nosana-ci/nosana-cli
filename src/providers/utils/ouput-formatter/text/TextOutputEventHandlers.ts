@@ -1,8 +1,9 @@
 import { 
-  BalanceLowParam, BalanceParam, CannotLogResultParam, DurationParam, IpfsParam, JobExecutionParam, 
+  BalanceLowParam, BalanceParam, DurationParam, IpfsParam, JobExecutionParam, 
   JobNotFoundErrorParam, JobPostedErrorParam, JobPostingParam, JobPriceParam, JobStatusParam, JobUrlParam, JsonFlowTypeErrorParam, 
   JsonFlowUrlParam, KeyfileParam, MarketUrlParam, NetworkParam, NodeUrlParam, NosBalanceLowParam, OUTPUT_EVENTS, ResultUrlParam, 
-  ServiceUrlParam, StartTimeParam, TotalCostParam, TxParam, ErrorParam, WalletParam, RetriveJobCommandParam 
+  ServiceUrlParam, StartTimeParam, TotalCostParam, TxParam, ErrorParam, WalletParam, RetriveJobCommandParam, 
+  ValidationErrorParam
 } from "../outputEvents.js";
 import { OutputEventParams } from "../outputEvents.js";
 import chalk from "chalk";
@@ -106,7 +107,7 @@ export const textOutputEventHandlers: OutputEventHandlers = {
     console.log(`job posted with tx ${chalk.cyan(param.tx)}!`);
   },
 
-  [OUTPUT_EVENTS.OUTPUT_JOB_VALIDATION_ERROR]: (param: ErrorParam) => {
+  [OUTPUT_EVENTS.OUTPUT_JOB_VALIDATION_ERROR]: (param: ValidationErrorParam) => {
     console.error(param.error);
     throw new Error(chalk.red.bold('Job Definition validation failed'));
   },
@@ -148,7 +149,7 @@ export const textOutputEventHandlers: OutputEventHandlers = {
     console.error(`${colors.RED}Could not retrieve job\n${colors.RESET}`, param.error);
   },
 
-  [OUTPUT_EVENTS.OUTPUT_CANNOT_LOG_RESULT]: (param: CannotLogResultParam) => {
+  [OUTPUT_EVENTS.OUTPUT_CANNOT_LOG_RESULT]: () => {
     console.log(`${colors.RED}Cannot log results${colors.RESET}`);
   },
 

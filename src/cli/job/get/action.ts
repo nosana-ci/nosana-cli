@@ -30,7 +30,7 @@ export async function getJob(
     clearLine();
   } catch (e) {
     clearLine();
-    formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_NOT_FOUND, { error: e })
+    formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_NOT_FOUND, { error: e as Error })
   }
 
   if (job) {
@@ -182,7 +182,7 @@ export async function getJob(
           }
         }
       } else {
-       formatter.output(OUTPUT_EVENTS.OUTPUT_CANNOT_LOG_RESULT, {})
+       formatter.output(OUTPUT_EVENTS.OUTPUT_CANNOT_LOG_RESULT, null)
       }
     }
   }

@@ -25,7 +25,7 @@ export class OutputFormatter {
   /**
    * Outputs an event using the selected format.
    * @param {OutputEvent} event - The event type to be output.
-   * @param {any} param - The parameters associated with the event.
+   * @param {T} param - The parameters associated with the event.
    * 
    * Usage:
    * 
@@ -46,7 +46,7 @@ export class OutputFormatter {
    * Note: This method works similarly to `output`, but it indicates that an error has occurred.
    * After every throw event, an actual error is thrown.
    * @param {OutputEvent} event - The event type to be thrown.
-   * @param {any} param - The parameters associated with the event.
+   * @param {T} param - The parameters associated with the event.
    * 
    * Usage:
    * 

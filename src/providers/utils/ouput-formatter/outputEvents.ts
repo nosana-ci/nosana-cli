@@ -1,3 +1,4 @@
+import { IValidation } from "typia";
 import { OpState } from "../../Provider.js";
 
 /**
@@ -72,12 +73,13 @@ export type JobStatusParam = { status: string };
 export type JobPostingParam = { market_address: string; price: number; total: string };
 export type TotalCostParam = { cost: number };
 export type TxParam = { tx: string };
-export type ErrorParam = { error: any};
+export type ValidationErrorParam = { error: IValidation.IError[]};
+export type ErrorParam = { error: Error};
 export type BalanceLowParam = { sol: string };
 export type NosBalanceLowParam = { nosBalance: string; nosNeeded: string };
-export type JobPostedErrorParam = { error: any };
+export type JobPostedErrorParam = { error: Error };
 export type JsonFlowTypeErrorParam = { type: string };
-export type JobNotFoundErrorParam = { error: any };
+export type JobNotFoundErrorParam = { error: Error };
 export type CannotLogResultParam = {};
 export type NodeUrlParam = { url: string };
 export type DurationParam = { duration: number };
@@ -104,13 +106,13 @@ export type OutputEventParams = {
   [OUTPUT_EVENTS.OUTPUT_JOB_STATUS]: JobStatusParam;
   [OUTPUT_EVENTS.OUTPUT_JOB_POSTING]: JobPostingParam;
   [OUTPUT_EVENTS.OUTPUT_JOB_POSTED_TX]: TxParam;
-  [OUTPUT_EVENTS.OUTPUT_JOB_VALIDATION_ERROR]: ErrorParam;
+  [OUTPUT_EVENTS.OUTPUT_JOB_VALIDATION_ERROR]: ValidationErrorParam;
   [OUTPUT_EVENTS.OUTPUT_JOB_POSTED_ERROR]: JobPostedErrorParam;
   [OUTPUT_EVENTS.OUTPUT_SOL_BALANCE_LOW_ERROR]: BalanceLowParam;
   [OUTPUT_EVENTS.OUTPUT_NOS_BALANCE_LOW_ERROR]: NosBalanceLowParam;
   [OUTPUT_EVENTS.OUTPUT_AIRDROP_REQUEST_FAILED_ERROR]: ErrorParam;
   [OUTPUT_EVENTS.OUTPUT_JOB_NOT_FOUND]: JobNotFoundErrorParam;
-  [OUTPUT_EVENTS.OUTPUT_CANNOT_LOG_RESULT]: CannotLogResultParam;
+  [OUTPUT_EVENTS.OUTPUT_CANNOT_LOG_RESULT]: CannotLogResultParam | null;
   [OUTPUT_EVENTS.OUTPUT_ARTIFACT_SUPPORT_INCOMING_ERROR]: ErrorParam;
   [OUTPUT_EVENTS.OUTPUT_JSON_FLOW_TYPE_NOT_SUPPORTED_ERROR]: JsonFlowTypeErrorParam;
   [OUTPUT_EVENTS.OUTPUT_NODE_URL]: NodeUrlParam;
