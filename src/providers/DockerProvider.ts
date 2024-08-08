@@ -122,8 +122,7 @@ export class DockerProvider extends BasicProvider implements Provider {
           );
         }
         if (op.args.expose) {
-          const frpcImage =
-            'registry.hub.docker.com/laurensv/nosana-frpc:0.1.0';
+          const frpcImage = 'registry.hub.docker.com/nosana/frpc:0.1.0';
           try {
             await this.pullImage(frpcImage);
           } catch (error: any) {
@@ -359,22 +358,19 @@ export class DockerProvider extends BasicProvider implements Provider {
       // console.error(e);
     }
     if (opArgs.expose) {
-      await this.runContainer(
-        'registry.hub.docker.com/laurensv/nosana-frpc:0.1.0',
-        {
-          name: 'frpc-' + name,
-          cmd: ['-c', '/etc/frp/frpc.toml'],
-          networks,
-          env: {
-            FRP_SERVER_ADDR: config.frp.serverAddr,
-            FRP_SERVER_PORT: config.frp.serverPort.toString(),
-            FRP_NAME: name,
-            FRP_LOCAL_IP: name,
-            FRP_LOCAL_PORT: opArgs.expose.toString(),
-            FRP_CUSTOM_DOMAIN: flowId + '.' + config.frp.serverAddr,
-          },
+      await this.runContainer('registry.hub.docker.com/nosana/frpc:0.1.0', {
+        name: 'frpc-' + name,
+        cmd: ['-c', '/etc/frp/frpc.toml'],
+        networks,
+        env: {
+          FRP_SERVER_ADDR: config.frp.serverAddr,
+          FRP_SERVER_PORT: config.frp.serverPort.toString(),
+          FRP_NAME: name,
+          FRP_LOCAL_IP: name,
+          FRP_LOCAL_PORT: opArgs.expose.toString(),
+          FRP_CUSTOM_DOMAIN: flowId + '.' + config.frp.serverAddr,
         },
-      );
+      });
       this.logger.emit(ProviderEvents.NEW_LOG, {
         type: 'info',
         log: chalk.cyan(
