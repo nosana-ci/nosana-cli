@@ -6,7 +6,7 @@ import {
   S3Secure,
 } from '../../../../../types/resources.js';
 
-export const s3HelperImage = 'docker.io/matthammond962/s3-helper:0.1.0';
+export const s3HelperImage = 'docker.io/matthammond962/s3-helper:0.1.1';
 
 export const createS3HelperOpts = (
   volumeName: string,
