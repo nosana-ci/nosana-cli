@@ -1,8 +1,11 @@
 import figlet from 'figlet';
 
 import { createNosanaCLI } from './createNosanaCli.js';
+import { validateCLIVersion } from '../services/versions.js';
 
 export async function startCLI(version: string) {
+  await validateCLIVersion();
+
   const cli = createNosanaCLI(version);
 
   try {
