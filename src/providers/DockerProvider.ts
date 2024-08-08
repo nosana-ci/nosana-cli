@@ -22,6 +22,7 @@ import {
 import { config } from '../generic/config.js';
 import { getSDK } from '../services/sdk.js';
 import { extractResultsFromLogs } from './utils/extractResultsFromLogs.js';
+import { parseOpArgsCmd } from './utils/parseOpsArgsCmd.js';
 import { createResourceManager } from './modules/resourceManager/index.js';
 import { DockerExtended } from '../docker/index.js';
 import { s3HelperImage } from './modules/resourceManager/volumes/definition/s3HelperOpts.js';
@@ -269,20 +270,8 @@ export class DockerProvider extends BasicProvider implements Provider {
     opStateIndex: number,
     updateOpState: Function,
   ): Promise<Container> {
-    let cmd = '';
-    if (Array.isArray(opArgs.cmd)) {
-      for (let i = 0; i < opArgs.cmd.length; i++) {
-        if (i === 0) {
-          cmd += opArgs.cmd[i];
-        } else {
-          cmd += "'" + opArgs.cmd[i] + "'";
-        }
-      }
-    } else {
-      cmd = opArgs.cmd;
-    }
     const flow = this.getFlow(flowId) as Flow;
-    const parsedcmd = parse(cmd);
+    const parsedCmd = parseOpArgsCmd(opArgs.cmd);
 
     // create volume mount array
     const volumes = [];
@@ -344,7 +333,7 @@ export class DockerProvider extends BasicProvider implements Provider {
       opArgs.image ? opArgs.image : flow.jobDefinition.global?.image!,
       {
         name,
-        cmd: parsedcmd as string[],
+        cmd: parsedCmd as string[],
         env: {
           ...globalEnv,
           ...opArgs.env,

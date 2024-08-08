@@ -9,7 +9,7 @@
       "type": "container/run",
       "id": "hello-world",
       "args": {
-        "cmd": ["echo hello world"],
+        "cmd": "echo hello world",
         "image": "ubuntu"
       }
     }

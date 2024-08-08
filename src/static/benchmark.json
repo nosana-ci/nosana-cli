@@ -9,7 +9,7 @@
       "type": "container/run",
       "id": "cpu",
       "args": {
-        "cmd": ["sh -c ", "cat /proc/cpuinfo  | grep name | uniq;"],
+        "cmd": "cat /proc/cpuinfo  | grep name | uniq;",
         "image": "registry.hub.docker.com/nosana/stats:v1.0.4",
         "env": {
           "DEBUG": "1"
@@ -20,10 +20,7 @@
       "type": "container/run",
       "id": "ram",
       "args": {
-        "cmd": [
-          "sh -c ",
-          "grep MemTotal /proc/meminfo | awk '\\''{print $2 / 1024 \"MB\"}'\\'';"
-        ],
+        "cmd": "grep MemTotal /proc/meminfo | awk '{print $2 / 1024 \"MB\"}';",
         "image": "registry.hub.docker.com/nosana/stats:v1.0.4",
         "env": {
           "DEBUG": "1"
@@ -34,10 +31,7 @@
       "type": "container/run",
       "id": "disk-space",
       "args": {
-        "cmd": [
-          "sh -c ",
-          "df -h --output=size --total | awk '\\''END {print $1}'\\'';"
-        ],
+        "cmd": "df -h --output=size --total | awk 'END {print $1}';",
         "image": "registry.hub.docker.com/nosana/stats:v1.0.4",
         "env": {
           "DEBUG": "1"
@@ -48,10 +42,7 @@
       "type": "container/run",
       "id": "country",
       "args": {
-        "cmd": [
-          "sh -c ",
-          "(curl -ks https://ipinfo.io/$(curl -ks https://ipinfo.io/ip) | jq -r \".country\") || true;"
-        ],
+        "cmd": "(curl -ks https://ipinfo.io/$(curl -ks https://ipinfo.io/ip) | jq -r \".country\") || true;",
         "image": "registry.hub.docker.com/nosana/stats:v1.0.4",
         "env": {
           "DEBUG": "1"
@@ -62,7 +53,7 @@
       "type": "container/run",
       "id": "bandwidth",
       "args": {
-        "cmd": ["sh -c ", "speedtest-cli --simple || true;"],
+        "cmd": "speedtest-cli --simple || true;",
         "image": "registry.hub.docker.com/nosana/stats:v1.0.4",
         "env": {
           "DEBUG": "1"
