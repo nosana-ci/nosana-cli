@@ -357,7 +357,7 @@ export async function startNode(
         }
       } else {
         // current GPU matches market
-        market = data[1].market;
+        market = data.address;
         nft = new PublicKey(nodeResponse.accessKeyMint);
       }
     } catch (e) {

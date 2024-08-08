@@ -13,13 +13,16 @@ describe('createNosanaCLI', () => {
   });
 
   it('should have only two commands', () => {
-    expect(CLI.commands.length).toBe(3);
+    expect(CLI.commands.length).toBe(4);
   });
 
-  it.each([['job', 'node', 'wallet']])('should have %s command', (command) => {
-    // @ts-ignore
-    expect(CLI.commands.map((command) => command._name)).toContain(command);
-  });
+  it.each([['job', 'node', 'wallet', 'market']])(
+    'should have %s command',
+    (command) => {
+      // @ts-ignore
+      expect(CLI.commands.map((command) => command._name)).toContain(command);
+    },
+  );
 
   it('should have only two options', () => {
     expect(CLI.options.length).toBe(2);
