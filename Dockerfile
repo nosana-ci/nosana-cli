@@ -10,7 +10,3 @@ RUN npm ci \
 ENV NODE_ENV production
 
 WORKDIR /nosana
-
-COPY ./auto-update/ /nosana/
-
-CMD [ "node", "--loader", "ts-node/esm", "src/index.ts", "node", "start" ]
