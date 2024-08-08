@@ -1,7 +1,5 @@
 import { Client, sleep } from '@nosana/sdk';
-
 import fs from 'node:fs';
-import chalk from 'chalk';
 import { randomUUID } from 'crypto';
 import { IValidation } from 'typia';
 import { config } from '../../../generic/config.js';

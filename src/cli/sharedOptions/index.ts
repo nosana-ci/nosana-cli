@@ -3,4 +3,4 @@
 export * from './network.js';
 export * from './rpc.js';
 export * from './wallet.js';
-export * from './network.js';
+export * from './format.js';
