@@ -9,10 +9,7 @@
       "type": "container/run",
       "id": "run-from-cli",
       "args": {
-        "cmd": [
-          "/bin/bash -c ",
-          "for i in {1..10}; do echo $i; sleep 1; done;"
-        ],
+        "cmd": "for i in `seq 1 10`; do echo $i; done",
         "image": "ubuntu"
       }
     }

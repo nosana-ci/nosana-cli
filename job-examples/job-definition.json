@@ -23,7 +23,8 @@
       "id": "run-from-cli",
       "args": {
         "cmd": [
-          "/bin/bash -c ",
+          "/bin/sh",
+          "-c",
           "echo Hello World > /nosana/outputs/test.txt;",
           "ls /nosana/outputs;",
           "pwd;"
@@ -42,7 +43,7 @@
       "type": "container/run",
       "id": "run-from-cli-2",
       "args": {
-        "cmd": "/bin/bash -c 'echo Hello World; ls; pwd;'",
+        "cmd": "echo Hello World; ls; pwd;",
         "image": "ubuntu"
       }
     }
