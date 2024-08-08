@@ -49,27 +49,15 @@ export const textOutputEventHandlers: OutputEventHandlers = {
     );
   },
 
-  [OUTPUT_EVENTS.OUTPUT_IPFS_UPLOADED]: (param: IpfsParam) => {
-    console.log(
-      `ipfs uploaded:\t${colors.BLUE}${param.ipfsHash}${colors.RESET}`,
-    );
-  },
+  [OUTPUT_EVENTS.OUTPUT_IPFS_UPLOADED]: (param: IpfsParam) => {},
 
-  [OUTPUT_EVENTS.OUTPUT_SERVICE_URL]: (param: ServiceUrlParam) => {
-    console.log(
-      chalk.cyan(`Service will be exposed at ${chalk.bold(`${param.url}`)}`),
-    );
-  },
+  [OUTPUT_EVENTS.OUTPUT_SERVICE_URL]: (param: ServiceUrlParam) => {},
 
   [OUTPUT_EVENTS.OUTPUT_JOB_URL]: (param: JobUrlParam) => {
     console.log(`Job:\t\t${colors.BLUE}${param.job_url}${colors.RESET}`);
   },
 
-  [OUTPUT_EVENTS.OUTPUT_JSON_FLOW_URL]: (param: JsonFlowUrlParam) => {
-    console.log(
-      `JSON flow:\t${colors.BLUE}${param.json_flow_url}${colors.RESET}`,
-    );
-  },
+  [OUTPUT_EVENTS.OUTPUT_JSON_FLOW_URL]: (param: JsonFlowUrlParam) => {},
 
   [OUTPUT_EVENTS.OUTPUT_MARKET_URL]: (param: MarketUrlParam) => {
     console.log(
@@ -77,11 +65,7 @@ export const textOutputEventHandlers: OutputEventHandlers = {
     );
   },
 
-  [OUTPUT_EVENTS.OUTPUT_JOB_PRICE]: (param: JobPriceParam) => {
-    console.log(
-      `Price:\t\t${colors.CYAN}${param.price} NOS/s${colors.RESET}`,
-    );
-  },
+  [OUTPUT_EVENTS.OUTPUT_JOB_PRICE]: (param: JobPriceParam) => {},
 
   [OUTPUT_EVENTS.OUTPUT_TOTAL_COST]: (param: TotalCostParam) => {
     console.log(
@@ -99,15 +83,9 @@ export const textOutputEventHandlers: OutputEventHandlers = {
     );
   },
 
-  [OUTPUT_EVENTS.OUTPUT_JOB_POSTING]: (param: JobPostingParam) => {
-    console.log(
-      `posting job to market ${colors.CYAN}${param.market_address}${colors.RESET} for price ${colors.YELLOW}${param.price} NOS/s${colors.RESET} (total: ${param.total} NOS)`,
-    );
-  },
+  [OUTPUT_EVENTS.OUTPUT_JOB_POSTING]: (param: JobPostingParam) => {},
 
-  [OUTPUT_EVENTS.OUTPUT_JOB_POSTED_TX]: (param: TxParam) => {
-    console.log(`job posted with tx ${chalk.cyan(param.tx)}!`);
-  },
+  [OUTPUT_EVENTS.OUTPUT_JOB_POSTED_TX]: (param: TxParam) => {},
 
   [OUTPUT_EVENTS.OUTPUT_JOB_VALIDATION_ERROR]: (param: ValidationErrorParam) => {
     console.error(param.error);
@@ -185,11 +163,7 @@ export const textOutputEventHandlers: OutputEventHandlers = {
     );
   },
 
-  [OUTPUT_EVENTS.OUTPUT_RESULT_URL]: (param: ResultUrlParam) => {
-    console.log(
-      `Result:\t\t${colors.BLUE}${param.url}${colors.RESET}`,
-    );
-  },
+  [OUTPUT_EVENTS.OUTPUT_RESULT_URL]: (param: ResultUrlParam) => {},
 
   [OUTPUT_EVENTS.OUTPUT_RETRIVE_JOB_COMMAND]: (param: RetriveJobCommandParam) => {
     console.log(
@@ -201,29 +175,5 @@ export const textOutputEventHandlers: OutputEventHandlers = {
     console.log(figlet.textSync(param.text));
   },
 
-  [OUTPUT_EVENTS.OUTPUT_JOB_EXECUTION]: (param: JobExecutionParam) => {
-    console.log('Logs:');
-
-    console.log(
-      `\n${colors.CYAN}- Executed step ${param.opState.operationId} in ${
-        (param.opState.endTime! - param.opState.startTime!) / 1000
-      }s${colors.RESET}\n`,
-    );
-
-    for (const log of param.opState.logs) {
-      const color = log.type === 'stderr' && param.opState.exitCode ? colors.RED : '';
-      const sanitizedLog = log.log;
-      console.log(`${color}${sanitizedLog}${colors.RESET}`);
-    }
-
-    if (param.opState.status) {
-      console.log(
-        `\n${
-          param.opState.exitCode ? colors.RED : colors.GREEN
-        }Exited with status ${param.opState.status} with code ${
-          param.opState.exitCode
-        } ${colors.RESET}`,
-      );
-    }
-  },
+  [OUTPUT_EVENTS.OUTPUT_JOB_EXECUTION]: (param: JobExecutionParam) => {},
 };
