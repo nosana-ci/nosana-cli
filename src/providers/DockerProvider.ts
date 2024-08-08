@@ -122,7 +122,7 @@ export class DockerProvider extends BasicProvider implements Provider {
           );
         }
         if (op.args.expose) {
-          const frpcImage = 'docker.io/laurensv/nosana-frpc';
+          const frpcImage = 'docker.io/nosana/frpc:0.1.0';
           try {
             await this.pullImage(frpcImage);
           } catch (error: any) {

@@ -4,7 +4,7 @@ FROM node:20.11.1
 WORKDIR /usr/local/lib/nosana-cli
 COPY . .
 # TODO - use build args to set the version in the pipeline
-RUN sed -i "s/0.0.0/0.1.99/" package.json
+RUN sed -i "s/0.0.0/0.1.100/" package.json
 RUN npm ci \
  && npm run build \
  && npm ci --omit=dev \
