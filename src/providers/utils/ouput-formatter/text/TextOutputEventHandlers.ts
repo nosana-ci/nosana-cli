@@ -1,17 +1,42 @@
-import { 
-  BalanceLowParam, BalanceParam, DurationParam, IpfsParam, JobExecutionParam, 
-  JobNotFoundErrorParam, JobPostedErrorParam, JobPostingParam, JobPriceParam, JobStatusParam, JobUrlParam, JsonFlowTypeErrorParam, 
-  JsonFlowUrlParam, KeyfileParam, MarketUrlParam, NetworkParam, NodeUrlParam, NosBalanceLowParam, OUTPUT_EVENTS, ResultUrlParam, 
-  ServiceUrlParam, StartTimeParam, TotalCostParam, TxParam, ErrorParam, WalletParam, RetriveJobCommandParam, 
+import {
+  BalanceLowParam,
+  BalanceParam,
+  DurationParam,
+  IpfsParam,
+  JobExecutionParam,
+  JobNotFoundErrorParam,
+  JobPostedErrorParam,
+  JobPostingParam,
+  JobPriceParam,
+  JobStatusParam,
+  JobUrlParam,
+  JsonFlowTypeErrorParam,
+  JsonFlowUrlParam,
+  KeyfileParam,
+  MarketUrlParam,
+  NetworkParam,
+  NodeUrlParam,
+  NosBalanceLowParam,
+  OUTPUT_EVENTS,
+  ResultUrlParam,
+  ServiceUrlParam,
+  StartTimeParam,
+  TotalCostParam,
+  TxParam,
+  ErrorParam,
+  WalletParam,
+  RetriveJobCommandParam,
   ValidationErrorParam,
-  OutputHeaderLogoParam
-} from "../outputEvents.js";
-import { OutputEventParams } from "../outputEvents.js";
-import chalk from "chalk";
+  OutputHeaderLogoParam,
+} from '../outputEvents.js';
+import { OutputEventParams } from '../outputEvents.js';
+import chalk from 'chalk';
 import { colors } from '../../../../generic/utils.js';
-import figlet from "figlet";
+import figlet from 'figlet';
 
-type EventHandler<T extends keyof OutputEventParams> = (param: OutputEventParams[T]) => void;
+type EventHandler<T extends keyof OutputEventParams> = (
+  param: OutputEventParams[T],
+) => void;
 
 type OutputEventHandlers = {
   [K in keyof OutputEventParams]: EventHandler<K>;
@@ -31,12 +56,8 @@ export const textOutputEventHandlers: OutputEventHandlers = {
   },
 
   [OUTPUT_EVENTS.OUTPUT_BALANCES]: (param: BalanceParam) => {
-    console.log(
-      `SOL balance:\t${colors.GREEN}${param.sol} SOL${colors.RESET}`,
-    );
-    console.log(
-      `NOS balance:\t${colors.GREEN}${param.nos} NOS${colors.RESET}`,
-    );
+    console.log(`SOL balance:\t${colors.GREEN}${param.sol} SOL${colors.RESET}`);
+    console.log(`NOS balance:\t${colors.GREEN}${param.nos} NOS${colors.RESET}`);
   },
 
   [OUTPUT_EVENTS.OUTPUT_NETWORK]: (param: NetworkParam) => {
@@ -44,9 +65,7 @@ export const textOutputEventHandlers: OutputEventHandlers = {
   },
 
   [OUTPUT_EVENTS.OUTPUT_WALLET]: (param: WalletParam) => {
-    console.log(
-      `Wallet:\t\t${colors.GREEN}${param.publicKey}${colors.RESET}`,
-    );
+    console.log(`Wallet:\t\t${colors.GREEN}${param.publicKey}${colors.RESET}`);
   },
 
   [OUTPUT_EVENTS.OUTPUT_IPFS_UPLOADED]: (param: IpfsParam) => {},
@@ -60,26 +79,20 @@ export const textOutputEventHandlers: OutputEventHandlers = {
   [OUTPUT_EVENTS.OUTPUT_JSON_FLOW_URL]: (param: JsonFlowUrlParam) => {},
 
   [OUTPUT_EVENTS.OUTPUT_MARKET_URL]: (param: MarketUrlParam) => {
-    console.log(
-      `Market:\t\t${colors.BLUE}${param.market_url}${colors.RESET}`,
-    );
+    console.log(`Market:\t\t${colors.BLUE}${param.market_url}${colors.RESET}`);
   },
 
   [OUTPUT_EVENTS.OUTPUT_JOB_PRICE]: (param: JobPriceParam) => {},
 
   [OUTPUT_EVENTS.OUTPUT_TOTAL_COST]: (param: TotalCostParam) => {
-    console.log(
-      `Total Costs:\t${colors.CYAN}${
-        param.cost
-      } NOS${colors.RESET}`,
-    );
+    console.log(`Total Costs:\t${colors.CYAN}${param.cost} NOS${colors.RESET}`);
   },
 
   [OUTPUT_EVENTS.OUTPUT_JOB_STATUS]: (param: JobStatusParam) => {
     console.log(
-      `Status:\t\t${
-        param.status === 'COMPLETED' ? colors.GREEN : colors.CYAN
-      }${param.status}${colors.RESET}`,
+      `Status:\t\t${param.status === 'COMPLETED' ? colors.GREEN : colors.CYAN}${
+        param.status
+      }${colors.RESET}`,
     );
   },
 
@@ -87,7 +100,9 @@ export const textOutputEventHandlers: OutputEventHandlers = {
 
   [OUTPUT_EVENTS.OUTPUT_JOB_POSTED_TX]: (param: TxParam) => {},
 
-  [OUTPUT_EVENTS.OUTPUT_JOB_VALIDATION_ERROR]: (param: ValidationErrorParam) => {
+  [OUTPUT_EVENTS.OUTPUT_JOB_VALIDATION_ERROR]: (
+    param: ValidationErrorParam,
+  ) => {
     console.error(param.error);
     throw new Error(chalk.red.bold('Job Definition validation failed'));
   },
@@ -126,46 +141,47 @@ export const textOutputEventHandlers: OutputEventHandlers = {
   },
 
   [OUTPUT_EVENTS.OUTPUT_JOB_NOT_FOUND]: (param: JobNotFoundErrorParam) => {
-    console.error(`${colors.RED}Could not retrieve job\n${colors.RESET}`, param.error);
+    console.error(
+      `${colors.RED}Could not retrieve job\n${colors.RESET}`,
+      param.error,
+    );
   },
 
   [OUTPUT_EVENTS.OUTPUT_CANNOT_LOG_RESULT]: () => {
     console.log(`${colors.RED}Cannot log results${colors.RESET}`);
   },
 
-  [OUTPUT_EVENTS.OUTPUT_ARTIFACT_SUPPORT_INCOMING_ERROR]: (param: ErrorParam) => {
+  [OUTPUT_EVENTS.OUTPUT_ARTIFACT_SUPPORT_INCOMING_ERROR]: (
+    param: ErrorParam,
+  ) => {
     throw new Error('artifact support coming soon!');
   },
-  
-  [OUTPUT_EVENTS.OUTPUT_JSON_FLOW_TYPE_NOT_SUPPORTED_ERROR]: (param: JsonFlowTypeErrorParam) => {
+
+  [OUTPUT_EVENTS.OUTPUT_JSON_FLOW_TYPE_NOT_SUPPORTED_ERROR]: (
+    param: JsonFlowTypeErrorParam,
+  ) => {
     throw new Error(`type ${param.type} not supported yet`);
   },
 
   [OUTPUT_EVENTS.OUTPUT_NODE_URL]: (param: NodeUrlParam) => {
-    console.log(
-      `Node:\t\t${colors.BLUE}${param.url}${colors.RESET}`,
-    );
+    console.log(`Node:\t\t${colors.BLUE}${param.url}${colors.RESET}`);
   },
 
   [OUTPUT_EVENTS.OUTPUT_DURATION]: (param: DurationParam) => {
     console.log(
-      `Duration:\t${colors.CYAN}${param.duration} seconds${
-        colors.RESET
-      }`,
+      `Duration:\t${colors.CYAN}${param.duration} seconds${colors.RESET}`,
     );
   },
 
   [OUTPUT_EVENTS.OUTPUT_START_TIME]: (param: StartTimeParam) => {
-    console.log(
-      `Start Time:\t${colors.CYAN}${param.date}${
-        colors.RESET
-      }`,
-    );
+    console.log(`Start Time:\t${colors.CYAN}${param.date}${colors.RESET}`);
   },
 
   [OUTPUT_EVENTS.OUTPUT_RESULT_URL]: (param: ResultUrlParam) => {},
 
-  [OUTPUT_EVENTS.OUTPUT_RETRIVE_JOB_COMMAND]: (param: RetriveJobCommandParam) => {
+  [OUTPUT_EVENTS.OUTPUT_RETRIVE_JOB_COMMAND]: (
+    param: RetriveJobCommandParam,
+  ) => {
     console.log(
       `\nrun ${colors.CYAN}nosana job get ${param.job} --network ${param.network}${colors.RESET} to retrieve job and result`,
     );

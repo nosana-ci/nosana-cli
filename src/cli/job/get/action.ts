@@ -10,8 +10,8 @@ import { clearLine, colors } from '../../../generic/utils.js';
 import { OpState } from '../../../providers/Provider.js';
 import { getSDK } from '../../../services/sdk.js';
 import { waitForJobCompletion } from '../../../services/jobs.js';
-import { OUTPUT_EVENTS } from "../../../providers/utils/ouput-formatter/outputEvents.js";
-import { outputFormatSelector } from "../../../providers/utils/ouput-formatter/outputFormatSelector.js";
+import { OUTPUT_EVENTS } from '../../../providers/utils/ouput-formatter/outputEvents.js';
+import { outputFormatSelector } from '../../../providers/utils/ouput-formatter/outputFormatSelector.js';
 
 export async function getJob(
   jobAddress: string,
@@ -21,7 +21,7 @@ export async function getJob(
   cmd: Command | undefined,
 ): Promise<void> {
   const nosana: Client = getSDK();
-  const formatter = outputFormatSelector(options.format)
+  const formatter = outputFormatSelector(options.format);
 
   let job;
   console.log('retrieving job...');
@@ -30,21 +30,31 @@ export async function getJob(
     clearLine();
   } catch (e) {
     clearLine();
-    formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_NOT_FOUND, { error: e as Error })
+    formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_NOT_FOUND, { error: e as Error });
   }
 
   if (job) {
-    formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_URL, {job_url: `https://explorer.nosana.io/jobs/${jobAddress}${
-      nosana.solana.config.network.includes('devnet') ? '?network=devnet' : ''
-    }`})
+    formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_URL, {
+      job_url: `https://explorer.nosana.io/jobs/${jobAddress}${
+        nosana.solana.config.network.includes('devnet') ? '?network=devnet' : ''
+      }`,
+    });
 
-    formatter.output(OUTPUT_EVENTS.OUTPUT_JSON_FLOW_URL, {json_flow_url: `${nosana.ipfs.config.gateway}${job.ipfsJob}`})
-    formatter.output(OUTPUT_EVENTS.OUTPUT_MARKET_URL, {market_url: `https://explorer.nosana.io/markets/${job.market}${
-      nosana.solana.config.network.includes('devnet') ? '?network=devnet' : ''
-    }`})
+    formatter.output(OUTPUT_EVENTS.OUTPUT_JSON_FLOW_URL, {
+      json_flow_url: `${nosana.ipfs.config.gateway}${job.ipfsJob}`,
+    });
+    formatter.output(OUTPUT_EVENTS.OUTPUT_MARKET_URL, {
+      market_url: `https://explorer.nosana.io/markets/${job.market}${
+        nosana.solana.config.network.includes('devnet') ? '?network=devnet' : ''
+      }`,
+    });
 
-    formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_PRICE, {price: `${job.price / 1e6}`})
-    formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_STATUS, {status: `${job.state}`})
+    formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_PRICE, {
+      price: `${job.price / 1e6}`,
+    });
+    formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_STATUS, {
+      status: `${job.state}`,
+    });
 
     if (
       (options.wait || options.download) &&
@@ -67,19 +77,27 @@ export async function getJob(
       });
 
       if (job.timeStart) {
-        formatter.output(OUTPUT_EVENTS.OUTPUT_START_TIME, {date: new Date(job.timeStart * 1000)})
+        formatter.output(OUTPUT_EVENTS.OUTPUT_START_TIME, {
+          date: new Date(job.timeStart * 1000),
+        });
       }
 
       if (job.timeEnd) {
-        formatter.output(OUTPUT_EVENTS.OUTPUT_DURATION, {duration: job.timeEnd - job.timeStart})
-        formatter.output(OUTPUT_EVENTS.OUTPUT_TOTAL_COST, { cost: ((job.timeEnd - job.timeStart) * job.price) / 1e6 })
+        formatter.output(OUTPUT_EVENTS.OUTPUT_DURATION, {
+          duration: job.timeEnd - job.timeStart,
+        });
+        formatter.output(OUTPUT_EVENTS.OUTPUT_TOTAL_COST, {
+          cost: ((job.timeEnd - job.timeStart) * job.price) / 1e6,
+        });
       }
 
-      formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_STATUS, { status: job.state })
+      formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_STATUS, { status: job.state });
     }
 
     if (job.state === 'COMPLETED') {
-      formatter.output(OUTPUT_EVENTS.OUTPUT_RESULT_URL, {url: `${nosana.ipfs.config.gateway}${job.ipfsResult}`})
+      formatter.output(OUTPUT_EVENTS.OUTPUT_RESULT_URL, {
+        url: `${nosana.ipfs.config.gateway}${job.ipfsResult}`,
+      });
 
       const ipfsResult = await nosana.ipfs.retrieve(job.ipfsResult);
 
@@ -88,7 +106,7 @@ export async function getJob(
         // New result format
         for (let i = 0; i < ipfsResult.opStates.length; i++) {
           const opState: OpState = ipfsResult.opStates[i];
-          formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_EXECUTION, {opState})
+          formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_EXECUTION, { opState });
         }
       } else if (result) {
         const jsonFlow = await nosana.ipfs.retrieve(job.ipfsJob);
@@ -182,9 +200,8 @@ export async function getJob(
           }
         }
       } else {
-       formatter.output(OUTPUT_EVENTS.OUTPUT_CANNOT_LOG_RESULT, null)
+        formatter.output(OUTPUT_EVENTS.OUTPUT_CANNOT_LOG_RESULT, null);
       }
     }
   }
 }
-

@@ -1,25 +1,25 @@
-import { IValidation } from "typia";
-import { OpState } from "../../Provider.js";
+import { IValidation } from 'typia';
+import { OpState } from '../../Provider.js';
 
 /**
  * Adding a new Output/Throw Event
- * 
+ *
  * Step 1: Add the new event name under OUTPUT_EVENTS
  * Example:
  * OUTPUT_NEW_EVENT: 'OUTPUT_NEW_EVENT',
- * 
+ *
  * Step 2: Define parameter types for the new event
  * Example:
  * export type NewEventParam = { data: string };
- * 
+ *
  * Step 3: Add the new event to OutputEventParams
  * Example:
  * [OUTPUT_EVENTS.OUTPUT_NEW_EVENT]: NewEventParam;
- * 
+ *
  * Step 4: Make implementation for this new event on all OutputFormatterAdapter Handlers, Failure to do this will cause errors
  * Example:
  * [OUTPUT_EVENTS.OUTPUT_NEW_EVENT]: (param: OutputEventParams) => {},
- * 
+ *
  * Step 5: also add the event to __mock__ so the tests can pass
  */
 
@@ -41,8 +41,10 @@ export const OUTPUT_EVENTS = {
   OUTPUT_JOB_NOT_FOUND: 'OUTPUT_JOB_NOT_FOUND',
   OUTPUT_CANNOT_LOG_RESULT: 'OUTPUT_CANNOT_LOG_RESULT',
   OUTPUT_JOB_VALIDATION_ERROR: 'OUTPUT_JOB_VALIDATION_ERROR',
-  OUTPUT_ARTIFACT_SUPPORT_INCOMING_ERROR: 'OUTPUT_ARTIFACT_SUPPORT_INCOMING_ERROR',
-  OUTPUT_JSON_FLOW_TYPE_NOT_SUPPORTED_ERROR: 'OUTPUT_JSON_FLOW_TYPE_NOT_SUPPORTED_ERROR',
+  OUTPUT_ARTIFACT_SUPPORT_INCOMING_ERROR:
+    'OUTPUT_ARTIFACT_SUPPORT_INCOMING_ERROR',
+  OUTPUT_JSON_FLOW_TYPE_NOT_SUPPORTED_ERROR:
+    'OUTPUT_JSON_FLOW_TYPE_NOT_SUPPORTED_ERROR',
   OUTPUT_SOL_BALANCE_LOW_ERROR: 'OUTPUT_SOL_BALANCE_LOW_ERROR',
   OUTPUT_NOS_BALANCE_LOW_ERROR: 'OUTPUT_NOS_BALANCE_LOW_ERROR',
   OUTPUT_AIRDROP_REQUEST_FAILED_ERROR: 'OUTPUT_AIRDROP_REQUEST_FAILED_ERROR',
@@ -71,11 +73,15 @@ export type JsonFlowUrlParam = { json_flow_url: string };
 export type MarketUrlParam = { market_url: string };
 export type JobPriceParam = { price: string };
 export type JobStatusParam = { status: string };
-export type JobPostingParam = { market_address: string; price: number; total: string };
+export type JobPostingParam = {
+  market_address: string;
+  price: number;
+  total: string;
+};
 export type TotalCostParam = { cost: number };
 export type TxParam = { tx: string };
-export type ValidationErrorParam = { error: IValidation.IError[]};
-export type ErrorParam = { error: Error};
+export type ValidationErrorParam = { error: IValidation.IError[] };
+export type ErrorParam = { error: Error };
 export type BalanceLowParam = { sol: string };
 export type NosBalanceLowParam = { nosBalance: string; nosNeeded: string };
 export type JobPostedErrorParam = { error: Error };
@@ -87,7 +93,7 @@ export type NodeUrlParam = { url: string };
 export type DurationParam = { duration: number };
 export type StartTimeParam = { date: Date };
 export type ResultUrlParam = { url: string };
-export type RetriveJobCommandParam = { job: string, network: string};
+export type RetriveJobCommandParam = { job: string; network: string };
 export type JobExecutionParam = {
   opState: OpState;
 };
@@ -124,5 +130,5 @@ export type OutputEventParams = {
   [OUTPUT_EVENTS.OUTPUT_JOB_EXECUTION]: JobExecutionParam;
   [OUTPUT_EVENTS.OUTPUT_RETRIVE_JOB_COMMAND]: RetriveJobCommandParam;
   [OUTPUT_EVENTS.OUTPUT_FAILED_TO_FETCH_MARKETS_ERROR]: ErrorParam;
-  [OUTPUT_EVENTS.OUTPUT_HEADER_LOGO]: OutputHeaderLogoParam
+  [OUTPUT_EVENTS.OUTPUT_HEADER_LOGO]: OutputHeaderLogoParam;
 };

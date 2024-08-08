@@ -1,4 +1,4 @@
-import { OutputEvent, OutputEventParams } from "./outputEvents.js";
+import { OutputEvent, OutputEventParams } from './outputEvents.js';
 
 /**
  * Interface defining the structure for output formatter adapters.
@@ -7,7 +7,10 @@ import { OutputEvent, OutputEventParams } from "./outputEvents.js";
  */
 export interface OutputFormatterAdapter {
   finalize(): void;
-  output<T extends keyof OutputEventParams>(event: T, param: OutputEventParams[T]): void;
+  output<T extends keyof OutputEventParams>(
+    event: T,
+    param: OutputEventParams[T],
+  ): void;
 }
 
 /**
@@ -26,13 +29,13 @@ export class OutputFormatter {
    * Outputs an event using the selected format.
    * @param {OutputEvent} event - The event type to be output.
    * @param {T} param - The parameters associated with the event.
-   * 
+   *
    * Usage:
-   * 
+   *
    * ```typescript
    * // To get a JSON formatter
    * const formatter = outputFormatSelector('json');
-   * 
+   *
    * // To output an event
    * formatter.output(OUTPUT_EVENTS.EXAMPLE_OUTPUT, { log: { log: 'Job started\n' } });
    * ```
@@ -47,9 +50,9 @@ export class OutputFormatter {
    * After every throw event, an actual error is thrown.
    * @param {OutputEvent} event - The event type to be thrown.
    * @param {T} param - The parameters associated with the event.
-   * 
+   *
    * Usage:
-   * 
+   *
    * ```typescript
    * // To throw an event (usually for error handling)
    * formatter.throw(OUTPUT_EVENTS.EXAMPLE_OUTPUT, { error: 'Invalid job definition' });
@@ -61,9 +64,9 @@ export class OutputFormatter {
 
   /**
    * Finalizes the output, performing any necessary cleanup or final steps.
-   * 
+   *
    * Usage:
-   * 
+   *
    * ```typescript
    * // Finalize the output (if needed)
    * formatter.finalize();

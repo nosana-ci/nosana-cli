@@ -1,4 +1,4 @@
-import outputEventsMock from "../../__mocks__/outputEvents.mock.js";
+import outputEventsMock from '../../__mocks__/outputEvents.mock.js';
 import { JsonOutputFormatter } from '../JsonOutputFormatter.js';
 import { OUTPUT_EVENTS } from '../../outputEvents.js';
 import { jsonOutputEventHandlers } from '../JsonOutputEventHandlers.js';
@@ -22,7 +22,10 @@ describe('JsonOutputFormatter', () => {
     const event = OUTPUT_EVENTS.READ_KEYFILE;
 
     formatter.output(event, param);
-    expect(jsonOutputEventHandlers.READ_KEYFILE).toHaveBeenCalledWith(formatter['response'], param);
+    expect(jsonOutputEventHandlers.READ_KEYFILE).toHaveBeenCalledWith(
+      formatter['response'],
+      param,
+    );
   });
 
   it('should set isError to undefined initially', () => {
@@ -41,6 +44,8 @@ describe('JsonOutputFormatter', () => {
     formatter.output(event, param);
     formatter.finalize();
 
-    expect(console.log).toHaveBeenCalledWith(JSON.stringify(formatter['response'], null, 2));
+    expect(console.log).toHaveBeenCalledWith(
+      JSON.stringify(formatter['response'], null, 2),
+    );
   });
 });
