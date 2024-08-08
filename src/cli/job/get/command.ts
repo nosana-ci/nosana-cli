@@ -3,6 +3,7 @@ import { Command, Option } from 'commander';
 import { getJob } from './action.js';
 import { networkOption, rpcOption } from '../../sharedOptions/index.js';
 import { formatOption } from "../../sharedOptions/format.js";
+import { verboseOption } from "../../sharedOptions/verbose.js";
 
 export const getJobCommand = new Command('get')
   .description('Get a job and display result')
@@ -19,4 +20,5 @@ export const getJobCommand = new Command('get')
     ),
   )
   .addOption(formatOption)
+  .addOption(verboseOption)
   .action(getJob);
