@@ -30,6 +30,7 @@ import {
   runBenchmark,
   healthCheck,
 } from '../../../services/nodes.js';
+import { validateCLIVersion } from '../../../services/versions.js';
 
 setGlobalDispatcher(new Agent({ connect: { timeout: 150_000 } }));
 
@@ -401,6 +402,7 @@ export async function startNode(
   const jobLoop = async (firstRun: Boolean = false): Promise<void> => {
     try {
       if (!firstRun) {
+        await validateCLIVersion();
         await healthCheck({
           node,
           provider,
