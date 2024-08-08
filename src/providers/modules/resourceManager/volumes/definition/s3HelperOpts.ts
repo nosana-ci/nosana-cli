@@ -6,7 +6,8 @@ import {
   S3Secure,
 } from '../../../../../types/resources.js';
 
-export const s3HelperImage = 'docker.io/nosana/remote-resource-helper:0.1.0';
+export const s3HelperImage =
+  'registry.hub.docker.com/nosana/remote-resource-helper:0.1.0';
 
 export const createS3HelperOpts = (
   volumeName: string,

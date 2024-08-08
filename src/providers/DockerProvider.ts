@@ -358,7 +358,7 @@ export class DockerProvider extends BasicProvider implements Provider {
       // console.error(e);
     }
     if (opArgs.expose) {
-      await this.runContainer('docker.io/laurensv/nosana-frpc', {
+      await this.runContainer('registry.hub.docker.com/laurensv/nosana-frpc', {
         name: 'frpc-' + name,
         cmd: ['-c', '/etc/frp/frpc.toml'],
         networks,
