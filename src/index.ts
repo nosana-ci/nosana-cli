@@ -1,6 +1,7 @@
 #!/usr/bin/env -S node --no-warnings
+import pkg from '../package.json' assert { type: 'json' };
 import { startCLI } from './cli/index.js';
 
-const VERSION: string = '0.3.0';
+const VERSION: string = pkg.version;
 
 startCLI(VERSION);

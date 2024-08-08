@@ -1,7 +1,10 @@
 import { createNosanaCLI } from './createNosanaCli.js';
 import { outputFormatSelector } from '../providers/utils/ouput-formatter/outputFormatSelector.js';
+import { validateCLIVersion } from '../services/versions.js';
 
 export async function startCLI(version: string) {
+  await validateCLIVersion();
+
   const cli = createNosanaCLI(version);
 
   try {
