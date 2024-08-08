@@ -1,4 +1,4 @@
-import outputEventsMock from "../../__mocks__/outputEvents.mock.js";
+import outputEventsMock from '../../__mocks__/outputEvents.mock.js';
 import { TextOutputFormatter } from '../TextOutputFormatter.js';
 import { OUTPUT_EVENTS } from '../../outputEvents.js';
 import { textOutputEventHandlers } from '../TextOutputEventHandlers.js';

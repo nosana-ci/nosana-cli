@@ -16,17 +16,30 @@ describe('OutputFormatter', () => {
   });
 
   it('should call the appropriate event handler', () => {
-    const param: OutputEventParams['OUTPUT_JOB_URL'] = { job_url: 'http://example.com' };
+    const param: OutputEventParams['OUTPUT_JOB_URL'] = {
+      job_url: 'http://example.com',
+    };
     formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_URL, param);
 
-    expect(mockAdapter.output).toHaveBeenCalledWith(OUTPUT_EVENTS.OUTPUT_JOB_URL, param);
+    expect(mockAdapter.output).toHaveBeenCalledWith(
+      OUTPUT_EVENTS.OUTPUT_JOB_URL,
+      param,
+    );
   });
 
   it('should call the appropriate event handler for throw and throw error', () => {
-    const param: OutputEventParams['OUTPUT_ARTIFACT_SUPPORT_INCOMING_ERROR'] = { error: new Error('ARTIFACT NOT SUPPORT') };
+    const param: OutputEventParams['OUTPUT_ARTIFACT_SUPPORT_INCOMING_ERROR'] = {
+      error: new Error('ARTIFACT NOT SUPPORT'),
+    };
 
-    formatter.throw(OUTPUT_EVENTS.OUTPUT_ARTIFACT_SUPPORT_INCOMING_ERROR, param);
-    expect(mockAdapter.output).toHaveBeenCalledWith(OUTPUT_EVENTS.OUTPUT_ARTIFACT_SUPPORT_INCOMING_ERROR, param);
+    formatter.throw(
+      OUTPUT_EVENTS.OUTPUT_ARTIFACT_SUPPORT_INCOMING_ERROR,
+      param,
+    );
+    expect(mockAdapter.output).toHaveBeenCalledWith(
+      OUTPUT_EVENTS.OUTPUT_ARTIFACT_SUPPORT_INCOMING_ERROR,
+      param,
+    );
   });
 
   it('should call finalize on the adapter', () => {

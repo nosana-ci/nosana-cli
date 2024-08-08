@@ -1,5 +1,5 @@
 import { createNosanaCLI } from './createNosanaCli.js';
-import { outputFormatSelector } from "../providers/utils/ouput-formatter/outputFormatSelector.js";
+import { outputFormatSelector } from '../providers/utils/ouput-formatter/outputFormatSelector.js';
 
 export async function startCLI(version: string) {
   const cli = createNosanaCLI(version);
@@ -15,6 +15,6 @@ export async function startCLI(version: string) {
     }
     process.exit(1);
   } finally {
-    outputFormatSelector('').finalize()
+    outputFormatSelector('').finalize();
   }
 }

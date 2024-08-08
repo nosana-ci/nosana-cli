@@ -1,8 +1,8 @@
-import '../__mocks__/outputFormatter.mock.js'
-import { JsonOutputFormatter } from "../json/JsonOutputFormatter.js";
-import { OutputFormatter } from "../OutputFormatter.js";
-import { OutputFormatterFactory } from "../OutputFormatterFactory.js";
-import { TextOutputFormatter } from "../text/TextOutputFormatter.js";
+import '../__mocks__/outputFormatter.mock.js';
+import { JsonOutputFormatter } from '../json/JsonOutputFormatter.js';
+import { OutputFormatter } from '../OutputFormatter.js';
+import { OutputFormatterFactory } from '../OutputFormatterFactory.js';
+import { TextOutputFormatter } from '../text/TextOutputFormatter.js';
 
 beforeEach(() => {
   jest.clearAllMocks();
