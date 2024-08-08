@@ -7,6 +7,15 @@ function requiresNewVersion(required: string, current: string): boolean {
   return parseInt(required) > parseInt(current);
 }
 
+function exitCleanly() {
+  console.log(
+    chalk.red(
+      'A new version of the Nosana cli has been released. Please update you CLI using npm install @nosana/cli.',
+    ),
+  );
+  process.exit(129);
+}
+
 export async function validateCLIVersion() {
   const client = clientSelector();
 
@@ -24,16 +33,20 @@ export async function validateCLIVersion() {
   const [current_major, current_minor, current_patch] = pkg.version.split('.');
   const [required_major, required_minor, required_patch] = data.split('.');
 
-  if (
-    requiresNewVersion(required_major, current_major) ||
-    requiresNewVersion(required_minor, current_minor) ||
-    requiresNewVersion(required_patch, current_patch)
-  ) {
-    console.log(
-      chalk.red(
-        'A new version of the Nosana cli has been released. Please update you CLI using npm install @nosana/cli.',
-      ),
-    );
-    process.exit(129);
+  // TODO: Refactor into a recurrsive loop
+  if (parseInt(required_major) === parseInt(current_major)) {
+    if (parseInt(required_minor) === parseInt(current_minor)) {
+      if (requiresNewVersion(required_patch, current_patch)) {
+        exitCleanly();
+      }
+    } else {
+      if (requiresNewVersion(required_minor, current_minor)) {
+        exitCleanly();
+      }
+    }
+  } else {
+    if (requiresNewVersion(required_major, current_major)) {
+      exitCleanly();
+    }
   }
 }
