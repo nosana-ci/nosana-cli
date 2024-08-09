@@ -6,7 +6,6 @@
 include:
   - project: nosana-ci/tools/cicd/gitlab-ci
     file: docker-container.yml
-    ref: build-arg
 
 variables:
   DOCKERFILE_DIR: .
