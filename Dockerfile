@@ -1,6 +1,6 @@
 FROM node:20.11.1
 
-ARG CONTAINER_TAG = "0.0.0"
+ARG CONTAINER_TAG=0.0.0
 
 # nosana cli
 WORKDIR /usr/local/lib/nosana-cli
