@@ -11,12 +11,12 @@
       "args": {
         "cmd": [],
         "image": "docker.io/ollama/ollama",
-        "gpu": false,
+        "gpu": true,
         "expose": 11434,
         "resources": [
           {
             "type": "S3",
-            "url": "s3://nos-ai-models-qllsn32u/ollama/llama3.1/8b",
+            "url": "s3://nos-ai-models-qllsn32u/ollama/llama3.1/70b",
             "target": "/root/.ollama/models"
           }
         ]

@@ -18,10 +18,7 @@
       "type": "container/run",
       "id": "disk-space-check",
       "args": {
-        "cmd": [
-          "sh -c ",
-          "df -m --output=avail --total | awk '\\''END {print $1}'\\'';"
-        ],
+        "cmd": "df -m --output=avail --total | awk 'END {print $1}';",
         "image": "registry.hub.docker.com/nosana/stats:v1.0.4",
         "env": {
           "DEBUG": "1"

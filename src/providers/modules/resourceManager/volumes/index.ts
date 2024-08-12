@@ -82,8 +82,11 @@ export function createVolumeManager(
           await docker.getVolume(volume).remove({ force: true });
           delete db.data.resources.volumes[resource];
         } catch (err) {
-          throw new Error(
-            `Could not remove remote resource: ${resource}.\n${err}`,
+          const message = (err as { json: { message: string } }).json.message;
+          logger.log(
+            chalk.red(
+              `Could not remove remote resource: ${resource}.\n${message}`,
+            ),
           );
         }
       }
