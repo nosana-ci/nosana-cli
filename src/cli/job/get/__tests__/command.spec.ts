@@ -25,8 +25,8 @@ describe('getJobCommand', () => {
     expect(getJobCommand.args[0]).toBe('address');
   });
 
-  it('should have 5 options', () => {
-    expect(getJobCommand.options.length).toBe(5);
+  it('should have 6 options', () => {
+    expect(getJobCommand.options.length).toBe(6);
   });
 
   it.each([

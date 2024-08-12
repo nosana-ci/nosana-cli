@@ -7,6 +7,7 @@ import {
   walletOption,
 } from '../../sharedOptions/index.js';
 import { formatOption } from '../../sharedOptions/format.js';
+import { verboseOption } from '../../sharedOptions/verbose.js';
 
 export const postJobCommand = new Command('post')
   .description('Create a job to run by Nosana Runners')
@@ -53,4 +54,5 @@ export const postJobCommand = new Command('post')
     ),
   )
   .addOption(formatOption)
+  .addOption(verboseOption)
   .action(run);
