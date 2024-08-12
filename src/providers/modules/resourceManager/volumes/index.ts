@@ -78,24 +78,17 @@ export function createVolumeManager(
       const hoursSinceLastUsed = hoursSinceDate(new Date(lastUsed));
 
       if (hoursSinceLastUsed > 24) {
-        const vol = await docker.getVolume(volume);
-
-        await new Promise((resolve) => {
-          vol
-            .remove({ force: true })
-            .then(() => {
-              delete db.data.resources.volumes[resource];
-              resolve(true);
-            })
-            .catch((err) => {
-              console.log(
-                chalk.red(
-                  `Could not remove unused remote resource: ${resource}.\n${err}`,
-                ),
-              );
-              resolve(true);
-            });
-        });
+        try {
+          await docker.getVolume(volume).remove({ force: true });
+          delete db.data.resources.volumes[resource];
+        } catch (err) {
+          const message = (err as { json: { message: string } }).json.message;
+          logger.log(
+            chalk.red(
+              `Could not remove remote resource: ${resource}.\n${message}`,
+            ),
+          );
+        }
       }
     }
 
