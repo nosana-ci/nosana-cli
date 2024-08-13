@@ -25,13 +25,14 @@ describe('getJobCommand', () => {
     expect(getJobCommand.args[0]).toBe('address');
   });
 
-  it('should have 4 options', () => {
-    expect(getJobCommand.options.length).toBe(4);
+  it('should have 6 options', () => {
+    expect(getJobCommand.options.length).toBe(6);
   });
 
   it.each([
     ['--network', '-n'],
     ['--wait', undefined],
+    ['--format', undefined],
     ['--rpc', undefined],
     ['--download', undefined],
   ])('should have %s option', (long, short) => {
