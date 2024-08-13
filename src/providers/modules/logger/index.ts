@@ -13,16 +13,19 @@ export default class Logger extends EventEmitter {
     [ProviderEvents.INFO_LOG, this.standard_info_log],
     [ProviderEvents.CONTAINER_LOG, this.standard_container_log],
   ]);
+
   constructor() {
     super();
 
     this.setDefaultListeners();
   }
+
   private setDefaultListeners() {
     this.defaultSubscriptions.forEach((callback, event) => {
       this.on(event, callback);
     });
   }
+
   public standard_info_log(
     event: {
       log: string;
@@ -55,10 +58,15 @@ export default class Logger extends EventEmitter {
       }
     }
   }
+
   public standard_container_log(event: { log: string; type: string }) {
     // STANDARD CONTAINER STREAMING LOG IS TO NOT PRINT
   }
-  override(event: ProviderEventsValues, callback: (...args: any[]) => void) {
+
+  public override(
+    event: ProviderEventsValues,
+    callback: (...args: any[]) => void,
+  ) {
     const defaultEvent = this.defaultSubscriptions.get(event);
 
     if (defaultEvent) {
@@ -67,20 +75,23 @@ export default class Logger extends EventEmitter {
 
     this.on(event, callback);
   }
-  log(message: string | ChalkInstance, pending: boolean = false) {
+
+  public log(message: string | ChalkInstance, pending: boolean = false) {
     this.emit(ProviderEvents.INFO_LOG, {
       type: 'info',
       log: message,
       pending,
     });
   }
-  succeed(message?: string | ChalkInstance) {
+
+  public succeed(message?: string | ChalkInstance) {
     this.emit(ProviderEvents.INFO_LOG, {
       type: 'success',
       log: message,
     });
   }
-  fail(message?: string | ChalkInstance) {
+
+  public fail(message?: string | ChalkInstance) {
     this.emit(ProviderEvents.INFO_LOG, {
       type: 'fail',
       log: message,
