@@ -70,6 +70,14 @@ export async function startNode(
       }
     },
   );
+  try {
+    await node.provider.healthy();
+  } catch (error) {
+    console.log(
+      chalk.red(`${chalk.bold(options.provider)} provider not healthy`),
+    );
+    throw error;
+  }
 
   /****************
    *    Market    *
