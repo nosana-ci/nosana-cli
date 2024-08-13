@@ -115,6 +115,8 @@ export async function startNode(
     marketAccount,
     accessKey,
   });
+  // The health check either grabs the accessKey from on-chain. If no accessKey is found on-chain,
+  // we'll try with the access key we got from the backend for test-grid
   accessKey = healthCheck.accessKey;
 
   let firstRun: Boolean = true;
