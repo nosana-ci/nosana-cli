@@ -53,32 +53,15 @@ export async function runJob(
     options.podman,
     options.config,
   );
-  node.logger.on(
+  node.logger.override(
     ProviderEvents.INFO_LOG,
-    (event: { log: string | undefined; type: string; pending: boolean }) => {
+    (event: { log: string; type: string; pending: boolean }) => {
       if (!handlingSigInt) {
-        if (event.type === 'info') {
-          if (spinner && spinner.isSpinning) {
-            spinner.succeed();
-          }
-          if (event.pending && !streamingLogs) {
-            spinner = ora(event.log).start();
-          } else {
-            console.log(event.log);
-          }
-        } else if (event.type === 'fail') {
-          if (spinner && spinner.isSpinning) {
-            spinner.fail(event.log);
-          } else {
-            console.log(event.log);
-          }
-        } else if (event.type === 'success') {
-          if (spinner && spinner.isSpinning) {
-            spinner.succeed(event.log);
-          } else {
-            console.log(event.log);
-          }
+        if (event.type === 'info' && event.pending && streamingLogs) {
+          // If we want to start a spinner during streamingLogs, disable it
+          event.pending = false;
         }
+        node.logger.standard_info_log(event, spinner);
       }
     },
   );

@@ -61,32 +61,12 @@ export async function startNode(
   const sdk: Client = getSDK();
   console.log(`Provider:\t${chalk.greenBright.bold(options.provider)}`);
   node = new NosanaNode(sdk, options.provider, options.podman, options.config);
-  node.logger.on(
+
+  node.logger.override(
     ProviderEvents.INFO_LOG,
     (event: { log: string; type: string; pending: boolean }) => {
       if (!handlingSigInt) {
-        if (event.type === 'info') {
-          if (spinner && spinner.isSpinning) {
-            spinner.succeed();
-          }
-          if (event.pending) {
-            spinner = ora(event.log).start();
-          } else {
-            console.log(event.log);
-          }
-        } else if (event.type === 'fail') {
-          if (spinner && spinner.isSpinning) {
-            spinner.fail(event.log);
-          } else {
-            console.log(event.log);
-          }
-        } else if (event.type === 'success') {
-          if (spinner && spinner.isSpinning) {
-            spinner.succeed(event.log);
-          } else {
-            console.log(event.log);
-          }
-        }
+        node.logger.standard_info_log(event, spinner);
       }
     },
   );
