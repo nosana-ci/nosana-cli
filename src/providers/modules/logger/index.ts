@@ -34,28 +34,35 @@ export default class Logger extends EventEmitter {
     },
     spinner?: Ora,
   ) {
-    let logSpinner = spinner || this.spinner;
-    if (event.type === 'info') {
-      if (logSpinner && logSpinner.isSpinning) {
-        logSpinner.succeed();
-      }
-      if (event.pending) {
-        logSpinner.start(event.log);
-      } else {
+    const logSpinner = spinner || this.spinner;
+    switch (event.type) {
+      case 'info':
+        if (logSpinner && logSpinner.isSpinning) {
+          logSpinner.succeed();
+        }
+        if (event.pending) {
+          logSpinner.start(event.log);
+        } else {
+          console.log(event.log);
+        }
+        break;
+      case 'fail':
+        if (logSpinner && logSpinner.isSpinning) {
+          logSpinner.fail(event.log);
+        } else {
+          console.log(event.log);
+        }
+        break;
+      case 'success':
+        if (logSpinner && logSpinner.isSpinning) {
+          logSpinner.succeed(event.log);
+        } else {
+          console.log(event.log);
+        }
+        break;
+      default:
         console.log(event.log);
-      }
-    } else if (event.type === 'fail') {
-      if (logSpinner && logSpinner.isSpinning) {
-        logSpinner.fail(event.log);
-      } else {
-        console.log(event.log);
-      }
-    } else if (event.type === 'success') {
-      if (logSpinner && logSpinner.isSpinning) {
-        logSpinner.succeed(event.log);
-      } else {
-        console.log(event.log);
-      }
+        break;
     }
   }
 
