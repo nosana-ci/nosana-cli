@@ -16,7 +16,7 @@ import { PodmanProvider } from '../../../providers/PodmanProvider.js';
 import { config } from '../../../generic/config.js';
 import { getSDK } from '../../../services/sdk.js';
 
-import jobDefinition from '../../../static/benchmark.json' assert { type: 'json' };
+import jobDefinition from '../../../static/benchmark.json' with { type: 'json' };
 
 let flow: Flow | undefined;
 let provider: Provider;

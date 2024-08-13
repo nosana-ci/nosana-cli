@@ -12,7 +12,7 @@ import { sleep } from '../generic/utils.js';
 import { EMPTY_ADDRESS } from './jobs.js';
 import { config } from '../generic/config.js';
 
-import benchmarkGPU from '../static/benchmark-gpu.json' assert { type: 'json' };
+import benchmarkGPU from '../static/benchmark-gpu.json' with { type: 'json' };
 
 export type NodeStats = {
   sol: number;

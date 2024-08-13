@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 
-import pkg from '../../package.json' assert { type: 'json' };
+import pkg from '../../package.json' with { type: 'json' };
 import { clientSelector } from '../api/client.js';
 
 function requiresNewVersion(required: string, current: string): boolean {
