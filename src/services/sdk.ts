@@ -15,6 +15,9 @@ import {
 
 import { colors } from '../generic/utils.js';
 import { config as envConfig } from '../generic/config.js';
+import { OptionValues } from 'commander';
+import { OUTPUT_EVENTS } from '../providers/utils/ouput-formatter/outputEvents.js';
+import { outputFormatSelector } from '../providers/utils/ouput-formatter/outputFormatSelector.js';
 
 let nosana: Client;
 let nosBalance: TokenAmount | undefined, solBalance: number;
@@ -24,8 +27,10 @@ export async function setSDK(
   rpc: string | undefined,
   market: string | undefined,
   keyfile: string,
-  airdrop: boolean = false,
+  options: OptionValues,
 ): Promise<Client> {
+  const formatter = outputFormatSelector(options.format);
+
   const config: ClientConfig = {
     solana: {
       priority_fee: 100000,
@@ -41,16 +46,11 @@ export async function setSDK(
         keyfile = keyfile.replace('~', os.homedir());
       }
       if (fs.existsSync(keyfile)) {
-        console.log(
-          `Reading keypair from ${colors.CYAN}${keyfile}${colors.RESET}\n`,
-        );
+        formatter.output(OUTPUT_EVENTS.READ_KEYFILE, { keyfile: keyfile });
         const privateKey = fs.readFileSync(keyfile, 'utf8');
         wallet = privateKey;
       } else {
-        console.log(
-          `Creating new keypair and storing it in ${colors.CYAN}${keyfile}${colors.RESET}\n`,
-        );
-
+        formatter.output(OUTPUT_EVENTS.CREATE_KEYFILE, { keyfile: keyfile });
         const keypair = Keypair.generate();
         fs.mkdirSync(path.dirname(keyfile), { recursive: true });
         fs.writeFileSync(
@@ -102,30 +102,22 @@ export async function setSDK(
     }
   }
   if (network) {
-    console.log(`Network:\t${colors.GREEN}${network}${colors.RESET}`);
+    formatter.output(OUTPUT_EVENTS.OUTPUT_NETWORK, { network });
   }
   if (keyfile) {
     solBalance = await nosana.solana.getSolBalance();
     nosBalance = await nosana.solana.getNosBalance();
 
-    console.log(
-      `Wallet:\t\t${colors.GREEN}${nosana.solana.wallet.publicKey.toString()}${
-        colors.RESET
-      }`,
-    );
+    formatter.output(OUTPUT_EVENTS.OUTPUT_WALLET, {
+      publicKey: nosana.solana.wallet.publicKey.toString(),
+    });
+    formatter.output(OUTPUT_EVENTS.OUTPUT_BALANCES, {
+      nos: nosBalance?.uiAmount?.toString() ?? '0',
+      sol: solBalance / LAMPORTS_PER_SOL,
+    });
 
-    console.log(
-      `SOL balance:\t${colors.GREEN}${solBalance / LAMPORTS_PER_SOL} SOL${
-        colors.RESET
-      }`,
-    );
-    console.log(
-      `NOS balance:\t${colors.GREEN}${
-        nosBalance ? nosBalance.uiAmount : 0
-      } NOS${colors.RESET}`,
-    );
     if (
-      airdrop &&
+      options.airdrop &&
       network.includes('devnet') &&
       solBalance < 0.01 * LAMPORTS_PER_SOL
       // || !nosBalance ||
@@ -142,10 +134,14 @@ export async function setSDK(
             `Received airdrop of ${colors.CYAN}1 SOL!${colors.RESET}`,
           );
         } else {
-          throw new Error('Couldnt airdrop tokens to your address');
+          formatter.throw(OUTPUT_EVENTS.OUTPUT_AIRDROP_REQUEST_FAILED_ERROR, {
+            error: new Error('Airdrop Request Failed'),
+          });
         }
       } catch (error) {
-        throw new Error('Couldnt airdrop tokens to your address');
+        formatter.throw(OUTPUT_EVENTS.OUTPUT_AIRDROP_REQUEST_FAILED_ERROR, {
+          error: error as Error,
+        });
       }
     }
   }
