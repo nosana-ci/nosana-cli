@@ -1,11 +1,14 @@
 import figlet from 'figlet';
 
 import { createNosanaCLI } from './createNosanaCli.js';
+import { validateCLIVersion } from '../services/versions.js';
 
 export async function startCLI(version: string) {
   const cli = createNosanaCLI(version);
 
   try {
+    await validateCLIVersion();
+
     console.log(figlet.textSync('Nosana'));
 
     await cli.parseAsync(process.argv);

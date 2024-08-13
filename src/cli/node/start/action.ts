@@ -9,11 +9,11 @@ import { NotQueuedError } from '../../../generic/errors.js';
 import {
   JobDefinition,
   FlowState,
-  OperationArgsMap,
   ProviderEvents,
 } from '../../../providers/Provider.js';
 import { getSDK } from '../../../services/sdk.js';
 import { isRunExpired, NosanaNode } from '../../../services/nodes.js';
+import { validateCLIVersion } from '../../../services/versions.js';
 
 let node: NosanaNode;
 let spinner: Ora;
@@ -139,6 +139,7 @@ export async function startNode(
       if (firstRun) {
         firstRun = false;
       } else {
+        await validateCLIVersion();
         const healthCheck = await node.healthCheck({
           market,
           marketAccount,

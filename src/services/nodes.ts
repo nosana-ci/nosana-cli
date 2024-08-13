@@ -737,7 +737,7 @@ export class NosanaNode {
         }
       } else {
         // current GPU matches market
-        market = data[1].market;
+        market = data.address;
         accessKey = new PublicKey(nodeResponse.accessKeyMint);
       }
     } catch (e) {
