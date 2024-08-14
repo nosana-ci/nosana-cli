@@ -14,7 +14,17 @@ const GPU_DEVICE = [
  * @returns
  */
 export function createPodmanRunOptions(image: string, args: RunContainerArgs) {
-  const { name, networks, cmd, gpu, volumes, env, work_dir, entrypoint } = args;
+  const {
+    name,
+    networks,
+    cmd,
+    gpu,
+    volumes,
+    env,
+    work_dir,
+    entrypoint,
+    network_mode,
+  } = args;
 
   const devices = gpu ? GPU_DEVICE : [];
   return {
@@ -33,7 +43,7 @@ export function createPodmanRunOptions(image: string, args: RunContainerArgs) {
       : undefined),
     env,
     devices,
-    netns: { nsmode: 'bridge' },
+    netns: { nsmode: network_mode || 'bridge' },
     Networks: networks,
     create_working_dir: true,
     cgroups_mode: 'disabled',

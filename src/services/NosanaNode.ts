@@ -20,11 +20,12 @@ import { sleep } from '../generic/utils.js';
 import { EMPTY_ADDRESS } from './jobs.js';
 import { config } from '../generic/config.js';
 import { PodmanProvider } from '../providers/PodmanProvider.js';
-import { DockerProvider } from '../providers/DockerProvider.js';
+import { DockerProvider, FRPC_IMAGE } from '../providers/DockerProvider.js';
 
 import benchmarkGPU from '../static/benchmark-gpu.json' assert { type: 'json' };
 // TODO: make generic logger for both NosanaNode and provider
 import Logger from '../providers/modules/logger/index.js';
+import { api } from './api.js';
 
 export type NodeStats = {
   sol: number;
@@ -77,6 +78,31 @@ export class NosanaNode {
     }
     this.sdk = client;
     this.address = this.sdk.solana.provider!.wallet.publicKey.toString();
+  }
+
+  public async startAPI(): Promise<number> {
+    const port = await api.start(this);
+    await this.provider.runContainer(FRPC_IMAGE, {
+      name: 'frpc-api-' + this.address,
+      cmd: ['-c', '/etc/frp/frpc.toml'],
+      network_mode: 'host',
+      env: {
+        FRP_SERVER_ADDR: config.frp.serverAddr,
+        FRP_SERVER_PORT: config.frp.serverPort.toString(),
+        FRP_NAME: 'API-' + this.address,
+        FRP_LOCAL_IP: 'localhost',
+        FRP_LOCAL_PORT: port.toString(),
+        FRP_CUSTOM_DOMAIN: this.address + '.' + config.frp.serverAddr,
+      },
+    });
+    this.logger.log(
+      chalk.cyan(
+        `Exposing service at ${chalk.bold(
+          `https://${this.address}.${config.frp.serverAddr}`,
+        )}`,
+      ),
+    );
+    return port;
   }
 
   public async checkRun(): Promise<Run | void> {
@@ -762,6 +788,9 @@ export class NosanaNode {
     return { market, accessKey };
   }
   public async shutdown() {
+    // Shutdown API frpc container
+    const apiName = 'frpc-api-' + this.address;
+    await this.provider.stopAndRemoveContainer(apiName);
     if (this.run) {
       this.logger.log(chalk.cyan('Quiting running job'), true);
       try {
