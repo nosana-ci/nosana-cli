@@ -14,9 +14,8 @@ import {
   FlowState,
   JobDefinition,
   OperationArgsMap,
-  Provider,
 } from '../providers/Provider.js';
-import { getRawTransaction, getSDK } from './sdk.js';
+import { getRawTransaction } from './sdk.js';
 import { sleep } from '../generic/utils.js';
 import { EMPTY_ADDRESS } from './jobs.js';
 import { config } from '../generic/config.js';
@@ -112,7 +111,7 @@ export class NosanaNode {
           if (isFlowExposed) {
             // Finish the job if the job timeout has been reached and we expose a service
             if (
-              isRunExpired(
+              NosanaNode.isRunExpired(
                 this.run!,
                 // TODO: fix: due to a problem with the typescript Market type of getMarket(),
                 // we need to convert timeout to a number by multipling with an int
@@ -127,7 +126,10 @@ export class NosanaNode {
             // If flow doesn't have an exposed service, quit the job if not finished yet after 1.5
             // times the job timeout
             if (
-              isRunExpired(this.run!, (this.market?.jobTimeout as number) * 1.5)
+              NosanaNode.isRunExpired(
+                this.run!,
+                (this.market?.jobTimeout as number) * 1.5,
+              )
             ) {
               clearInterval(expireInterval);
               // Quit job when timeout * 1.5 is reached.
@@ -311,6 +313,18 @@ export class NosanaNode {
     }
   }
 
+  public async getNodeStats(): Promise<NodeStats> {
+    const solBalance = await this.sdk.solana.getSolBalance(this.address);
+    const nosBalance = await this.sdk.solana.getNosBalance(this.address);
+
+    return {
+      sol: solBalance,
+      nos: nosBalance,
+      stake: 0,
+      nfts: [],
+    };
+  }
+
   public async healthCheck({
     market,
     marketAccount,
@@ -326,7 +340,7 @@ export class NosanaNode {
     }
     let stats: NodeStats | null = null;
     try {
-      stats = await getNodeStats(this.address);
+      stats = await this.getNodeStats();
     } catch (e) {
       this.logger.fail(
         'Could not check SOL balance, make sure you have enough SOL',
@@ -770,26 +784,9 @@ export class NosanaNode {
       }
     }
   }
+  public static isRunExpired(run: Run, expireTime: number): Boolean {
+    const now = Date.now() / 1000;
+    // @ts-expect-error Type is wrong, its not a number but a BN
+    return run.account.time.toNumber() + expireTime < now;
+  }
 }
-
-export const getNodeStats = async (
-  node: PublicKey | string,
-): Promise<NodeStats> => {
-  const nosana: Client = getSDK();
-
-  const solBalance = await nosana.solana.getSolBalance(node);
-  const nosBalance = await nosana.solana.getNosBalance(node);
-
-  return {
-    sol: solBalance,
-    nos: nosBalance,
-    stake: 0,
-    nfts: [],
-  };
-};
-
-export const isRunExpired = (run: Run, expireTime: number): Boolean => {
-  const now = Date.now() / 1000;
-  // @ts-expect-error Type is wrong, its not a number but a BN
-  return run.account.time.toNumber() + expireTime < now;
-};

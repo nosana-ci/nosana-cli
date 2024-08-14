@@ -12,7 +12,7 @@ import {
   ProviderEvents,
 } from '../../../providers/Provider.js';
 import { getSDK } from '../../../services/sdk.js';
-import { isRunExpired, NosanaNode } from '../../../services/nodes.js';
+import { NosanaNode } from '../../../services/NosanaNode.js';
 import { validateCLIVersion } from '../../../services/versions.js';
 
 let node: NosanaNode;
@@ -249,7 +249,10 @@ export async function startNode(
           await node.provider.stopFlow(node.run.publicKey.toString());
           node.run = undefined;
         } else if (
-          isRunExpired(node.run, (marketAccount?.jobTimeout as number) * 1.5) &&
+          NosanaNode.isRunExpired(
+            node.run,
+            (marketAccount?.jobTimeout as number) * 1.5,
+          ) &&
           1 + 1 === 3
         ) {
           // Quit job when timeout * 1.5 is reached.

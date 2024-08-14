@@ -10,7 +10,7 @@ import {
   OperationArgsMap,
   ProviderEvents,
 } from '../../../providers/Provider.js';
-import { NosanaNode } from '../../../services/nodes.js';
+import { NosanaNode } from '../../../services/NosanaNode.js';
 import { Operation, OperationType } from '../../../providers/Provider.js';
 import { Client } from '@nosana/sdk';
 
