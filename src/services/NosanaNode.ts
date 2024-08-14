@@ -26,6 +26,8 @@ import benchmarkGPU from '../static/benchmark-gpu.json' assert { type: 'json' };
 // TODO: make generic logger for both NosanaNode and provider
 import Logger from '../providers/modules/logger/index.js';
 import { api } from './api.js';
+import { initTunnel } from './tunnel.js';
+export const TUNNEL_IMAGE = 'registry.hub.docker.com/nosana/tunnel:0.1.0';
 
 export type NodeStats = {
   sol: number;
@@ -81,26 +83,49 @@ export class NosanaNode {
   }
 
   public async startAPI(): Promise<number> {
+    const networkName = 'api-' + this.address;
+    await this.provider.docker.createNetwork({ Name: networkName });
+    const networks: { [key: string]: {} } = {};
+    networks[networkName] = {};
     const port = await api.start(this);
+    // TODO: move to config;
+    const tunnel_port = 3000;
+    const tunnel_name = 'tunnel-api-' + this.address;
+    try {
+      await this.provider.pullImage(FRPC_IMAGE);
+    } catch (error: any) {
+      throw new Error(chalk.red(`Cannot pull image ${FRPC_IMAGE}: `) + error);
+    }
+    try {
+      await this.provider.pullImage(TUNNEL_IMAGE);
+    } catch (error: any) {
+      throw new Error(chalk.red(`Cannot pull image ${TUNNEL_IMAGE}: `) + error);
+    }
+    await this.provider.runContainer(TUNNEL_IMAGE, {
+      name: tunnel_name,
+      networks,
+      env: {
+        PORT: tunnel_port.toString(),
+      },
+    });
     await this.provider.runContainer(FRPC_IMAGE, {
       name: 'frpc-api-' + this.address,
       cmd: ['-c', '/etc/frp/frpc.toml'],
-      network_mode: 'host',
+      networks,
       env: {
         FRP_SERVER_ADDR: config.frp.serverAddr,
         FRP_SERVER_PORT: config.frp.serverPort.toString(),
         FRP_NAME: 'API-' + this.address,
-        FRP_LOCAL_IP: 'localhost',
-        FRP_LOCAL_PORT: port.toString(),
+        FRP_LOCAL_IP: tunnel_name,
+        FRP_LOCAL_PORT: tunnel_port.toString(),
         FRP_CUSTOM_DOMAIN: this.address + '.' + config.frp.serverAddr,
       },
     });
-    this.logger.log(
-      chalk.cyan(
-        `Exposing service at ${chalk.bold(
-          `https://${this.address}.${config.frp.serverAddr}`,
-        )}`,
-      ),
+    const tunnelServer = `https://${this.address}.${config.frp.serverAddr}`;
+    await sleep(3);
+    initTunnel({ server: tunnelServer, port });
+    this.logger.succeed(
+      chalk.cyan(`Node API running at ${chalk.bold(tunnelServer)}`),
     );
     return port;
   }
@@ -788,9 +813,12 @@ export class NosanaNode {
     return { market, accessKey };
   }
   public async shutdown() {
-    // Shutdown API frpc container
+    // Shutdown API frpc container + tunnel
+    const tunnelName = 'tunnel-api-' + this.address;
+    await this.provider.stopAndRemoveContainer(tunnelName);
     const apiName = 'frpc-api-' + this.address;
     await this.provider.stopAndRemoveContainer(apiName);
+
     if (this.run) {
       this.logger.log(chalk.cyan('Quiting running job'), true);
       try {

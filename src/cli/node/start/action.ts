@@ -78,6 +78,13 @@ export async function startNode(
     );
     throw error;
   }
+  spinner = ora(chalk.cyan('Starting API')).start();
+  try {
+    await node.startAPI();
+  } catch (error) {
+    spinner.fail(chalk.red(`Could not start API`));
+    throw error;
+  }
 
   /****************
    *    Market    *

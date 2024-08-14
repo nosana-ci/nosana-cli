@@ -1,6 +1,5 @@
 import chalk from 'chalk';
 import stream from 'stream';
-import { parse } from 'shell-quote';
 import { sleep } from '@nosana/sdk';
 import Docker, {
   Container,
@@ -48,7 +47,7 @@ export type RunContainerArgs = {
 export const FRPC_IMAGE = 'registry.hub.docker.com/nosana/frpc:0.1.0';
 
 export class DockerProvider extends BasicProvider implements Provider {
-  protected docker: DockerExtended;
+  public docker: DockerExtended;
   protected resourceManager;
   public host: string;
   public port: string;
@@ -643,7 +642,7 @@ export class DockerProvider extends BasicProvider implements Provider {
   /****************
    *   Helpers   *
    ****************/
-  protected async pullImage(image: string) {
+  public async pullImage(image: string) {
     if (await this.docker.hasImage(image)) {
       this.resourceManager.images.setImage(image);
 

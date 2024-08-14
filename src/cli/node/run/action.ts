@@ -88,11 +88,6 @@ export async function runJob(
   spinner = ora(chalk.cyan('Starting API')).start();
   try {
     const port = await node.startAPI();
-    spinner.succeed(
-      chalk.green(
-        `API is running on ${chalk.bold(`http://localhost:${port}`)}`,
-      ),
-    );
   } catch (error) {
     spinner.fail(chalk.red(`Could not start API`));
     throw error;
