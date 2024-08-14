@@ -20,6 +20,7 @@ import {
   RetriveJobCommandParam,
   ValidationErrorParam,
   OutputHeaderLogoParam,
+  ServiceUrlParam,
 } from '../outputEvents.js';
 import { OutputEventParams } from '../outputEvents.js';
 import chalk from 'chalk';
@@ -48,7 +49,6 @@ export const textOutputEventHandlers: OutputEventHandlers = {
    */
   ...mapToDoNothingFunction([
     OUTPUT_EVENTS.OUTPUT_IPFS_UPLOADED,
-    OUTPUT_EVENTS.OUTPUT_SERVICE_URL,
     OUTPUT_EVENTS.OUTPUT_JSON_FLOW_URL,
     OUTPUT_EVENTS.OUTPUT_JOB_PRICE,
     OUTPUT_EVENTS.OUTPUT_JOB_POSTING,
@@ -56,7 +56,11 @@ export const textOutputEventHandlers: OutputEventHandlers = {
     OUTPUT_EVENTS.OUTPUT_RESULT_URL,
     OUTPUT_EVENTS.OUTPUT_JOB_EXECUTION,
   ]),
-
+  [OUTPUT_EVENTS.OUTPUT_SERVICE_URL]: (param: ServiceUrlParam) => {
+    console.log(
+      chalk.cyan(`Service will be exposed at ${chalk.bold(`${param.url}`)}`),
+    );
+  },
   [OUTPUT_EVENTS.READ_KEYFILE]: (param: KeyfileParam) => {
     console.log(
       `Reading keypair from ${colors.CYAN}${param.keyfile}${colors.RESET}\n`,
