@@ -1,6 +1,5 @@
 import { Command } from 'commander';
 import { Client } from '@nosana/sdk';
-import { config } from '../../../generic/config.js';
 import 'rpc-websockets/dist/lib/client.js';
 
 import { clearLine, colors, logTable } from '../../../generic/utils.js';
@@ -17,7 +16,7 @@ export async function getMarket(
   const nosana: Client = getSDK();
   let blockchainMarket;
   console.log('retrieving market...');
-  const { data: market, error } = await clientSelector().GET(
+  const { data: market, error }: any = await clientSelector().GET(
     '/api/markets/{id}/',
     {
       params: { path: { id: marketId } },

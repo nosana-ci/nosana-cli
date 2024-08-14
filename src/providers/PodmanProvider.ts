@@ -2,12 +2,14 @@ import { Container } from 'dockerode';
 
 import { createPodmanRunOptions } from './utils/createPodmanRunOptions.js';
 import { DockerProvider, type RunContainerArgs } from './DockerProvider.js';
+import Logger from './modules/logger/index.js';
 
 export class PodmanProvider extends DockerProvider {
   private apiUrl: string;
+  public name: string = 'podman';
 
-  constructor(podman: string, configLocation: string) {
-    super(podman, configLocation);
+  constructor(podman: string, configLocation: string, logger?: Logger) {
+    super(podman, configLocation, logger);
     this.apiUrl = `${this.protocol}://${this.host}:${this.port}/v4.5.0/libpod`;
   }
 
