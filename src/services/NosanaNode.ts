@@ -24,7 +24,7 @@ import { DockerProvider } from '../providers/DockerProvider.js';
 
 // TODO: make generic logger for both NosanaNode and provider
 import Logger from '../providers/modules/logger/index.js';
-import { benchmarkGPU } from "../assertImports.js";
+import { benchmarkGPU } from '../assertImports.js';
 
 export type NodeStats = {
   sol: number;
