@@ -35,13 +35,15 @@ export function createResourceManager(
   const volumeManager = createVolumeManager(db, docker, logger);
 
   const resyncResourcesDB = async (): Promise<void> => {
-    logger.log(chalk.cyan('Syncing Resources'));
+    logger.log(chalk.cyan('Syncing Resources'), true);
 
     await imageManager.resyncImagesDB();
     await volumeManager.resyncResourcesDB();
 
     if (required_market) {
       await fetchMarketRequiredResources(required_market);
+    } else {
+      logger.succeed('Synced Resources');
     }
   };
 
@@ -67,7 +69,7 @@ export function createResourceManager(
       data.required_remote_resources,
     );
 
-    logger.log(chalk.green('Fetched market all required resources'));
+    logger.succeed(chalk.green('Fetched market all required resources'));
   };
 
   return {

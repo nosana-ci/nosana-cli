@@ -109,10 +109,12 @@ export const validateJobDefinition =
 export const ProviderEvents: { [key: string]: string } = {
   STOP_FLOW: 'stopFlowEvent',
   FLOW_FINISHED: 'flowFinished',
-  NEW_LOG: 'newLog',
+  INFO_LOG: 'infoLog',
+  CONTAINER_LOG: 'containerLog',
 };
 
 export abstract class Provider {
+  public abstract name: string;
   abstract run(JobDefinition: JobDefinition, flowStateId?: string): Flow;
   abstract healthy(): Promise<Boolean>;
   abstract getFlow(id: string): Flow | undefined;
@@ -121,7 +123,7 @@ export abstract class Provider {
   abstract stopFlow(flowId: string): Promise<void>;
   abstract stopFlowOperation(
     flowId: string,
-    op: Operation<any>,
+    op: Operation<OperationType>,
   ): Promise<OpState>;
   abstract finishFlow(flowId: string, status?: string): void;
   abstract waitForFlowFinish(
