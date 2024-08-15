@@ -1,1 +1,3 @@
 src/api/schema.d.ts
+src/assertImports.ts
+dist/src/assertImports.js

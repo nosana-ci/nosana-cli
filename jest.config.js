@@ -13,7 +13,7 @@ export default {
         supportsDynamicImport: true,
         tsconfig: 'tsconfig.json',
         diagnostics: {
-          ignoreCodes: [1343, 'TS2821'],
+          ignoreCodes: [1343, 'TS2821', 'TS1324', 'TS2823', 2823],
         },
         astTransformers: {
           before: [

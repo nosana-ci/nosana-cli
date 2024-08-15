@@ -11,8 +11,7 @@ import { getSDK } from './sdk.js';
 import { sleep } from '../generic/utils.js';
 import { EMPTY_ADDRESS } from './jobs.js';
 import { config } from '../generic/config.js';
-
-import benchmarkGPU from '../static/benchmark-gpu.json' with { type: 'json' };
+import { benchmarkGPU } from '../assertImports.js';
 
 export type NodeStats = {
   sol: number;
