@@ -35,7 +35,6 @@ export function createVolumeManager(
     const savedVolumes = db.data.resources.volumes;
 
     for (const resource of market_required_volumes) {
-      let volumeName;
       if (!savedVolumes[resource.url]) {
         logger.log(
           chalk.cyan(`Fetching remote resource ${chalk.bold(resource.url)}`),
@@ -43,17 +42,14 @@ export function createVolumeManager(
         );
 
         try {
-          volumeName = await createRemoteVolume(resource);
+          const volumeName = await createRemoteVolume(resource);
+          setVolume(resource.url, volumeName);
         } catch (err) {
           throw new Error(
             chalk.red(`Cannot pull remote resource ${resource.url}:\n`) + err,
           );
         }
         logger.succeed();
-      }
-
-      if (volumeName && !db.data.resources.volumes[resource.url]) {
-        setVolume(resource.url, volumeName);
       }
     }
   };
