@@ -34,15 +34,17 @@ export function createImageManager(
     for (const image of market_required_images) {
       if (!(await docker.hasImage(image))) {
         logger.log(chalk.cyan(`Pulling image ${chalk.bold(image)}`), true);
+
         try {
           await docker.promisePull(image);
         } catch (error: any) {
           throw new Error(chalk.red(`Cannot pull image ${image}: `) + error);
         }
-        logger.succeed();
 
-        setImage(image);
+        logger.succeed();
       }
+
+      if (!db.data.resources.images[image]) setImage(image);
     }
   };
 
