@@ -14,6 +14,7 @@ export type ResourceManager = {
   fetchMarketRequiredResources: (market: string) => Promise<void>;
   images: {
     setImage: (image: string) => void;
+    pruneImages: () => Promise<void>;
   };
   volumes: {
     getVolume: (resource: string) => string | undefined;
@@ -22,6 +23,7 @@ export type ResourceManager = {
     createRemoteVolume: (
       resource: RequiredResource | Resource,
     ) => Promise<string>;
+    pruneVolumes: () => Promise<void>;
   };
 };
 
@@ -77,11 +79,13 @@ export function createResourceManager(
     fetchMarketRequiredResources,
     images: {
       setImage: imageManager.setImage,
+      pruneImages: imageManager.pruneImages,
     },
     volumes: {
       getVolume: volumeManager.getVolume,
       hasVolume: volumeManager.hasVolume,
       setVolume: volumeManager.setVolume,
+      pruneVolumes: volumeManager.pruneVolumes,
       createRemoteVolume: volumeManager.createRemoteVolume,
     },
   };

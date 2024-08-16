@@ -177,12 +177,35 @@ export function createVolumeManager(
     db.write();
   };
 
+  const pruneVolumes = async (): Promise<void> => {
+    const cachedVolumes = (await docker.listVolumes()).Volumes;
+    const dbVolume = Object.entries(db.data.resources.volumes);
+
+    for (const { Name } of cachedVolumes) {
+      const dbEntry = dbVolume.find((vol) => vol[1].volume === Name);
+
+      if (dbEntry && dbEntry[1].required) continue;
+
+      try {
+        const volume = await docker.getVolume(Name);
+        await volume.remove({ force: true });
+      } catch (err) {
+        logger.log(chalk.red(`Could not remove ${Name} volume.\n${err}`));
+      }
+
+      if (dbEntry) delete db.data.resources.volumes[dbEntry[0]];
+    }
+
+    db.write();
+  };
+
   return {
+    createRemoteVolume,
     getVolume,
     hasVolume,
     setVolume,
     resyncResourcesDB,
     pullMarketRequiredVolumes,
-    createRemoteVolume,
+    pruneVolumes,
   };
 }
