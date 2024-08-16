@@ -42,9 +42,9 @@ export function createImageManager(
           throw new Error(chalk.red(`Cannot pull image ${image}: `) + error);
         }
         logger.succeed();
-
-        setImage(image);
       }
+
+      if (!db.data.resources.images[image]) setImage(image);
     }
   };
 
