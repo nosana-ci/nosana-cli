@@ -18,12 +18,11 @@ export async function pruneResources({ config, podman }: PruneResourcesOption) {
   });
   const logger = new Logger();
 
-  const { images, volumes } = createResourceManager(db, docker, logger);
+  const { prune } = createResourceManager(db, docker, logger);
 
   logger.log('Pruning system', true);
 
-  await images.pruneImages();
-  await volumes.pruneVolumes();
+  await prune();
 
   logger.succeed('Finished pruning system');
 }

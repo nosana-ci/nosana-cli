@@ -12,9 +12,9 @@ import Logger from '../logger/index.js';
 export type ResourceManager = {
   resyncResourcesDB: () => Promise<void>;
   fetchMarketRequiredResources: (market: string) => Promise<void>;
+  prune: () => Promise<void>;
   images: {
     setImage: (image: string) => void;
-    pruneImages: () => Promise<void>;
   };
   volumes: {
     getVolume: (resource: string) => string | undefined;
@@ -23,7 +23,6 @@ export type ResourceManager = {
     createRemoteVolume: (
       resource: RequiredResource | Resource,
     ) => Promise<string>;
-    pruneVolumes: () => Promise<void>;
   };
 };
 
@@ -74,18 +73,22 @@ export function createResourceManager(
     logger.succeed(chalk.green('Fetched market all required resources'));
   };
 
+  const prune = async (): Promise<void> => {
+    await imageManager.pruneImages();
+    await volumeManager.pruneVolumes();
+  };
+
   return {
     resyncResourcesDB,
     fetchMarketRequiredResources,
+    prune,
     images: {
       setImage: imageManager.setImage,
-      pruneImages: imageManager.pruneImages,
     },
     volumes: {
       getVolume: volumeManager.getVolume,
       hasVolume: volumeManager.hasVolume,
       setVolume: volumeManager.setVolume,
-      pruneVolumes: volumeManager.pruneVolumes,
       createRemoteVolume: volumeManager.createRemoteVolume,
     },
   };
