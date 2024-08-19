@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 import { clientSelector } from '../api/client.js';
-import { pkg } from '../assertImports.js';
+import { pkg } from '../static/staticsImports.js';
 
 function requiresNewVersion(required: string, current: string): boolean {
   return parseInt(required) > parseInt(current);
