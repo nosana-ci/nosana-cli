@@ -483,7 +483,7 @@ export class NosanaNode {
       }
 
       // Create new flow
-      const flow = this.provider.run(benchmarkGPU as JobDefinition);
+      const flow = this.provider.run(benchmarkGPU);
       result = await this.provider.waitForFlowFinish(
         flow.id,
         (event: { log: string; type: string }) => {
