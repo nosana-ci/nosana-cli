@@ -22,9 +22,9 @@ import { config } from '../generic/config.js';
 import { PodmanProvider } from '../providers/PodmanProvider.js';
 import { DockerProvider } from '../providers/DockerProvider.js';
 
-import benchmarkGPU from '../static/benchmark-gpu.json' assert { type: 'json' };
 // TODO: make generic logger for both NosanaNode and provider
 import Logger from '../providers/modules/logger/index.js';
+import { benchmarkGPU } from '../static/staticsImports.js';
 
 export type NodeStats = {
   sol: number;
@@ -483,7 +483,7 @@ export class NosanaNode {
       }
 
       // Create new flow
-      const flow = this.provider.run(benchmarkGPU as JobDefinition);
+      const flow = this.provider.run(benchmarkGPU);
       result = await this.provider.waitForFlowFinish(
         flow.id,
         (event: { log: string; type: string }) => {
