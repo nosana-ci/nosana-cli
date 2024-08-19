@@ -1,0 +1,33 @@
+{
+  "version": "0.1",
+  "type": "container",
+  "meta": {
+    "trigger": "cli"
+  },
+  "ops": [
+    {
+      "type": "container/run",
+      "id": "sogni-ai",
+      "args": {
+        "cmd": [
+          "/bin/sh",
+          "-c",
+          "python -u webui.py --listen --port 7859 --xformers --api & socat TCP6-LISTEN:${PORT},fork TCP4:127.0.0.1:7859"
+        ],
+        "image": "docker.io/saladtechnologies/a1111:ipv6-v1.9.4",
+        "env": {
+          "PORT": "7860"
+        },
+        "gpu": true,
+        "expose": 7860,
+        "resources": [
+          {
+            "type": "S3",
+            "url": "s3://nos-ai-models-qllsn32u/stable-diffusion/dreamshaper/8",
+            "target": "/data/models/Stable-diffusion"
+          }
+        ]
+      }
+    }
+  ]
+}
