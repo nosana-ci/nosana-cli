@@ -36,20 +36,7 @@ export function createVolumeManager(
 
     for (const resource of market_required_volumes) {
       if (!savedVolumes[resource.url]) {
-        logger.log(
-          chalk.cyan(`Fetching remote resource ${chalk.bold(resource.url)}`),
-          true,
-        );
-
-        try {
-          const volumeName = await createRemoteVolume(resource);
-          setVolume(resource.url, volumeName);
-        } catch (err) {
-          throw new Error(
-            chalk.red(`Cannot pull remote resource ${resource.url}:\n`) + err,
-          );
-        }
-        logger.succeed();
+        await createRemoteVolume(resource);
       }
     }
   };
@@ -112,7 +99,7 @@ export function createVolumeManager(
     }
 
     logger.log(
-      chalk.cyan(`Fetching resource ${chalk.bold(resource.url)}`),
+      chalk.cyan(`Fetching remote resource ${chalk.bold(resource.url)}`),
       true,
     );
 
@@ -122,7 +109,7 @@ export function createVolumeManager(
       logger.succeed();
       return volume;
     } catch (err) {
-      throw new Error(`Failed to fetch resource\n${err}`);
+      throw new Error(`Failed to fetch remote resource\n${err}`);
     }
   };
 

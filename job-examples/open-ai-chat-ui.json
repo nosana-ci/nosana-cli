@@ -1,0 +1,18 @@
+{
+  "version": "0.1",
+  "type": "container",
+  "meta": {
+    "trigger": "cli"
+  },
+  "ops": [
+    {
+      "type": "container/run",
+      "id": "open-ai-chat-ui",
+      "args": {
+        "cmd": [],
+        "image": "docker.io/matthammond962/open-ai-chat-ui:0.0.2",
+        "expose": 3000
+      }
+    }
+  ]
+}
