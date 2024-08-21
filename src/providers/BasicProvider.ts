@@ -49,7 +49,7 @@ type OpFunction = (
 export class BasicProvider implements Provider {
   protected db: LowSync<NodeDb>;
   public name: string = 'basic';
-  public logger: Logger = new Logger();
+  public logger: Logger;
   protected supportedOps: { [key: string]: OpFunction } = {};
   public clearFlowsCronJob: CronJob = new CronJob(
     '0 */12 * * *', // every 12 hours
@@ -62,7 +62,9 @@ export class BasicProvider implements Provider {
 
   constructor(configLocation: string, logger?: Logger) {
     this.db = new DB(configLocation).db;
-    if (logger) {
+    if (!logger) {
+      this.logger = new Logger();
+    }else{
       this.logger = logger;
     }
   }

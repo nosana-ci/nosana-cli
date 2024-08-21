@@ -234,6 +234,10 @@ export class DockerProvider extends BasicProvider implements Provider {
     };
   }
 
+  public async getContainer(id: string): Promise<Docker.Container>{
+    return this.docker.getContainer(id)
+  }
+
   /**
    * Check if DockerProvider is healthy by checking if podman is running
    * @returns boolean

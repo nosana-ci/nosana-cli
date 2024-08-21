@@ -53,7 +53,7 @@ export class NosanaNode {
   public address: string;
   public market: Market | void = undefined;
   public run: Run | void = undefined;
-  public logger: Logger = new Logger();
+  public logger: Logger;
 
   constructor(
     client: Client,
@@ -61,6 +61,7 @@ export class NosanaNode {
     providerUrl = 'http://localhost:8080',
     configLocation = '~/.nosana/',
   ) {
+    this.logger = new Logger();
     switch (providerName) {
       case 'podman':
         this.provider = new PodmanProvider(
@@ -82,6 +83,14 @@ export class NosanaNode {
     this.address = this.sdk.solana.provider!.wallet.publicKey.toString();
   }
 
+  public async ensureContainerDoesNotExist(containerName: string) {
+    const existingContainer = await this.provider.getContainer(containerName);
+  
+    if (existingContainer) {
+      await this.provider.stopAndRemoveContainer(containerName);
+    }
+  }
+
   public async startAPI(): Promise<number> {
     const networkName = 'api-' + this.address;
     await this.provider.docker.createNetwork({ Name: networkName });
@@ -101,6 +110,9 @@ export class NosanaNode {
     } catch (error: any) {
       throw new Error(chalk.red(`Cannot pull image ${TUNNEL_IMAGE}: `) + error);
     }
+
+    await this.ensureContainerDoesNotExist(tunnel_name);
+
     await this.provider.runContainer(TUNNEL_IMAGE, {
       name: tunnel_name,
       networks,
@@ -108,6 +120,9 @@ export class NosanaNode {
         PORT: tunnel_port.toString(),
       },
     });
+
+    await this.ensureContainerDoesNotExist('frpc-api-' + this.address);
+
     await this.provider.runContainer(FRPC_IMAGE, {
       name: 'frpc-api-' + this.address,
       cmd: ['-c', '/etc/frp/frpc.toml'],
