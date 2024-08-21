@@ -64,7 +64,7 @@ export class BasicProvider implements Provider {
     this.db = new DB(configLocation).db;
     if (!logger) {
       this.logger = new Logger();
-    }else{
+    } else {
       this.logger = logger;
     }
   }

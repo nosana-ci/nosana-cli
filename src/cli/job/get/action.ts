@@ -9,13 +9,18 @@ import { download } from '../download/action.js';
 import { clearLine, colors } from '../../../generic/utils.js';
 import { OpState } from '../../../providers/Provider.js';
 import { getSDK } from '../../../services/sdk.js';
-import { waitForJobCompletion, waitForJobRunOrCompletion } from '../../../services/jobs.js';
+import {
+  waitForJobCompletion,
+  waitForJobRunOrCompletion,
+} from '../../../services/jobs.js';
 import { OUTPUT_EVENTS } from '../../../providers/utils/ouput-formatter/outputEvents.js';
 import { outputFormatSelector } from '../../../providers/utils/ouput-formatter/outputFormatSelector.js';
-import { listenToEventSource } from "../../../services/eventsource.js";
-import Logger from "../../../providers/modules/logger/index.js";
-import LogSubscriberManager, { LogEvent } from "../../../services/LogSubscriberManager.js";
-import { config } from "../../../generic/config.js";
+import { listenToEventSource } from '../../../services/eventsource.js';
+import Logger from '../../../providers/modules/logger/index.js';
+import LogSubscriberManager, {
+  LogEvent,
+} from '../../../services/LogSubscriberManager.js';
+import { config } from '../../../generic/config.js';
 
 export async function getJob(
   jobAddress: string,
@@ -71,8 +76,7 @@ export async function getJob(
       clearLine();
       clearLine();
 
-      if(job.state === 'RUNNING'){
-
+      if (job.state === 'RUNNING') {
         formatter.output(OUTPUT_EVENTS.OUTPUT_NODE_URL, {
           url: `https://explorer.nosana.io/nodes/${job.node}${
             nosana.solana.config.network.includes('devnet')
@@ -81,14 +85,19 @@ export async function getJob(
           }`,
         });
 
-        formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_STATUS, { status: job.state });
-        console.log('')
+        formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_STATUS, {
+          status: job.state,
+        });
+        console.log('');
 
-        const logSubscriberManager = new LogSubscriberManager()
+        const logSubscriberManager = new LogSubscriberManager();
         const logger = new Logger();
-        listenToEventSource<LogEvent[]>(`https://${job.node}.${config.frp.serverAddr}/status/${jobAddress}`, (events) => {
-          logSubscriberManager.handleRemoteLogEvents(events, logger)
-        })
+        listenToEventSource<LogEvent[]>(
+          `https://${job.node}.${config.frp.serverAddr}/status/${jobAddress}`,
+          (events) => {
+            logSubscriberManager.handleRemoteLogEvents(events, logger);
+          },
+        );
 
         job = await waitForJobCompletion(new PublicKey(jobAddress));
       }

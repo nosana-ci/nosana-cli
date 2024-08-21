@@ -1,8 +1,7 @@
 import EventEmitter from 'events';
-import { ProviderEvents } from "../providers/Provider.js";
-import { Ora } from "ora";
-import { NosanaNode } from "./NosanaNode.js";
-import Logger from "../providers/modules/logger/index.js";
+import { ProviderEvents } from '../providers/Provider.js';
+import { NosanaNode } from './NosanaNode.js';
+import Logger from '../providers/modules/logger/index.js';
 
 export type LogEvent = {
   index: number;
@@ -12,7 +11,7 @@ export type LogEvent = {
   job: string;
 };
 
-export default class LogSubscriberManager{
+export default class LogSubscriberManager {
   private subscribers: Set<(logEvent: LogEvent) => void> = new Set();
   private eventIndex: number = 0;
   public events: LogEvent[] = [];
@@ -36,10 +35,10 @@ export default class LogSubscriberManager{
 
   private getCurrentJob(node: NosanaNode): string {
     const run = node.run;
-    if(run){
-      return run.account.job.toString()
+    if (run) {
+      return run.account.job.toString();
     }
-    return ''
+    return '';
   }
 
   public getEvents() {
@@ -55,24 +54,31 @@ export default class LogSubscriberManager{
   }
 
   public listenToLoggerEvents(logger: EventEmitter, node: NosanaNode) {
-    logger.on(ProviderEvents.INFO_LOG, (event: {
-      log: string;
-      type: string;
-      pending: boolean;
-  }) => {
-      this.notifySubscribers({...event, index: this.getEventIndex(), job: this.getCurrentJob(node)});
-      this.incrementEventIndex();
-    });
+    logger.on(
+      ProviderEvents.INFO_LOG,
+      (event: { log: string; type: string; pending: boolean }) => {
+        this.notifySubscribers({
+          ...event,
+          index: this.getEventIndex(),
+          job: this.getCurrentJob(node),
+        });
+        this.incrementEventIndex();
+      },
+    );
   }
 
-public handleRemoteLogEvents(events: LogEvent[], logger: Logger){
-  events.sort((a, b) => a.index - b.index);
+  public handleRemoteLogEvents(events: LogEvent[], logger: Logger) {
+    events.sort((a, b) => a.index - b.index);
 
-  events.forEach((event) => {
-    if (event.index >= this.lastProcessedLogIndex + 1) {
-      logger.standard_info_log({ log: event.log, pending: event.pending, type: event.type });
-      this.lastProcessedLogIndex = event.index;
-    }
-  });
-};
+    events.forEach((event) => {
+      if (event.index >= this.lastProcessedLogIndex + 1) {
+        logger.standard_info_log({
+          log: event.log,
+          pending: event.pending,
+          type: event.type,
+        });
+        this.lastProcessedLogIndex = event.index;
+      }
+    });
+  }
 }

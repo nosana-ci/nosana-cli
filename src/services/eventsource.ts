@@ -3,7 +3,7 @@ import EventSource from 'eventsource';
 export const listenToEventSource = <T>(
   url: string,
   onMessageCallback: (data: T) => void,
-  onErrorCallback?: (err: MessageEvent) => void
+  onErrorCallback?: (err: MessageEvent) => void,
 ): void => {
   const eventSource = new EventSource(url);
 

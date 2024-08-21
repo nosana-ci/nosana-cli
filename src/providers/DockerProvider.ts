@@ -234,8 +234,8 @@ export class DockerProvider extends BasicProvider implements Provider {
     };
   }
 
-  public async getContainer(id: string): Promise<Docker.Container>{
-    return this.docker.getContainer(id)
+  public async getContainer(id: string): Promise<Docker.Container> {
+    return this.docker.getContainer(id);
   }
 
   /**

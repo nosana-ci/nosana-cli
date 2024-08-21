@@ -85,7 +85,7 @@ export class NosanaNode {
 
   public async ensureContainerDoesNotExist(containerName: string) {
     const existingContainer = await this.provider.getContainer(containerName);
-  
+
     if (existingContainer) {
       await this.provider.stopAndRemoveContainer(containerName);
     }

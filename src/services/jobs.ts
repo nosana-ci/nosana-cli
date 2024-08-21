@@ -42,12 +42,12 @@ export const waitForJobRunOrCompletion = async (
 
   const getJobRunningPromise = new Promise<Job>((resolve) => {
     const checkCondition = async () => {
-        const job: Job = await nosana.jobs.get(jobAddress);
-        if (job.state === 'RUNNING') {
-          resolve(job);
-        } else {
-          setTimeout(checkCondition, POLLING_INTERVAL);
-        }
+      const job: Job = await nosana.jobs.get(jobAddress);
+      if (job.state === 'RUNNING') {
+        resolve(job);
+      } else {
+        setTimeout(checkCondition, POLLING_INTERVAL);
+      }
     };
 
     checkCondition();
