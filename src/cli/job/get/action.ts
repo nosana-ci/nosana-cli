@@ -74,9 +74,14 @@ export async function getJob(
       job = await waitForJobRunOrCompletion(new PublicKey(jobAddress));
       spinner.succeed();
       clearLine();
-      clearLine();
 
       if (job.state === 'RUNNING') {
+        clearLine();
+
+        formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_STATUS, {
+          status: job.state,
+        });
+
         formatter.output(OUTPUT_EVENTS.OUTPUT_NODE_URL, {
           url: `https://explorer.nosana.io/nodes/${job.node}${
             nosana.solana.config.network.includes('devnet')
@@ -84,11 +89,6 @@ export async function getJob(
               : ''
           }`,
         });
-
-        formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_STATUS, {
-          status: job.state,
-        });
-        console.log('');
 
         const logSubscriberManager = new LogSubscriberManager();
         const logger = new Logger();
