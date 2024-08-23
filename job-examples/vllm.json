@@ -1,0 +1,35 @@
+{
+  "version": "0.1",
+  "type": "container",
+  "meta": {
+    "trigger": "cli"
+  },
+  "ops": [
+    {
+      "type": "container/run",
+      "id": "VLLM-llama3.1",
+      "args": {
+        "cmd": [
+          "--model",
+          "/root/.cache/huggingface/hub/models--hugging-quants--Meta-Llama-3.1-8B-Instruct-AWQ-INT4/snapshots/db1f81ad4b8c7e39777509fac66c652eb0a52f91",
+          "--served-model-name",
+          "llama3.1",
+          "--quantization",
+          "awq",
+          "--max-model-len",
+          "2176"
+        ],
+        "image": "docker.io/vllm/vllm-openai:v0.5.4",
+        "gpu": true,
+        "expose": 8000,
+        "resources": [
+          {
+            "type": "S3",
+            "url": "s3://nos-ai-models-qllsn32u/hugging-face/llama3.1/8b/4x/models--hugging-quants--Meta-Llama-3.1-8B-Instruct-AWQ-INT4",
+            "target": "/root/.cache/huggingface/hub/models--hugging-quants--Meta-Llama-3.1-8B-Instruct-AWQ-INT4"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "version": "0.1",
+  "type": "container",
+  "meta": {
+    "trigger": "cli"
+  },
+  "ops": [
+    {
+      "type": "container/run",
+      "id": "sogni-ai",
+      "args": {
+        "cmd": [
+          "--allow-code --xformers --enable-insecure-extension-access --api --no-download-sd-model"
+        ],
+        "image": "docker.io/markledford/sogni-nvidia-worker:v7",
+        "env": {
+          "NODE_ENV": "production"
+        },
+        "gpu": true,
+        "expose": 8000
+      }
+    }
+  ]
+}

@@ -15,8 +15,7 @@ import {
 import { PodmanProvider } from '../../../providers/PodmanProvider.js';
 import { config } from '../../../generic/config.js';
 import { getSDK } from '../../../services/sdk.js';
-
-import jobDefinition from '../../../static/benchmark.json' assert { type: 'json' };
+import { jobDefinition } from '../../../static/staticsImports.js';
 
 let flow: Flow | undefined;
 let provider: Provider;
@@ -74,9 +73,8 @@ export async function runBenchmark(options: { [key: string]: any }) {
 
   let result: Partial<FlowState> | null;
 
-  const validation: IValidation<JobDefinition> = validateJobDefinition(
-    jobDefinition as JobDefinition,
-  );
+  const validation: IValidation<JobDefinition> =
+    validateJobDefinition(jobDefinition);
   spinner.stop();
   let answers;
   if (!validation.success) {
@@ -119,7 +117,7 @@ export async function runBenchmark(options: { [key: string]: any }) {
     }
     console.log(chalk.cyan('Running benchmark'));
     // Create new flow
-    flow = provider.run(jobDefinition as JobDefinition);
+    flow = provider.run(jobDefinition);
     result = await provider.waitForFlowFinish(
       flow.id,
       (log: { log: string; type: string }) => {

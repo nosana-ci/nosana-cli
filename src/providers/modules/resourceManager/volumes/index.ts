@@ -36,20 +36,7 @@ export function createVolumeManager(
 
     for (const resource of market_required_volumes) {
       if (!savedVolumes[resource.url]) {
-        logger.log(
-          chalk.cyan(`Fetching remote resource ${chalk.bold(resource.url)}`),
-          true,
-        );
-
-        try {
-          const volumeName = await createRemoteVolume(resource);
-          setVolume(resource.url, volumeName);
-        } catch (err) {
-          throw new Error(
-            chalk.red(`Cannot pull remote resource ${resource.url}:\n`) + err,
-          );
-        }
-        logger.succeed();
+        await createRemoteVolume(resource);
       }
     }
   };
@@ -112,7 +99,7 @@ export function createVolumeManager(
     }
 
     logger.log(
-      chalk.cyan(`Fetching resource ${chalk.bold(resource.url)}`),
+      chalk.cyan(`Fetching remote resource ${chalk.bold(resource.url)}`),
       true,
     );
 
@@ -122,7 +109,7 @@ export function createVolumeManager(
       logger.succeed();
       return volume;
     } catch (err) {
-      throw new Error(`Failed to fetch resource\n${err}`);
+      throw new Error(`Failed to fetch remote resource\n${err}`);
     }
   };
 
@@ -177,12 +164,35 @@ export function createVolumeManager(
     db.write();
   };
 
+  const pruneVolumes = async (): Promise<void> => {
+    const cachedVolumes = (await docker.listVolumes()).Volumes;
+    const dbVolume = Object.entries(db.data.resources.volumes);
+
+    for (const { Name } of cachedVolumes) {
+      const dbEntry = dbVolume.find((vol) => vol[1].volume === Name);
+
+      if (dbEntry && dbEntry[1].required) continue;
+
+      try {
+        const volume = await docker.getVolume(Name);
+        await volume.remove({ force: true });
+      } catch (err) {
+        logger.log(chalk.red(`Could not remove ${Name} volume.\n${err}`));
+      }
+
+      if (dbEntry) delete db.data.resources.volumes[dbEntry[0]];
+    }
+
+    db.write();
+  };
+
   return {
+    createRemoteVolume,
     getVolume,
     hasVolume,
     setVolume,
     resyncResourcesDB,
     pullMarketRequiredVolumes,
-    createRemoteVolume,
+    pruneVolumes,
   };
 }
