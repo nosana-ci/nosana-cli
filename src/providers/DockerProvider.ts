@@ -683,9 +683,9 @@ export class DockerProvider extends BasicProvider implements Provider {
           await container.remove();
         }
       } catch (err: any) {
-        console.error(
-          `couldnt stop or remove container ${containerId} - ${err}`,
-        );
+        // console.error(
+        //   `couldnt stop or remove container ${containerId} - ${err}`,
+        // );
       }
     }
   }
