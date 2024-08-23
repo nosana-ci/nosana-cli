@@ -34,6 +34,7 @@ export type RunContainerArgs = {
   networks?: { [key: string]: {} };
   cmd?: string[];
   gpu?: boolean;
+  network_mode?: 'bridge' | 'host' | 'none';
   volumes?: Array<{
     dest: string;
     name: string;
@@ -44,8 +45,10 @@ export type RunContainerArgs = {
   entrypoint?: string | string[];
 };
 
+export const FRPC_IMAGE = 'registry.hub.docker.com/nosana/frpc:0.1.0';
+
 export class DockerProvider extends BasicProvider implements Provider {
-  protected docker: DockerExtended;
+  public docker: DockerExtended;
   protected resourceManager;
   public host: string;
   public port: string;
@@ -116,12 +119,11 @@ export class DockerProvider extends BasicProvider implements Provider {
           );
         }
         if (op.args.expose) {
-          const frpcImage = 'registry.hub.docker.com/nosana/frpc:0.1.0';
           try {
-            await this.pullImage(frpcImage);
+            await this.pullImage(FRPC_IMAGE);
           } catch (error: any) {
             throw new Error(
-              chalk.red(`Cannot pull image ${frpcImage}: `) + error,
+              chalk.red(`Cannot pull image ${FRPC_IMAGE}: `) + error,
             );
           }
         }
@@ -346,7 +348,7 @@ export class DockerProvider extends BasicProvider implements Provider {
       // console.error(e);
     }
     if (opArgs.expose) {
-      await this.runContainer('registry.hub.docker.com/nosana/frpc:0.1.0', {
+      await this.runContainer(FRPC_IMAGE, {
         name: 'frpc-' + name,
         cmd: ['-c', '/etc/frp/frpc.toml'],
         networks,
@@ -380,6 +382,7 @@ export class DockerProvider extends BasicProvider implements Provider {
       volumes,
       env,
       work_dir,
+      network_mode,
       entrypoint,
     }: RunContainerArgs,
   ): Promise<Container> {
@@ -431,7 +434,7 @@ export class DockerProvider extends BasicProvider implements Provider {
       },
       HostConfig: {
         Mounts: dockerVolumes,
-        NetworkMode: 'bridge',
+        NetworkMode: network_mode || 'bridge',
         DeviceRequests: devices,
       },
     };
@@ -631,7 +634,7 @@ export class DockerProvider extends BasicProvider implements Provider {
   /****************
    *   Helpers   *
    ****************/
-  protected async pullImage(image: string) {
+  public async pullImage(image: string) {
     if (await this.docker.hasImage(image)) {
       this.resourceManager.images.setImage(image);
 
@@ -661,10 +664,10 @@ export class DockerProvider extends BasicProvider implements Provider {
     });
   }
 
-  private async stopAndRemoveContainer(providerId: string) {
-    if (providerId) {
+  public async stopAndRemoveContainer(containerId: string) {
+    if (containerId) {
       try {
-        const container = this.docker.getContainer(providerId);
+        const container = this.docker.getContainer(containerId);
         const containerInfo = await container.inspect();
         if (containerInfo.State.Running) {
           await container.kill();
@@ -673,7 +676,7 @@ export class DockerProvider extends BasicProvider implements Provider {
         }
       } catch (err: any) {
         // console.error(
-        //   `couldnt stop or remove container ${providerId} - ${err}`,
+        //   `couldnt stop or remove container ${containerId} - ${err}`,
         // );
       }
     }

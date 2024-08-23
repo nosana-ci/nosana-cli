@@ -28,6 +28,9 @@ export async function runJob(
     if (!handlingSigInt) {
       handlingSigInt = true;
       console.log(chalk.yellow.bold('Shutting down..'));
+      if (node) {
+        await node.shutdown();
+      }
       if (flow) {
         const spinner = ora(chalk.cyan(`Stopping flow ${flow.id}`)).start();
         try {
@@ -82,18 +85,6 @@ export async function runJob(
     ),
   );
 
-  // spinner = ora(chalk.cyan('Starting API')).start();
-  // try {
-  //   const port = await api.start();
-  //   spinner.succeed(
-  //     chalk.green(
-  //       `API is running on ${chalk.bold(`http://localhost:${port}`)}`,
-  //     ),
-  //   );
-  // } catch (error) {
-  //   spinner.fail(chalk.red(`Could not start API`));
-  //   throw error;
-  // }
   const jobDefinition: JobDefinition = JSON.parse(
     fs.readFileSync(jobDefinitionFile, 'utf8'),
   );
