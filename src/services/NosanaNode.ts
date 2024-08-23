@@ -24,13 +24,10 @@ import { DockerProvider, FRPC_IMAGE } from '../providers/DockerProvider.js';
 
 // TODO: make generic logger for both NosanaNode and provider
 import Logger from '../providers/modules/logger/index.js';
-<<<<<<< HEAD
 import { api } from './api.js';
 import { initTunnel } from './tunnel.js';
 export const TUNNEL_IMAGE = 'registry.hub.docker.com/nosana/tunnel:0.1.0';
-=======
 import { benchmarkGPU } from '../static/staticsImports.js';
->>>>>>> a60bb8b645fdbdeb3fdd3e4e3286bc3d69c17b3b
 
 export type NodeStats = {
   sol: number;
