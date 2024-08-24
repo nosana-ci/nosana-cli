@@ -226,6 +226,10 @@ export class DockerProvider extends BasicProvider implements Provider {
     };
   }
 
+  public async getContainer(id: string): Promise<Docker.Container> {
+    return this.docker.getContainer(id);
+  }
+
   /**
    * Check if DockerProvider is healthy by checking if podman is running
    * @returns boolean
@@ -671,6 +675,7 @@ export class DockerProvider extends BasicProvider implements Provider {
         const containerInfo = await container.inspect();
         if (containerInfo.State.Running) {
           await container.kill();
+          await container.remove();
         } else {
           await container.remove();
         }
