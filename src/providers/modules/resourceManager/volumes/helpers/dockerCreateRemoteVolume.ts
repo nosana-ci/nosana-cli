@@ -6,7 +6,7 @@ export async function createRemoteDockerVolume(
   docker: DockerExtended,
   resource: RequiredResource | Resource,
 ): Promise<string> {
-  // TODO: check again database and volumes to see if it already exists
+  // TODO: Add download progress status
   // TODO: if exists we could add a sync feature to ensure it will reflect any changes
 
   // Create the volume// Create the volume

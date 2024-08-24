@@ -216,7 +216,7 @@ export async function run(
 
   formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_POSTED_TX, { tx: response.tx });
   const isExposed =
-    json_flow.ops.map(
+    json_flow.ops.filter(
       (op: Operation<OperationType>) =>
         op.type === 'container/run' &&
         (op.args as OperationArgsMap['container/run']).expose,
