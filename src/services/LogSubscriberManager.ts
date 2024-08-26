@@ -2,6 +2,7 @@ import EventEmitter from 'events';
 import { ProviderEvents } from '../providers/Provider.js';
 import { NosanaNode } from './NosanaNode.js';
 import Logger from '../providers/modules/logger/index.js';
+import express, { Request, Response } from 'express';
 
 export type LogEvent = {
   index: number;
@@ -11,12 +12,17 @@ export type LogEvent = {
   job: string;
 };
 
+export type StatusLogClient = {
+  response: Response;
+  jobId: string;
+};
+
 export default class LogSubscriberManager {
   private subscribers: Set<(logEvent: LogEvent) => void> = new Set();
   private eventIndex: number = 0;
-  public events: LogEvent[] = [];
+  public events: Map<string, LogEvent[]> = new Map<string, LogEvent[]>();
   public lastProcessedLogIndex: number = -1;
-  public cmdEntriesLinesCount: number = 0;
+  private logStatusClients: StatusLogClient[] = [];
 
   constructor() {}
 
@@ -28,9 +34,35 @@ export default class LogSubscriberManager {
     this.subscribers.delete(callback);
   }
 
-  private notifySubscribers(log: LogEvent) {
-    this.events.push(log);
+  public addClient(response: Response, jobId: string) {
+    this.logStatusClients.push({ response, jobId });
+
+    const events = this.getEvents(jobId);
+    response.write(`data: ${JSON.stringify(events)}\n\n`);
+
+    response.on('close', () => {
+      this.removeClient(response);
+    });
+  }
+
+  public removeClient(response: Response) {
+    const index = this.logStatusClients.findIndex(
+      (client) => client.response === response,
+    );
+    if (index !== -1) {
+      this.logStatusClients.splice(index, 1);
+    }
+  }
+
+  public notifySubscribers(log: LogEvent) {
+    this.addEvent(log.job, log);
     this.subscribers.forEach((callback) => callback(log));
+
+    this.logStatusClients.forEach((client) => {
+      if (log.job === client.jobId) {
+        client.response.write(`data: ${JSON.stringify([log])}\n\n`);
+      }
+    });
   }
 
   private getCurrentJob(node: NosanaNode): string {
@@ -38,11 +70,15 @@ export default class LogSubscriberManager {
     if (run) {
       return run.account.job.toString();
     }
-    return '';
+    return 'default';
   }
 
-  public getEvents() {
-    return this.events;
+  public getEvents(jobId: string) {
+    return this.events.get(jobId) || [];
+  }
+
+  public addEvent(jobId: string, log: LogEvent){
+    this.events.set(jobId, this.getEvents(jobId).concat([log]))
   }
 
   public getEventIndex() {
