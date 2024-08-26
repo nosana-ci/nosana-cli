@@ -10,6 +10,7 @@ export type LogEvent = {
   type: string; // 'info' | 'fail' | 'success';
   pending: boolean;
   job: string;
+  event: string;
 };
 
 export type StatusLogClient = {
@@ -95,6 +96,20 @@ export default class LogSubscriberManager {
       (event: { log: string; type: string; pending: boolean }) => {
         this.notifySubscribers({
           ...event,
+          event: ProviderEvents.INFO_LOG,
+          index: this.getEventIndex(),
+          job: this.getCurrentJob(node),
+        });
+        this.incrementEventIndex();
+      },
+    );
+
+    logger.on(
+      ProviderEvents.CONTAINER_LOG, 
+      (event: { log: string; type: string; pending: boolean }) => {
+        this.notifySubscribers({
+          ...event,
+          event: ProviderEvents.CONTAINER_LOG,
           index: this.getEventIndex(),
           job: this.getCurrentJob(node),
         });
@@ -108,11 +123,16 @@ export default class LogSubscriberManager {
 
     events.forEach((event) => {
       if (event.index >= this.lastProcessedLogIndex + 1) {
-        logger.standard_info_log({
-          log: event.log,
-          pending: event.pending,
-          type: event.type,
-        });
+        if(event.event === ProviderEvents.INFO_LOG){
+          logger.standard_info_log({
+            log: event.log,
+            pending: event.pending,
+            type: event.type,
+          });
+        }
+        if(event.event === ProviderEvents.CONTAINER_LOG){
+          console.log(event.log)
+        }
         this.lastProcessedLogIndex = event.index;
       }
     });

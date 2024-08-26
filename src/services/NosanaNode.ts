@@ -355,24 +355,24 @@ export class NosanaNode {
     let ipfsResult: string;
     try {
       ipfsResult = await this.sdk.ipfs.pin(result as object);
-      this.logger.succeed(`Uploaded results to IPFS ${ipfsResult}`);
+      this.logger.succeed(chalk.cyan(`Uploaded results to IPFS ${ipfsResult}`));
     } catch (e) {
       this.logger.fail(chalk.red.bold('Could not upload results to IPFS'));
       throw e;
     }
     const bytesArray = this.sdk.ipfs.IpfsHashToByteArray(ipfsResult);
-    this.logger.log(chalk.cyan('Finishing job'), true);
+    this.logger.log(chalk.cyan('Finishing job'));
     try {
       const tx = await this.sdk.jobs.submitResult(
         bytesArray,
         run,
         job.market.toString(),
       );
+      this.logger.succeed(chalk.green(`Job finished ${tx}`));
       if (this.run && this.run.publicKey.toString() === run.toString()) {
         // Clear run if we just finished the set run in the node
         this.run = undefined;
       }
-      this.logger.succeed(chalk.green('Job finished ') + chalk.green.bold(tx));
     } catch (e) {
       this.logger.fail(chalk.red.bold('Could not finish job'));
       throw e;

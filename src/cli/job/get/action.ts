@@ -31,6 +31,7 @@ export async function getJob(
 ): Promise<void> {
   const nosana: Client = getSDK();
   const formatter = outputFormatSelector(options.format);
+  const logSubscriberManager = new LogSubscriberManager();
 
   let job;
   console.log('retrieving job...');
@@ -90,7 +91,6 @@ export async function getJob(
           }`,
         });
 
-        const logSubscriberManager = new LogSubscriberManager();
         const logger = new Logger();
         listenToEventSource<LogEvent[]>(
           `https://${job.node}.${config.frp.serverAddr}/status/${jobAddress}`,
