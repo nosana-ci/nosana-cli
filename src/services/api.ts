@@ -3,8 +3,8 @@ import { config } from '../generic/config.js';
 import { NosanaNode } from './NosanaNode.js';
 import LogSubscriberManager from './LogSubscriberManager.js';
 import nacl from 'tweetnacl';
-import { getSDK } from "./sdk.js";
-import { Client, Run } from "@nosana/sdk";
+import { getSDK } from './sdk.js';
+import { Client, Run } from '@nosana/sdk';
 import * as web3 from '@solana/web3.js';
 
 export interface CustomRequest extends Request {
@@ -27,7 +27,7 @@ export const createSignature = async (): Promise<SignatureHeaders> => {
     config.signMessage,
   )) as Uint8Array;
   const base64Signature = Buffer.from(signature).toString('base64');
-  
+
   const headers: SignatureHeaders = {
     Authorization: `${nosana.solana.wallet.publicKey.toString()}:${base64Signature}`,
   };
@@ -35,30 +35,38 @@ export const createSignature = async (): Promise<SignatureHeaders> => {
   return headers;
 };
 
-const verifySignatureMiddleware = (req: CustomRequest, res: Response, next: NextFunction) => {
+const verifySignatureMiddleware = (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction,
+) => {
   const authHeader = req.headers['authorization'] as string;
 
   if (!authHeader) {
     res.status(401).send('Authorization header is required');
-    return
+    return;
   }
 
   const [address, base64Signature] = authHeader.split(':');
 
   if (!address || !base64Signature) {
     res.status(400).send('Invalid Authorization format');
-    return
+    return;
   }
 
   const signature = Buffer.from(base64Signature, 'base64');
   const message = Buffer.from(config.signMessage);
   const publicKey = new web3.PublicKey(address);
 
-  const isValidSignature = nacl.sign.detached.verify(message, signature, publicKey.toBytes());
+  const isValidSignature = nacl.sign.detached.verify(
+    message,
+    signature,
+    publicKey.toBytes(),
+  );
 
   if (!isValidSignature) {
     res.status(403).send('Invalid signature');
-    return
+    return;
   }
 
   req.address = address;
@@ -66,32 +74,41 @@ const verifySignatureMiddleware = (req: CustomRequest, res: Response, next: Next
   next();
 };
 
-const verifyAddressMiddleware = (req: CustomRequest, res: Response, next: NextFunction) => {
-  if(req.address !== (node.run as Run).account.payer.toString()){
+const verifyAddressMiddleware = (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction,
+) => {
+  if (req.address !== (node.run as Run).account.payer.toString()) {
     res.status(403).send('Invalid address');
-    return
+    return;
   }
   next();
-}
+};
 
 app.get('/', (req: Request, res: Response) => {
   res.send(node.address);
 });
 
-app.get('/status/:jobId', verifySignatureMiddleware, verifyAddressMiddleware, (req: Request, res: Response) => {
-  const jobId = req.params.jobId;
+app.get(
+  '/status/:jobId',
+  verifySignatureMiddleware,
+  verifyAddressMiddleware,
+  (req: Request, res: Response) => {
+    const jobId = req.params.jobId;
 
-  if (!jobId) {
-    res.status(400).send('jobId path parameter is required');
-    return;
-  }
+    if (!jobId) {
+      res.status(400).send('jobId path parameter is required');
+      return;
+    }
 
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
 
-  logSubscriberManager.addClient(res, jobId);
-});
+    logSubscriberManager.addClient(res, jobId);
+  },
+);
 
 export const api = {
   start: async (nosanaNode: NosanaNode): Promise<number> => {

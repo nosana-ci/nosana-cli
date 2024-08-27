@@ -1,5 +1,5 @@
 import EventSource from 'eventsource';
-import { SignatureHeaders } from "./api";
+import { SignatureHeaders } from './api';
 
 export const listenToEventSource = <T>(
   url: string,
@@ -24,7 +24,7 @@ export const listenToEventSource = <T>(
 };
 
 export const closeEventSource = (eventSorce: EventSource | null): void => {
-  if(eventSorce){
+  if (eventSorce) {
     eventSorce.close();
   }
-}
+};

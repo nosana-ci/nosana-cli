@@ -15,13 +15,16 @@ import {
 } from '../../../services/jobs.js';
 import { OUTPUT_EVENTS } from '../../../providers/utils/ouput-formatter/outputEvents.js';
 import { outputFormatSelector } from '../../../providers/utils/ouput-formatter/outputFormatSelector.js';
-import { closeEventSource, listenToEventSource } from '../../../services/eventsource.js';
+import {
+  closeEventSource,
+  listenToEventSource,
+} from '../../../services/eventsource.js';
 import Logger from '../../../providers/modules/logger/index.js';
 import LogSubscriberManager, {
   LogEvent,
 } from '../../../services/LogSubscriberManager.js';
 import { config } from '../../../generic/config.js';
-import { createSignature } from "../../../services/api.js";
+import { createSignature } from '../../../services/api.js';
 import EventSource from 'eventsource';
 
 export async function getJob(
@@ -35,7 +38,7 @@ export async function getJob(
   const formatter = outputFormatSelector(options.format);
 
   const logSubscriberManager = new LogSubscriberManager();
-  let listener : EventSource | null = null
+  let listener: EventSource | null = null;
   const headers = await createSignature();
 
   let job;
