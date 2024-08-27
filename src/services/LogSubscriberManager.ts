@@ -131,7 +131,7 @@ export default class LogSubscriberManager {
           });
         }
         if (event.event === ProviderEvents.CONTAINER_LOG) {
-          console.log(event.log);
+          process.stdout.write(event.log);
         }
         this.lastProcessedLogIndex = event.index;
       }
