@@ -134,11 +134,17 @@ export async function runBenchmark(options: { [key: string]: any }) {
 
   if (result && result.status === 'success' && result.opStates && answers) {
     try {
+      const signature = (await nosana.solana.signMessage(
+        config.signMessage,
+      )) as Uint8Array;
+      const base64Signature = Buffer.from(signature).toString('base64');
+
       const response = await fetch(
         `${config.backendUrl}/nodes/join-test-grid`,
         {
           method: 'POST',
           headers: {
+            Authorization: `${node}:${base64Signature}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
