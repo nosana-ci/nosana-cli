@@ -86,7 +86,7 @@ const verifyJobOwnerMiddleware = async (
     return;
   }
 
-  const job: Job = await node.sdk.jobs.get(jobId)
+  const job: Job = await node.sdk.jobs.get(jobId);
 
   if (req.address !== job.project.toString()) {
     res.status(403).send('Invalid address');
