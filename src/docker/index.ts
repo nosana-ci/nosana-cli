@@ -1,5 +1,7 @@
 import Dockerode from 'dockerode';
 
+import { repoTagsContainsImage } from './utils/repoTagsContainsImage.js';
+
 export class DockerExtended extends Dockerode {
   async promisePull(image: string) {
     return await new Promise((resolve, reject): any =>
@@ -30,19 +32,8 @@ export class DockerExtended extends Dockerode {
   async hasImage(image: string): Promise<boolean> {
     const savedImages = await this.listImages();
 
-    let imageWithTag = `${image}${!image.includes(':') ? ':latest' : ''}`;
-
-    const possible_options = [
-      imageWithTag,
-      `docker.io/${imageWithTag}`,
-      `docker.io/library/${imageWithTag}`,
-      `registry.hub.docker.com//${imageWithTag}`,
-      `registry.hub.docker.com/library/${imageWithTag}`,
-    ];
-
-    return savedImages.some(
-      ({ RepoTags }) =>
-        RepoTags && RepoTags.some((tag) => possible_options.includes(tag)),
+    return savedImages.some(({ RepoTags }) =>
+      repoTagsContainsImage(image, RepoTags),
     );
   }
 }

@@ -12,6 +12,7 @@ import Logger from '../logger/index.js';
 export type ResourceManager = {
   resyncResourcesDB: () => Promise<void>;
   fetchMarketRequiredResources: (market: string) => Promise<void>;
+  prune: () => Promise<void>;
   images: {
     setImage: (image: string) => void;
   };
@@ -72,9 +73,15 @@ export function createResourceManager(
     logger.succeed(chalk.green('Fetched market all required resources'));
   };
 
+  const prune = async (): Promise<void> => {
+    await imageManager.pruneImages();
+    await volumeManager.pruneVolumes();
+  };
+
   return {
     resyncResourcesDB,
     fetchMarketRequiredResources,
+    prune,
     images: {
       setImage: imageManager.setImage,
     },
