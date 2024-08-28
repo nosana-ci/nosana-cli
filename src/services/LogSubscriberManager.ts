@@ -126,7 +126,7 @@ export default class LogSubscriberManager {
         if (event.event === ProviderEvents.INFO_LOG) {
           logger.standard_info_log({
             log: event.log,
-            pending: event.pending,
+            pending: false,
             type: event.type,
           });
         }

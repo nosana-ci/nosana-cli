@@ -250,5 +250,7 @@ export async function getJob(
     }
   }
 
-  closeEventSource(listener);
+  if (listener) {
+    closeEventSource(listener);
+  }
 }

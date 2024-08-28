@@ -346,7 +346,6 @@ export class DockerProvider extends BasicProvider implements Provider {
     );
     updateOpState({ providerId: container.id });
     this.logger.log(chalk.cyan('Running container ' + container.id), true);
-    this.logger.succeed(chalk.cyan('Running container ' + container.id));
     try {
       await this.streamingLogs(container);
     } catch (e) {

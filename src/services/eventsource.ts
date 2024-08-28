@@ -23,8 +23,6 @@ export const listenToEventSource = <T>(
   return eventSource;
 };
 
-export const closeEventSource = (eventSorce: EventSource | null): void => {
-  if (eventSorce) {
-    eventSorce.close();
-  }
+export const closeEventSource = (eventSorce: EventSource): void => {
+  eventSorce.close();
 };

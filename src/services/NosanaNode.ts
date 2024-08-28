@@ -361,7 +361,7 @@ export class NosanaNode {
       throw e;
     }
     const bytesArray = this.sdk.ipfs.IpfsHashToByteArray(ipfsResult);
-    this.logger.log(chalk.cyan('Finishing job'));
+    this.logger.log(chalk.cyan('Finishing job'), true);
     try {
       const tx = await this.sdk.jobs.submitResult(
         bytesArray,
