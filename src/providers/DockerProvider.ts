@@ -676,13 +676,14 @@ export class DockerProvider extends BasicProvider implements Provider {
         const containerInfo = await container.inspect();
         if (containerInfo.State.Running) {
           await container.kill();
+          await container.remove();
         } else {
           await container.remove();
         }
       } catch (err: any) {
-        console.error(
-          `couldnt stop or remove container ${containerId} - ${err}`,
-        );
+        // console.error(
+        //   `couldnt stop or remove container ${containerId} - ${err}`,
+        // );
       }
     }
   }

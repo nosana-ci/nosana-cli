@@ -85,13 +85,6 @@ export async function runJob(
     ),
   );
 
-  spinner = ora(chalk.cyan('Starting API')).start();
-  try {
-    const port = await node.startAPI();
-  } catch (error) {
-    spinner.fail(chalk.red(`Could not start API`));
-    throw error;
-  }
   const jobDefinition: JobDefinition = JSON.parse(
     fs.readFileSync(jobDefinitionFile, 'utf8'),
   );
