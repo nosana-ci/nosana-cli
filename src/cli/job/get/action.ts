@@ -15,12 +15,17 @@ import {
 } from '../../../services/jobs.js';
 import { OUTPUT_EVENTS } from '../../../providers/utils/ouput-formatter/outputEvents.js';
 import { outputFormatSelector } from '../../../providers/utils/ouput-formatter/outputFormatSelector.js';
-import { listenToEventSource } from '../../../services/eventsource.js';
+import {
+  closeEventSource,
+  listenToEventSource,
+} from '../../../services/eventsource.js';
 import Logger from '../../../providers/modules/logger/index.js';
 import LogSubscriberManager, {
   LogEvent,
 } from '../../../services/LogSubscriberManager.js';
 import { config } from '../../../generic/config.js';
+import { createSignature } from '../../../services/api.js';
+import EventSource from 'eventsource';
 
 export async function getJob(
   jobAddress: string,
@@ -31,7 +36,10 @@ export async function getJob(
 ): Promise<void> {
   const nosana: Client = getSDK();
   const formatter = outputFormatSelector(options.format);
+
   const logSubscriberManager = new LogSubscriberManager();
+  let listener: EventSource | null = null;
+  const headers = await createSignature();
 
   let job;
   console.log('retrieving job...');
@@ -92,8 +100,9 @@ export async function getJob(
         });
 
         const logger = new Logger();
-        listenToEventSource<LogEvent[]>(
+        listener = listenToEventSource<LogEvent[]>(
           `https://${job.node}.${config.frp.serverAddr}/status/${jobAddress}`,
+          headers,
           (events) => {
             logSubscriberManager.handleRemoteLogEvents(events, logger);
           },
@@ -240,4 +249,6 @@ export async function getJob(
       }
     }
   }
+
+  closeEventSource(listener);
 }
