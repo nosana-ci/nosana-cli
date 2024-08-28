@@ -4,7 +4,7 @@ import { NosanaNode } from './NosanaNode.js';
 import LogSubscriberManager from './LogSubscriberManager.js';
 import nacl from 'tweetnacl';
 import { getSDK } from './sdk.js';
-import { Client, Run } from '@nosana/sdk';
+import { Client, Job, Run } from '@nosana/sdk';
 import * as web3 from '@solana/web3.js';
 
 export interface CustomRequest extends Request {
@@ -74,12 +74,21 @@ const verifySignatureMiddleware = (
   next();
 };
 
-const verifyAddressMiddleware = (
+const verifyJobOwnerMiddleware = async (
   req: CustomRequest,
   res: Response,
   next: NextFunction,
 ) => {
-  if (req.address !== (node.run as Run).account.payer.toString()) {
+  const jobId = req.params.jobId;
+
+  if (!jobId) {
+    res.status(400).send('jobId path parameter is required');
+    return;
+  }
+
+  const job: Job = await node.sdk.jobs.get(jobId)
+
+  if (req.address !== job.project.toString()) {
     res.status(403).send('Invalid address');
     return;
   }
@@ -93,7 +102,7 @@ app.get('/', (req: Request, res: Response) => {
 app.get(
   '/status/:jobId',
   verifySignatureMiddleware,
-  verifyAddressMiddleware,
+  verifyJobOwnerMiddleware,
   (req: Request, res: Response) => {
     const jobId = req.params.jobId;
 
