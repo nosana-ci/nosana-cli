@@ -27,6 +27,7 @@ import { createResourceManager } from './modules/resourceManager/index.js';
 import { DockerExtended } from '../docker/index.js';
 import { s3HelperImage } from './modules/resourceManager/volumes/definition/s3HelperOpts.js';
 import Logger from './modules/logger/index.js';
+import { createSeverObject } from './utils/createServerObject.js';
 
 export type RunContainerArgs = {
   name?: string;
@@ -51,31 +52,22 @@ export class DockerProvider extends BasicProvider implements Provider {
   protected resourceManager;
   public host: string;
   public port: string;
-  public protocol: string;
+  public protocol: 'https' | 'http' | 'ssh';
   public name: string = 'docker';
 
   constructor(server: string, configLocation: string, logger?: Logger) {
     super(configLocation, logger);
-    const serverUri = new URL(
-      server.startsWith('http') || server.startsWith('ssh')
-        ? server
-        : `http://${server}`,
-    );
-    const protocol = serverUri.protocol.replace(':', '');
-    if (
-      !['https', 'http', 'ssh'].includes(protocol) &&
-      typeof protocol !== 'undefined'
-    ) {
-      throw new Error(`Protocol ${protocol} not supported`);
-    }
 
-    this.host = serverUri.hostname;
-    this.port = serverUri.port;
+    const { host, port, protocol } = createSeverObject(server);
+
+    this.host = host;
+    this.port = port;
     this.protocol = protocol;
+
     this.docker = new DockerExtended({
       host: this.host,
       port: this.port,
-      protocol: this.protocol as 'https' | 'http' | 'ssh' | undefined,
+      protocol: this.protocol,
     });
 
     this.resourceManager = createResourceManager(
@@ -684,13 +676,14 @@ export class DockerProvider extends BasicProvider implements Provider {
         const containerInfo = await container.inspect();
         if (containerInfo.State.Running) {
           await container.kill();
+          await container.remove();
         } else {
           await container.remove();
         }
       } catch (err: any) {
-        console.error(
-          `couldnt stop or remove container ${containerId} - ${err}`,
-        );
+        // console.error(
+        //   `couldnt stop or remove container ${containerId} - ${err}`,
+        // );
       }
     }
   }

@@ -5,11 +5,13 @@ import { NodeDb } from '../../../BasicProvider.js';
 import { DockerExtended } from '../../../../docker/index.js';
 import { hoursSinceDate } from '../utils/hoursSinceDate.js';
 import Logger from '../../logger/index.js';
+import { repoTagsContainsImage } from '../../../../docker/utils/repoTagsContainsImage.js';
 
 export type ImageManager = {
   setImage: (image: string) => void;
   resyncImagesDB: () => Promise<void>;
   pullMarketRequiredImages: (required_images: string[]) => Promise<void>;
+  pruneImages: () => Promise<void>;
 };
 
 /**
@@ -34,15 +36,16 @@ export function createImageManager(
     for (const image of market_required_images) {
       if (!(await docker.hasImage(image))) {
         logger.log(chalk.cyan(`Pulling image ${chalk.bold(image)}`), true);
+
         try {
           await docker.promisePull(image);
         } catch (error: any) {
           throw new Error(chalk.red(`Cannot pull image ${image}: `) + error);
         }
         logger.succeed();
-
-        setImage(image);
       }
+
+      if (!db.data.resources.images[image]) setImage(image);
     }
   };
 
@@ -94,9 +97,33 @@ export function createImageManager(
     db.write();
   };
 
+  const pruneImages = async () => {
+    const cachedImages = await docker.listImages();
+
+    for (const { Id, RepoTags } of cachedImages) {
+      const dbEntry = Object.entries(db.data.resources.images).find((img) =>
+        repoTagsContainsImage(img[0], RepoTags) ? img : undefined,
+      );
+
+      if (dbEntry && dbEntry[1].required) continue;
+
+      try {
+        const image = await docker.getImage(Id);
+        await image.remove({ force: true });
+      } catch (err) {
+        logger.log(chalk.red(`Could not remove ${Id} volume.\n${err}`));
+      }
+
+      if (dbEntry) delete db.data.resources.images[dbEntry[0]];
+    }
+
+    db.write();
+  };
+
   return {
     setImage,
     resyncImagesDB,
     pullMarketRequiredImages,
+    pruneImages,
   };
 }
