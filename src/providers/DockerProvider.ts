@@ -296,8 +296,8 @@ export class DockerProvider extends BasicProvider implements Provider {
 
         volumes.push({
           dest: resource.target,
-          name: (await this.resourceManager.volumes.getVolume(resource.url))!,
-          readonly: true,
+          name: await this.resourceManager.volumes.getVolume(resource.url)!,
+          readonly: resource.allowWrite ? false : true,
         });
       }
     }
