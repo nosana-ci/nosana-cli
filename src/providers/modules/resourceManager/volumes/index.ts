@@ -9,6 +9,13 @@ import { createRemoteDockerVolume } from './helpers/dockerCreateRemoteVolume.js'
 import { RequiredResource, Resource } from '../../../../types/resources.js';
 import { hoursSinceDate } from '../utils/hoursSinceDate.js';
 
+export function createResourceName(resource: RequiredResource) {
+  if (resource.url) return resource.url;
+
+  // TODO: Fix type to ensure that it is either url or bucket!
+  return resource.buckets!.map((bucket) => bucket.url).join('-');
+}
+
 /**
  * Creates Volume Manager Sub-module
  * @param db
@@ -35,7 +42,7 @@ export function createVolumeManager(
     const savedVolumes = db.data.resources.volumes;
 
     for (const resource of market_required_volumes) {
-      if (!savedVolumes[resource.url]) {
+      if (!savedVolumes[createResourceName(resource)]) {
         await createRemoteVolume(resource);
       }
     }
@@ -60,7 +67,9 @@ export function createVolumeManager(
 
       if (
         (!fetched && required) ||
-        market_required_volumes.some((vol) => vol.url === resource)
+        market_required_volumes.some(
+          (vol) => createResourceName(vol) === resource,
+        )
       )
         continue;
 
@@ -91,21 +100,22 @@ export function createVolumeManager(
   const createRemoteVolume = async (
     resource: RequiredResource | Resource,
   ): Promise<string> => {
-    const savedResource = await getVolume(resource.url);
+    const resourceName = createResourceName(resource);
+    const savedResource = await getVolume(resource);
 
     if (savedResource) {
-      setVolume(resource.url, savedResource);
+      setVolume(resourceName, savedResource);
       return savedResource;
     }
 
     logger.log(
-      chalk.cyan(`Fetching remote resource ${chalk.bold(resource.url)}`),
+      chalk.cyan(`Fetching remote resource ${chalk.bold(resourceName)}`),
       true,
     );
 
     try {
       const volume = await createRemoteDockerVolume(docker, resource);
-      setVolume(resource.url, volume);
+      setVolume(resourceName, volume);
       logger.succeed();
       return volume;
     } catch (err) {
@@ -118,8 +128,10 @@ export function createVolumeManager(
    * @param resourceName
    * @returns string | undefined
    */
-  const getVolume = (resourceName: string): string | undefined => {
-    return db.data.resources.volumes[resourceName]?.volume;
+  const getVolume = (
+    resource: RequiredResource | Resource,
+  ): string | undefined => {
+    return db.data.resources.volumes[createResourceName(resource)]?.volume;
   };
 
   /**
@@ -127,9 +139,9 @@ export function createVolumeManager(
    * @param resourceName
    * @returns Promise<boolean>
    */
-  const hasVolume = async (resourceName: string): Promise<boolean> => {
+  const hasVolume = async (resource: Resource): Promise<boolean> => {
     let result: boolean;
-    const volume = getVolume(resourceName);
+    const volume = getVolume(resource);
 
     if (!volume) return false;
 
@@ -141,7 +153,7 @@ export function createVolumeManager(
     }
 
     if (!result) {
-      delete db.data.resources.volumes[resourceName];
+      delete db.data.resources.volumes[createResourceName(resource)];
       db.write();
     }
 
@@ -156,7 +168,9 @@ export function createVolumeManager(
   const setVolume = (bucket: string, volume: string): void => {
     db.data.resources.volumes[bucket] = {
       volume,
-      required: market_required_volumes.some((vol) => vol.url === bucket),
+      required: market_required_volumes.some(
+        (vol) => createResourceName(vol) === bucket,
+      ),
       lastUsed: new Date(),
       usage: db.data.resources.volumes[bucket]?.usage + 1 || 1,
     };

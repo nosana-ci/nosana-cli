@@ -17,8 +17,8 @@ export type ResourceManager = {
     setImage: (image: string) => void;
   };
   volumes: {
-    getVolume: (resource: string) => string | undefined;
-    hasVolume: (resource: string) => Promise<boolean>;
+    getVolume: (resource: Resource) => string | undefined;
+    hasVolume: (resource: Resource) => Promise<boolean>;
     setVolume: (bucket: string, volume: string) => void;
     createRemoteVolume: (
       resource: RequiredResource | Resource,

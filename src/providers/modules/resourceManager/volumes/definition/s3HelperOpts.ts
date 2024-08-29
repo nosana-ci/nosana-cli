@@ -1,17 +1,17 @@
 import { ContainerCreateOptions } from 'dockerode';
 
-import {
-  RequiredResource,
-  Resource,
-  S3Secure,
-} from '../../../../../types/resources.js';
+import { S3Auth } from '../../../../../types/resources.js';
 
 export const s3HelperImage =
   'registry.hub.docker.com/nosana/remote-resource-helper:0.3.0';
 
 export const createS3HelperOpts = (
   volumeName: string,
-  s3: RequiredResource | Resource,
+  s3: {
+    url: string;
+    files?: string[];
+  },
+  s3Auth: S3Auth | undefined,
 ): ContainerCreateOptions => ({
   AttachStdin: false,
   AttachStdout: true,
@@ -21,11 +21,11 @@ export const createS3HelperOpts = (
   StdinOnce: false,
   Cmd: ['index.js', s3.url, s3.files ? s3.files.join(',') : ''],
   Image: s3HelperImage,
-  Env: (s3 as S3Secure).IAM
+  Env: s3Auth
     ? [
-        `REGION=${(s3 as S3Secure).IAM.REGION}`,
-        `ACCESS_KEY_ID=${(s3 as S3Secure).IAM.ACCESS_KEY_ID}`,
-        `SECRET_ACCESS_KEY=${(s3 as S3Secure).IAM.SECRET_ACCESS_KEY}`,
+        `REGION=${s3Auth.REGION}`,
+        `ACCESS_KEY_ID=${s3Auth.ACCESS_KEY_ID}`,
+        `SECRET_ACCESS_KEY=${s3Auth.SECRET_ACCESS_KEY}`,
       ]
     : undefined,
   HostConfig: {
