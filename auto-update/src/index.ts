@@ -1,11 +1,15 @@
 import chalk from 'chalk';
-import { execSync, spawn } from 'child_process';
+import { exec, spawn } from 'child_process';
 import ora from 'ora';
 
 type SpawnParameters = Parameters<typeof spawn>;
 
 async function installNosanaCLI(version?: string) {
-  await execSync(`npm install -g @nosana/cli${version ? '@' + version : ''}`);
+  return new Promise((resolve) =>
+    exec(`npm install -g @nosana/cli${version ? '@' + version : ''}`, () => {
+      resolve(true);
+    }),
+  );
 }
 
 async function nosanaCLIRunner() {
@@ -13,7 +17,7 @@ async function nosanaCLIRunner() {
   const version: string | undefined = process.env.CLI_VERSION;
   const spinner = ora(chalk.cyan('Installing @nosana/cli')).start();
   await installNosanaCLI(version);
-  spinner.stop();
+  spinner.succeed();
 
   while (errorCode === undefined || errorCode === 129) {
     if (errorCode === 129) {
@@ -21,7 +25,7 @@ async function nosanaCLIRunner() {
         console.log(chalk.yellow('New @nosana/cli version found.'));
         const spinner = ora(chalk.cyan('Updating @nosana/cli')).start();
         await installNosanaCLI();
-        spinner.stop();
+        spinner.succeed();
       } else {
         throw new Error(
           chalk.red(`Need newer @nosana/cli version, but pinned to ${version}`),
