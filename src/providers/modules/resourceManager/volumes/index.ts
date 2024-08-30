@@ -114,7 +114,7 @@ export function createVolumeManager(
     );
 
     try {
-      const volume = await createRemoteDockerVolume(docker, resource);
+      const volume = await createRemoteDockerVolume(docker, resource, logger);
       setVolume(resourceName, volume);
       logger.succeed();
       return volume;

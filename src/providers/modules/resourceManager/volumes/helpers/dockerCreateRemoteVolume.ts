@@ -4,6 +4,7 @@ import {
   Resource,
   S3Secure,
 } from '../../../../../types/resources.js';
+import Logger from '../../../logger/index.js';
 import { createS3HelperOpts } from '../definition/s3HelperOpts.js';
 
 async function runRemoteDockerVolume(
@@ -37,6 +38,7 @@ async function runRemoteDockerVolume(
 export async function createRemoteDockerVolume(
   docker: DockerExtended,
   resource: RequiredResource | Resource,
+  logger?: Logger,
 ): Promise<string> {
   // TODO: Add download progress status
   // TODO: if exists we could add a sync feature to ensure it will reflect any changes
@@ -61,8 +63,15 @@ export async function createRemoteDockerVolume(
     );
   } else {
     for (const bucket of resource.buckets!) {
-      console.log(`Fetching items from bucket: ${bucket.url}`);
+      if (logger) {
+        logger.log(`Fetching resources from ${bucket.url}`, true);
+      }
+
       await runRemoteDockerVolume(volumeName, bucket, docker);
+
+      if (logger) {
+        logger.succeed();
+      }
     }
   }
 
