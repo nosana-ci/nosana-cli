@@ -38,7 +38,7 @@
               "control_v11p_sd15_softedge_fp16.safetensors",
               "control_v11p_sd15s2_lineart_anime_fp16.safetensors"
             ],
-            "target": "/root/../data-models/ControlNet/",
+            "target": "/data-models/ControlNet/",
             "allowWrite": true
           },
           {
@@ -110,7 +110,7 @@
                 ]
               }
             ],
-            "target": "/root/../data-models/Stable-diffusion",
+            "target": "/data-models/Stable-diffusion",
             "allowWrite": true
           }
         ]
