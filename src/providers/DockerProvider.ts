@@ -334,6 +334,7 @@ export class DockerProvider extends BasicProvider implements Provider {
         env: {
           ...globalEnv,
           ...opArgs.env,
+          NOSANA_ID: flowId,
         },
         networks,
         gpu:
@@ -363,6 +364,7 @@ export class DockerProvider extends BasicProvider implements Provider {
           FRP_LOCAL_IP: name,
           FRP_LOCAL_PORT: opArgs.expose.toString(),
           FRP_CUSTOM_DOMAIN: flowId + '.' + config.frp.serverAddr,
+          NOSANA_ID: flowId,
         },
       });
       this.logger.log(
