@@ -166,7 +166,7 @@ export class NosanaNode {
     return new Promise<FlowState | null>(async (resolve, reject) => {
       // check if expired every 30s
       const expireInterval = setInterval(async () => {
-        const flow = this.provider.getFlow(this.run!.publicKey.toString());
+        const flow = this.provider.getFlow(this.run!.account.job.toString());
         if (flow) {
           const isFlowExposed =
             flow.jobDefinition.ops.filter(
@@ -186,7 +186,7 @@ export class NosanaNode {
             ) {
               clearInterval(expireInterval);
               this.logger.log(chalk.cyan('Stopping service'), true);
-              await this.provider.stopFlow(this.run!.publicKey.toString());
+              await this.provider.stopFlow(this.run!.account.job.toString());
             }
           } else {
             // If flow doesn't have an exposed service, quit the job if not finished yet after 1.5
@@ -208,7 +208,7 @@ export class NosanaNode {
                 this.logger.fail(chalk.red.bold('Could not quit job'));
                 reject(e);
               }
-              await this.provider.stopFlow(this.run!.publicKey.toString());
+              await this.provider.stopFlow(this.run!.account.job.toString());
               reject('Job expired');
             }
           }
@@ -216,7 +216,7 @@ export class NosanaNode {
       }, 30000);
       try {
         const flowResult = await this.provider.waitForFlowFinish(
-          this.run!.publicKey.toString(),
+          this.run!.account.job.toString(),
         );
         this.logger.succeed();
         clearInterval(expireInterval);
@@ -843,8 +843,8 @@ export class NosanaNode {
         this.logger.fail(chalk.red.bold('Could not quit job'));
         throw e;
       }
-      await this.provider.stopFlow(this.run.publicKey.toString());
-      await this.provider.waitForFlowFinish(this.run.publicKey.toString());
+      await this.provider.stopFlow(this.run.account.job.toString());
+      await this.provider.waitForFlowFinish(this.run.account.job.toString());
     } else if (this.market) {
       this.logger.log(chalk.cyan('Leaving market queue'), true);
       try {
