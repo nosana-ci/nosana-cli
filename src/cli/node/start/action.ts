@@ -283,7 +283,7 @@ export async function startNode(
             );
             throw error;
           }
-          let flowId = node.run.publicKey.toString();
+          let flowId = jobAddress;
           let result: Partial<FlowState> | null = null;
           const existingFlow = node.provider.getFlow(flowId);
           if (!existingFlow) {
