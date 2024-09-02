@@ -223,9 +223,14 @@ export async function run(
     ).length > 0;
   await sleep(3);
   if (isExposed) {
-    formatter.output(OUTPUT_EVENTS.OUTPUT_SERVICE_URL, {
-      url: `https://${response.run}.${config.frp.serverAddr}`,
-    });
+    if(json_flow.public){
+      formatter.output(OUTPUT_EVENTS.OUTPUT_SERVICE_URL, {
+        url: `https://${response.job}.${config.frp.serverAddr}`,
+      });
+    }else{
+      console.log(`this servcie exposed url is private you can access it via the command: job url ${response.job}`)
+    }
+
   }
   await getJob(response.job, options, undefined);
 

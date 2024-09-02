@@ -66,9 +66,9 @@ export function createResourceManager(
       );
 
     await imageManager.pullMarketRequiredImages(data.required_images);
-    await volumeManager.pullMarketRequiredVolumes(
-      data.required_remote_resources,
-    );
+    // await volumeManager.pullMarketRequiredVolumes(
+    //   data.required_remote_resources,
+    // );
 
     logger.succeed(chalk.green('Fetched market all required resources'));
   };

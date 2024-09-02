@@ -4,6 +4,7 @@
   "meta": {
     "trigger": "cli"
   },
+  "public": true,
   "ops": [
     {
       "type": "container/run",

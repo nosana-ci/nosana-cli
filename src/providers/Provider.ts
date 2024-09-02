@@ -10,6 +10,7 @@ import { Resource } from '../types/resources.js';
 export type JobDefinition = {
   version: string;
   type: JobType;
+  public?: boolean;
   meta?: {
     trigger?: string;
   };
@@ -78,6 +79,9 @@ export type FlowState = {
   endTime: number | null;
   errors?: Array<any>;
   opStates: Array<OpState>;
+  secrets?: {
+    [key: string]: string;
+  }
 };
 export type Flow = {
   id: string;

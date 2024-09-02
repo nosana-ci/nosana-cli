@@ -28,6 +28,7 @@ import { DockerExtended } from '../docker/index.js';
 import { s3HelperImage } from './modules/resourceManager/volumes/definition/s3HelperOpts.js';
 import Logger from './modules/logger/index.js';
 import { createSeverObject } from './utils/createServerObject.js';
+import { randomUUID } from "crypto";
 
 export type RunContainerArgs = {
   name?: string;
@@ -353,6 +354,19 @@ export class DockerProvider extends BasicProvider implements Provider {
       // console.error(e);
     }
     if (opArgs.expose) {
+      let prefix = flowId;
+
+      if(!flow.jobDefinition.public){
+        prefix = randomUUID();
+
+        if (!flow.state.secrets) {
+          flow.state.secrets = {};
+        }
+        
+        flow.state.secrets[flowId] = prefix
+        this.db.write();
+      }
+
       await this.runContainer(FRPC_IMAGE, {
         name: 'frpc-' + name,
         cmd: ['-c', '/etc/frp/frpc.toml'],
@@ -363,17 +377,20 @@ export class DockerProvider extends BasicProvider implements Provider {
           FRP_NAME: name,
           FRP_LOCAL_IP: name,
           FRP_LOCAL_PORT: opArgs.expose.toString(),
-          FRP_CUSTOM_DOMAIN: flowId + '.' + config.frp.serverAddr,
+          FRP_CUSTOM_DOMAIN: prefix + '.' + config.frp.serverAddr,
           NOSANA_ID: flowId,
         },
       });
-      this.logger.log(
-        chalk.cyan(
-          `Exposing service at ${chalk.bold(
-            `https://${flowId}.${config.frp.serverAddr}`,
-          )}`,
-        ),
-      );
+
+      if(flow.jobDefinition.public){
+        this.logger.log(
+          chalk.cyan(
+            `Exposing service at ${chalk.bold(
+              `https://${prefix}.${config.frp.serverAddr}`,
+            )}`,
+          ),
+        );
+      }
     }
     return container;
   }
