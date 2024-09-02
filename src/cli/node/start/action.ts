@@ -253,7 +253,7 @@ export async function startNode(
             spinner.fail(chalk.red('Could not quit job'));
             throw e;
           }
-          await node.provider.stopFlow(node.run.publicKey.toString());
+          await node.provider.stopFlow(jobAddress);
           node.run = undefined;
         } else if (
           NosanaNode.isRunExpired(
@@ -271,7 +271,7 @@ export async function startNode(
             spinner.fail(chalk.red('Could not quit job'));
             throw e;
           }
-          await node.provider.stopFlow(node.run.publicKey.toString());
+          await node.provider.stopFlow(jobAddress);
           node.run = undefined;
         } else {
           spinner = ora(chalk.cyan('Checking provider health')).start();
