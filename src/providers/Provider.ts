@@ -10,7 +10,7 @@ import { Resource } from '../types/resources.js';
 export type JobDefinition = {
   version: string;
   type: JobType;
-  public?: boolean;
+  private?: boolean;
   meta?: {
     trigger?: string;
   };

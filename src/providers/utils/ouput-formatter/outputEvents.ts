@@ -38,6 +38,7 @@ export const OUTPUT_EVENTS = {
   OUTPUT_WALLET: 'OUTPUT_WALLET',
   OUTPUT_IPFS_UPLOADED: 'OUTPUT_IPFS_UPLOADED',
   OUTPUT_SERVICE_URL: 'OUTPUT_SERVICE_URL',
+  OUTPUT_PRIVATE_URL_MESSAGE: 'OUTPUT_PRIVATE_URL_MESSAGE',
   OUTPUT_JOB_NOT_FOUND: 'OUTPUT_JOB_NOT_FOUND',
   OUTPUT_CANNOT_LOG_RESULT: 'OUTPUT_CANNOT_LOG_RESULT',
   OUTPUT_JOB_VALIDATION_ERROR: 'OUTPUT_JOB_VALIDATION_ERROR',
@@ -68,6 +69,7 @@ export type NetworkParam = { network: string };
 export type WalletParam = { publicKey: string };
 export type IpfsParam = { ipfsHash: string };
 export type ServiceUrlParam = { url: string };
+export type CommandParam = { command: string };
 export type JobUrlParam = { job_url: string };
 export type JsonFlowUrlParam = { json_flow_url: string };
 export type MarketUrlParam = { market_url: string };
@@ -106,6 +108,7 @@ export type OutputEventParams = {
   [OUTPUT_EVENTS.OUTPUT_WALLET]: WalletParam;
   [OUTPUT_EVENTS.OUTPUT_IPFS_UPLOADED]: IpfsParam;
   [OUTPUT_EVENTS.OUTPUT_SERVICE_URL]: ServiceUrlParam;
+  [OUTPUT_EVENTS.OUTPUT_PRIVATE_URL_MESSAGE]: CommandParam;
   [OUTPUT_EVENTS.OUTPUT_JOB_URL]: JobUrlParam;
   [OUTPUT_EVENTS.OUTPUT_JSON_FLOW_URL]: JsonFlowUrlParam;
   [OUTPUT_EVENTS.OUTPUT_MARKET_URL]: MarketUrlParam;

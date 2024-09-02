@@ -21,6 +21,7 @@ import {
   ValidationErrorParam,
   OutputHeaderLogoParam,
   ServiceUrlParam,
+  CommandParam,
 } from '../outputEvents.js';
 import { OutputEventParams } from '../outputEvents.js';
 import chalk from 'chalk';
@@ -60,6 +61,9 @@ export const textOutputEventHandlers: OutputEventHandlers = {
     console.log(
       chalk.cyan(`Service will be exposed at ${chalk.bold(`${param.url}`)}`),
     );
+  },
+  [OUTPUT_EVENTS.OUTPUT_PRIVATE_URL_MESSAGE]: (param: CommandParam) => {
+    console.log(chalk.cyan(`this servcie exposed url is private you can access it once a node picks up this job via the command: ${chalk.bold(param.command)}`));
   },
   [OUTPUT_EVENTS.READ_KEYFILE]: (param: KeyfileParam) => {
     console.log(

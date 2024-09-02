@@ -28,6 +28,7 @@ import {
   RetriveJobCommandParam,
   ValidationErrorParam,
   OutputHeaderLogoParam,
+  CommandParam,
 } from '../outputEvents.js';
 import { OutputEventParams } from '../outputEvents.js';
 import { JsonResponseType } from './JsonOutputFormatter.js';
@@ -92,6 +93,13 @@ export const jsonOutputEventHandlers: OutputEventHandlers = {
     param: ServiceUrlParam,
   ) => {
     response.service_url = param.url;
+  },
+
+  [OUTPUT_EVENTS.OUTPUT_PRIVATE_URL_MESSAGE]: (
+    response: JsonResponseType,
+    param: CommandParam,
+  ) => {
+    response.service_url = undefined;
   },
 
   [OUTPUT_EVENTS.OUTPUT_JOB_URL]: (

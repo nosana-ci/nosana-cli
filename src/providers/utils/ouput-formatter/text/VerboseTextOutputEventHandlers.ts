@@ -28,6 +28,7 @@ import {
   RetriveJobCommandParam,
   ValidationErrorParam,
   OutputHeaderLogoParam,
+  CommandParam,
 } from '../outputEvents.js';
 import { OutputEventParams } from '../outputEvents.js';
 import chalk from 'chalk';
@@ -80,6 +81,10 @@ export const verboseTextOutputEventHandlers: OutputEventHandlers = {
     );
   },
 
+  [OUTPUT_EVENTS.OUTPUT_PRIVATE_URL_MESSAGE]: (param: CommandParam) => {
+    console.log(chalk.cyan(`this servcie exposed url is private you can access it once a node picks up this job via the command: ${chalk.bold(param.command)}`));
+  },
+  
   [OUTPUT_EVENTS.OUTPUT_JOB_URL]: (param: JobUrlParam) => {
     console.log(`Job:\t\t${colors.BLUE}${param.job_url}${colors.RESET}`);
   },

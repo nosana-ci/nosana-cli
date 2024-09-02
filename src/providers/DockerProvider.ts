@@ -356,7 +356,7 @@ export class DockerProvider extends BasicProvider implements Provider {
     if (opArgs.expose) {
       let prefix = flowId;
 
-      if(!flow.jobDefinition.public){
+      if(flow.jobDefinition.private){
         prefix = randomUUID();
 
         if (!flow.state.secrets) {
@@ -382,7 +382,7 @@ export class DockerProvider extends BasicProvider implements Provider {
         },
       });
 
-      if(flow.jobDefinition.public){
+      if(!flow.jobDefinition.private){
         this.logger.log(
           chalk.cyan(
             `Exposing service at ${chalk.bold(
