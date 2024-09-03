@@ -161,7 +161,7 @@ export class NosanaNode {
     this.run = undefined;
   }
 
-  public async waitForJob(): Promise<FlowState | null> {
+  public async waitForJob(marketAccount: Market): Promise<FlowState | null> {
     return new Promise<FlowState | null>(async (resolve, reject) => {
       // check if expired every 30s
       const expireInterval = setInterval(async () => {
@@ -180,7 +180,7 @@ export class NosanaNode {
                 this.run!,
                 // TODO: fix: due to a problem with the typescript Market type of getMarket(),
                 // we need to convert timeout to a number by multipling with an int
-                (this.market?.jobTimeout as number) * 1,
+                (marketAccount.jobTimeout as number) * 1,
               )
             ) {
               clearInterval(expireInterval);
@@ -193,7 +193,7 @@ export class NosanaNode {
             if (
               NosanaNode.isRunExpired(
                 this.run!,
-                (this.market?.jobTimeout as number) * 1.5,
+                (marketAccount.jobTimeout as number) * 1.5,
               )
             ) {
               clearInterval(expireInterval);
