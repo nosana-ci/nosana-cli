@@ -29,6 +29,7 @@ import { s3HelperImage } from './modules/resourceManager/volumes/definition/s3He
 import Logger from './modules/logger/index.js';
 import { createSeverObject } from './utils/createServerObject.js';
 import { randomUUID } from "crypto";
+import { createResourceName } from './modules/resourceManager/volumes/index.js';
 
 export type RunContainerArgs = {
   name?: string;
@@ -142,8 +143,11 @@ export class DockerProvider extends BasicProvider implements Provider {
               await this.resourceManager.volumes.createRemoteVolume(resource);
             } catch (err) {
               throw new Error(
-                chalk.red(`Cannot pull remote resource ${resource.url}:\n`) +
-                  err,
+                chalk.red(
+                  `Cannot pull remote resource ${createResourceName(
+                    resource,
+                  )}:\n`,
+                ) + err,
               );
             }
           }
@@ -290,15 +294,17 @@ export class DockerProvider extends BasicProvider implements Provider {
     if (opArgs.resources) {
       for (const resource of opArgs.resources) {
         if (
-          (await this.resourceManager.volumes.hasVolume(resource.url)) === false
+          (await this.resourceManager.volumes.hasVolume(resource)) === false
         ) {
-          throw new Error(`Missing required resource ${resource.url}.`);
+          throw new Error(
+            `Missing required resource ${createResourceName(resource)}.`,
+          );
         }
 
         volumes.push({
           dest: resource.target,
-          name: (await this.resourceManager.volumes.getVolume(resource.url))!,
-          readonly: true,
+          name: await this.resourceManager.volumes.getVolume(resource)!,
+          readonly: resource.allowWrite ? false : true,
         });
       }
     }
