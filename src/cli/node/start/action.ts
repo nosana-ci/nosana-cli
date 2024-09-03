@@ -306,7 +306,7 @@ export async function startNode(
             }
           }
           if (result) {
-            node.finishJob(job, node.run.publicKey, result);
+            await node.finishJob(job, node.run.publicKey, result);
             if (result.status !== 'success') {
               // Flow failed, so we have a cooldown of 15 minutes
               console.log(chalk.cyan('Waiting to enter the queue'));
