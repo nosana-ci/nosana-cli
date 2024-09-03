@@ -156,7 +156,6 @@ export class NosanaNode {
     ]);
     if (runs && runs.length > 0) {
       this.run = runs[0];
-      this.market = undefined;
       return runs[0];
     }
     this.run = undefined;
