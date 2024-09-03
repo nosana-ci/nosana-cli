@@ -29,6 +29,9 @@ import {
   ValidationErrorParam,
   OutputHeaderLogoParam,
   CommandParam,
+  JobServiceUrlParam,
+  JobServiceUrlExpiredParam,
+  JobServiceUrlErrorParam,
 } from '../outputEvents.js';
 import { OutputEventParams } from '../outputEvents.js';
 import { JsonResponseType } from './JsonOutputFormatter.js';
@@ -93,6 +96,49 @@ export const jsonOutputEventHandlers: OutputEventHandlers = {
     param: ServiceUrlParam,
   ) => {
     response.service_url = param.url;
+  },
+
+  [OUTPUT_EVENTS.OUTPUT_JOB_SERVICE_URL]: (
+    response: JsonResponseType,
+    param: JobServiceUrlParam,
+  ) => {
+    response.service_url = param.url;
+  },
+
+  [OUTPUT_EVENTS.OUTPUT_JOB_INVALID]: (response: JsonResponseType) => {
+    response.isError = true;
+    response.msg = 'Invalid Job';
+    response.errors = ['Invalid Job Entered'];
+    response.service_url = undefined;
+  },
+
+  [OUTPUT_EVENTS.OUTPUT_JOB_URL_EXPIRED]: (
+    response: JsonResponseType,
+    param: JobServiceUrlExpiredParam,
+  ) => {
+    response.isError = true;
+    response.msg = 'Job expired';
+    response.errors = [
+      `Job exposed URL is expired since Job has been ${param.state}`,
+    ];
+    response.service_url = undefined;
+  },
+
+  [OUTPUT_EVENTS.OUTPUT_JOB_URL_NOT_READY]: (response: JsonResponseType) => {
+    response.isError = true;
+    response.msg = 'Job exposed URL is not ready yet';
+    response.errors = [`Job exposed URL is not ready yet`];
+    response.service_url = undefined;
+  },
+
+  [OUTPUT_EVENTS.OUTPUT_JOB_URL_ERROR]: (
+    response: JsonResponseType,
+    param: JobServiceUrlErrorParam,
+  ) => {
+    response.isError = true;
+    response.msg = `Failed to fetch exposed URL ${param.error.message}`;
+    response.errors = [param.error];
+    throw response;
   },
 
   [OUTPUT_EVENTS.OUTPUT_PRIVATE_URL_MESSAGE]: (

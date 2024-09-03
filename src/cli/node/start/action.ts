@@ -97,7 +97,7 @@ export async function startNode(
 
   // TODO: decouple resources in providers from markets/blockchain/backend stuff,
   //       that should be part of the node or cli..
-  // await node.provider.updateMarketRequiredResources(market);
+  await node.provider.updateMarketRequiredResources(market);
 
   let marketAccount: Market;
   try {

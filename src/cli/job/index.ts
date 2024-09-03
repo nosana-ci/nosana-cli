@@ -4,12 +4,10 @@ import { downloadJobCommand } from './download/command.js';
 import { getJobCommand } from './get/command.js';
 import { postJobCommand } from './post/command.js';
 import { uploadJobCommand } from './upload/command.js';
-import { getURLCommand } from './url/command.js';
 
 export const jobCommand: Command = program
   .command('job')
   .addCommand(downloadJobCommand)
   .addCommand(getJobCommand)
   .addCommand(postJobCommand)
-  .addCommand(uploadJobCommand)
-  .addCommand(getURLCommand);
+  .addCommand(uploadJobCommand);

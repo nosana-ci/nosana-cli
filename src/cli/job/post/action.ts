@@ -17,7 +17,7 @@ import { OUTPUT_EVENTS } from '../../../providers/utils/ouput-formatter/outputEv
 import { outputFormatSelector } from '../../../providers/utils/ouput-formatter/outputFormatSelector.js';
 import { clientSelector } from '../../../api/client.js';
 import { PublicKey } from '@solana/web3.js';
-import chalk from "chalk";
+import chalk from 'chalk';
 
 export async function run(
   command: Array<string>,
@@ -224,16 +224,15 @@ export async function run(
     ).length > 0;
   await sleep(3);
   if (isExposed) {
-    if(!json_flow.private){
+    if (!json_flow.private) {
       formatter.output(OUTPUT_EVENTS.OUTPUT_SERVICE_URL, {
         url: `https://${response.job}.${config.frp.serverAddr}`,
       });
-    }else{
+    } else {
       formatter.output(OUTPUT_EVENTS.OUTPUT_PRIVATE_URL_MESSAGE, {
         command: `nosana job url ${response.job}`,
       });
     }
-
   }
   await getJob(response.job, options, undefined);
 

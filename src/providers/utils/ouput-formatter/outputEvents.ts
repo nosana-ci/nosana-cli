@@ -59,10 +59,20 @@ export const OUTPUT_EVENTS = {
   OUTPUT_RETRIVE_JOB_COMMAND: 'OUTPUT_RETRIVE_JOB_COMMAND',
   OUTPUT_FAILED_TO_FETCH_MARKETS_ERROR: 'OUTPUT_FAILED_TO_FETCH_MARKETS_ERROR',
   OUTPUT_HEADER_LOGO: 'OUTPUT_HEADER_LOGO',
+  OUTPUT_JOB_URL_ERROR: 'OUTPUT_JOB_URL_ERROR',
+  OUTPUT_JOB_URL_EXPIRED: 'OUTPUT_JOB_URL_EXPIRED',
+  OUTPUT_JOB_URL_NOT_READY: 'OUTPUT_JOB_URL_NOT_READY',
+  OUTPUT_JOB_INVALID: 'OUTPUT_JOB_INVALID',
+  OUTPUT_JOB_SERVICE_URL: 'OUTPUT_JOB_SERVICE_URL',
 } as const;
 
 export type OutputEvent = (typeof OUTPUT_EVENTS)[keyof typeof OUTPUT_EVENTS];
 
+export type JobServiceUrlErrorParam = { error: Error };
+export type JobServiceUrlExpiredParam = { state: string };
+export type JobServiceUrlNotReadyParam = {};
+export type JobServiceUrlInvalidParam = {};
+export type JobServiceUrlParam = { url: string };
 export type KeyfileParam = { keyfile: string };
 export type BalanceParam = { sol: number; nos: string };
 export type NetworkParam = { network: string };
@@ -134,4 +144,9 @@ export type OutputEventParams = {
   [OUTPUT_EVENTS.OUTPUT_RETRIVE_JOB_COMMAND]: RetriveJobCommandParam;
   [OUTPUT_EVENTS.OUTPUT_FAILED_TO_FETCH_MARKETS_ERROR]: ErrorParam;
   [OUTPUT_EVENTS.OUTPUT_HEADER_LOGO]: OutputHeaderLogoParam;
+  [OUTPUT_EVENTS.OUTPUT_JOB_URL_ERROR]: JobServiceUrlErrorParam;
+  [OUTPUT_EVENTS.OUTPUT_JOB_URL_EXPIRED]: JobServiceUrlExpiredParam;
+  [OUTPUT_EVENTS.OUTPUT_JOB_URL_NOT_READY]: JobServiceUrlNotReadyParam | null;
+  [OUTPUT_EVENTS.OUTPUT_JOB_INVALID]: JobServiceUrlInvalidParam | null;
+  [OUTPUT_EVENTS.OUTPUT_JOB_SERVICE_URL]: JobServiceUrlParam;
 };

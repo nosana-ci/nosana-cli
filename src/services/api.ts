@@ -99,23 +99,29 @@ app.get('/', (req: Request, res: Response) => {
   res.send(node.address);
 });
 
-app.get('/service/url/:jobId', verifySignatureMiddleware, verifyJobOwnerMiddleware, (req: Request, res: Response) => {
-  try {
-    const jobId = req.params.jobId;
+app.get(
+  '/service/url/:jobId',
+  verifySignatureMiddleware,
+  (req: Request, res: Response) => {
+    try {
+      const jobId = req.params.jobId;
 
-    const flow = node.provider.getFlow(jobId);
-    const secrets = flow?.state.secrets;
-  
-    if(secrets && secrets[jobId]){
-      res.status(200).send(`https://${secrets[jobId]}.${config.frp.serverAddr}`);
-      return;
+      const flow = node.provider.getFlow(jobId);
+      const secrets = flow?.state.secrets;
+
+      if (secrets && secrets[jobId]) {
+        res
+          .status(200)
+          .send(`https://${secrets[jobId]}.${config.frp.serverAddr}`);
+        return;
+      }
+
+      res.status(400).send('No exposed url for job id');
+    } catch (error) {
+      res.status(500).send('Error occured getting url');
     }
-  
-    res.status(400).send('No exposed url for job id')
-  } catch (error) {
-    res.status(500).send('Error occured getting url')
-  }
-});
+  },
+);
 
 app.get(
   '/status/:jobId',

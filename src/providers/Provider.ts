@@ -81,7 +81,7 @@ export type FlowState = {
   opStates: Array<OpState>;
   secrets?: {
     [key: string]: string;
-  }
+  };
 };
 export type Flow = {
   id: string;
