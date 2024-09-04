@@ -7,6 +7,8 @@ import { Resource } from '../types/resources.js';
 /************************
  * Job Definition Types *
  ************************/
+export type Ops = Array<Operation<OperationType>>;
+
 export type JobDefinition = {
   version: string;
   type: JobType;
@@ -22,7 +24,7 @@ export type JobDefinition = {
     };
     work_dir?: string;
   };
-  ops: Array<Operation<OperationType>>;
+  ops: Ops;
 };
 export type JobType = 'container';
 

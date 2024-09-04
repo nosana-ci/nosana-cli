@@ -24,6 +24,7 @@ export async function run(
     [key: string]: any;
   },
 ) {
+  // TODO: Replace this with `await new JobManager().post(market, job, formatter);`
   const formatter = outputFormatSelector(options.format);
 
   if (command.length && options.file) {
