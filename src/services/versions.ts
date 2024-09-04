@@ -30,12 +30,11 @@ export async function validateCLIVersion() {
 
     const packageData = await fetch('https://registry.npmjs.com/@nosana/cli');
     const packageJSON = await packageData.json();
-    const registryLatestVersion = packageJSON['dist-tags'].latest;
+    const registryLatestVersion = packageJSON['dist-tags']?.latest;
 
-    // Add fetch error logging
-    // if (error || typeof data !== 'string') {
-    //   throw new Error(`${error}`);
-    // }
+    if (!registryLatestVersion || typeof registryLatestVersion !== 'string') {
+      throw new Error('Could not retrive valid package information from npm');
+    }
 
     const [required_major, required_minor, required_patch] =
       registryLatestVersion.split('.');
