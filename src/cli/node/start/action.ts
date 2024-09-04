@@ -300,7 +300,7 @@ export async function startNode(
           }
 
           if (!result) {
-            result = await node.waitForJob();
+            result = await node.waitForJob(marketAccount);
             if (result) {
               spinner.succeed(`Retrieved results with status ${result.status}`);
             }
