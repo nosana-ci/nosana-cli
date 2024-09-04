@@ -404,6 +404,8 @@ export class DockerProvider extends BasicProvider implements Provider {
             )}`,
           ),
         );
+      } else {
+        this.logger.log(chalk.cyan(`Exposing service privately`));
       }
     }
     return container;

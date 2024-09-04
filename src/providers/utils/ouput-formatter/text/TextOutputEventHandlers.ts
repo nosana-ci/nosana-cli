@@ -70,7 +70,7 @@ export const textOutputEventHandlers: OutputEventHandlers = {
   [OUTPUT_EVENTS.OUTPUT_PRIVATE_URL_MESSAGE]: (param: CommandParam) => {
     console.log(
       chalk.cyan(
-        `this servcie exposed url is private and will available when a node picks up this job`,
+        `this servcie exposed url is private and will be available when a node picks up this job`,
       ),
     );
   },
