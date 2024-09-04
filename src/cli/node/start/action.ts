@@ -307,21 +307,6 @@ export async function startNode(
           }
           if (result) {
             await node.finishJob(job, node.run.publicKey, result);
-            if (result.status !== 'success') {
-              const finishedOpstates = result.opStates
-                ? result.opStates.filter((os) => os.exitCode !== null)
-                : [];
-              // Check if last operation we ran resulted in an 137 exit code
-              // If so, we probably forcefully killed it and they don't need to cooldown
-              if (
-                !finishedOpstates.slice(-1)[0] ||
-                finishedOpstates.slice(-1)[0].exitCode !== 137
-              ) {
-                // Flow failed, so we have a cooldown of 15 minutes
-                console.log(chalk.cyan('Waiting to enter the queue'));
-                await sleep(900);
-              }
-            }
           }
         }
       }
