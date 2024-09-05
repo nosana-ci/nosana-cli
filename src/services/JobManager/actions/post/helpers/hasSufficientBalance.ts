@@ -1,6 +1,6 @@
 import { getNosBalance, getSDK, getSolBalance } from '../../../../sdk.js';
 
-async function hasSufficentNos(): Promise<boolean> {
+async function hasSufficientNos(): Promise<boolean> {
   const nosana = getSDK();
 
   const market = await nosana.jobs.getMarket(
@@ -15,12 +15,12 @@ async function hasSufficentNos(): Promise<boolean> {
   );
 }
 
-function hasSufficentSol(): boolean {
+function hasSufficientSol(): boolean {
   const solBalance = getSolBalance();
 
   return solBalance < 0.05 * 1e9;
 }
 
-export async function hasSufficentBalance(): Promise<Boolean> {
-  return hasSufficentSol() && (await hasSufficentNos());
+export async function hasSufficientBalance(): Promise<Boolean> {
+  return hasSufficientSol() && (await hasSufficientNos());
 }

@@ -1,3 +1,5 @@
+import { PublicKey } from '@solana/web3.js';
+
 import {
   JobDefinition,
   validateJobDefinition,
@@ -5,12 +7,12 @@ import {
 import { config } from '../../../../generic/config.js';
 import { getSDK } from '../../../sdk.js';
 import { isExposedJobOps } from '../utils/isExposedJob.js';
-import { hasSufficentBalance } from './helpers/hasSufficientBalance.js';
-import { PublicKey } from '@solana/web3.js';
+import { hasSufficientBalance } from './helpers/hasSufficientBalance.js';
 
 export type PostJobResult = {
   job: string;
   tx: string;
+  created_at: string;
   service_url: string | undefined;
 };
 
@@ -30,14 +32,14 @@ export function postJob(
       return reject('Invalid market address');
     }
 
-    if (!hasSufficentBalance()) {
+    if (!hasSufficientBalance()) {
       return reject('Insufficient balance');
     }
 
     const validation = validateJobDefinition(job);
 
     if (!validation.success) {
-      return reject('Failed to validate job definiton');
+      return reject('Failed to validate job definition');
     }
 
     const market = await nosana.jobs.getMarket(
@@ -60,6 +62,7 @@ export function postJob(
         service_url: isExposedJobOps(job)
           ? `https://${response.job}.${config.frp.serverAddr}`
           : undefined,
+        created_at: new Date().toString(),
       });
     } catch (e) {
       reject((e as Error).message);

@@ -4,7 +4,7 @@ import { postJob, PostJobResult } from './actions/post/index.js';
 import { jobListener } from './listener/index.js';
 
 export default class JobManager {
-  private db; // Soon to be used to presist jobs
+  private db; // Soon to be used to persist jobs
   private jobs: Map<string, PostJobResult>;
 
   constructor(config: string) {
