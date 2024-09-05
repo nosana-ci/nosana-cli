@@ -253,7 +253,7 @@ export async function startNode(
             spinner.fail(chalk.red('Could not quit job'));
             throw e;
           }
-          await node.provider.stopFlow(node.run.publicKey.toString());
+          await node.provider.stopFlow(jobAddress);
           node.run = undefined;
         } else if (
           NosanaNode.isRunExpired(
@@ -271,7 +271,7 @@ export async function startNode(
             spinner.fail(chalk.red('Could not quit job'));
             throw e;
           }
-          await node.provider.stopFlow(node.run.publicKey.toString());
+          await node.provider.stopFlow(jobAddress);
           node.run = undefined;
         } else {
           spinner = ora(chalk.cyan('Checking provider health')).start();
@@ -300,18 +300,13 @@ export async function startNode(
           }
 
           if (!result) {
-            result = await node.waitForJob();
+            result = await node.waitForJob(marketAccount);
             if (result) {
               spinner.succeed(`Retrieved results with status ${result.status}`);
             }
           }
           if (result) {
-            node.finishJob(job, node.run.publicKey, result);
-            if (result.status !== 'success') {
-              // Flow failed, so we have a cooldown of 15 minutes
-              console.log(chalk.cyan('Waiting to enter the queue'));
-              await sleep(900);
-            }
+            await node.finishJob(job, node.run.publicKey, result);
           }
         }
       }

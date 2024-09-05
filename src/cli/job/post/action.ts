@@ -49,7 +49,7 @@ export async function run(
               type: 'container/run',
               id: 'run-from-cli',
               args: {
-                cmd: [command.join(' ')],
+                cmd: command.join(' '),
                 image: options.image,
               },
             },
@@ -224,7 +224,7 @@ export async function run(
   await sleep(3);
   if (isExposed) {
     formatter.output(OUTPUT_EVENTS.OUTPUT_SERVICE_URL, {
-      url: `https://${response.run}.${config.frp.serverAddr}`,
+      url: `https://${response.job}.${config.frp.serverAddr}`,
     });
   }
   await getJob(response.job, options, undefined);
