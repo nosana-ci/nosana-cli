@@ -12,6 +12,7 @@ import { hasSufficientBalance } from './helpers/hasSufficientBalance.js';
 export type PostJobResult = {
   job: string;
   tx: string;
+  job_timeout: number;
   created_at: string;
   service_url: string | undefined;
 };
@@ -59,6 +60,7 @@ export function postJob(
       resolve({
         job: response.job,
         tx: response.tx,
+        job_timeout: 1 * market.jobTimeout,
         service_url: isExposedJobOps(job)
           ? `https://${response.job}.${config.frp.serverAddr}`
           : undefined,
