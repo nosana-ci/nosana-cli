@@ -3,7 +3,7 @@ import { Request } from 'express';
 import { JobDefinition } from '../../../../providers/Provider.js';
 import JobManager from '../../index.js';
 
-export type JobRequest<T extends {}> = Request<{}, {}, T> & {
+export type JobRequest<Params = {}, Body = {}> = Request<Params, {}, Body> & {
   jobManager?: JobManager;
 };
 

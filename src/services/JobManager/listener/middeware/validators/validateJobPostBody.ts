@@ -4,7 +4,7 @@ import typia from 'typia';
 import { JobRequest, PostRequestBody } from '../../types/index.js';
 
 export function validateJobPostBody(
-  req: JobRequest<PostRequestBody>,
+  req: JobRequest<{}, PostRequestBody>,
   res: Response,
   next: NextFunction,
 ) {

@@ -3,7 +3,7 @@ import { NextFunction, Response } from 'express';
 import { JobRequest, PostRequestBody } from '../types';
 
 export async function postJob(
-  req: JobRequest<PostRequestBody>,
+  req: JobRequest<{}, PostRequestBody>,
   res: Response,
   next: NextFunction,
 ) {
@@ -11,19 +11,8 @@ export async function postJob(
     return next();
   }
 
-  if (!req.jobManager) {
-    res.locals.error = {
-      error: 'Internal System Error',
-      message: '',
-    };
-
-    console.log('Failed to access job manager.');
-
-    return next();
-  }
-
   try {
-    const jobResult = await req.jobManager.post(
+    const jobResult = await req.jobManager!.post(
       req.body.market.trim(),
       req.body.job,
     );

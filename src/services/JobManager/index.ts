@@ -27,6 +27,14 @@ export default class JobManager {
     });
   }
 
+  public get(id: string): PostJobResult | undefined {
+    return this.jobs.get(id);
+  }
+
+  public list(): string[] {
+    return [...this.jobs.keys()];
+  }
+
   public listen(port: number) {
     jobListener(port, this);
   }
