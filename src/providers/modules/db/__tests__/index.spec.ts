@@ -27,11 +27,12 @@ describe('DB', () => {
     expect(mock_mkdirSync).toHaveBeenCalledWith('test', { recursive: true });
 
     expect(result.db.data).toEqual({
-      flows: {},
+      jobs: {},
       resources: {
         images: {},
         volumes: {},
       },
+      flows: {},
     });
   });
 

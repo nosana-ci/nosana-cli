@@ -7,11 +7,13 @@ import { postJob, PostJobResult } from './actions/post/index.js';
 
 export default class JobManager {
   private db: LowSync<NodeDb>;
+  private jobGroups: Map<number, string[]>;
   private jobs: Map<string, PostJobResult>;
 
   constructor(config: string) {
     this.db = new DB(config).db;
     this.jobs = new Map(Object.entries(this.db.data.jobs));
+    this.jobGroups = new Map();
   }
 
   private updateJobDB(key: string, job: PostJobResult | undefined) {
@@ -27,11 +29,17 @@ export default class JobManager {
   public async post(
     market: string,
     job: JobDefinition,
+    recursive = false,
   ): Promise<PostJobResult> {
     return new Promise(async (resolve, reject) => {
       try {
         const result = await postJob(market, job);
         this.jobs.set(result.job, result);
+
+        if (recursive) {
+          this.jobGroups.set(this.jobGroups.size, [result.job]);
+        }
+
         this.updateJobDB(result.job, result);
         resolve(result);
       } catch (e) {

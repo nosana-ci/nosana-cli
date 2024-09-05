@@ -2,8 +2,7 @@ import fs from 'fs';
 import { LowSync } from 'lowdb/lib';
 
 import { createImageManager } from '..';
-import { NodeDb } from '../../../../BasicProvider';
-import { DB } from '../../../db';
+import { DB, NodeDb } from '../../../db';
 import {
   CorrectedImageInfo,
   DockerodeMock,
