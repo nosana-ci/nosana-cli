@@ -268,9 +268,8 @@ async function fetchServiceURLWithRetry(
   headers: any,
 ): Promise<void> {
   const retryInterval = 5000; // 5 seconds
-  let success = false;
 
-  while (!success) {
+  const intervalId = setInterval(async () => {
     try {
       const response = await fetch(
         `https://${job.node}.${config.frp.serverAddr}/service/url/${jobAddress}`,
@@ -281,22 +280,18 @@ async function fetchServiceURLWithRetry(
         const url = await response.text();
         if (url) {
           formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_SERVICE_URL, { url });
-          success = true;
+          clearInterval(intervalId);
         }
       } else if (response.status === 400) {
         throw new Error('URL not ready yet');
       } else {
         formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_SERVICE_URL, {
-          url: 'No exposed url for job id',
+          url: 'No exposed URL for job id',
         });
-        break;
+        clearInterval(intervalId);
       }
     } catch (error) {
-      await delay(retryInterval); // Wait before retrying
+      // The interval will continue, no need to manually retry here
     }
-  }
-}
-
-async function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  }, retryInterval);
 }
