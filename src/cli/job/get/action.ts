@@ -7,7 +7,12 @@ import 'rpc-websockets/dist/lib/client.js';
 
 import { download } from '../download/action.js';
 import { clearLine, colors } from '../../../generic/utils.js';
-import { Operation, OperationArgsMap, OperationType, OpState } from '../../../providers/Provider.js';
+import {
+  Operation,
+  OperationArgsMap,
+  OperationType,
+  OpState,
+} from '../../../providers/Provider.js';
 import { getSDK } from '../../../services/sdk.js';
 import {
   waitForJobCompletion,
@@ -105,14 +110,14 @@ export async function getJob(
         const exposedOp = ipfsJob.ops.find(
           (op: Operation<OperationType>) =>
             op.type === 'container/run' &&
-            (op.args as OperationArgsMap['container/run']).expose
+            (op.args as OperationArgsMap['container/run']).expose,
         );
-        
+
         const isExposed = !!exposedOp;
         const isPrivate = isExposed
           ? (exposedOp!.args as OperationArgsMap['container/run']).private
           : false;
-        
+
         if (isPrivate) {
           await fetchServiceURLWithRetry(job, jobAddress, formatter, headers);
         }

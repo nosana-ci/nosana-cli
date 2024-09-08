@@ -220,27 +220,27 @@ export async function run(
   const exposedOp = json_flow.ops.find(
     (op: Operation<OperationType>) =>
       op.type === 'container/run' &&
-      (op.args as OperationArgsMap['container/run']).expose
+      (op.args as OperationArgsMap['container/run']).expose,
   );
-  
+
   const isExposed = !!exposedOp;
   const isPrivate = isExposed
     ? (exposedOp!.args as OperationArgsMap['container/run']).private
     : false;
 
-    await sleep(3);
-    
-    if (isExposed) {
-      if (!isPrivate) {
-        formatter.output(OUTPUT_EVENTS.OUTPUT_SERVICE_URL, {
-          url: `https://${response.job}.${config.frp.serverAddr}`,
-        });
-      } else {
-        formatter.output(OUTPUT_EVENTS.OUTPUT_PRIVATE_URL_MESSAGE, {
-          command: '',
-        });
-      }
+  await sleep(3);
+
+  if (isExposed) {
+    if (!isPrivate) {
+      formatter.output(OUTPUT_EVENTS.OUTPUT_SERVICE_URL, {
+        url: `https://${response.job}.${config.frp.serverAddr}`,
+      });
+    } else {
+      formatter.output(OUTPUT_EVENTS.OUTPUT_PRIVATE_URL_MESSAGE, {
+        command: '',
+      });
     }
+  }
 
   await getJob(response.job, options, undefined);
 
