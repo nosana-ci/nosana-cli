@@ -216,24 +216,32 @@ export async function run(
   }
 
   formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_POSTED_TX, { tx: response.tx });
-  const isExposed =
-    json_flow.ops.filter(
-      (op: Operation<OperationType>) =>
-        op.type === 'container/run' &&
-        (op.args as OperationArgsMap['container/run']).expose,
-    ).length > 0;
-  await sleep(3);
-  if (isExposed) {
-    if (!json_flow.private) {
-      formatter.output(OUTPUT_EVENTS.OUTPUT_SERVICE_URL, {
-        url: `https://${response.job}.${config.frp.serverAddr}`,
-      });
-    } else {
-      formatter.output(OUTPUT_EVENTS.OUTPUT_PRIVATE_URL_MESSAGE, {
-        command: `nosana job url ${response.job}`,
-      });
+
+  const exposedOp = json_flow.ops.find(
+    (op: Operation<OperationType>) =>
+      op.type === 'container/run' &&
+      (op.args as OperationArgsMap['container/run']).expose
+  );
+  
+  const isExposed = !!exposedOp;
+  const isPrivate = isExposed
+    ? (exposedOp!.args as OperationArgsMap['container/run']).private
+    : false;
+
+    await sleep(3);
+    
+    if (isExposed) {
+      if (!isPrivate) {
+        formatter.output(OUTPUT_EVENTS.OUTPUT_SERVICE_URL, {
+          url: `https://${response.job}.${config.frp.serverAddr}`,
+        });
+      } else {
+        formatter.output(OUTPUT_EVENTS.OUTPUT_PRIVATE_URL_MESSAGE, {
+          command: '',
+        });
+      }
     }
-  }
+
   await getJob(response.job, options, undefined);
 
   if (!(options.wait || options.download)) {

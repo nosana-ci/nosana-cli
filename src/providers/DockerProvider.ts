@@ -95,17 +95,6 @@ export class DockerProvider extends BasicProvider implements Provider {
       );
       const opState = flow.state.opStates[opStateIndex];
 
-      if (flow.jobDefinition.private) {
-        const prefix = randomUUID();
-
-        if (!flow.state.secrets) {
-          flow.state.secrets = {};
-        }
-
-        flow.state.secrets[flowId] = prefix;
-        this.db.write();
-      }
-
       let container: Container | undefined;
       // Check if we already have a container running for this operation
       if (opState.providerId) {
@@ -374,11 +363,15 @@ export class DockerProvider extends BasicProvider implements Provider {
     if (opArgs.expose) {
       let prefix = flowId;
 
-      if (flow.jobDefinition.private) {
-        const secrets = flow.state.secrets;
-        if (secrets) {
-          prefix = secrets[flowId];
+      if (opArgs.private) {
+        prefix = randomUUID();
+
+        if (!flow.state.secrets) {
+          flow.state.secrets = {};
         }
+
+        flow.state.secrets[flowId] = prefix;
+        this.db.write();
       }
 
       await this.runContainer(FRPC_IMAGE, {
@@ -396,7 +389,7 @@ export class DockerProvider extends BasicProvider implements Provider {
         },
       });
 
-      if (!flow.jobDefinition.private) {
+      if (!opArgs.private) {
         this.logger.log(
           chalk.cyan(
             `Exposing service at ${chalk.bold(

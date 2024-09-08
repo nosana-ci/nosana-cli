@@ -10,7 +10,6 @@ import { Resource } from '../types/resources.js';
 export type JobDefinition = {
   version: string;
   type: JobType;
-  private?: boolean;
   meta?: {
     trigger?: string;
   };
@@ -44,6 +43,7 @@ export interface OperationArgsMap {
       },
     ];
     expose?: number;
+    private?: boolean;
     gpu?: boolean;
     work_dir?: string;
     output?: string;
