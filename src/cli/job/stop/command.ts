@@ -1,12 +1,12 @@
 import { Command, Option } from 'commander';
 
-import { getJob } from './action.js';
 import { networkOption, rpcOption, walletOption } from '../../sharedOptions/index.js';
 import { formatOption } from '../../sharedOptions/format.js';
 import { verboseOption } from '../../sharedOptions/verbose.js';
+import { stopJob } from "./action.js";
 
-export const getJobCommand = new Command('get')
-  .description('Get a job and display result')
+export const stopJobCommand = new Command('stop')
+  .description('stop a job')
   .argument('<job>', 'job address')
   .addOption(
     new Option('--wait', 'wait for job to be completed and show result'),
@@ -14,12 +14,6 @@ export const getJobCommand = new Command('get')
   .addOption(networkOption)
   .addOption(walletOption)
   .addOption(rpcOption)
-  .addOption(
-    new Option(
-      '--download [path]',
-      'download external artifacts to specified path (implies --wait)',
-    ),
-  )
   .addOption(formatOption)
   .addOption(verboseOption)
-  .action(getJob);
+  .action(stopJob);
