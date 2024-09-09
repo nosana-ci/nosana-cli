@@ -1,13 +1,18 @@
 import ora from 'ora';
 import chalk from 'chalk';
 import { Command } from 'commander';
-import { Client } from '@nosana/sdk';
+import { Client, Job } from '@nosana/sdk';
 import { PublicKey } from '@solana/web3.js';
 import 'rpc-websockets/dist/lib/client.js';
 
 import { download } from '../download/action.js';
 import { clearLine, colors } from '../../../generic/utils.js';
-import { OpState } from '../../../providers/Provider.js';
+import {
+  Operation,
+  OperationArgsMap,
+  OperationType,
+  OpState,
+} from '../../../providers/Provider.js';
 import { getSDK } from '../../../services/sdk.js';
 import {
   waitForJobCompletion,
@@ -26,6 +31,8 @@ import LogSubscriberManager, {
 import { config } from '../../../generic/config.js';
 import { createSignature } from '../../../services/api.js';
 import EventSource from 'eventsource';
+import { OutputFormatter } from '../../../providers/utils/ouput-formatter/OutputFormatter.js';
+import { isPrivate } from '../../../generic/ops-util.js';
 
 export async function getJob(
   jobAddress: string,
@@ -98,6 +105,12 @@ export async function getJob(
               : ''
           }`,
         });
+
+        const ipfsJob = await nosana.ipfs.retrieve(job.ipfsJob);
+
+        if (isPrivate(ipfsJob)) {
+          await fetchServiceURLWithRetry(job, jobAddress, formatter, headers);
+        }
 
         const logger = new Logger();
         listener = listenToEventSource<LogEvent[]>(
@@ -253,4 +266,39 @@ export async function getJob(
   if (listener) {
     closeEventSource(listener);
   }
+}
+
+async function fetchServiceURLWithRetry(
+  job: Job,
+  jobAddress: string,
+  formatter: OutputFormatter,
+  headers: any,
+): Promise<void> {
+  const retryInterval = 5000; // 5 seconds
+
+  const intervalId = setInterval(async () => {
+    try {
+      const response = await fetch(
+        `https://${job.node}.${config.frp.serverAddr}/service/url/${jobAddress}`,
+        { method: 'GET', headers },
+      );
+
+      if (response.status === 200) {
+        const url = await response.text();
+        if (url) {
+          formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_SERVICE_URL, { url });
+          clearInterval(intervalId);
+        }
+      } else if (response.status === 400) {
+        throw new Error('URL not ready yet');
+      } else {
+        formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_SERVICE_URL, {
+          url: 'No exposed URL for job id',
+        });
+        clearInterval(intervalId);
+      }
+    } catch (error) {
+      // The interval will continue, no need to manually retry here
+    }
+  }, retryInterval);
 }

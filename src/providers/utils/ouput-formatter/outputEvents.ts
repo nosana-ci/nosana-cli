@@ -38,6 +38,7 @@ export const OUTPUT_EVENTS = {
   OUTPUT_WALLET: 'OUTPUT_WALLET',
   OUTPUT_IPFS_UPLOADED: 'OUTPUT_IPFS_UPLOADED',
   OUTPUT_SERVICE_URL: 'OUTPUT_SERVICE_URL',
+  OUTPUT_PRIVATE_URL_MESSAGE: 'OUTPUT_PRIVATE_URL_MESSAGE',
   OUTPUT_JOB_NOT_FOUND: 'OUTPUT_JOB_NOT_FOUND',
   OUTPUT_CANNOT_LOG_RESULT: 'OUTPUT_CANNOT_LOG_RESULT',
   OUTPUT_JOB_VALIDATION_ERROR: 'OUTPUT_JOB_VALIDATION_ERROR',
@@ -58,16 +59,27 @@ export const OUTPUT_EVENTS = {
   OUTPUT_RETRIVE_JOB_COMMAND: 'OUTPUT_RETRIVE_JOB_COMMAND',
   OUTPUT_FAILED_TO_FETCH_MARKETS_ERROR: 'OUTPUT_FAILED_TO_FETCH_MARKETS_ERROR',
   OUTPUT_HEADER_LOGO: 'OUTPUT_HEADER_LOGO',
+  OUTPUT_JOB_URL_ERROR: 'OUTPUT_JOB_URL_ERROR',
+  OUTPUT_JOB_URL_EXPIRED: 'OUTPUT_JOB_URL_EXPIRED',
+  OUTPUT_JOB_URL_NOT_READY: 'OUTPUT_JOB_URL_NOT_READY',
+  OUTPUT_JOB_INVALID: 'OUTPUT_JOB_INVALID',
+  OUTPUT_JOB_SERVICE_URL: 'OUTPUT_JOB_SERVICE_URL',
 } as const;
 
 export type OutputEvent = (typeof OUTPUT_EVENTS)[keyof typeof OUTPUT_EVENTS];
 
+export type JobServiceUrlErrorParam = { error: Error };
+export type JobServiceUrlExpiredParam = { state: string };
+export type JobServiceUrlNotReadyParam = {};
+export type JobServiceUrlInvalidParam = {};
+export type JobServiceUrlParam = { url: string };
 export type KeyfileParam = { keyfile: string };
 export type BalanceParam = { sol: number; nos: string };
 export type NetworkParam = { network: string };
 export type WalletParam = { publicKey: string };
 export type IpfsParam = { ipfsHash: string };
 export type ServiceUrlParam = { url: string };
+export type CommandParam = { command: string };
 export type JobUrlParam = { job_url: string };
 export type JsonFlowUrlParam = { json_flow_url: string };
 export type MarketUrlParam = { market_url: string };
@@ -106,6 +118,7 @@ export type OutputEventParams = {
   [OUTPUT_EVENTS.OUTPUT_WALLET]: WalletParam;
   [OUTPUT_EVENTS.OUTPUT_IPFS_UPLOADED]: IpfsParam;
   [OUTPUT_EVENTS.OUTPUT_SERVICE_URL]: ServiceUrlParam;
+  [OUTPUT_EVENTS.OUTPUT_PRIVATE_URL_MESSAGE]: CommandParam;
   [OUTPUT_EVENTS.OUTPUT_JOB_URL]: JobUrlParam;
   [OUTPUT_EVENTS.OUTPUT_JSON_FLOW_URL]: JsonFlowUrlParam;
   [OUTPUT_EVENTS.OUTPUT_MARKET_URL]: MarketUrlParam;
@@ -131,4 +144,9 @@ export type OutputEventParams = {
   [OUTPUT_EVENTS.OUTPUT_RETRIVE_JOB_COMMAND]: RetriveJobCommandParam;
   [OUTPUT_EVENTS.OUTPUT_FAILED_TO_FETCH_MARKETS_ERROR]: ErrorParam;
   [OUTPUT_EVENTS.OUTPUT_HEADER_LOGO]: OutputHeaderLogoParam;
+  [OUTPUT_EVENTS.OUTPUT_JOB_URL_ERROR]: JobServiceUrlErrorParam;
+  [OUTPUT_EVENTS.OUTPUT_JOB_URL_EXPIRED]: JobServiceUrlExpiredParam;
+  [OUTPUT_EVENTS.OUTPUT_JOB_URL_NOT_READY]: JobServiceUrlNotReadyParam | null;
+  [OUTPUT_EVENTS.OUTPUT_JOB_INVALID]: JobServiceUrlInvalidParam | null;
+  [OUTPUT_EVENTS.OUTPUT_JOB_SERVICE_URL]: JobServiceUrlParam;
 };

@@ -43,6 +43,7 @@ export interface OperationArgsMap {
       },
     ];
     expose?: number;
+    private?: boolean;
     gpu?: boolean;
     work_dir?: string;
     output?: string;
@@ -78,6 +79,9 @@ export type FlowState = {
   endTime: number | null;
   errors?: Array<any>;
   opStates: Array<OpState>;
+  secrets?: {
+    [key: string]: string;
+  };
 };
 export type Flow = {
   id: string;

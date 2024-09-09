@@ -17,6 +17,8 @@ import { OUTPUT_EVENTS } from '../../../providers/utils/ouput-formatter/outputEv
 import { outputFormatSelector } from '../../../providers/utils/ouput-formatter/outputFormatSelector.js';
 import { clientSelector } from '../../../api/client.js';
 import { PublicKey } from '@solana/web3.js';
+import chalk from 'chalk';
+import { isExposed, isPrivate } from '../../../generic/ops-util.js';
 
 export async function run(
   command: Array<string>,
@@ -215,18 +217,21 @@ export async function run(
   }
 
   formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_POSTED_TX, { tx: response.tx });
-  const isExposed =
-    json_flow.ops.filter(
-      (op: Operation<OperationType>) =>
-        op.type === 'container/run' &&
-        (op.args as OperationArgsMap['container/run']).expose,
-    ).length > 0;
+
   await sleep(3);
-  if (isExposed) {
-    formatter.output(OUTPUT_EVENTS.OUTPUT_SERVICE_URL, {
-      url: `https://${response.job}.${config.frp.serverAddr}`,
-    });
+
+  if (isExposed(json_flow as JobDefinition)) {
+    if (!isPrivate(json_flow as JobDefinition)) {
+      formatter.output(OUTPUT_EVENTS.OUTPUT_SERVICE_URL, {
+        url: `https://${response.job}.${config.frp.serverAddr}`,
+      });
+    } else {
+      formatter.output(OUTPUT_EVENTS.OUTPUT_PRIVATE_URL_MESSAGE, {
+        command: '',
+      });
+    }
   }
+
   await getJob(response.job, options, undefined);
 
   if (!(options.wait || options.download)) {
