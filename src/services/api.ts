@@ -132,11 +132,9 @@ app.post(
     }
 
     try {
-      await node.provider.stopFlow(jobId)
-      res
-      .status(200)
-      .send('job stopped successfully');
-    return;
+      await node.provider.stopFlow(jobId);
+      res.status(200).send('job stopped successfully');
+      return;
     } catch (error) {
       res.status(500).send('Error occured while stopping job');
     }

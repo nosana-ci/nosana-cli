@@ -1,9 +1,13 @@
 import { Command, Option } from 'commander';
 
-import { networkOption, rpcOption, walletOption } from '../../sharedOptions/index.js';
+import {
+  networkOption,
+  rpcOption,
+  walletOption,
+} from '../../sharedOptions/index.js';
 import { formatOption } from '../../sharedOptions/format.js';
 import { verboseOption } from '../../sharedOptions/verbose.js';
-import { stopJob } from "./action.js";
+import { stopJob } from './action.js';
 
 export const stopJobCommand = new Command('stop')
   .description('stop a job')

@@ -1,7 +1,11 @@
 import { Command, Option } from 'commander';
 
 import { getJob } from './action.js';
-import { networkOption, rpcOption, walletOption } from '../../sharedOptions/index.js';
+import {
+  networkOption,
+  rpcOption,
+  walletOption,
+} from '../../sharedOptions/index.js';
 import { formatOption } from '../../sharedOptions/format.js';
 import { verboseOption } from '../../sharedOptions/verbose.js';
 
