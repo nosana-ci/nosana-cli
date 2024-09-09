@@ -32,6 +32,7 @@ import { config } from '../../../generic/config.js';
 import { createSignature } from '../../../services/api.js';
 import EventSource from 'eventsource';
 import { OutputFormatter } from '../../../providers/utils/ouput-formatter/OutputFormatter.js';
+import { isPrivate } from "../../../generic/ops-util.js";
 
 export async function getJob(
   jobAddress: string,
@@ -107,18 +108,7 @@ export async function getJob(
 
         const ipfsJob = await nosana.ipfs.retrieve(job.ipfsJob);
 
-        const exposedOp = ipfsJob.ops.find(
-          (op: Operation<OperationType>) =>
-            op.type === 'container/run' &&
-            (op.args as OperationArgsMap['container/run']).expose,
-        );
-
-        const isExposed = !!exposedOp;
-        const isPrivate = isExposed
-          ? (exposedOp!.args as OperationArgsMap['container/run']).private
-          : false;
-
-        if (isPrivate) {
+        if (isPrivate(ipfsJob)) {
           await fetchServiceURLWithRetry(job, jobAddress, formatter, headers);
         }
 

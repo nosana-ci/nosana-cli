@@ -18,6 +18,7 @@ import { outputFormatSelector } from '../../../providers/utils/ouput-formatter/o
 import { clientSelector } from '../../../api/client.js';
 import { PublicKey } from '@solana/web3.js';
 import chalk from 'chalk';
+import { isExposed, isPrivate } from "../../../generic/ops-util.js";
 
 export async function run(
   command: Array<string>,
@@ -217,21 +218,10 @@ export async function run(
 
   formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_POSTED_TX, { tx: response.tx });
 
-  const exposedOp = json_flow.ops.find(
-    (op: Operation<OperationType>) =>
-      op.type === 'container/run' &&
-      (op.args as OperationArgsMap['container/run']).expose,
-  );
-
-  const isExposed = !!exposedOp;
-  const isPrivate = isExposed
-    ? (exposedOp!.args as OperationArgsMap['container/run']).private
-    : false;
-
   await sleep(3);
 
-  if (isExposed) {
-    if (!isPrivate) {
+  if (isExposed(json_flow as JobDefinition)) {
+    if (!isPrivate(json_flow as JobDefinition)) {
       formatter.output(OUTPUT_EVENTS.OUTPUT_SERVICE_URL, {
         url: `https://${response.job}.${config.frp.serverAddr}`,
       });
