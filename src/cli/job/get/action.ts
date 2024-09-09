@@ -32,7 +32,7 @@ import { config } from '../../../generic/config.js';
 import { createSignature } from '../../../services/api.js';
 import EventSource from 'eventsource';
 import { OutputFormatter } from '../../../providers/utils/ouput-formatter/OutputFormatter.js';
-import { isPrivate } from "../../../generic/ops-util.js";
+import { isPrivate } from '../../../generic/ops-util.js';
 
 export async function getJob(
   jobAddress: string,

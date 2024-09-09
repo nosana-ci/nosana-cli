@@ -18,7 +18,7 @@ import { outputFormatSelector } from '../../../providers/utils/ouput-formatter/o
 import { clientSelector } from '../../../api/client.js';
 import { PublicKey } from '@solana/web3.js';
 import chalk from 'chalk';
-import { isExposed, isPrivate } from "../../../generic/ops-util.js";
+import { isExposed, isPrivate } from '../../../generic/ops-util.js';
 
 export async function run(
   command: Array<string>,
