@@ -21,6 +21,12 @@ import {
   ValidationErrorParam,
   OutputHeaderLogoParam,
   ServiceUrlParam,
+  CommandParam,
+  JobServiceUrlParam,
+  JobServiceUrlInvalidParam,
+  JobServiceUrlExpiredParam,
+  JobServiceUrlNotReadyParam,
+  JobServiceUrlErrorParam,
 } from '../outputEvents.js';
 import { OutputEventParams } from '../outputEvents.js';
 import chalk from 'chalk';
@@ -60,6 +66,32 @@ export const textOutputEventHandlers: OutputEventHandlers = {
     console.log(
       chalk.cyan(`Service will be exposed at ${chalk.bold(`${param.url}`)}`),
     );
+  },
+  [OUTPUT_EVENTS.OUTPUT_PRIVATE_URL_MESSAGE]: (param: CommandParam) => {
+    console.log(
+      chalk.cyan(
+        `this servcie exposed url is private and will be available when a node picks up this job`,
+      ),
+    );
+  },
+  [OUTPUT_EVENTS.OUTPUT_JOB_SERVICE_URL]: (param: JobServiceUrlParam) => {
+    console.log(`URL:\t\t${colors.GREEN}${param.url}${colors.RESET}`);
+  },
+  [OUTPUT_EVENTS.OUTPUT_JOB_INVALID]: () => {
+    console.error(chalk.red('Invalid job entered'));
+  },
+  [OUTPUT_EVENTS.OUTPUT_JOB_URL_EXPIRED]: (
+    param: JobServiceUrlExpiredParam,
+  ) => {
+    console.error(
+      chalk.red(`Job exposed URL is expired since Job has been ${param.state}`),
+    );
+  },
+  [OUTPUT_EVENTS.OUTPUT_JOB_URL_NOT_READY]: () => {
+    console.error(chalk.red('Job exposed URL is not ready yet'));
+  },
+  [OUTPUT_EVENTS.OUTPUT_JOB_URL_ERROR]: (param: JobServiceUrlErrorParam) => {
+    throw new Error(`Failed to fetch exposed URL \n${param.error.message}`);
   },
   [OUTPUT_EVENTS.READ_KEYFILE]: (param: KeyfileParam) => {
     console.log(
