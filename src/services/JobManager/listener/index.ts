@@ -7,6 +7,7 @@ import { handleResponse } from './middeware/responseHandler.js';
 import { validateJobPostBody } from './middeware/validators/index.js';
 import { getJob } from './routes/get.js';
 import { listJobs } from './routes/list.js';
+import { stopJob } from './routes/stop.js';
 
 export const jobListener = (port: number, jobManager: JobManager) => {
   const app = express();
@@ -23,6 +24,7 @@ export const jobListener = (port: number, jobManager: JobManager) => {
 
   // POST Routes
   app.post('/job/post', validateJobPostBody, postJob);
+  app.post('/job/stop/"id', stopJob);
 
   // Put Routes (update replicas)
 

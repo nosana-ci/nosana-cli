@@ -4,9 +4,13 @@ import { jobListener } from './listener/index.js';
 import { DB, NodeDb } from '../../providers/modules/db/index.js';
 import { JobDefinition } from '../../providers/Provider.js';
 import { postJob, PostJobResult } from './actions/post/index.js';
+import { JobWorker } from './workers/index.js';
+import { randomUUID } from 'node:crypto';
+import { getMarket } from './actions/getMarket/index.js';
 
 export default class JobManager {
   private db: LowSync<NodeDb>;
+  private workers = new Map();
   private jobs: Map<string, PostJobResult>;
 
   constructor(config: string) {
@@ -24,21 +28,60 @@ export default class JobManager {
     this.db.write();
   }
 
-  public async post(
+  private async postHandler(
     market: string,
     job: JobDefinition,
   ): Promise<PostJobResult> {
     return new Promise(async (resolve, reject) => {
       try {
         const result = await postJob(market, job);
-        this.jobs.set(result.job, result);
-
-        this.updateJobDB(result.job, result);
         resolve(result);
       } catch (e) {
         reject(e);
       }
     });
+  }
+
+  public stop(job: string): string | Error {
+    if (!this.workers.has(job)) {
+      return new Error('Failed to find job');
+    }
+
+    clearInterval(this.workers.get(job));
+    return job;
+  }
+
+  public async post(
+    market: string,
+    job: JobDefinition,
+    recursive = false,
+  ): Promise<{
+    id: string;
+    nodes: PostJobResult[];
+  }> {
+    const id = randomUUID();
+    if (recursive) {
+      try {
+        const timeout = (await getMarket(market)).jobTimeout;
+
+        this.workers.set(
+          id,
+          setInterval(() => {
+            console.log('POSTING');
+            // this.postHandler(market, job);
+          }, 500),
+        );
+      } catch (e) {
+        throw e;
+      }
+    }
+
+    const result = await this.postHandler(market, job);
+
+    this.jobs.set(result.job, result);
+    this.updateJobDB(result.job, result);
+
+    return { id, nodes: [result] };
   }
 
   public get(id: string): PostJobResult | undefined {
