@@ -1,23 +1,21 @@
 import chalk from 'chalk';
-import { clientSelector } from '../api/client.js';
+
 import { pkg } from '../static/staticsImports.js';
 
 function requiresNewVersion(required: string, current: string): boolean {
   return parseInt(required) > parseInt(current);
 }
 
-function exitCleanly() {
+function exitCleanly(currentVersion: string, latestVersion: string) {
   console.log(
     chalk.red(
-      'A new version of the Nosana cli has been released. Please update you CLI using npm install @nosana/cli.',
+      `You are currently running Nosana CLI version ${currentVersion}. Version ${latestVersion} has been released, please update your CLI to the latest version using npm install @nosana/cli.`,
     ),
   );
   process.exit(129);
 }
 
 export async function validateCLIVersion() {
-  const client = clientSelector();
-
   try {
     const [current_major, current_minor, current_patch] =
       pkg.version.split('.');
@@ -29,32 +27,32 @@ export async function validateCLIVersion() {
       console.warn(chalk.yellow('Running in dev mode, skipping version check'));
       return;
     }
-    const { data, error } = await client.GET(
-      '/api/nodes/minimum-required-version',
-      {
-        parseAs: 'text',
-      },
-    );
-    if (error || typeof data !== 'string') {
-      throw new Error(`${error}`);
+
+    const packageData = await fetch('https://registry.npmjs.com/@nosana/cli');
+    const packageJSON = await packageData.json();
+    const registryLatestVersion = packageJSON['dist-tags']?.latest;
+
+    if (!registryLatestVersion || typeof registryLatestVersion !== 'string') {
+      throw new Error('Could not retrive valid package information from npm');
     }
 
-    const [required_major, required_minor, required_patch] = data.split('.');
+    const [required_major, required_minor, required_patch] =
+      registryLatestVersion.split('.');
 
     // TODO: Refactor into a recurrsive loop
     if (parseInt(required_major) === parseInt(current_major)) {
       if (parseInt(required_minor) === parseInt(current_minor)) {
         if (requiresNewVersion(required_patch, current_patch)) {
-          exitCleanly();
+          exitCleanly(pkg.version, registryLatestVersion);
         }
       } else {
         if (requiresNewVersion(required_minor, current_minor)) {
-          exitCleanly();
+          exitCleanly(pkg.version, registryLatestVersion);
         }
       }
     } else {
       if (requiresNewVersion(required_major, current_major)) {
-        exitCleanly();
+        exitCleanly(pkg.version, registryLatestVersion);
       }
     }
   } catch (error: any) {

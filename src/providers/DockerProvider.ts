@@ -28,6 +28,7 @@ import { DockerExtended } from '../docker/index.js';
 import { s3HelperImage } from './modules/resourceManager/volumes/definition/s3HelperOpts.js';
 import Logger from './modules/logger/index.js';
 import { createSeverObject } from './utils/createServerObject.js';
+import { randomUUID } from 'crypto';
 import { createResourceName } from './modules/resourceManager/volumes/index.js';
 
 export type RunContainerArgs = {
@@ -93,6 +94,7 @@ export class DockerProvider extends BasicProvider implements Provider {
         (opState) => op.id === opState.operationId,
       );
       const opState = flow.state.opStates[opStateIndex];
+
       let container: Container | undefined;
       // Check if we already have a container running for this operation
       if (opState.providerId) {
@@ -359,6 +361,19 @@ export class DockerProvider extends BasicProvider implements Provider {
       // console.error(e);
     }
     if (opArgs.expose) {
+      let prefix = flowId;
+
+      if (opArgs.private) {
+        prefix = randomUUID();
+
+        if (!flow.state.secrets) {
+          flow.state.secrets = {};
+        }
+
+        flow.state.secrets[flowId] = prefix;
+        this.db.write();
+      }
+
       await this.runContainer(FRPC_IMAGE, {
         name: 'frpc-' + name,
         cmd: ['-c', '/etc/frp/frpc.toml'],
@@ -369,17 +384,22 @@ export class DockerProvider extends BasicProvider implements Provider {
           FRP_NAME: name,
           FRP_LOCAL_IP: name,
           FRP_LOCAL_PORT: opArgs.expose.toString(),
-          FRP_CUSTOM_DOMAIN: flowId + '.' + config.frp.serverAddr,
+          FRP_CUSTOM_DOMAIN: prefix + '.' + config.frp.serverAddr,
           NOSANA_ID: flowId,
         },
       });
-      this.logger.log(
-        chalk.cyan(
-          `Exposing service at ${chalk.bold(
-            `https://${flowId}.${config.frp.serverAddr}`,
-          )}`,
-        ),
-      );
+
+      if (!opArgs.private) {
+        this.logger.log(
+          chalk.cyan(
+            `Exposing service at ${chalk.bold(
+              `https://${prefix}.${config.frp.serverAddr}`,
+            )}`,
+          ),
+        );
+      } else {
+        this.logger.log(chalk.cyan(`Exposing service privately`));
+      }
     }
     return container;
   }
