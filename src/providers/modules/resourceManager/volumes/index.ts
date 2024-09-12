@@ -10,7 +10,11 @@ import { hoursSinceDate } from '../utils/hoursSinceDate.js';
 import { NodeDb } from '../../db/index.js';
 
 export function createResourceName(resource: RequiredResource) {
-  if (resource.url) return resource.url;
+  if (resource.url)
+    return resource.url.replace(
+      's3://nos-ai-models-qllsn32u',
+      'https://d36838c9417fded43c1a22cf4065d818.r2.cloudflarestorage.com/nosana-ai-models',
+    );
 
   // TODO: Fix type to ensure that it is either url or bucket!
   return resource.buckets!.map((bucket) => bucket.url).join('-');
@@ -56,6 +60,22 @@ export function createVolumeManager(
    */
   const resyncResourcesDB = async (): Promise<void> => {
     const savedVolumes = (await docker.listVolumes()).Volumes;
+
+    // RENAME NOSANA S3 BUCKETS TO CLOUDFRONT
+    for (const [resource, value] of Object.entries(db.data.resources.volumes)) {
+      // RENAME NOSANA S3 BUCKETS TO CLOUDFRONT
+      if (resource.includes('s3://nos-ai-models-qllsn32u')) {
+        db.data.resources.volumes[
+          `${resource.replace(
+            's3://nos-ai-models-qllsn32u',
+            'https://d36838c9417fded43c1a22cf4065d818.r2.cloudflarestorage.com/nosana-ai-models',
+          )}`
+        ] = value;
+        delete db.data.resources.volumes['s3://nos-ai-models-qllsn32u'];
+      }
+    }
+
+    db.write();
 
     for (const [resource, { volume, lastUsed, required }] of Object.entries(
       db.data.resources.volumes,
