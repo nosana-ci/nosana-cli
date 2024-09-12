@@ -72,6 +72,7 @@ export class BasicProvider implements Provider {
           startTime: Date.now(),
           endTime: null,
           opStates: [],
+          secrets: {},
         },
       };
 

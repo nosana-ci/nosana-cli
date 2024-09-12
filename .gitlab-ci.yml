@@ -8,7 +8,7 @@ include:
     file: docker-container.yml
 
 variables:
-  DOCKERFILE_DIR: .
+  DOCKERFILE_DIR: ./auto-update/
   CONTAINER_PLATFORMS: linux/amd64
   REG_REPOSITORY: nosana/nosana-cli
 
