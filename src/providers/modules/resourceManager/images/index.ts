@@ -1,11 +1,11 @@
 import chalk from 'chalk';
 import { LowSync } from 'lowdb/lib';
 
-import { NodeDb } from '../../../BasicProvider.js';
 import { DockerExtended } from '../../../../docker/index.js';
 import { hoursSinceDate } from '../utils/hoursSinceDate.js';
 import Logger from '../../logger/index.js';
 import { repoTagsContainsImage } from '../../../../docker/utils/repoTagsContainsImage.js';
+import { NodeDb } from '../../db/index.js';
 
 export type ImageManager = {
   setImage: (image: string) => void;
