@@ -17,6 +17,20 @@ export type PostJobResult = {
   service_url: string | undefined;
 };
 
+export function asyncPostJob(
+  market: string,
+  job: JobDefinition,
+): Promise<PostJobResult> {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const result = await postJob(market, job);
+      resolve(result);
+    } catch (e) {
+      reject(e);
+    }
+  });
+}
+
 export function postJob(
   marketAddress: string,
   job: JobDefinition,

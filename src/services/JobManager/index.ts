@@ -3,10 +3,11 @@ import { LowSync } from 'lowdb/lib/index.js';
 import { jobListener } from './listener/index.js';
 import { DB, NodeDb } from '../../providers/modules/db/index.js';
 import { JobDefinition } from '../../providers/Provider.js';
-import { postJob, PostJobResult } from './actions/post/index.js';
-import { JobWorker } from './workers/index.js';
+import { asyncPostJob, PostJobResult } from './actions/post/index.js';
 import { randomUUID } from 'node:crypto';
 import { getMarket } from './actions/getMarket/index.js';
+
+const DEFAULT_OFFSET_SEC = 5;
 
 export default class JobManager {
   private db: LowSync<NodeDb>;
@@ -28,20 +29,6 @@ export default class JobManager {
     this.db.write();
   }
 
-  private async postHandler(
-    market: string,
-    job: JobDefinition,
-  ): Promise<PostJobResult> {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const result = await postJob(market, job);
-        resolve(result);
-      } catch (e) {
-        reject(e);
-      }
-    });
-  }
-
   public stop(job: string): string | Error {
     if (!this.workers.has(job)) {
       return new Error('Failed to find job');
@@ -59,27 +46,35 @@ export default class JobManager {
     id: string;
     nodes: PostJobResult[];
   }> {
-    const id = randomUUID();
+    let id;
+
+    const handlePostJob = async () => {
+      const result = await asyncPostJob(market, job);
+      this.jobs.set(result.job, result);
+      this.updateJobDB(result.job, result);
+      return result;
+    };
+
+    const result = await handlePostJob();
+    id = result.job;
+
     if (recursive) {
       try {
+        id = randomUUID();
         const timeout = (await getMarket(market)).jobTimeout;
+
+        console.log((timeout - DEFAULT_OFFSET_SEC) * 1000);
 
         this.workers.set(
           id,
-          setInterval(() => {
-            console.log('POSTING');
-            // this.postHandler(market, job);
-          }, 500),
+          setInterval(async () => {
+            await handlePostJob();
+          }, (timeout - DEFAULT_OFFSET_SEC) * 1000),
         );
       } catch (e) {
         throw e;
       }
     }
-
-    const result = await this.postHandler(market, job);
-
-    this.jobs.set(result.job, result);
-    this.updateJobDB(result.job, result);
 
     return { id, nodes: [result] };
   }
