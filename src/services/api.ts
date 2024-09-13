@@ -147,7 +147,7 @@ app.post(
   '/service/stop/:jobId',
   verifySignatureMiddleware,
   verifyJobOwnerMiddleware,
-  async (req: Request, res: Response) => {
+  async (req: Request<{jobId: string}>, res: Response) => {
     const jobId = req.params.jobId;
 
     if (!jobId) {
