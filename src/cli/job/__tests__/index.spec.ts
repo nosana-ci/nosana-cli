@@ -2,10 +2,10 @@ import { jobCommand } from '../';
 
 describe('jobCommand', () => {
   it('should only have two commands', () => {
-    expect(jobCommand.commands.length).toBe(5);
+    expect(jobCommand.commands.length).toBe(6);
   });
 
-  it.each([['download'], ['get'], ['post'], ['upload'], ['stop']])(
+  it.each([['download'], ['get'], ['post'], ['serve'], ['upload'], ['stop']])(
     'should contain %s command',
     (command) => {
       // @ts-ignore

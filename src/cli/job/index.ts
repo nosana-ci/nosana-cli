@@ -5,6 +5,7 @@ import { getJobCommand } from './get/command.js';
 import { postJobCommand } from './post/command.js';
 import { uploadJobCommand } from './upload/command.js';
 import { stopJobCommand } from './stop/command.js';
+import { jobServeCommand } from './serve/command.js';
 
 export const jobCommand: Command = program
   .command('job')
@@ -12,4 +13,5 @@ export const jobCommand: Command = program
   .addCommand(getJobCommand)
   .addCommand(postJobCommand)
   .addCommand(stopJobCommand)
+  .addCommand(jobServeCommand)
   .addCommand(uploadJobCommand);

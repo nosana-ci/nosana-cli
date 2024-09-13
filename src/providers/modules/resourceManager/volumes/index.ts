@@ -2,12 +2,12 @@ import chalk from 'chalk';
 import { LowSync } from 'lowdb/lib';
 
 import Logger from '../../logger/index.js';
-import { NodeDb } from '../../../BasicProvider.js';
 import { DockerExtended } from '../../../../docker/index.js';
 import { hasDockerVolume } from './helpers/hasDockerVolume.js';
 import { createRemoteDockerVolume } from './helpers/dockerCreateRemoteVolume.js';
 import { RequiredResource, Resource } from '../../../../types/resources.js';
 import { hoursSinceDate } from '../utils/hoursSinceDate.js';
+import { NodeDb } from '../../db/index.js';
 
 export function createResourceName(resource: RequiredResource) {
   if (resource.url) return resource.url;
