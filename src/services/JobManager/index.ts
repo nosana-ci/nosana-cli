@@ -48,7 +48,8 @@ export default class JobManager {
     nodes: PostJobResult[];
   }> {
     const nodes: PostJobResult[] = [];
-    const { group_id, recursive, recursive_offset_min, replica_count } = options;
+    const { group_id, recursive, recursive_offset_min, replica_count } =
+      options;
 
     if (group_id) {
       if (this.workers.has(group_id)) {
@@ -100,7 +101,7 @@ export default class JobManager {
           id,
           setTimeout(async () => {
             await this.post(market, job, options);
-          }, (timeout - (recursive_offset_min ? recursive_offset_min * 60 : DEFAULT_OFFSET_SEC) * 1000),
+          }, timeout - (recursive_offset_min ? recursive_offset_min * 60 : DEFAULT_OFFSET_SEC) * 1000),
         );
       } catch (e) {
         throw e;
