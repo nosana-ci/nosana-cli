@@ -6,8 +6,8 @@ import { JobDefinition } from '../../providers/Provider.js';
 import { asyncPostJob, PostJobResult } from './actions/post/index.js';
 import { randomUUID } from 'node:crypto';
 import { getMarket } from './actions/getMarket/index.js';
-
-const DEFAULT_OFFSET_SEC = 5;
+import { JobPostingOptions } from './listener/types/index.js';
+import { DEFAULT_OFFSET_SEC } from './definitions/index.js';
 
 export default class JobManager {
   private db: LowSync<NodeDb>;
@@ -41,34 +41,41 @@ export default class JobManager {
   public async post(
     market: string,
     job: JobDefinition,
-    recursive = false,
+    options: JobPostingOptions,
   ): Promise<{
     id: string;
     nodes: PostJobResult[];
   }> {
-    let id;
+    const { recursive, replica_count } = options;
+    const nodes: PostJobResult[] = [];
 
-    const handlePostJob = async () => {
-      const result = await asyncPostJob(market, job);
+    const postFunctions = [];
+
+    for (let i = 0; i < (replica_count || 1); i++) {
+      postFunctions.push(asyncPostJob(market, job));
+    }
+
+    const results = await Promise.all(postFunctions);
+    results.forEach((result) => {
+      nodes.push(result);
       this.jobs.set(result.job, result);
       this.updateJobDB(result.job, result);
-      return result;
-    };
+    });
 
-    const result = await handlePostJob();
-    id = result.job;
+    if (nodes.length === 0) {
+      throw new Error('Failed to post any jobs.');
+    }
+
+    const id = recursive || nodes.length <= 1 ? nodes[0].job : randomUUID();
 
     if (recursive) {
       try {
-        id = randomUUID();
         const timeout = (await getMarket(market)).jobTimeout;
-
-        console.log((timeout - DEFAULT_OFFSET_SEC) * 1000);
 
         this.workers.set(
           id,
-          setInterval(async () => {
-            await handlePostJob();
+          setTimeout(async () => {
+            await this.post(market, job, options);
           }, (timeout - DEFAULT_OFFSET_SEC) * 1000),
         );
       } catch (e) {
@@ -76,7 +83,7 @@ export default class JobManager {
       }
     }
 
-    return { id, nodes: [result] };
+    return { id, nodes };
   }
 
   public get(id: string): PostJobResult | undefined {

@@ -11,10 +11,10 @@ export async function postJob(
     return next();
   }
 
-  const { market, job, recursive } = req.body;
+  const { market, job, options } = req.body;
 
   try {
-    const jobResult = await req.jobManager!.post(market.trim(), job, recursive);
+    const jobResult = await req.jobManager!.post(market.trim(), job, options);
     res.locals.result = jobResult;
   } catch (e) {
     res.locals.error = {

@@ -7,13 +7,15 @@ export type JobRequest<Params = {}, Body = {}> = Request<Params, {}, Body> & {
   jobManager?: JobManager;
 };
 
+export type JobPostingOptions = {
+  recursive?: boolean;
+  replica_count?: number;
+  replica_offset?: number;
+  health_prob?: string;
+};
+
 export type PostRequestBody = {
   market: string;
   job: JobDefinition;
-  recursive?: boolean;
-  replicas?: {
-    count: number;
-    health_prob?: string;
-  };
-  group_id?: string;
+  options: JobPostingOptions;
 };
