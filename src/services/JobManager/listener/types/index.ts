@@ -8,10 +8,11 @@ export type JobRequest<Params = {}, Body = {}> = Request<Params, {}, Body> & {
 };
 
 export type JobPostingOptions = {
+  group_id?: string;
+  health_prob?: string;
   recursive?: boolean;
   replica_count?: number;
   replica_offset?: number;
-  health_prob?: string;
 };
 
 export type PostRequestBody = {

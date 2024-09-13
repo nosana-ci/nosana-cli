@@ -3,11 +3,12 @@ import { LowSync } from 'lowdb/lib/index.js';
 import { jobListener } from './listener/index.js';
 import { DB, NodeDb } from '../../providers/modules/db/index.js';
 import { JobDefinition } from '../../providers/Provider.js';
-import { asyncPostJob, PostJobResult } from './actions/post/index.js';
+import { PostJobResult } from './actions/post/index.js';
 import { randomUUID } from 'node:crypto';
 import { getMarket } from './actions/getMarket/index.js';
 import { JobPostingOptions } from './listener/types/index.js';
 import { DEFAULT_OFFSET_SEC } from './definitions/index.js';
+import { asyncPostJob } from './actions/post/asyncPostJob.js';
 
 export default class JobManager {
   private db: LowSync<NodeDb>;
@@ -46,8 +47,27 @@ export default class JobManager {
     id: string;
     nodes: PostJobResult[];
   }> {
-    const { recursive, replica_count } = options;
     const nodes: PostJobResult[] = [];
+    const { group_id, recursive, replica_count } = options;
+
+    if (group_id) {
+      if (this.workers.has(group_id)) {
+        throw new Error(
+          'Group id already exists, please stop the existing group or update the group.',
+        );
+      }
+
+      job.ops.forEach((_, i) => {
+        if (job.ops[i].type === 'container/run') {
+          // @ts-ignore
+          job.ops[i].args.env = {
+            // @ts-ignore
+            ...job.ops[i].args.env,
+            NOSANA_GROUP_ID: group_id,
+          };
+        }
+      });
+    }
 
     const postFunctions = [];
 
@@ -66,7 +86,11 @@ export default class JobManager {
       throw new Error('Failed to post any jobs.');
     }
 
-    const id = recursive || nodes.length <= 1 ? nodes[0].job : randomUUID();
+    const id = group_id
+      ? group_id
+      : recursive || nodes.length <= 1
+      ? nodes[0].job
+      : randomUUID();
 
     if (recursive) {
       try {
