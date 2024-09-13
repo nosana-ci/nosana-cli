@@ -11,6 +11,7 @@ export type JobPostingOptions = {
   group_id?: string;
   health_prob?: string;
   recursive?: boolean;
+  recursive_offset_min?: number;
   replica_count?: number;
   replica_offset?: number;
 };
