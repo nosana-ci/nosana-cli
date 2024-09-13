@@ -1,10 +1,6 @@
-import { randomUUID } from 'node:crypto';
 import { LowSync } from 'lowdb/lib/index.js';
 
-import { PostJobResult } from './actions/post/index.js';
-import { getMarket } from './actions/getMarket/index.js';
-import { asyncPostJob } from './actions/post/asyncPostJob.js';
-import { DEFAULT_OFFSET_SEC } from './definitions/index.js';
+import { PostJobResult, postJobWithOptions } from './actions/post/index.js';
 import { jobListener } from './listener/index.js';
 import { JobPostingOptions } from './listener/types/index.js';
 import { DB, NodeDb } from '../../providers/modules/db/index.js';
@@ -47,66 +43,12 @@ export default class JobManager {
     id: string;
     nodes: PostJobResult[];
   }> {
-    const nodes: PostJobResult[] = [];
-    const { group_id, recursive, recursive_offset_min, replica_count } =
-      options;
-
-    if (group_id) {
-      if (this.workers.has(group_id)) {
-        throw new Error(
-          'Group id already exists, please stop the existing group or update the group.',
-        );
-      }
-
-      job.ops.forEach((_, i) => {
-        if (job.ops[i].type === 'container/run') {
-          // @ts-ignore
-          job.ops[i].args.env = {
-            // @ts-ignore
-            ...job.ops[i].args.env,
-            NOSANA_GROUP_ID: group_id,
-          };
-        }
-      });
-    }
-
-    const postFunctions = [];
-
-    for (let i = 0; i < (replica_count || 1); i++) {
-      postFunctions.push(asyncPostJob(market, job));
-    }
-
-    const results = await Promise.all(postFunctions);
-    results.forEach((result) => {
-      nodes.push(result);
-      this.jobs.set(result.job, result);
-      this.updateJobDB(result.job, result);
-    });
-
-    if (nodes.length === 0) {
-      throw new Error('Failed to post any jobs.');
-    }
-
-    const id = group_id
-      ? group_id
-      : recursive || nodes.length <= 1
-      ? nodes[0].job
-      : randomUUID();
-
-    if (recursive) {
-      try {
-        const timeout = (await getMarket(market)).jobTimeout;
-
-        this.workers.set(
-          id,
-          setTimeout(async () => {
-            await this.post(market, job, options);
-          }, timeout - (recursive_offset_min ? recursive_offset_min * 60 : DEFAULT_OFFSET_SEC) * 1000),
-        );
-      } catch (e) {
-        throw e;
-      }
-    }
+    const { id, nodes } = await postJobWithOptions(
+      market,
+      job,
+      options,
+      this.workers,
+    );
 
     return { id, nodes };
   }
