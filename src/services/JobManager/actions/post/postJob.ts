@@ -4,10 +4,11 @@ import { PostJobResult } from './index.js';
 import {
   JobDefinition,
   validateJobDefinition,
-} from '../../../../providers/Provider';
+} from '../../../../providers/Provider.js';
 import { getSDK } from '../../../sdk.js';
 import { hasSufficientBalance } from './helpers/hasSufficientBalance.js';
 import { isExposedJobOps } from '../utils/isExposedJob.js';
+import { config } from '../../../../generic/config.js';
 
 export function postJob(
   marketAddress: string,

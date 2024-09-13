@@ -1,14 +1,14 @@
+import { randomUUID } from 'node:crypto';
 import { LowSync } from 'lowdb/lib/index.js';
 
+import { PostJobResult } from './actions/post/index.js';
+import { getMarket } from './actions/getMarket/index.js';
+import { asyncPostJob } from './actions/post/asyncPostJob.js';
+import { DEFAULT_OFFSET_SEC } from './definitions/index.js';
 import { jobListener } from './listener/index.js';
+import { JobPostingOptions } from './listener/types/index.js';
 import { DB, NodeDb } from '../../providers/modules/db/index.js';
 import { JobDefinition } from '../../providers/Provider.js';
-import { PostJobResult } from './actions/post/index.js';
-import { randomUUID } from 'node:crypto';
-import { getMarket } from './actions/getMarket/index.js';
-import { JobPostingOptions } from './listener/types/index.js';
-import { DEFAULT_OFFSET_SEC } from './definitions/index.js';
-import { asyncPostJob } from './actions/post/asyncPostJob.js';
 
 export default class JobManager {
   private db: LowSync<NodeDb>;
