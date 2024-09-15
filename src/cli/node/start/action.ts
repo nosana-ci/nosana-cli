@@ -14,6 +14,8 @@ import {
 import { getSDK } from '../../../services/sdk.js';
 import { NosanaNode } from '../../../services/NosanaNode.js';
 import { validateCLIVersion } from '../../../services/versions.js';
+import { dispatch } from "../../../services/state/node/dispatch.js";
+import { NODE_STATE_NAME } from "../../../services/state/node/types.js";
 
 let node: NosanaNode;
 let spinner: Ora;
@@ -59,6 +61,11 @@ export async function startNode(
    * Nosana Node  *
    ****************/
   const sdk: Client = getSDK();
+
+  dispatch(NODE_STATE_NAME.NODE_STARTING, {
+    node: sdk.solana.wallet.publicKey.toString(),
+  })
+
   console.log(`Provider:\t${chalk.greenBright.bold(options.provider)}`);
   node = new NosanaNode(sdk, options.provider, options.podman, options.config);
 
@@ -70,6 +77,11 @@ export async function startNode(
       }
     },
   );
+
+  dispatch(NODE_STATE_NAME.NODE_STARTED, {
+    node: sdk.solana.wallet.publicKey.toString(),
+  })
+
   try {
     await node.provider.healthy();
   } catch (error) {
@@ -97,7 +109,7 @@ export async function startNode(
 
   // TODO: decouple resources in providers from markets/blockchain/backend stuff,
   //       that should be part of the node or cli..
-  await node.provider.updateMarketRequiredResources(market);
+  // await node.provider.updateMarketRequiredResources(market);
 
   let marketAccount: Market;
   try {

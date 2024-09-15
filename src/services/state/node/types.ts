@@ -1,4 +1,4 @@
-export const STATE_NAME = {
+export const NODE_STATE_NAME = {
     NODE_STARTING: 'NODE_STARTING',
     NODE_STARTED: 'NODE_STARTED',
 
@@ -31,21 +31,14 @@ export const STATE_NAME = {
     NONE: 'NONE'
 } as const;
 
-export type State = (typeof STATE_NAME)[keyof typeof STATE_NAME];
+export type NodeState = (typeof NODE_STATE_NAME)[keyof typeof NODE_STATE_NAME];
 
-export type StateHistoryEntry = {
-    state: State,
-    data: StateData[State]
-    timestamp: Date
-}
-
-// Define specific types of data for each state
 export type NodeStartingData = {
-    message: string;
+    node: string;
 }
 
 export type NodeStartedData = {
-    startedAt: Date;
+    node: string;
 }
 
 export type HealthCheckStartingData = {
@@ -155,30 +148,30 @@ export type ShuttingDownData = {
 
 export type NoneData = {}
 
-export type StateData = {
-    [STATE_NAME.NODE_STARTING]: NodeStartingData;
-    [STATE_NAME.NODE_STARTED]: NodeStartedData;
-    [STATE_NAME.HEALTH_CHECK_STARTING]: HealthCheckStartingData;
-    [STATE_NAME.HEALTH_CHECK_RUNNING]: HealthCheckRunningData;
-    [STATE_NAME.HEALTH_CHECK_PASSED]: HealthCheckPassedData;
-    [STATE_NAME.HEALTH_CHECK_FAILED]: HealthCheckFailedData;
-    [STATE_NAME.BENCHMARK_STARTING]: BenchmarkStartingData;
-    [STATE_NAME.BENCHMARK_RUNNING]: BenchmarkRunningData;
-    [STATE_NAME.BENCHMARK_PASSED]: BenchmarkPassedData;
-    [STATE_NAME.BENCHMARK_FAILED]: BenchmarkFailedData;
-    [STATE_NAME.JOINING_QUEUE]: JoiningQueueData;
-    [STATE_NAME.JOINING_QUEUE_PASSED]: JoiningQueuePassedData;
-    [STATE_NAME.JOINING_QUEUE_FAILED]: JoiningQueueFailedData;
-    [STATE_NAME.JOB_STARTING]: JobStartingData;
-    [STATE_NAME.JOB_STARTING_PASSED]: JobStartingPassedData;
-    [STATE_NAME.JOB_STARTING_FAILED]: JobStartingFailedData;
-    [STATE_NAME.JOB_RUNNING]: JobRunningData;
-    [STATE_NAME.JOB_COMPLETED]: JobCompletedData;
-    [STATE_NAME.JOB_STOPPED]: JobStoppedData;
-    [STATE_NAME.JOB_FAILED]: JobFailedData;
-    [STATE_NAME.IDLE]: IdleData;
-    [STATE_NAME.UPDATING]: UpdatingData;
-    [STATE_NAME.RESTARTING]: RestartingData;
-    [STATE_NAME.SHUTTING_DOWN]: ShuttingDownData;
-    [STATE_NAME.NONE]: NoneData;
+export type NodeStateData = {
+    [NODE_STATE_NAME.NODE_STARTING]: NodeStartingData;
+    [NODE_STATE_NAME.NODE_STARTED]: NodeStartedData;
+    [NODE_STATE_NAME.HEALTH_CHECK_STARTING]: HealthCheckStartingData;
+    [NODE_STATE_NAME.HEALTH_CHECK_RUNNING]: HealthCheckRunningData;
+    [NODE_STATE_NAME.HEALTH_CHECK_PASSED]: HealthCheckPassedData;
+    [NODE_STATE_NAME.HEALTH_CHECK_FAILED]: HealthCheckFailedData;
+    [NODE_STATE_NAME.BENCHMARK_STARTING]: BenchmarkStartingData;
+    [NODE_STATE_NAME.BENCHMARK_RUNNING]: BenchmarkRunningData;
+    [NODE_STATE_NAME.BENCHMARK_PASSED]: BenchmarkPassedData;
+    [NODE_STATE_NAME.BENCHMARK_FAILED]: BenchmarkFailedData;
+    [NODE_STATE_NAME.JOINING_QUEUE]: JoiningQueueData;
+    [NODE_STATE_NAME.JOINING_QUEUE_PASSED]: JoiningQueuePassedData;
+    [NODE_STATE_NAME.JOINING_QUEUE_FAILED]: JoiningQueueFailedData;
+    [NODE_STATE_NAME.JOB_STARTING]: JobStartingData;
+    [NODE_STATE_NAME.JOB_STARTING_PASSED]: JobStartingPassedData;
+    [NODE_STATE_NAME.JOB_STARTING_FAILED]: JobStartingFailedData;
+    [NODE_STATE_NAME.JOB_RUNNING]: JobRunningData;
+    [NODE_STATE_NAME.JOB_COMPLETED]: JobCompletedData;
+    [NODE_STATE_NAME.JOB_STOPPED]: JobStoppedData;
+    [NODE_STATE_NAME.JOB_FAILED]: JobFailedData;
+    [NODE_STATE_NAME.IDLE]: IdleData;
+    [NODE_STATE_NAME.UPDATING]: UpdatingData;
+    [NODE_STATE_NAME.RESTARTING]: RestartingData;
+    [NODE_STATE_NAME.SHUTTING_DOWN]: ShuttingDownData;
+    [NODE_STATE_NAME.NONE]: NoneData;
 };
