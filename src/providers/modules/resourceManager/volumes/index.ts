@@ -8,13 +8,11 @@ import { createRemoteDockerVolume } from './helpers/dockerCreateRemoteVolume.js'
 import { RequiredResource, Resource } from '../../../../types/resources.js';
 import { hoursSinceDate } from '../utils/hoursSinceDate.js';
 import { NodeDb } from '../../db/index.js';
+import { nosanaBucket } from './definition/s3HelperOpts.js';
 
 export function createResourceName(resource: RequiredResource) {
   if (resource.url)
-    return resource.url.replace(
-      's3://nos-ai-models-qllsn32u',
-      'https://d36838c9417fded43c1a22cf4065d818.r2.cloudflarestorage.com/nosana-ai-models',
-    );
+    return resource.url.replace('s3://nos-ai-models-qllsn32u', nosanaBucket);
 
   // TODO: Fix type to ensure that it is either url or bucket!
   return resource.buckets!.map((bucket) => bucket.url).join('-');
@@ -66,10 +64,7 @@ export function createVolumeManager(
       // RENAME NOSANA S3 BUCKETS TO CLOUDFRONT
       if (resource.includes('s3://nos-ai-models-qllsn32u')) {
         db.data.resources.volumes[
-          `${resource.replace(
-            's3://nos-ai-models-qllsn32u',
-            'https://d36838c9417fded43c1a22cf4065d818.r2.cloudflarestorage.com/nosana-ai-models',
-          )}`
+          `${resource.replace('s3://nos-ai-models-qllsn32u', nosanaBucket)}`
         ] = value;
         delete db.data.resources.volumes['s3://nos-ai-models-qllsn32u'];
       }

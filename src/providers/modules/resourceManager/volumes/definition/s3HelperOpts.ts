@@ -5,6 +5,8 @@ import { S3Auth } from '../../../../../types/resources.js';
 export const s3HelperImage =
   'registry.hub.docker.com/nosana/remote-resource-helper:0.4.0';
 
+export const nosanaBucket = 'https://models.nosana.io';
+
 export const createS3HelperOpts = (
   volumeName: string,
   s3: {
@@ -21,10 +23,7 @@ export const createS3HelperOpts = (
   StdinOnce: false,
   Cmd: [
     'index.js',
-    s3.url.replace(
-      's3://nos-ai-models-qllsn32u',
-      'https://d36838c9417fded43c1a22cf4065d818.r2.cloudflarestorage.com/nosana-ai-models',
-    ),
+    s3.url.replace('s3://nos-ai-models-qllsn32u', nosanaBucket),
     s3.files ? s3.files.join(',') : '',
   ],
   Image: s3HelperImage,
