@@ -66,7 +66,7 @@ export function createVolumeManager(
         db.data.resources.volumes[
           `${resource.replace('s3://nos-ai-models-qllsn32u', nosanaBucket)}`
         ] = value;
-        delete db.data.resources.volumes['s3://nos-ai-models-qllsn32u'];
+        delete db.data.resources.volumes[resource];
       }
     }
 
