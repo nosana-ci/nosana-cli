@@ -2,12 +2,13 @@ import fs from 'fs';
 import os from 'os';
 import { LowSync } from 'lowdb/lib';
 import { JSONFileSyncPreset } from 'lowdb/node';
-import { PostJobResult } from '../../../services/JobManager/actions/post/index.js';
+
 import { Flow } from '../../Provider.js';
+import { JobObject } from '../../../services/JobManager/listener/types/index.js';
 
 export type NodeDb = {
   jobs: {
-    [key: string]: PostJobResult;
+    [key: string]: JobObject;
   };
   flows: { [key: string]: Flow };
   resources: Resources;

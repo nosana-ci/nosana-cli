@@ -1,29 +1,15 @@
-import { LowSync } from 'lowdb/lib/index.js';
-
-import { PostJobResult, postJobWithOptions } from './actions/post/index.js';
+import { postJobWithOptions } from './actions/post/index.js';
 import { jobListener } from './listener/index.js';
-import { JobPostingOptions } from './listener/types/index.js';
-import { DB, NodeDb } from '../../providers/modules/db/index.js';
+import { JobObject, JobPostingOptions } from './listener/types/index.js';
 import { JobDefinition } from '../../providers/Provider.js';
+import { JobManagerState } from './state/index.js';
 
 export default class JobManager {
-  private db: LowSync<NodeDb>;
+  public state: JobManagerState;
   private workers = new Map();
-  private jobs: Map<string, PostJobResult>;
 
   constructor(config: string) {
-    this.db = new DB(config).db;
-    this.jobs = new Map(Object.entries(this.db.data.jobs));
-  }
-
-  private updateJobDB(key: string, job: PostJobResult | undefined) {
-    if (!job) {
-      delete this.db.data.jobs[key];
-    } else {
-      this.db.data.jobs[key] = job;
-    }
-
-    this.db.write();
+    this.state = new JobManagerState(config);
   }
 
   public stop(job: string): string | Error {
@@ -39,26 +25,21 @@ export default class JobManager {
     market: string,
     job: JobDefinition,
     options: JobPostingOptions,
-  ): Promise<{
-    id: string;
-    nodes: PostJobResult[];
-  }> {
-    const { id, nodes } = await postJobWithOptions(
-      market,
-      job,
-      options,
-      this.workers,
-    );
+  ): Promise<JobObject> {
+    const result = await postJobWithOptions(market, job, options, this.workers);
 
-    return { id, nodes };
+    // nodes.forEach((job) => this.updateJobDB(job.job, job));
+
+    return result;
   }
 
-  public get(id: string): PostJobResult | undefined {
-    return this.jobs.get(id);
+  public get(id: string): JobObject | undefined {
+    return this.state.get(id);
   }
 
   public list(): string[] {
-    return [...this.jobs.keys()];
+    // @ts-ignore
+    return this.state.list();
   }
 
   public listen(port: number) {

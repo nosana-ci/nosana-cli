@@ -1,4 +1,4 @@
-import { Request } from 'express';
+import { Request, Response } from 'express';
 
 import { JobDefinition } from '../../../../providers/Provider.js';
 import JobManager from '../../index.js';
@@ -6,6 +6,32 @@ import JobManager from '../../index.js';
 export type JobRequest<Params = {}, Body = {}> = Request<Params, {}, Body> & {
   jobManager?: JobManager;
 };
+
+export type JobResult = {
+  job: string;
+  tx: string;
+  job_timeout: number;
+  created_at: string;
+  ended_at?: string;
+  service_url: string | undefined;
+};
+
+export type JobObject = {
+  id: string;
+  active_nodes: JobResult[];
+  expired_nodes: JobResult[];
+};
+
+export type JobResponse<Locals = {}> = Response<
+  {},
+  {
+    result: {} | undefined;
+    error: {
+      error: string;
+      message: string;
+    };
+  } & Locals
+>;
 
 export type JobPostingOptions = {
   group_id?: string;
