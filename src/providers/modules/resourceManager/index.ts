@@ -55,20 +55,20 @@ export function createResourceManager(
 
     required_market = market;
 
-    const { data, error } = await clientSelector().GET(
-      '/api/markets/{id}/required-resources',
-      { params: { path: { id: market } } },
-    );
+    // const { data, error } = await clientSelector().GET(
+    //   '/api/markets/{id}/required-resources',
+    //   { params: { path: { id: market } } },
+    // );
 
-    if (error)
-      throw new Error(
-        `Failed to fetch market resource requirements.\n${error.message}`,
-      );
+    // if (error)
+    //   throw new Error(
+    //     `Failed to fetch market resource requirements.\n${error.message}`,
+    //   );
 
-    await imageManager.pullMarketRequiredImages(data.required_images);
-    await volumeManager.pullMarketRequiredVolumes(
-      data.required_remote_resources,
-    );
+    // await imageManager.pullMarketRequiredImages(data.required_images);
+    // await volumeManager.pullMarketRequiredVolumes(
+    //   data.required_remote_resources,
+    // );
 
     logger.succeed(chalk.green('Fetched market all required resources'));
   };

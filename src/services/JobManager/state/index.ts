@@ -28,6 +28,17 @@ export class JobManagerState {
   }
 
   set(key: string, value: JobObject): void {
+    const current_entry = this.state.get(key);
+
+    if (current_entry) {
+      this.state.set(key, {
+        id: value.id,
+        active_nodes: [...value.active_nodes, ...current_entry.active_nodes],
+        expired_nodes: [...value.expired_nodes, ...current_entry.expired_nodes],
+      });
+      return;
+    }
+
     this.state.set(key, value);
     // @ts-ignore
     // this.db.data.jobs[key] = value;

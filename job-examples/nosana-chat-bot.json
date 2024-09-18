@@ -1,0 +1,29 @@
+{
+  "version": "0.1",
+  "type": "container",
+  "meta": {
+    "trigger": "cli"
+  },
+  "ops": [
+    {
+      "type": "container/run",
+      "id": "nosana-chat-bot",
+      "args": {
+        "image": "nosana/nosana-chat-bot:0.1.0",
+        "cmd": [
+          "-c",
+          "lmdeploy serve api_server ../../root/models/snapshots/069adfb3ab0ceba60b9af8f11fa51558b9f9d396 --model-name llama3.1 --chat-template ./chat_template.json & npm start"
+        ],
+        "gpu": true,
+        "expose": 3000,
+        "resources": [
+          {
+            "type": "S3",
+            "url": "s3://nos-ai-models-qllsn32u/hugging-face/llama3.1/8b/models--unsloth--Meta-Llama-3.1-8B",
+            "target": "/root/models/"
+          }
+        ]
+      }
+    }
+  ]
+}

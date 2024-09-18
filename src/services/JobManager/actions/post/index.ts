@@ -14,18 +14,12 @@ export async function postJobWithOptions(
   market: string,
   job: JobDefinition,
   options: JobPostingOptions,
-  workers: Map<string, NodeJS.Timeout>,
+  callback?: (job: JobObject) => void,
 ): Promise<JobObject> {
   const nodes: JobResult[] = [];
   const { group_id, recursive, recursive_offset_min, replica_count } = options;
 
   if (group_id) {
-    if (workers.has(group_id)) {
-      throw new Error(
-        'Group id already exists, please stop the existing group or update the group.',
-      );
-    }
-
     job.ops.forEach((_, i) => {
       if (job.ops[i].type === 'container/run') {
         // @ts-ignore
@@ -60,21 +54,6 @@ export async function postJobWithOptions(
     : recursive || nodes.length <= 1
     ? nodes[0].job
     : randomUUID();
-
-  if (recursive) {
-    try {
-      const timeout = (await getMarket(market)).jobTimeout;
-
-      workers.set(
-        id,
-        setTimeout(async () => {
-          await postJobWithOptions(market, job, options, workers);
-        }, timeout - (recursive_offset_min ? recursive_offset_min * 60 : DEFAULT_OFFSET_SEC) * 1000),
-      );
-    } catch (e) {
-      throw e;
-    }
-  }
 
   return { id, active_nodes: nodes, expired_nodes: [] };
 }
