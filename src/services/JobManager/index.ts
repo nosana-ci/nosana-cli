@@ -4,16 +4,23 @@ import { JobObject, JobPostingOptions } from './listener/types/index.js';
 import { JobDefinition } from '../../providers/Provider.js';
 import { JobManagerState } from './state/index.js';
 import { DEFAULT_OFFSET_SEC } from './definitions/index.js';
-import { EventEmitter } from 'node:stream';
+import { Client } from '@nosana/sdk';
+import { getSDK } from '../sdk.js';
+import { createSignature } from '../api.js';
+import { listenToEventSource } from '../eventsource.js';
+import { config } from '../../generic/config.js';
+import { waitForJobCompletion, waitForJobRunOrCompletion } from '../jobs.js';
 import { PublicKey } from '@solana/web3.js';
-import { waitForJobRunOrCompletion } from '../jobs.js';
+import EventEmitter from 'events';
 
 export default class JobManager {
   public state: JobManagerState;
+  private nosana: Client;
   private workers: Map<string, NodeJS.Timeout>;
 
   constructor(config: string) {
     this.state = new JobManagerState(config);
+    this.nosana = getSDK();
     this.workers = new Map();
   }
 
@@ -26,27 +33,84 @@ export default class JobManager {
     return job;
   }
 
-  public status(id: string) {
-    const event = new EventEmitter();
+  // TODO: Listen to state for recurisve posting
+  // TODO: Stop send close event when all jobs are complete
+  // TODO: Listen to node status
+  // TODO: Refactor
 
-    const job = this.state.get(id);
+  public async createStatusListener(id: string): Promise<EventEmitter> {
+    await this.nosana.jobs.loadNosanaJobs();
 
-    const createListener = (node: string, job: string) => {};
+    const emitter = new EventEmitter();
 
-    const validateJob = async (address: string): Promise<boolean> => {
-      const job = await waitForJobRunOrCompletion(new PublicKey(address));
-      if (job.state === 'RUNNING') return true;
-      return false;
+    const jobState = this.state.get(id);
+
+    if (!jobState) {
+      throw new Error('Failed to find job');
+    }
+
+    const createListener = async (nodeAddress: string, jobAddress: string) => {
+      console.log('CREATING LISTENER');
+      const headers = await createSignature();
+      const listener = listenToEventSource(
+        `https://${nodeAddress}.${config.frp.serverAddr}/status/${jobAddress}`,
+        headers,
+        (events) => {
+          console.log(events);
+        },
+      );
     };
 
-    if (job) {
-      job.active_nodes.forEach((node) => {});
+    jobState.active_nodes.forEach(async (obj, index) => {
+      const id = new PublicKey(obj.job);
+      const { node, state } = await this.nosana.jobs.get(id);
 
-      this.state.subscribe(id, async (event, value) => {
-        const source = new EventSource('');
-        source.onmessage = (event) => {};
+      emitter.emit('message', {
+        event: 'status_init',
+        job_id: obj.job,
+        status: state,
+        node: node === '11111111111111111111111111111111' ? undefined : node,
       });
+
+      if (['COMPLETE', 'STOPPED'].includes(`${state}`)) {
+        jobState.expired_nodes.push(obj);
+        jobState.active_nodes.splice(index, 1);
+        return;
+      }
+
+      const { node: currentNode, state: currentState } =
+        await waitForJobRunOrCompletion(id);
+
+      console.log('Running');
+
+      if (currentState === 'RUNNING') {
+        if (state !== currentState) {
+          emitter.emit('message', {
+            event: 'status_update',
+            job_id: obj.job,
+            status: currentState,
+            node: currentNode,
+          });
+        }
+        // createListener(node, obj.job);
+      }
+
+      const { node: finalNode, state: finalState } = await waitForJobCompletion(
+        id,
+      );
+      emitter.emit('message', {
+        event: 'status_update',
+        job_id: obj.job,
+        status: finalState,
+        node: finalNode,
+      });
+    });
+
+    if (jobState.active_nodes.length === 0) {
+      throw new Error('No active jobs');
     }
+
+    return emitter;
   }
 
   public async post(

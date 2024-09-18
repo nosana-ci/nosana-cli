@@ -22,7 +22,7 @@ export const jobListener = (port: number, jobManager: JobManager) => {
   // GET Routes
   app.get('/jobs', listJobs);
   app.get('/job/:id', getJob);
-  app.get('/status/:id', jobStatus);
+  app.get('/status/:id', getJob, jobStatus);
 
   // POST Routes
   app.post('/job/post', validateJobPostBody, postJob);

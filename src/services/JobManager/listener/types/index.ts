@@ -13,7 +13,7 @@ export type JobResult = {
   job_timeout: number;
   created_at: string;
   ended_at?: string;
-  service_url: string | undefined;
+  service_url?: string | undefined;
 };
 
 export type JobObject = {

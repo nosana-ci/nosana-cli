@@ -10,7 +10,11 @@ export class JobManagerState {
 
   constructor(config: string) {
     this.db = new DB(config).db;
-    this.state = new ReactiveState();
+
+    this.state = new ReactiveState<string, JobObject>();
+    Object.entries(this.db.data.jobs).forEach(([id, job]) => {
+      this.state.set(id, job);
+    });
   }
 
   delete(key: string): void {
@@ -40,8 +44,8 @@ export class JobManagerState {
     }
 
     this.state.set(key, value);
-    // @ts-ignore
-    // this.db.data.jobs[key] = value;
+    this.db.data.jobs[key] = value;
+    this.db.write();
   }
 
   subscribe(
