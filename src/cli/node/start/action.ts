@@ -14,8 +14,10 @@ import {
 import { getSDK } from '../../../services/sdk.js';
 import { NosanaNode } from '../../../services/NosanaNode.js';
 import { validateCLIVersion } from '../../../services/versions.js';
-import { dispatch } from "../../../services/state/node/dispatch.js";
-import { NODE_STATE_NAME } from "../../../services/state/node/types.js";
+import { dispatch } from '../../../services/state/node/dispatch.js';
+import { dispatch as jobDispatch } from '../../../services/state/job/dispatch.js';
+import { NODE_STATE_NAME } from '../../../services/state/node/types.js';
+import { JOB_STATE_NAME } from '../../../services/state/job/types.js';
 
 let node: NosanaNode;
 let spinner: Ora;
@@ -64,7 +66,7 @@ export async function startNode(
 
   dispatch(NODE_STATE_NAME.NODE_STARTING, {
     node: sdk.solana.wallet.publicKey.toString(),
-  })
+  });
 
   console.log(`Provider:\t${chalk.greenBright.bold(options.provider)}`);
   node = new NosanaNode(sdk, options.provider, options.podman, options.config);
@@ -80,21 +82,51 @@ export async function startNode(
 
   dispatch(NODE_STATE_NAME.NODE_STARTED, {
     node: sdk.solana.wallet.publicKey.toString(),
-  })
+  });
 
   try {
+    dispatch(NODE_STATE_NAME.PROVIDER_HEALTH_CHECKING, {
+      node: sdk.solana.wallet.publicKey.toString(),
+    });
+
     await node.provider.healthy();
+
+    dispatch(NODE_STATE_NAME.PROVIDER_HEALTH_PASSED, {
+      node: sdk.solana.wallet.publicKey.toString(),
+    });
   } catch (error) {
     console.log(
       chalk.red(`${chalk.bold(options.provider)} provider not healthy`),
     );
+
+    dispatch(NODE_STATE_NAME.PROVIDER_HEALTH_FAILED, {
+      node: sdk.solana.wallet.publicKey.toString(),
+      error: error,
+    });
+
     throw error;
   }
+
+  dispatch(NODE_STATE_NAME.API_SERVER_STARTING, {
+    node: sdk.solana.wallet.publicKey.toString(),
+  });
+
   spinner = ora(chalk.cyan('Starting API')).start();
+
   try {
     await node.startAPI();
+
+    dispatch(NODE_STATE_NAME.API_SERVER_STARTED, {
+      node: sdk.solana.wallet.publicKey.toString(),
+    });
   } catch (error) {
     spinner.fail(chalk.red(`Could not start API`));
+
+    dispatch(NODE_STATE_NAME.API_SERVER_FAILED, {
+      node: sdk.solana.wallet.publicKey.toString(),
+      error: error,
+    });
+
     throw error;
   }
 
@@ -111,14 +143,31 @@ export async function startNode(
   //       that should be part of the node or cli..
   // await node.provider.updateMarketRequiredResources(market);
 
+  dispatch(NODE_STATE_NAME.RETRIVING_MARKET, {
+    node: sdk.solana.wallet.publicKey.toString(),
+    market: market,
+  });
+
   let marketAccount: Market;
   try {
     spinner = ora(chalk.cyan('Retrieving market')).start();
     marketAccount = await node.sdk.jobs.getMarket(market);
+
+    dispatch(NODE_STATE_NAME.RETRIVING_MARKET_PASSED, {
+      node: sdk.solana.wallet.publicKey.toString(),
+      market: market,
+    });
+
     spinner.stop();
     console.log(`Market:\t\t${chalk.greenBright.bold(market)}`);
     console.log('================================');
   } catch (e: any) {
+    dispatch(NODE_STATE_NAME.RETRIVING_MARKET_FAILED, {
+      node: sdk.solana.wallet.publicKey.toString(),
+      market: market,
+      error: e,
+    });
+
     spinner.fail(chalk.red(`Could not retrieve market ${chalk.bold(market)}`));
     if (e.message && e.message.includes('Account does not exist')) {
       throw new Error(chalk.red(`Market ${chalk.bold(market)} not found`));
@@ -166,6 +215,11 @@ export async function startNode(
         spinner.text = chalk.cyan('Checking queued status');
         await node.checkQueued();
 
+        dispatch(NODE_STATE_NAME.JOINING_QUEUE, {
+          node: sdk.solana.wallet.publicKey.toString(),
+          market: market,
+        });
+
         if (!node.market || node.market.address.toString() !== market) {
           if (node.market) {
             // We are in the wrong market, leave queue
@@ -181,6 +235,12 @@ export async function startNode(
               const tx = await node.sdk.jobs.stop(node.market.address);
               spinner.succeed(`Market queue successfully left with tx ${tx}`);
             } catch (e) {
+              dispatch(NODE_STATE_NAME.JOINING_QUEUE_FAILED, {
+                node: sdk.solana.wallet.publicKey.toString(),
+                market: market,
+                error: e,
+              });
+
               spinner.fail(chalk.red('Could not quit market queue'));
               throw e;
             }
@@ -194,6 +254,12 @@ export async function startNode(
             );
             spinner.succeed(chalk.greenBright(`Joined market tx ${tx}`));
           } catch (e) {
+            dispatch(NODE_STATE_NAME.JOINING_QUEUE_FAILED, {
+              node: sdk.solana.wallet.publicKey.toString(),
+              market: market,
+              error: e,
+            });
+
             spinner.fail(chalk.red.bold('Could not join market'));
             throw e;
           }
@@ -202,11 +268,29 @@ export async function startNode(
             await sleep(2);
             await node.checkQueued();
           } catch (e) {
+            dispatch(NODE_STATE_NAME.JOINING_QUEUE_FAILED, {
+              node: sdk.solana.wallet.publicKey.toString(),
+              market: market,
+              error: e,
+            });
+
             spinner.fail(chalk.red.bold('Could not check market queue'));
+
             throw e;
           }
         }
+
+        dispatch(NODE_STATE_NAME.JOINING_QUEUE_PASSED, {
+          node: sdk.solana.wallet.publicKey.toString(),
+          market: market,
+        });
+
         if (node.market) {
+          dispatch(NODE_STATE_NAME.JOINED_QUEUE, {
+            node: sdk.solana.wallet.publicKey.toString(),
+            market: market,
+          });
+
           // Currently queued in a market, wait for run
           spinner.color = 'yellow';
           const queuedMarketText = (market: Market, nodeAddress: string) => {
@@ -252,6 +336,13 @@ export async function startNode(
       if (node.run) {
         if (spinner) spinner.stop();
         const jobAddress = node.run.account.job.toString();
+
+        dispatch(NODE_STATE_NAME.JOB_STARTING, {
+          node: sdk.solana.wallet.publicKey.toString(),
+          market: market,
+          job: jobAddress,
+        });
+
         console.log(chalk.green('Claimed job ') + chalk.green.bold(jobAddress));
         const job: Job = await node.sdk.jobs.get(jobAddress);
         if (job.market.toString() !== market) {
@@ -267,6 +358,13 @@ export async function startNode(
           }
           await node.provider.stopFlow(jobAddress);
           node.run = undefined;
+
+          dispatch(NODE_STATE_NAME.JOB_STARTING_FAILED, {
+            node: sdk.solana.wallet.publicKey.toString(),
+            market: market,
+            job: jobAddress,
+            error: new Error('Job has the wrong market, quiting job'),
+          });
         } else if (
           NosanaNode.isRunExpired(
             node.run,
@@ -285,6 +383,13 @@ export async function startNode(
           }
           await node.provider.stopFlow(jobAddress);
           node.run = undefined;
+
+          dispatch(NODE_STATE_NAME.JOB_STARTING_FAILED, {
+            node: sdk.solana.wallet.publicKey.toString(),
+            market: market,
+            job: jobAddress,
+            error: new Error('Job is expired, quiting job'),
+          });
         } else {
           spinner = ora(chalk.cyan('Checking provider health')).start();
           try {
@@ -293,25 +398,79 @@ export async function startNode(
             spinner.fail(
               chalk.red(`${chalk.bold(options.provider)} provider not healthy`),
             );
+
+            dispatch(NODE_STATE_NAME.JOB_STARTING_FAILED, {
+              node: sdk.solana.wallet.publicKey.toString(),
+              market: market,
+              job: jobAddress,
+              error: error,
+            });
+
             throw error;
           }
+
+          dispatch(NODE_STATE_NAME.JOB_RUNNING, {
+            node: sdk.solana.wallet.publicKey.toString(),
+            market: market,
+            job: jobAddress,
+          });
+
           let flowId = jobAddress;
           let result: Partial<FlowState> | null = null;
           const existingFlow = node.provider.getFlow(flowId);
           if (!existingFlow) {
+            jobDispatch(JOB_STATE_NAME.RETREIVING_JOB_DEFINATION, {
+              node: sdk.solana.wallet.publicKey.toString(),
+              market: market,
+              job: jobAddress,
+              ipfs: job.ipfsJob,
+            });
+
             spinner.text = chalk.cyan('Retrieving job definition');
             const jobDefinition: JobDefinition = await node.sdk.ipfs.retrieve(
               job.ipfsJob,
             );
             spinner.succeed(chalk.green('Retrieved job definition'));
+
+            jobDispatch(JOB_STATE_NAME.RETREIVED_JOB_DEFINATION, {
+              node: sdk.solana.wallet.publicKey.toString(),
+              market: market,
+              job: jobAddress,
+              ipfs: job.ipfsJob,
+            });
+
+            jobDispatch(JOB_STATE_NAME.STARTING_NEW_FLOW, {
+              node: sdk.solana.wallet.publicKey.toString(),
+              market: market,
+              job: jobAddress,
+              ipfs: job.ipfsJob,
+              flow: flowId,
+            });
+
             // Create new flow
             flowId = node.provider.run(jobDefinition, flowId).id;
           } else {
+            jobDispatch(JOB_STATE_NAME.CONTINUE_EXISTING_FLOW, {
+              node: sdk.solana.wallet.publicKey.toString(),
+              market: market,
+              job: jobAddress,
+              ipfs: job.ipfsJob,
+              flow: flowId,
+            });
+
             spinner.info(chalk.cyan('Continuing with existing flow'));
             node.provider.continueFlow(flowId);
           }
 
           if (!result) {
+            jobDispatch(JOB_STATE_NAME.WAITING_FOR_JOB_TO_COMPLETE, {
+              node: sdk.solana.wallet.publicKey.toString(),
+              market: market,
+              job: jobAddress,
+              ipfs: job.ipfsJob,
+              flow: flowId,
+            });
+
             result = await node.waitForJob(marketAccount);
             if (result) {
               spinner.succeed(`Retrieved results with status ${result.status}`);
@@ -319,10 +478,22 @@ export async function startNode(
           }
           if (result) {
             await node.finishJob(job, node.run.publicKey, result);
+
+            dispatch(NODE_STATE_NAME.JOB_COMPLETED, {
+              node: sdk.solana.wallet.publicKey.toString(),
+              market: market,
+              job: jobAddress,
+              status: result.status,
+            });
           }
         }
       }
       spinner.stop();
+
+      dispatch(NODE_STATE_NAME.RESTARTING, {
+        node: sdk.solana.wallet.publicKey.toString(),
+      });
+
       for (let timer = 10; timer > 0; timer--) {
         spinner.start(chalk.cyan(`Restarting in ${timer}s`));
         await sleep(1);
