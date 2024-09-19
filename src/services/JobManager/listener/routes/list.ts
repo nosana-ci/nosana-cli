@@ -6,7 +6,6 @@ export function listJobs(
   res: Response,
   next: NextFunction,
 ) {
-  console.log(req.jobManager!.list());
   res.locals.result = req.jobManager!.list();
 
   next();

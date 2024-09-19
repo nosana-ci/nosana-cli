@@ -24,8 +24,8 @@ export default class JobManager {
   private nosana: Client;
   private workers: Map<string, NodeJS.Timeout>;
 
-  constructor(config: string) {
-    this.state = new JobManagerState(config);
+  constructor(configPath: string) {
+    this.state = new JobManagerState(configPath);
     this.nosana = getSDK();
     this.workers = new Map();
   }
@@ -44,6 +44,9 @@ export default class JobManager {
   // TODO: Listen to node status
   // TODO: Refactor
 
+  // { event: PULLING_IMAGE, image_name: "ubunutu" }
+  // { event: PULLING_COMPLETE }
+
   public async status(
     id: string,
     onEvent: (msg: {}) => void,
@@ -58,6 +61,8 @@ export default class JobManager {
     statusEmitter.on('close', onClose);
 
     this.state.subscribe(id, (event, jobObj) => {
+      console.log({ length: jobObj.active_nodes.length });
+      console.log({ nodes: jobObj.active_nodes });
       if (event === 'DELETE' || jobObj.active_nodes.length === 0) {
         statusEmitter.close();
         return;
@@ -72,24 +77,21 @@ export default class JobManager {
           jobObj.active_nodes.splice(index, 1);
 
           this.state.set(id, jobObj);
-          // jobState.expired_nodes.push(obj);
-          // jobState.active_nodes.splice(index, 1);
         }
       });
     });
   }
 
-  // const createListener = async (nodeAddress: string, jobAddress: string) => {
-  //   console.log('CREATING LISTENER');
-  //   const headers = await createSignature();
-  //   const listener = listenToEventSource(
-  //     `https://${nodeAddress}.${config.frp.serverAddr}/status/${jobAddress}`,
-  //     headers,
-  //     (events) => {
-  //       console.log(events);
-  //     },
-  //   );
-  // };
+  private createListener = async (nodeAddress: string, jobAddress: string) => {
+    const headers = await createSignature();
+    const listener = listenToEventSource(
+      `https://${nodeAddress}.${config.frp.serverAddr}/status/${jobAddress}`,
+      headers,
+      (events) => {
+        console.log(events);
+      },
+    );
+  };
 
   private async listenToJobUntilComplete(
     jobId: string,
@@ -112,7 +114,7 @@ export default class JobManager {
         if (state !== runState) {
           statusEmitter.emitStatus(jobId, runNode, runState);
         }
-        // createListener(node, obj.job);
+        // this.createListener(node, jobId);
       }
 
       const { node: finalNode, state: finalState } = await waitForJobCompletion(
