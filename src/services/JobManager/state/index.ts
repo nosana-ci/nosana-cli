@@ -3,6 +3,7 @@ import { LowSync } from 'lowdb/lib';
 import { JobObject } from '../listener/types/index.js';
 import { ReactiveEvent, ReactiveState } from './helper/reactiveState.js';
 import { DB, NodeDb } from '../../../providers/modules/db/index.js';
+import e from 'express';
 
 export class JobManagerState {
   private db: LowSync<NodeDb>;
@@ -20,6 +21,7 @@ export class JobManagerState {
   delete(key: string): void {
     if (this.state.delete(key)) {
       delete this.db.data.jobs[key];
+      this.db.write();
     }
   }
 
@@ -40,10 +42,10 @@ export class JobManagerState {
         active_nodes: [...value.active_nodes, ...current_entry.active_nodes],
         expired_nodes: [...value.expired_nodes, ...current_entry.expired_nodes],
       });
-      return;
+    } else {
+      this.state.set(key, value);
     }
 
-    this.state.set(key, value);
     this.db.data.jobs[key] = value;
     this.db.write();
   }

@@ -17,6 +17,7 @@ import { createSignature } from '../api.js';
 import { listenToEventSource } from '../eventsource.js';
 import { config } from '../../generic/config.js';
 import { waitForJobCompletion, waitForJobRunOrCompletion } from '../jobs.js';
+import { StatusEmitter } from './actions/status/statusEmitter.js';
 
 export default class JobManager {
   public state: JobManagerState;
@@ -51,21 +52,28 @@ export default class JobManager {
     await this.nosana.jobs.loadNosanaJobs();
 
     const processedIds = new Set<string>();
-    const statusEmitter = new EventEmitter();
+    const statusEmitter = new StatusEmitter();
 
     statusEmitter.on('event', onEvent);
     statusEmitter.on('close', onClose);
 
     this.state.subscribe(id, (event, jobObj) => {
       if (event === 'DELETE' || jobObj.active_nodes.length === 0) {
-        statusEmitter.emit('close');
+        statusEmitter.close();
         return;
       }
 
-      jobObj.active_nodes.forEach((result) => {
+      jobObj.active_nodes.forEach(async (result, index) => {
         if (!processedIds.has(result.job)) {
           processedIds.add(result.job);
-          await this.listenToJobUntilComplete(result, statusEmitter);
+          await this.listenToJobUntilComplete(result.job, statusEmitter);
+
+          jobObj.expired_nodes.push(result);
+          jobObj.active_nodes.splice(index, 1);
+
+          this.state.set(id, jobObj);
+          // jobState.expired_nodes.push(obj);
+          // jobState.active_nodes.splice(index, 1);
         }
       });
     });
@@ -84,49 +92,35 @@ export default class JobManager {
   // };
 
   private async listenToJobUntilComplete(
-    job: JobResult,
-    statusEmitter: EventEmitter,
+    jobId: string,
+    statusEmitter: StatusEmitter,
   ) {
-    return new Promise((resolve) => {});
-    const id = new PublicKey(obj.job);
-    const { node, state } = await this.nosana.jobs.get(id);
+    return new Promise(async (resolve) => {
+      const id = new PublicKey(jobId);
+      const { node, state } = await this.nosana.jobs.get(id);
 
-    emitter.emit('event', {
-      event: 'status',
-      job_id: obj.job,
-      status: state,
-      node: node == '11111111111111111111111111111111' ? undefined : node,
-    });
+      statusEmitter.emitStatus(jobId, node, state);
 
-    if (['COMPLETED', 'STOPPED'].includes(`${state}`)) {
-      jobState.expired_nodes.push(obj);
-      jobState.active_nodes.splice(index, 1);
-      return;
-    }
-
-    const { node: currentNode, state: currentState } =
-      await waitForJobRunOrCompletion(id);
-
-    if (currentState === 'RUNNING') {
-      if (state !== currentState) {
-        emitter.emit('event', {
-          event: 'status',
-          job_id: obj.job,
-          status: currentState,
-          node: currentNode,
-        });
+      if (['COMPLETED', 'STOPPED'].includes(`${state}`)) {
+        resolve(true);
       }
-      // createListener(node, obj.job);
-    }
 
-    const { node: finalNode, state: finalState } = await waitForJobCompletion(
-      id,
-    );
-    emitter.emit('event', {
-      event: 'status',
-      job_id: obj.job,
-      status: finalState,
-      node: finalNode,
+      const { node: runNode, state: runState } =
+        await waitForJobRunOrCompletion(id);
+
+      if (runState === 'RUNNING') {
+        if (state !== runState) {
+          statusEmitter.emitStatus(jobId, runNode, runState);
+        }
+        // createListener(node, obj.job);
+      }
+
+      const { node: finalNode, state: finalState } = await waitForJobCompletion(
+        id,
+      );
+
+      statusEmitter.emitStatus(jobId, finalNode, finalState);
+      resolve(true);
     });
   }
 
