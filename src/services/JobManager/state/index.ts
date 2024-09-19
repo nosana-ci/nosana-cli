@@ -32,21 +32,23 @@ export class JobManagerState {
     return this.state.list();
   }
 
-  set(key: string, value: JobObject): void {
+  set(
+    key: string,
+    stateOrCallback:
+      | JobObject
+      | ((current: JobObject | undefined) => JobObject),
+  ): void {
+    let value: JobObject;
+    if (typeof stateOrCallback === 'function') {
+      value = stateOrCallback(this.state.get(key));
+    } else {
+      value = stateOrCallback;
+    }
+
     this.db.data.jobs[key] = value;
     this.db.write();
 
-    // const current_entry = this.state.get(key);
-
-    // if (current_entry) {
-    //   this.state.set(key, {
-    //     id: value.id,
-    //     active_nodes: [...value.active_nodes, ...current_entry.active_nodes],
-    //     expired_nodes: [...value.expired_nodes, ...current_entry.expired_nodes],
-    //   });
-    // } else {
     this.state.set(key, value);
-    // }
   }
 
   subscribe(

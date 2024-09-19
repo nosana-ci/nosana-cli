@@ -1,23 +1,18 @@
-import EventEmitter from 'events';
 import { Client } from '@nosana/sdk';
 import { PublicKey } from '@solana/web3.js';
 
 import { postJobWithOptions } from './actions/post/index.js';
 import { jobListener } from './listener/index.js';
-import {
-  JobObject,
-  JobPostingOptions,
-  JobResult,
-} from './listener/types/index.js';
+import { JobObject, JobPostingOptions } from './listener/types/index.js';
 import { JobDefinition } from '../../providers/Provider.js';
 import { JobManagerState } from './state/index.js';
-import { DEFAULT_OFFSET_SEC } from './definitions/index.js';
 import { getSDK } from '../sdk.js';
 import { createSignature } from '../api.js';
 import { listenToEventSource } from '../eventsource.js';
 import { config } from '../../generic/config.js';
 import { waitForJobCompletion, waitForJobRunOrCompletion } from '../jobs.js';
 import { StatusEmitter } from './actions/status/statusEmitter.js';
+import { recurisveTimeout } from './actions/post/helpers/getRecursiveTimeout.js';
 
 export default class JobManager {
   public state: JobManagerState;
@@ -61,9 +56,10 @@ export default class JobManager {
     statusEmitter.on('close', onClose);
 
     this.state.subscribe(id, (event, jobObj) => {
-      console.log({ length: jobObj.active_nodes.length });
-      console.log({ nodes: jobObj.active_nodes });
-      if (event === 'DELETE' || jobObj.active_nodes.length === 0) {
+      if (
+        event === 'DELETE' ||
+        (jobObj.active_nodes.length === 0 && !jobObj.recursive)
+      ) {
         statusEmitter.close();
         return;
       }
@@ -138,31 +134,45 @@ export default class JobManager {
       );
     }
 
-    const result = await postJobWithOptions(
-      market,
-      job,
-      options,
-      ({ id, active_nodes }) => {
-        const timeout = active_nodes[0].job_timeout;
-        if (recursive) {
-          this.workers.set(
-            id,
-            setTimeout(
-              () => this.post(market, job, options),
-              timeout -
-                (recursive_offset_min
-                  ? recursive_offset_min * 60
-                  : DEFAULT_OFFSET_SEC) *
-                  1000,
-            ),
-          );
-        }
-      },
-    );
+    let runId: string;
 
-    this.state.set(result.id, result);
+    const recurisveLoop = async (
+      market: string,
+      job: JobDefinition,
+      options: JobPostingOptions,
+    ) => {
+      const jobResult = await postJobWithOptions(
+        market,
+        job,
+        options,
+        ({ active_nodes }) => {
+          const timeout = active_nodes[0].job_timeout;
+          console.log(recurisveTimeout(timeout, recursive_offset_min));
+          if (recursive) {
+            setTimeout(() => {
+              recurisveLoop(market, job, options);
+            }, recurisveTimeout(timeout, recursive_offset_min));
+          }
+        },
+      );
+      if (runId === undefined) runId = jobResult.id;
+      this.state.set(runId, (e) => ({
+        ...jobResult,
+        ...e,
+        active_nodes: [
+          ...(e
+            ? [...e.active_nodes, ...jobResult.active_nodes]
+            : jobResult.active_nodes),
+        ],
+      }));
+      return jobResult;
+    };
 
-    return result;
+    try {
+      return await recurisveLoop(market, job, options);
+    } catch (e) {
+      throw new Error('Failed to post job');
+    }
   }
 
   public get(id: string): JobObject | undefined {

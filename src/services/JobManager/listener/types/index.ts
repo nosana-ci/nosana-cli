@@ -18,6 +18,7 @@ export type JobResult = {
 
 export type JobObject = {
   id: string;
+  recursive: boolean;
   active_nodes: JobResult[];
   expired_nodes: JobResult[];
 };

@@ -7,8 +7,6 @@ import {
   JobResult,
 } from '../../listener/types/index.js';
 import { asyncPostJob } from './asyncPostJob.js';
-import { getMarket } from '../getMarket/index.js';
-import { DEFAULT_OFFSET_SEC } from '../../definitions/index.js';
 
 export async function postJobWithOptions(
   market: string,
@@ -51,9 +49,20 @@ export async function postJobWithOptions(
 
   const id = group_id
     ? group_id
-    : recursive || nodes.length <= 1
+    : !recursive && nodes.length > 1
     ? nodes[0].job
     : randomUUID();
 
-  return { id, active_nodes: nodes, expired_nodes: [] };
+  const result = {
+    id,
+    recursive: !!recursive,
+    active_nodes: nodes,
+    expired_nodes: [],
+  };
+
+  if (callback) {
+    callback(result);
+  }
+
+  return result;
 }
