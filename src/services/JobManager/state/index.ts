@@ -51,8 +51,10 @@ export class JobManagerState {
   subscribe(
     key: string,
     callback: (event: ReactiveEvent, value: JobObject) => void,
-  ): void {
+  ) {
     this.state.addListener(key, callback);
+    const initValue = this.state.get(key);
+    if (initValue) callback('CREATE', initValue);
   }
 
   unsubscribe(key: string): void {

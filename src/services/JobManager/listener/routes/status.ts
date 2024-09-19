@@ -31,21 +31,25 @@ export async function jobStatus(
     'Content-Type': 'text/event-stream',
   });
 
-  // jobManager.state.subscribe('test', (event, value) => {
   res.write(createEventSourceEvent({ event: 'connection_init' }));
-  // });
 
   res.locals.result = undefined;
 
   res.on('close', () => {
-    // jobManager.state.unsubscribe('test');
     res.end();
   });
 
-  const statusEmitter = await jobManager.createStatusListener(job.id);
-  statusEmitter.on('message', (msg) => {
-    res.write(createEventSourceEvent(msg));
-  });
+  jobManager.status(
+    job.id,
+    (msg) => {
+      res.write(createEventSourceEvent(msg));
+    },
+    () => {
+      console.log('STOPPING');
+      res.write(createEventSourceEvent({ event: 'stop' }));
+      res.end();
+    },
+  );
 
   next();
 }
