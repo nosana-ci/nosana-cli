@@ -6,7 +6,6 @@ import nacl from 'tweetnacl';
 import { getSDK } from './sdk.js';
 import { Client, Job, Run } from '@nosana/sdk';
 import * as web3 from '@solana/web3.js';
-import StateEventSubscriberManager from './EventSubscriberManager.js';
 
 export interface CustomRequest extends Request {
   address?: string;
@@ -21,9 +20,6 @@ const port = config.api.port;
 
 let node: NosanaNode;
 let logSubscriberManager = new LogSubscriberManager();
-
-let stateEventSubscriberManager = new StateEventSubscriberManager();
-stateEventSubscriberManager.listenToJobState();
 
 export const createSignature = async (): Promise<SignatureHeaders> => {
   const nosana: Client = getSDK();

@@ -20,7 +20,6 @@ import { DB } from './modules/db/index.js';
 import Logger from './modules/logger/index.js';
 import { dispatch as jobDispatch } from '../services/state/job/dispatch.js';
 import { JOB_STATE_NAME } from '../services/state/job/types.js';
-import { sharedObj } from '../services/state/job/shared.js';
 
 export type NodeDb = {
   flows: { [key: string]: Flow };
@@ -100,17 +99,13 @@ export class BasicProvider implements Provider {
       };
 
       jobDispatch(JOB_STATE_NAME.JOB_DEFINATION_VALIDATION, {
-        ...sharedObj('node', 'market', 'ipfs', 'job'),
         flow: flowId,
       });
 
       const validation: IValidation<JobDefinition> =
         validateJobDefinition(jobDefinition);
       if (!validation.success) {
-        jobDispatch(JOB_STATE_NAME.RETREIVING_JOB_DEFINATION_FAILED, {
-          ...sharedObj('node', 'market', 'ipfs', 'job'),
-          flow: flowId,
-        });
+        jobDispatch(JOB_STATE_NAME.RETREIVING_JOB_DEFINATION_FAILED, {});
 
         console.error(validation.errors);
         flow.state.status = 'failed';
@@ -120,10 +115,7 @@ export class BasicProvider implements Provider {
         return flow;
       }
 
-      jobDispatch(JOB_STATE_NAME.JOB_DEFINATION_VALIDATION_PASSED, {
-        ...sharedObj('node', 'market', 'ipfs', 'job'),
-        flow: flowId,
-      });
+      jobDispatch(JOB_STATE_NAME.JOB_DEFINATION_VALIDATION_PASSED, {});
 
       flow = this.hookPreRun(flow);
 
@@ -144,10 +136,7 @@ export class BasicProvider implements Provider {
       this.db.update(({ flows }) => (flows[id] = flow));
     }
 
-    jobDispatch(JOB_STATE_NAME.STARTED_NEW_FLOW, {
-      ...sharedObj('node', 'market', 'ipfs', 'job'),
-      flow: flowId,
-    });
+    jobDispatch(JOB_STATE_NAME.STARTED_NEW_FLOW, {});
 
     // Start running this flow
     this.runFlow(id);
@@ -182,15 +171,12 @@ export class BasicProvider implements Provider {
     try {
       // run operations
 
-      jobDispatch(JOB_STATE_NAME.OPERATION_STARTING, {
-        ...sharedObj('node', 'market', 'ipfs', 'job', 'flow'),
-      });
+      jobDispatch(JOB_STATE_NAME.OPERATION_STARTING, {});
       let stopFlow: boolean = false;
       for (let i = 0; i < flow.jobDefinition.ops.length; i++) {
         const op = flow.jobDefinition.ops[i];
 
         jobDispatch(JOB_STATE_NAME.OPERATION_STARTED, {
-          ...sharedObj('node', 'market', 'ipfs', 'job', 'flow'),
           operation: op.id,
         });
 
@@ -212,8 +198,6 @@ export class BasicProvider implements Provider {
               );
 
               jobDispatch(JOB_STATE_NAME.OPERATION_FAILED, {
-                ...sharedObj('node', 'market', 'ipfs', 'job', 'flow'),
-                operation: op.id,
                 error: error,
               });
 
@@ -251,15 +235,10 @@ export class BasicProvider implements Provider {
                   flow.jobDefinition.ops[i].results,
                 );
 
-                jobDispatch(JOB_STATE_NAME.OPERATION_PASSED, {
-                  ...sharedObj('node', 'market', 'ipfs', 'job', 'flow'),
-                  operation: op.id,
-                });
+                jobDispatch(JOB_STATE_NAME.OPERATION_PASSED, {});
                 resolve(finishedOpState);
               } catch (error) {
                 jobDispatch(JOB_STATE_NAME.OPERATION_FAILED, {
-                  ...sharedObj('node', 'market', 'ipfs', 'job', 'flow'),
-                  operation: op.id,
                   error: error,
                 });
                 reject(error);
@@ -268,8 +247,6 @@ export class BasicProvider implements Provider {
             this.logger.removeAllListeners(ProviderEvents.STOP_FLOW);
           } catch (error: any) {
             jobDispatch(JOB_STATE_NAME.OPERATION_FAILED, {
-              ...sharedObj('node', 'market', 'ipfs', 'job', 'flow'),
-              operation: op.id,
               error: error,
             });
             updateOpState({
@@ -402,7 +379,6 @@ export class BasicProvider implements Provider {
     }
 
     jobDispatch(JOB_STATE_NAME.FLOW_FINISHED, {
-      ...sharedObj('node', 'market', 'ipfs', 'job', 'flow'),
       status: flow.state.status,
     });
 

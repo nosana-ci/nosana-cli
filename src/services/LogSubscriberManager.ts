@@ -93,6 +93,30 @@ export default class LogSubscriberManager {
   }
 
   public listenToLoggerEvents(logger: EventEmitter, node: NosanaNode) {
+    JobSubscribe((entry) => {
+      this.notifySubscribers({
+        log: JSON.stringify(entry),
+        pending: false,
+        type: '',
+        job: this.getCurrentJob(node),
+        index: this.getEventIndex(),
+        event: 'jobLog',
+      });
+      this.incrementEventIndex();
+    });
+
+    NodeSubscribe((entry) => {
+      this.notifySubscribers({
+        log: JSON.stringify(entry),
+        pending: false,
+        type: '',
+        job: '',
+        index: this.getEventIndex(),
+        event: 'nodeLog',
+      });
+      this.incrementEventIndex();
+    });
+
     logger.on(
       ProviderEvents.INFO_LOG,
       (event: { log: string; type: string; pending: boolean }) => {

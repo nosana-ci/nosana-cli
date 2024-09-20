@@ -32,7 +32,6 @@ import { randomUUID } from 'crypto';
 import { createResourceName } from './modules/resourceManager/volumes/index.js';
 import { dispatch as jobDispatch } from '../services/state/job/dispatch.js';
 import { JOB_STATE_NAME } from '../services/state/job/types.js';
-import { sharedObj } from '../services/state/job/shared.js';
 
 export type RunContainerArgs = {
   name?: string;
@@ -103,7 +102,6 @@ export class DockerProvider extends BasicProvider implements Provider {
       if (opState.providerId) {
         try {
           jobDispatch(JOB_STATE_NAME.GET_CONTAINER, {
-            ...sharedObj('node', 'market', 'ipfs', 'job', 'operation'),
             flow: flow.id,
             container: opState.providerId,
           });
@@ -116,14 +114,12 @@ export class DockerProvider extends BasicProvider implements Provider {
           }
 
           jobDispatch(JOB_STATE_NAME.GET_CONTAINER_PASSED, {
-            ...sharedObj('node', 'market', 'ipfs', 'job', 'operation', 'flow'),
             container: opState.providerId,
           });
         } catch (error) {
           updateOpState({ providerId: null });
 
           jobDispatch(JOB_STATE_NAME.GET_CONTAINER_FAILED, {
-            ...sharedObj('node', 'market', 'ipfs', 'job', 'operation', 'flow'),
             container: opState.providerId,
             error: error,
           });
@@ -136,7 +132,6 @@ export class DockerProvider extends BasicProvider implements Provider {
         });
 
         jobDispatch(JOB_STATE_NAME.PULLING_IMAGE, {
-          ...sharedObj('node', 'market', 'ipfs', 'job', 'operation', 'flow'),
           image: op.args.image,
         });
 
@@ -147,7 +142,6 @@ export class DockerProvider extends BasicProvider implements Provider {
             chalk.red(`Cannot pull image ${op.args.image}: `) + error,
           );
           jobDispatch(JOB_STATE_NAME.PULLING_IMAGE_FAILED, {
-            ...sharedObj('node', 'market', 'ipfs', 'job', 'operation', 'flow'),
             image: op.args.image,
             error: err,
           });
@@ -155,13 +149,11 @@ export class DockerProvider extends BasicProvider implements Provider {
         }
 
         jobDispatch(JOB_STATE_NAME.PULLING_IMAGE_SUCCESS, {
-          ...sharedObj('node', 'market', 'ipfs', 'job', 'operation', 'flow'),
           image: op.args.image,
         });
 
         if (op.args.expose) {
           jobDispatch(JOB_STATE_NAME.PULLING_IMAGE, {
-            ...sharedObj('node', 'market', 'ipfs', 'job', 'operation', 'flow'),
             image: FRPC_IMAGE,
           });
 
@@ -173,14 +165,6 @@ export class DockerProvider extends BasicProvider implements Provider {
             );
 
             jobDispatch(JOB_STATE_NAME.PULLING_IMAGE, {
-              ...sharedObj(
-                'node',
-                'market',
-                'ipfs',
-                'job',
-                'operation',
-                'flow',
-              ),
               image: FRPC_IMAGE,
               error: err,
             });
@@ -189,14 +173,12 @@ export class DockerProvider extends BasicProvider implements Provider {
           }
 
           jobDispatch(JOB_STATE_NAME.PULLING_IMAGE_SUCCESS, {
-            ...sharedObj('node', 'market', 'ipfs', 'job', 'operation', 'flow'),
             image: FRPC_IMAGE,
           });
         }
 
         if (op.args.resources) {
           jobDispatch(JOB_STATE_NAME.PULLING_IMAGE, {
-            ...sharedObj('node', 'market', 'ipfs', 'job', 'operation', 'flow'),
             image: s3HelperImage,
           });
 
@@ -208,14 +190,6 @@ export class DockerProvider extends BasicProvider implements Provider {
             );
 
             jobDispatch(JOB_STATE_NAME.PULLING_IMAGE, {
-              ...sharedObj(
-                'node',
-                'market',
-                'ipfs',
-                'job',
-                'operation',
-                'flow',
-              ),
               image: s3HelperImage,
               error: err,
             });
@@ -224,20 +198,11 @@ export class DockerProvider extends BasicProvider implements Provider {
           }
 
           jobDispatch(JOB_STATE_NAME.PULLING_IMAGE_SUCCESS, {
-            ...sharedObj('node', 'market', 'ipfs', 'job', 'operation', 'flow'),
             image: s3HelperImage,
           });
 
           for (const resource of op.args.resources) {
             jobDispatch(JOB_STATE_NAME.CREATING_VOLUME, {
-              ...sharedObj(
-                'node',
-                'market',
-                'ipfs',
-                'job',
-                'operation',
-                'flow',
-              ),
               volume: resource.type,
             });
 
@@ -253,14 +218,6 @@ export class DockerProvider extends BasicProvider implements Provider {
               );
 
               jobDispatch(JOB_STATE_NAME.CREATING_VOLUME_FAILED, {
-                ...sharedObj(
-                  'node',
-                  'market',
-                  'ipfs',
-                  'job',
-                  'operation',
-                  'flow',
-                ),
                 volume: resource.type,
                 error: error,
               });
@@ -269,14 +226,6 @@ export class DockerProvider extends BasicProvider implements Provider {
             }
 
             jobDispatch(JOB_STATE_NAME.CREATING_VOLUME_SUCCESS, {
-              ...sharedObj(
-                'node',
-                'market',
-                'ipfs',
-                'job',
-                'operation',
-                'flow',
-              ),
               volume: resource.type,
             });
           }
@@ -285,9 +234,7 @@ export class DockerProvider extends BasicProvider implements Provider {
         // Allow file locks to reset - hopefully will reduce image not known issue
         await sleep(3);
 
-        jobDispatch(JOB_STATE_NAME.RUN_CONTAINER_OPERATION, {
-          ...sharedObj('node', 'market', 'ipfs', 'job', 'operation', 'flow'),
-        });
+        jobDispatch(JOB_STATE_NAME.RUN_CONTAINER_OPERATION, {});
 
         container = await this.runOpContainerRun(
           op.args,
@@ -305,9 +252,7 @@ export class DockerProvider extends BasicProvider implements Provider {
         });
       }
 
-      jobDispatch(JOB_STATE_NAME.FINISH_CONTAINER_OPERATION, {
-        ...sharedObj('node', 'market', 'ipfs', 'job', 'operation', 'flow'),
-      });
+      jobDispatch(JOB_STATE_NAME.FINISH_CONTAINER_OPERATION, {});
 
       return opState;
     };
@@ -336,7 +281,6 @@ export class DockerProvider extends BasicProvider implements Provider {
       });
 
       jobDispatch(JOB_STATE_NAME.CREATING_VOLUME, {
-        ...sharedObj('node', 'market', 'ipfs', 'job', 'operation', 'flow'),
         volume: flowId + '-' + op.args.name,
       });
 
@@ -361,14 +305,6 @@ export class DockerProvider extends BasicProvider implements Provider {
               });
 
               jobDispatch(JOB_STATE_NAME.CREATING_VOLUME_FAILED, {
-                ...sharedObj(
-                  'node',
-                  'market',
-                  'ipfs',
-                  'job',
-                  'operation',
-                  'flow',
-                ),
                 volume: flowId + '-' + op.args.name,
                 error: err,
               });
@@ -384,14 +320,6 @@ export class DockerProvider extends BasicProvider implements Provider {
             });
 
             jobDispatch(JOB_STATE_NAME.CREATING_VOLUME_SUCCESS, {
-              ...sharedObj(
-                'node',
-                'market',
-                'ipfs',
-                'job',
-                'operation',
-                'flow',
-              ),
               volume: flowId + '-' + op.args.name,
             });
 
@@ -471,9 +399,7 @@ export class DockerProvider extends BasicProvider implements Provider {
             `Missing required resource ${createResourceName(resource)}.`,
           );
 
-          jobDispatch(JOB_STATE_NAME.CONTAINER_OPERATION_FAILED, {
-            ...sharedObj('node', 'market', 'ipfs', 'job', 'operation', 'flow'),
-          });
+          jobDispatch(JOB_STATE_NAME.CONTAINER_OPERATION_FAILED, {});
 
           throw error;
         }
@@ -509,7 +435,6 @@ export class DockerProvider extends BasicProvider implements Provider {
     const name = flowId + '-' + flow.state.opStates[opStateIndex].operationId;
 
     jobDispatch(JOB_STATE_NAME.CREATING_NETWORK, {
-      ...sharedObj('node', 'market', 'ipfs', 'job', 'operation', 'flow'),
       network: name,
     });
 
@@ -518,12 +443,10 @@ export class DockerProvider extends BasicProvider implements Provider {
     networks[name] = {};
 
     jobDispatch(JOB_STATE_NAME.CREATING_NETWORK_SUCCESS, {
-      ...sharedObj('node', 'market', 'ipfs', 'job', 'operation', 'flow'),
       network: name,
     });
 
     jobDispatch(JOB_STATE_NAME.CONTAINER_STARTING, {
-      ...sharedObj('node', 'market', 'ipfs', 'job', 'operation', 'flow'),
       container: name,
       image: opArgs.image ? opArgs.image : flow.jobDefinition.global?.image!,
     });
@@ -549,7 +472,6 @@ export class DockerProvider extends BasicProvider implements Provider {
     );
 
     jobDispatch(JOB_STATE_NAME.CONTAINER_STARTED, {
-      ...sharedObj('node', 'market', 'ipfs', 'job', 'operation', 'flow'),
       container: name,
       image: opArgs.image ? opArgs.image : flow.jobDefinition.global?.image!,
     });
@@ -576,7 +498,6 @@ export class DockerProvider extends BasicProvider implements Provider {
       }
 
       jobDispatch(JOB_STATE_NAME.CONTAINER_STARTING, {
-        ...sharedObj('node', 'market', 'ipfs', 'job', 'operation', 'flow'),
         container: 'frpc-' + name,
         image: FRPC_IMAGE,
       });
@@ -597,7 +518,6 @@ export class DockerProvider extends BasicProvider implements Provider {
       });
 
       jobDispatch(JOB_STATE_NAME.CONTAINER_STARTED, {
-        ...sharedObj('node', 'market', 'ipfs', 'job', 'operation', 'flow'),
         container: 'frpc-' + name,
         image: FRPC_IMAGE,
       });
@@ -615,7 +535,6 @@ export class DockerProvider extends BasicProvider implements Provider {
       }
 
       jobDispatch(JOB_STATE_NAME.EXPOSED_URL_STARTED, {
-        ...sharedObj('node', 'market', 'ipfs', 'job', 'flow', 'operation'),
         url: opArgs.private ? '' : `https://${prefix}.${config.frp.serverAddr}`,
         isUrlPrivate: opArgs.private,
       });
