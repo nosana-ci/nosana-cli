@@ -19,7 +19,7 @@ const app = express();
 const port = config.api.port;
 
 let node: NosanaNode;
-let logSubscriberManager: LogSubscriberManager;
+let logSubscriberManager = new LogSubscriberManager();
 
 export const createSignature = async (): Promise<SignatureHeaders> => {
   const nosana: Client = getSDK();
@@ -169,7 +169,6 @@ export const api = {
   start: async (nosanaNode: NosanaNode): Promise<number> => {
     node = nosanaNode;
 
-    logSubscriberManager = new LogSubscriberManager();
     logSubscriberManager.listenToLoggerEvents(node.logger, node);
 
     return await new Promise<number>((resolve, reject) => {
