@@ -64,7 +64,9 @@ export async function startNode(
    ****************/
   const sdk: Client = getSDK();
 
-  nodeDispatch(NODE_STATE_NAME.NODE_STARTING, {});
+  nodeDispatch(NODE_STATE_NAME.NODE_STARTING, {
+    node: sdk.solana.wallet.publicKey.toString(),
+  });
 
   console.log(`Provider:\t${chalk.greenBright.bold(options.provider)}`);
   node = new NosanaNode(sdk, options.provider, options.podman, options.config);

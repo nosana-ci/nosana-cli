@@ -28,7 +28,7 @@ import { api } from './api.js';
 import { initTunnel } from './tunnel.js';
 export const TUNNEL_IMAGE = 'registry.hub.docker.com/nosana/tunnel:0.1.0';
 import { benchmarkGPU } from '../static/staticsImports.js';
-import { dispatch } from './state/node/dispatch.js';
+import { dispatch as nodeDispatch } from './state/node/dispatch.js';
 import { NODE_STATE_NAME } from './state/node/types.js';
 
 export type NodeStats = {
@@ -405,8 +405,7 @@ export class NosanaNode {
     accessKey,
     printDetailed = true,
   }: HealthCheckArgs): Promise<HealthCheckResponse> {
-    dispatch(NODE_STATE_NAME.HEALTH_CHECK_RUNNING, {
-      node: this.sdk.solana.wallet.publicKey.toString(),
+    nodeDispatch(NODE_STATE_NAME.HEALTH_CHECK_RUNNING, {
       market: market,
     });
 
@@ -436,9 +435,7 @@ export class NosanaNode {
           )} `,
         );
 
-        dispatch(NODE_STATE_NAME.HEALTH_CHECK_FAILED, {
-          node: this.sdk.solana.wallet.publicKey.toString(),
-          market: market,
+        nodeDispatch(NODE_STATE_NAME.HEALTH_CHECK_FAILED, {
           error: error,
         });
 
@@ -456,9 +453,7 @@ export class NosanaNode {
     try {
       await this.provider.healthy();
     } catch (error) {
-      dispatch(NODE_STATE_NAME.HEALTH_CHECK_FAILED, {
-        node: this.sdk.solana.wallet.publicKey.toString(),
-        market: market,
+      nodeDispatch(NODE_STATE_NAME.HEALTH_CHECK_FAILED, {
         error: error,
       });
 
@@ -482,9 +477,7 @@ export class NosanaNode {
       // create NOS ATA if it doesn't exists
       await this.sdk.solana.createNosAta(this.address);
     } catch (error) {
-      dispatch(NODE_STATE_NAME.HEALTH_CHECK_FAILED, {
-        node: this.sdk.solana.wallet.publicKey.toString(),
-        market: market,
+      nodeDispatch(NODE_STATE_NAME.HEALTH_CHECK_FAILED, {
         error: error,
       });
 
@@ -505,9 +498,7 @@ export class NosanaNode {
         await sleep(2);
         stake = await this.sdk.stake.get(this.address);
       } else {
-        dispatch(NODE_STATE_NAME.HEALTH_CHECK_FAILED, {
-          node: this.sdk.solana.wallet.publicKey.toString(),
-          market: market,
+        nodeDispatch(NODE_STATE_NAME.HEALTH_CHECK_FAILED, {
           error: error,
         });
 
@@ -556,9 +547,7 @@ export class NosanaNode {
           if (!accessKey) {
             const error = new Error('Could not find access key');
 
-            dispatch(NODE_STATE_NAME.HEALTH_CHECK_FAILED, {
-              node: this.sdk.solana.wallet.publicKey.toString(),
-              market: market,
+            nodeDispatch(NODE_STATE_NAME.HEALTH_CHECK_FAILED, {
               error: error,
             });
 
@@ -578,9 +567,7 @@ export class NosanaNode {
         chalk.red(`Denied access to market ${chalk.bold(market)}`),
       );
 
-      dispatch(NODE_STATE_NAME.HEALTH_CHECK_FAILED, {
-        node: this.sdk.solana.wallet.publicKey.toString(),
-        market: market,
+      nodeDispatch(NODE_STATE_NAME.HEALTH_CHECK_FAILED, {
         error: e,
       });
 
@@ -590,10 +577,7 @@ export class NosanaNode {
       this.logger.succeed('Health checks passed');
     }
 
-    dispatch(NODE_STATE_NAME.HEALTH_CHECK_PASSED, {
-      node: this.sdk.solana.wallet.publicKey.toString(),
-      market: market,
-    });
+    nodeDispatch(NODE_STATE_NAME.HEALTH_CHECK_PASSED, {});
 
     return { accessKey };
   }
@@ -605,9 +589,7 @@ export class NosanaNode {
        * Benchmark *
        ****************/
 
-      dispatch(NODE_STATE_NAME.BENCHMARK_RUNNING, {
-        node: this.sdk.solana.wallet.publicKey.toString(),
-      });
+      nodeDispatch(NODE_STATE_NAME.BENCHMARK_RUNNING, {});
 
       let result: Partial<FlowState> | null;
       if (printDetailed) {
@@ -640,8 +622,7 @@ export class NosanaNode {
         if (!result.opStates[0].logs) {
           const error = new Error('Cannot find GPU benchmark output');
 
-          dispatch(NODE_STATE_NAME.BENCHMARK_FAILED, {
-            node: this.sdk.solana.wallet.publicKey.toString(),
+          nodeDispatch(NODE_STATE_NAME.BENCHMARK_FAILED, {
             error: error,
           });
 
@@ -654,8 +635,7 @@ export class NosanaNode {
 
         if (!devices) {
           const error = new Error('GPU benchmark returned with no devices');
-          dispatch(NODE_STATE_NAME.BENCHMARK_FAILED, {
-            node: this.sdk.solana.wallet.publicKey.toString(),
+          nodeDispatch(NODE_STATE_NAME.BENCHMARK_FAILED, {
             error: error,
           });
           throw error;
@@ -666,8 +646,7 @@ export class NosanaNode {
         if (!result.opStates[1].logs) {
           const error = new Error(`Can't find disk space output`);
 
-          dispatch(NODE_STATE_NAME.BENCHMARK_FAILED, {
-            node: this.sdk.solana.wallet.publicKey.toString(),
+          nodeDispatch(NODE_STATE_NAME.BENCHMARK_FAILED, {
             error: error,
           });
 
@@ -689,8 +668,7 @@ export class NosanaNode {
                 } GB.`,
               );
 
-              dispatch(NODE_STATE_NAME.BENCHMARK_FAILED, {
-                node: this.sdk.solana.wallet.publicKey.toString(),
+              nodeDispatch(NODE_STATE_NAME.BENCHMARK_FAILED, {
                 error: error,
               });
 
@@ -699,8 +677,7 @@ export class NosanaNode {
           } else {
             const error = new Error(`Can't find disk space output`);
 
-            dispatch(NODE_STATE_NAME.BENCHMARK_FAILED, {
-              node: this.sdk.solana.wallet.publicKey.toString(),
+            nodeDispatch(NODE_STATE_NAME.BENCHMARK_FAILED, {
               error: error,
             });
 
@@ -728,8 +705,7 @@ export class NosanaNode {
           output.push(result.opStates[1].logs);
         }
 
-        dispatch(NODE_STATE_NAME.BENCHMARK_FAILED, {
-          node: this.sdk.solana.wallet.publicKey.toString(),
+        nodeDispatch(NODE_STATE_NAME.BENCHMARK_FAILED, {
           error: new Error('GPU benchmark failed'),
           errors: output,
         });
@@ -738,16 +714,14 @@ export class NosanaNode {
       } else {
         const error = new Error('Cant find results');
 
-        dispatch(NODE_STATE_NAME.BENCHMARK_FAILED, {
-          node: this.sdk.solana.wallet.publicKey.toString(),
+        nodeDispatch(NODE_STATE_NAME.BENCHMARK_FAILED, {
           error: error,
         });
 
         throw 'Cant find results';
       }
     } catch (e: any) {
-      dispatch(NODE_STATE_NAME.BENCHMARK_FAILED, {
-        node: this.sdk.solana.wallet.publicKey.toString(),
+      nodeDispatch(NODE_STATE_NAME.BENCHMARK_FAILED, {
         error: e,
       });
 
@@ -757,9 +731,7 @@ export class NosanaNode {
       throw e;
     }
 
-    dispatch(NODE_STATE_NAME.BENCHMARK_PASSED, {
-      node: this.sdk.solana.wallet.publicKey.toString(),
-    });
+    nodeDispatch(NODE_STATE_NAME.BENCHMARK_PASSED, {});
 
     return gpus;
   }
