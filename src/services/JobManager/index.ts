@@ -34,13 +34,8 @@ export default class JobManager {
     return job;
   }
 
-  // TODO: Listen to state for recurisve posting
-  // TODO: Stop send close event when all jobs are complete
   // TODO: Listen to node status
-  // TODO: Refactor
-
-  // { event: PULLING_IMAGE, image_name: "ubunutu" }
-  // { event: PULLING_COMPLETE }
+  // TODO: Listen for recursive stop
 
   public async status(
     id: string,
