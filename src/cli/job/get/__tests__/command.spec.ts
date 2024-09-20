@@ -26,7 +26,7 @@ describe('getJobCommand', () => {
   });
 
   it('should have 6 options', () => {
-    expect(getJobCommand.options.length).toBe(6);
+    expect(getJobCommand.options.length).toBe(7);
   });
 
   it.each([
@@ -35,6 +35,7 @@ describe('getJobCommand', () => {
     ['--format', undefined],
     ['--rpc', undefined],
     ['--download', undefined],
+    ['--wallet', '-w'],
   ])('should have %s option', (long, short) => {
     const option = getJobCommand.options.find((i) => i.long === long);
     expect(option?.long).toBe(long);
