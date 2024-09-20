@@ -30,6 +30,8 @@ import Logger from './modules/logger/index.js';
 import { createSeverObject } from './utils/createServerObject.js';
 import { randomUUID } from 'crypto';
 import { createResourceName } from './modules/resourceManager/volumes/index.js';
+import { dispatch as jobDispatch } from '../services/state/job/dispatch.js';
+import { JOB_STATE_NAME } from '../services/state/job/types.js';
 
 export type RunContainerArgs = {
   name?: string;
@@ -99,14 +101,28 @@ export class DockerProvider extends BasicProvider implements Provider {
       // Check if we already have a container running for this operation
       if (opState.providerId) {
         try {
+          jobDispatch(JOB_STATE_NAME.GET_CONTAINER, {
+            flow: flow.id,
+            container: opState.providerId,
+          });
+
           container = this.docker.getContainer(opState.providerId as string);
           try {
             await this.streamingLogs(container);
           } catch (e) {
             // console.error(e);
           }
+
+          jobDispatch(JOB_STATE_NAME.GET_CONTAINER_PASSED, {
+            container: opState.providerId,
+          });
         } catch (error) {
           updateOpState({ providerId: null });
+
+          jobDispatch(JOB_STATE_NAME.GET_CONTAINER_FAILED, {
+            container: opState.providerId,
+            error: error,
+          });
         }
       }
       if (!opState.providerId) {
@@ -114,48 +130,111 @@ export class DockerProvider extends BasicProvider implements Provider {
           startTime: Date.now(),
           status: 'running',
         });
+
+        jobDispatch(JOB_STATE_NAME.PULLING_IMAGE, {
+          image: op.args.image,
+        });
+
         try {
           await this.pullImage(op.args.image);
         } catch (error: any) {
-          throw new Error(
+          const err = new Error(
             chalk.red(`Cannot pull image ${op.args.image}: `) + error,
           );
+          jobDispatch(JOB_STATE_NAME.PULLING_IMAGE_FAILED, {
+            image: op.args.image,
+            error: err,
+          });
+          throw err;
         }
+
+        jobDispatch(JOB_STATE_NAME.PULLING_IMAGE_SUCCESS, {
+          image: op.args.image,
+        });
+
         if (op.args.expose) {
+          jobDispatch(JOB_STATE_NAME.PULLING_IMAGE, {
+            image: FRPC_IMAGE,
+          });
+
           try {
             await this.pullImage(FRPC_IMAGE);
           } catch (error: any) {
-            throw new Error(
+            const err = new Error(
               chalk.red(`Cannot pull image ${FRPC_IMAGE}: `) + error,
             );
+
+            jobDispatch(JOB_STATE_NAME.PULLING_IMAGE, {
+              image: FRPC_IMAGE,
+              error: err,
+            });
+
+            throw err;
           }
+
+          jobDispatch(JOB_STATE_NAME.PULLING_IMAGE_SUCCESS, {
+            image: FRPC_IMAGE,
+          });
         }
 
         if (op.args.resources) {
+          jobDispatch(JOB_STATE_NAME.PULLING_IMAGE, {
+            image: s3HelperImage,
+          });
+
           try {
             await this.pullImage(s3HelperImage);
           } catch (error) {
-            throw new Error(
+            const err = new Error(
               chalk.red(`Cannot pull image ${s3HelperImage}: `) + error,
             );
+
+            jobDispatch(JOB_STATE_NAME.PULLING_IMAGE, {
+              image: s3HelperImage,
+              error: err,
+            });
+
+            throw err;
           }
+
+          jobDispatch(JOB_STATE_NAME.PULLING_IMAGE_SUCCESS, {
+            image: s3HelperImage,
+          });
+
           for (const resource of op.args.resources) {
+            jobDispatch(JOB_STATE_NAME.CREATING_VOLUME, {
+              volume: resource.type,
+            });
+
             try {
               await this.resourceManager.volumes.createRemoteVolume(resource);
             } catch (err) {
-              throw new Error(
+              const error = new Error(
                 chalk.red(
                   `Cannot pull remote resource ${createResourceName(
                     resource,
                   )}:\n`,
                 ) + err,
               );
+
+              jobDispatch(JOB_STATE_NAME.CREATING_VOLUME_FAILED, {
+                volume: resource.type,
+                error: error,
+              });
+
+              throw error;
             }
+
+            jobDispatch(JOB_STATE_NAME.CREATING_VOLUME_SUCCESS, {
+              volume: resource.type,
+            });
           }
         }
 
         // Allow file locks to reset - hopefully will reduce image not known issue
         await sleep(3);
+
+        jobDispatch(JOB_STATE_NAME.RUN_CONTAINER_OPERATION);
 
         container = await this.runOpContainerRun(
           op.args,
@@ -172,6 +251,8 @@ export class DockerProvider extends BasicProvider implements Provider {
           operationResults,
         });
       }
+
+      jobDispatch(JOB_STATE_NAME.FINISH_CONTAINER_OPERATION);
 
       return opState;
     };
@@ -199,6 +280,11 @@ export class DockerProvider extends BasicProvider implements Provider {
         status: 'running',
       });
 
+      jobDispatch(JOB_STATE_NAME.CREATING_VOLUME, {
+        volume: flowId + '-' + op.args.name,
+      });
+
+      // CREATE_PROVIDER_VOLUME
       return await new Promise(async (resolve, reject) => {
         this.docker.createVolume(
           {
@@ -217,14 +303,26 @@ export class DockerProvider extends BasicProvider implements Provider {
                   },
                 ],
               });
+
+              jobDispatch(JOB_STATE_NAME.CREATING_VOLUME_FAILED, {
+                volume: flowId + '-' + op.args.name,
+                error: err,
+              });
+
               reject(err);
             }
+
             updateOpState({
               providerId: volume?.name,
               endTime: Date.now(),
               exitCode: 0,
               status: 'success',
             });
+
+            jobDispatch(JOB_STATE_NAME.CREATING_VOLUME_SUCCESS, {
+              volume: flowId + '-' + op.args.name,
+            });
+
             resolve(opState);
           },
         );
@@ -297,9 +395,13 @@ export class DockerProvider extends BasicProvider implements Provider {
         if (
           (await this.resourceManager.volumes.hasVolume(resource)) === false
         ) {
-          throw new Error(
+          const error = new Error(
             `Missing required resource ${createResourceName(resource)}.`,
           );
+
+          jobDispatch(JOB_STATE_NAME.CONTAINER_OPERATION_FAILED);
+
+          throw error;
         }
 
         volumes.push({
@@ -331,9 +433,24 @@ export class DockerProvider extends BasicProvider implements Provider {
         : {};
     this.logger.log(chalk.cyan('Starting container'), true);
     const name = flowId + '-' + flow.state.opStates[opStateIndex].operationId;
+
+    jobDispatch(JOB_STATE_NAME.CREATING_NETWORK, {
+      network: name,
+    });
+
     await this.docker.createNetwork({ Name: name });
     const networks: { [key: string]: {} } = {};
     networks[name] = {};
+
+    jobDispatch(JOB_STATE_NAME.CREATING_NETWORK_SUCCESS, {
+      network: name,
+    });
+
+    jobDispatch(JOB_STATE_NAME.CONTAINER_STARTING, {
+      container: name,
+      image: opArgs.image ? opArgs.image : flow.jobDefinition.global?.image!,
+    });
+
     const container: Container = await this.runContainer(
       opArgs.image ? opArgs.image : flow.jobDefinition.global?.image!,
       {
@@ -353,6 +470,12 @@ export class DockerProvider extends BasicProvider implements Provider {
         volumes,
       },
     );
+
+    jobDispatch(JOB_STATE_NAME.CONTAINER_STARTED, {
+      container: name,
+      image: opArgs.image ? opArgs.image : flow.jobDefinition.global?.image!,
+    });
+
     updateOpState({ providerId: container.id });
     this.logger.log(chalk.cyan('Running container ' + container.id), true);
     try {
@@ -374,6 +497,11 @@ export class DockerProvider extends BasicProvider implements Provider {
         this.db.write();
       }
 
+      jobDispatch(JOB_STATE_NAME.CONTAINER_STARTING, {
+        container: 'frpc-' + name,
+        image: FRPC_IMAGE,
+      });
+
       await this.runContainer(FRPC_IMAGE, {
         name: 'frpc-' + name,
         cmd: ['-c', '/etc/frp/frpc.toml'],
@@ -389,6 +517,11 @@ export class DockerProvider extends BasicProvider implements Provider {
         },
       });
 
+      jobDispatch(JOB_STATE_NAME.CONTAINER_STARTED, {
+        container: 'frpc-' + name,
+        image: FRPC_IMAGE,
+      });
+
       if (!opArgs.private) {
         this.logger.log(
           chalk.cyan(
@@ -400,6 +533,11 @@ export class DockerProvider extends BasicProvider implements Provider {
       } else {
         this.logger.log(chalk.cyan(`Exposing service privately`));
       }
+
+      jobDispatch(JOB_STATE_NAME.EXPOSED_URL_STARTED, {
+        url: opArgs.private ? '' : `https://${prefix}.${config.frp.serverAddr}`,
+        isUrlPrivate: opArgs.private,
+      });
     }
     return container;
   }

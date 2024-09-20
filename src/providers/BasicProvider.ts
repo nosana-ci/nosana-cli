@@ -18,6 +18,8 @@ import {
 import { sleep } from '../generic/utils.js';
 import { DB, NodeDb } from './modules/db/index.js';
 import Logger from './modules/logger/index.js';
+import { dispatch as jobDispatch } from '../services/state/job/dispatch.js';
+import { JOB_STATE_NAME } from '../services/state/job/types.js';
 
 type OpFunction = (
   op: Operation<any>,
@@ -76,9 +78,15 @@ export class BasicProvider implements Provider {
         },
       };
 
+      jobDispatch(JOB_STATE_NAME.JOB_DEFINATION_VALIDATION, {
+        flow: flowId,
+      });
+
       const validation: IValidation<JobDefinition> =
         validateJobDefinition(jobDefinition);
       if (!validation.success) {
+        jobDispatch(JOB_STATE_NAME.RETREIVING_JOB_DEFINATION_FAILED);
+
         console.error(validation.errors);
         flow.state.status = 'failed';
         flow.state.endTime = Date.now();
@@ -87,7 +95,10 @@ export class BasicProvider implements Provider {
         return flow;
       }
 
+      jobDispatch(JOB_STATE_NAME.JOB_DEFINATION_VALIDATION_PASSED);
+
       flow = this.hookPreRun(flow);
+
       // Add ops from job definition to flow
       for (let i = 0; i < jobDefinition.ops.length; i++) {
         const op = jobDefinition.ops[i];
@@ -104,6 +115,9 @@ export class BasicProvider implements Provider {
       }
       this.db.update(({ flows }) => (flows[id] = flow));
     }
+
+    jobDispatch(JOB_STATE_NAME.STARTED_NEW_FLOW);
+
     // Start running this flow
     this.runFlow(id);
     return flow;
@@ -136,9 +150,16 @@ export class BasicProvider implements Provider {
     this.logger.log(chalk.cyan(`Running flow ${chalk.bold(flowId)}`));
     try {
       // run operations
+
+      jobDispatch(JOB_STATE_NAME.OPERATION_STARTING);
       let stopFlow: boolean = false;
       for (let i = 0; i < flow.jobDefinition.ops.length; i++) {
         const op = flow.jobDefinition.ops[i];
+
+        jobDispatch(JOB_STATE_NAME.OPERATION_STARTED, {
+          operation: op.id,
+        });
+
         let opState: OpState = flow.state.opStates[i];
         if (!opState.endTime) {
           const updateOpState = (newOpStateData: Partial<OpState>) => {
@@ -152,7 +173,15 @@ export class BasicProvider implements Provider {
           try {
             const operationTypeFunction = this.supportedOps[op.type];
             if (!operationTypeFunction) {
-              throw new Error(`no support for operation type ${op.type}`);
+              const error = new Error(
+                `no support for operation type ${op.type}`,
+              );
+
+              jobDispatch(JOB_STATE_NAME.OPERATION_FAILED, {
+                error: error,
+              });
+
+              throw error;
             }
             opState = await new Promise<OpState>(async (resolve, reject) => {
               // when flow is being stopped, resolve promise
@@ -185,13 +214,21 @@ export class BasicProvider implements Provider {
                   updateOpState,
                   flow.jobDefinition.ops[i].results,
                 );
+
+                jobDispatch(JOB_STATE_NAME.OPERATION_PASSED);
                 resolve(finishedOpState);
               } catch (error) {
+                jobDispatch(JOB_STATE_NAME.OPERATION_FAILED, {
+                  error: error,
+                });
                 reject(error);
               }
             });
             this.logger.removeAllListeners(ProviderEvents.STOP_FLOW);
           } catch (error: any) {
+            jobDispatch(JOB_STATE_NAME.OPERATION_FAILED, {
+              error: error,
+            });
             updateOpState({
               exitCode: 2,
               status: 'failed',
@@ -224,6 +261,7 @@ export class BasicProvider implements Provider {
       this.db.data.flows[flowId].state.errors?.push(error.toString());
       this.db.write();
     }
+
     this.finishFlow(
       flowId,
       flow && flow.state.errors && flow.state.errors.length > 0
@@ -319,6 +357,11 @@ export class BasicProvider implements Provider {
       flow.state.endTime = Date.now();
       this.db.write();
     }
+
+    jobDispatch(JOB_STATE_NAME.FLOW_FINISHED, {
+      status: flow.state.status,
+    });
+
     this.logger.emit(ProviderEvents.FLOW_FINISHED, flow);
   }
 
