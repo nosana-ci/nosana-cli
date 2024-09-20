@@ -2,14 +2,39 @@ import fs from 'fs';
 import os from 'os';
 import { LowSync } from 'lowdb/lib';
 import { JSONFileSyncPreset } from 'lowdb/node';
+import { PostJobResult } from '../../../services/JobManager/actions/post/index.js';
+import { Flow } from '../../Provider.js';
 
-import { NodeDb } from '../../BasicProvider';
+export type NodeDb = {
+  jobs: {
+    [key: string]: PostJobResult;
+  };
+  flows: { [key: string]: Flow };
+  resources: Resources;
+};
 
-const flows = {};
+type Resources = {
+  images: { [key: string]: ResourceHistory };
+  volumes: { [key: string]: VolumeResource };
+};
 
-const resources = {
-  images: {},
-  volumes: {},
+type ResourceHistory = {
+  lastUsed: Date;
+  usage: number;
+  required: boolean;
+};
+
+type VolumeResource = ResourceHistory & {
+  volume: string;
+};
+
+const initial_state = {
+  jobs: {},
+  resources: {
+    images: {},
+    volumes: {},
+  },
+  flows: {},
 };
 
 export class DB {
@@ -22,16 +47,21 @@ export class DB {
 
     fs.mkdirSync(configLocation, { recursive: true });
 
-    this.db = JSONFileSyncPreset<NodeDb>(`${configLocation}/nosana_db.json`, {
-      resources,
-      flows,
-    });
+    this.db = JSONFileSyncPreset<NodeDb>(
+      `${configLocation}/nosana_db.json`,
+      initial_state,
+    );
 
     if (!this.db.data.resources) {
-      this.db.data.resources = resources;
+      this.db.data.resources = initial_state.resources;
     }
+
     if (!this.db.data.flows) {
-      this.db.data.flows = flows;
+      this.db.data.flows = initial_state.flows;
+    }
+
+    if (!this.db.data.jobs) {
+      this.db.data.jobs = initial_state.jobs;
     }
 
     this.db.write();

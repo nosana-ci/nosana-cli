@@ -16,30 +16,10 @@ import {
   OperationType,
 } from './Provider.js';
 import { sleep } from '../generic/utils.js';
-import { DB } from './modules/db/index.js';
+import { DB, NodeDb } from './modules/db/index.js';
 import Logger from './modules/logger/index.js';
 import { dispatch as jobDispatch } from '../services/state/job/dispatch.js';
 import { JOB_STATE_NAME } from '../services/state/job/types.js';
-
-export type NodeDb = {
-  flows: { [key: string]: Flow };
-  resources: Resources;
-};
-
-type Resources = {
-  images: { [key: string]: ResourceHistory };
-  volumes: { [key: string]: VolumeResource };
-};
-
-type ResourceHistory = {
-  lastUsed: Date;
-  usage: number;
-  required: boolean;
-};
-
-type VolumeResource = ResourceHistory & {
-  volume: string;
-};
 
 type OpFunction = (
   op: Operation<any>,
