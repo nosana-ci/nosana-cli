@@ -85,7 +85,7 @@ export class BasicProvider implements Provider {
       const validation: IValidation<JobDefinition> =
         validateJobDefinition(jobDefinition);
       if (!validation.success) {
-        jobDispatch(JOB_STATE_NAME.RETREIVING_JOB_DEFINATION_FAILED, {});
+        jobDispatch(JOB_STATE_NAME.RETREIVING_JOB_DEFINATION_FAILED);
 
         console.error(validation.errors);
         flow.state.status = 'failed';
@@ -95,7 +95,7 @@ export class BasicProvider implements Provider {
         return flow;
       }
 
-      jobDispatch(JOB_STATE_NAME.JOB_DEFINATION_VALIDATION_PASSED, {});
+      jobDispatch(JOB_STATE_NAME.JOB_DEFINATION_VALIDATION_PASSED);
 
       flow = this.hookPreRun(flow);
 
@@ -116,7 +116,7 @@ export class BasicProvider implements Provider {
       this.db.update(({ flows }) => (flows[id] = flow));
     }
 
-    jobDispatch(JOB_STATE_NAME.STARTED_NEW_FLOW, {});
+    jobDispatch(JOB_STATE_NAME.STARTED_NEW_FLOW);
 
     // Start running this flow
     this.runFlow(id);
@@ -151,7 +151,7 @@ export class BasicProvider implements Provider {
     try {
       // run operations
 
-      jobDispatch(JOB_STATE_NAME.OPERATION_STARTING, {});
+      jobDispatch(JOB_STATE_NAME.OPERATION_STARTING);
       let stopFlow: boolean = false;
       for (let i = 0; i < flow.jobDefinition.ops.length; i++) {
         const op = flow.jobDefinition.ops[i];
@@ -215,7 +215,7 @@ export class BasicProvider implements Provider {
                   flow.jobDefinition.ops[i].results,
                 );
 
-                jobDispatch(JOB_STATE_NAME.OPERATION_PASSED, {});
+                jobDispatch(JOB_STATE_NAME.OPERATION_PASSED);
                 resolve(finishedOpState);
               } catch (error) {
                 jobDispatch(JOB_STATE_NAME.OPERATION_FAILED, {

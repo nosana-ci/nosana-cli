@@ -2,7 +2,7 @@ import { getJobStateManager } from './instance.js';
 import { sharedObj } from './shared.js';
 import { JobState, JobStateData } from './types.js';
 
-export const dispatch = (newState: JobState, data: JobStateData[JobState]) => {
+export const dispatch = (newState: JobState, data?: JobStateData[JobState]) => {
   const stateManager = getJobStateManager();
 
   const sharedData = {

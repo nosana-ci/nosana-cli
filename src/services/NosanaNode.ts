@@ -577,7 +577,7 @@ export class NosanaNode {
       this.logger.succeed('Health checks passed');
     }
 
-    nodeDispatch(NODE_STATE_NAME.HEALTH_CHECK_PASSED, {});
+    nodeDispatch(NODE_STATE_NAME.HEALTH_CHECK_PASSED);
 
     return { accessKey };
   }
@@ -589,7 +589,7 @@ export class NosanaNode {
        * Benchmark *
        ****************/
 
-      nodeDispatch(NODE_STATE_NAME.BENCHMARK_RUNNING, {});
+      nodeDispatch(NODE_STATE_NAME.BENCHMARK_RUNNING);
 
       let result: Partial<FlowState> | null;
       if (printDetailed) {
@@ -731,7 +731,7 @@ export class NosanaNode {
       throw e;
     }
 
-    nodeDispatch(NODE_STATE_NAME.BENCHMARK_PASSED, {});
+    nodeDispatch(NODE_STATE_NAME.BENCHMARK_PASSED);
 
     return gpus;
   }

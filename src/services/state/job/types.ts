@@ -49,298 +49,110 @@ export const JOB_STATE_NAME = {
 
 export type JobState = (typeof JOB_STATE_NAME)[keyof typeof JOB_STATE_NAME];
 
-export type PullingImageData = {
+export type BasicNodeInfo = {
   node: string;
   ipfs: string;
   job: string;
   market: string;
+};
+
+export type OperationData = BasicNodeInfo & {
   operation: string;
   flow: string;
+};
+
+export type PullingImageData = OperationData & {
   image: string;
 };
 
-export type PullingImageFailedData = {
-  node: string;
-  ipfs: string;
-  job: string;
-  market: string;
-  operation: string;
-  flow: string;
-  image: string;
+export type PullingImageFailedData = PullingImageData & {
   error: string;
 };
 
-export type PullingImageSuccessData = {
-  node: string;
-  ipfs: string;
-  job: string;
-  market: string;
-  operation: string;
-  flow: string;
-  image: string;
-};
+export type PullingImageSuccessData = PullingImageData;
 
-export type CreatingVolumeData = {
-  node: string;
-  ipfs: string;
-  job: string;
-  market: string;
-  operation: string;
-  flow: string;
+export type CreatingVolumeData = OperationData & {
   volume: string;
 };
 
-export type CreatingVolumeSucessData = {
-  node: string;
-  ipfs: string;
-  job: string;
-  market: string;
-  operation: string;
-  flow: string;
-  volume: string;
+export type CreatingVolumeSuccessData = CreatingVolumeData;
+
+export type CreatingVolumeFailedData = CreatingVolumeData & {
+  error: string;
 };
 
-export type CreatingVolumeFailedData = {
-  node: string;
-  ipfs: string;
-  job: string;
-  market: string;
-  operation: string;
-  flow: string;
-  volume: string;
-};
-
-export type CreatingNetworkData = {
-  node: string;
-  ipfs: string;
-  job: string;
-  market: string;
-  operation: string;
-  flow: string;
+export type CreatingNetworkData = OperationData & {
   network: string;
 };
 
-export type CreatingNetworkSucessData = {
-  node: string;
-  ipfs: string;
-  job: string;
-  market: string;
-  operation: string;
-  flow: string;
-  network: string;
-};
+export type CreatingNetworkSuccessData = CreatingNetworkData;
 
-export type CreatingNetworkFailedData = {
-  node: string;
-  ipfs: string;
-  job: string;
-  market: string;
-  operation: string;
-  flow: string;
-  network: string;
+export type CreatingNetworkFailedData = CreatingNetworkData & {
   error: Error;
 };
 
-export type GetContainerData = {
-  node: string;
-  ipfs: string;
-  job: string;
-  market: string;
-  operation: string;
-  flow: string;
+export type GetContainerData = OperationData & {
   container: string;
 };
 
-export type GetContainerSucessData = {
-  node: string;
-  ipfs: string;
-  job: string;
-  market: string;
-  operation: string;
-  flow: string;
-  container: string;
-};
+export type GetContainerSuccessData = GetContainerData;
 
-export type GetContainerFailedData = {
-  node: string;
-  ipfs: string;
-  job: string;
-  market: string;
-  operation: string;
-  flow: string;
-  container: string;
-};
-
-export type ContainerStartingData = {
-  node: string;
-  ipfs: string;
-  job: string;
-  market: string;
-  operation: string;
-  flow: string;
-  container: string;
-  image: string;
-};
-
-export type ContainerStartingSucessData = {
-  node: string;
-  ipfs: string;
-  job: string;
-  market: string;
-  operation: string;
-  flow: string;
-  container: string;
-  image: string;
-};
-
-export type ContainerStartingFailedData = {
-  node: string;
-  ipfs: string;
-  job: string;
-  market: string;
-  operation: string;
-  flow: string;
-  container: string;
-  image: string;
+export type GetContainerFailedData = GetContainerData & {
   error: Error;
 };
 
-export type ExposedUrlStartedData = {
-  node: string;
-  ipfs: string;
-  job: string;
-  market: string;
-  flow: string;
-  operation: string;
+export type ContainerStartingData = GetContainerData & {
+  image: string;
+};
+
+export type ContainerStartingSuccessData = ContainerStartingData;
+
+export type ContainerStartingFailedData = ContainerStartingData & {
+  error: Error;
+};
+
+export type ExposedUrlStartedData = OperationData & {
   isUrlPrivate: boolean;
   url: string;
 };
 
-export type RunContainerOperationData = {
-  node: string;
-  ipfs: string;
-  job: string;
-  market: string;
-  operation: string;
-  flow: string;
-};
+export type RunContainerOperationData = OperationData;
 
-export type FinishContainerOperationData = {
-  node: string;
-  ipfs: string;
-  job: string;
-  market: string;
-  operation: string;
-  flow: string;
-};
+export type FinishContainerOperationData = OperationData;
 
-export type ContainerOperationFailedData = {
-  node: string;
-  ipfs: string;
-  job: string;
-  market: string;
-  operation: string;
-  flow: string;
+export type ContainerOperationFailedData = OperationData & {
   error: Error;
 };
 
-export type OperationStartingData = {
-  node: string;
-  ipfs: string;
-  job: string;
-  market: string;
-  flow: string;
-};
+export type RetrievingJobDefinitionData = BasicNodeInfo;
 
-export type OperationStartedData = {
-  node: string;
-  ipfs: string;
-  job: string;
-  market: string;
-  operation: string;
-  flow: string;
-};
+export type RetrievedJobDefinitionData = BasicNodeInfo;
 
-export type OperationFailedData = {
-  node: string;
-  ipfs: string;
-  job: string;
-  market: string;
-  operation: string;
-  flow: string;
+export type RetrievingJobDefinitionFailedData = BasicNodeInfo & {
   error: Error;
 };
 
-export type OperationPassedData = {
-  node: string;
-  ipfs: string;
-  job: string;
-  market: string;
-  operation: string;
+export type StartingNewFlowData = OperationData;
+
+export type StartedNewFlowData = OperationData;
+
+export type ContinueExistingFlowData = OperationData;
+
+export type FlowFinishedData = OperationData;
+
+export type OperationStartingData = BasicNodeInfo & {
   flow: string;
 };
 
-export type RetrievingJobDefinationData = {
-  node: string;
-  ipfs: string;
-  job: string;
-  market: string;
-};
+export type OperationStartedData = OperationData;
 
-export type RetrievedJobDefinationData = {
-  node: string;
-  ipfs: string;
-  job: string;
-  market: string;
-};
-
-export type RetrievingJobDefinationFailedData = {
-  node: string;
-  ipfs: string;
-  job: string;
-  market: string;
+export type OperationFailedData = OperationData & {
   error: Error;
 };
 
-export type StartingNewFlowData = {
-  node: string;
-  ipfs: string;
-  job: string;
-  market: string;
-  flow: string;
-};
+export type OperationPassedData = OperationData;
 
-export type StartedNewFlowData = {
-  node: string;
-  ipfs: string;
-  job: string;
-  market: string;
-  flow: string;
-};
-
-export type ContinueExistingFlowData = {
-  node: string;
-  ipfs: string;
-  job: string;
-  market: string;
-  flow: string;
-};
-
-export type FlowFinishedData = {
-  node: string;
-  ipfs: string;
-  job: string;
-  market: string;
-  flow: string;
-};
-
-export type WaitingForJobToCompleteData = {
-  node: string;
-  ipfs: string;
-  job: string;
-  market: string;
-  flow: string;
-};
+export type WaitingForJobToCompleteData = OperationData;
 
 export type NoneData = {};
 
@@ -351,19 +163,19 @@ export type JobStateData = {
 
   [JOB_STATE_NAME.CREATING_VOLUME]: CreatingVolumeData;
   [JOB_STATE_NAME.CREATING_VOLUME_FAILED]: CreatingVolumeFailedData;
-  [JOB_STATE_NAME.CREATING_VOLUME_SUCCESS]: CreatingVolumeSucessData;
+  [JOB_STATE_NAME.CREATING_VOLUME_SUCCESS]: CreatingVolumeSuccessData;
 
   [JOB_STATE_NAME.CREATING_NETWORK]: CreatingNetworkData;
   [JOB_STATE_NAME.CREATING_NETWORK_FAILED]: CreatingNetworkFailedData;
-  [JOB_STATE_NAME.CREATING_NETWORK_SUCCESS]: CreatingNetworkSucessData;
+  [JOB_STATE_NAME.CREATING_NETWORK_SUCCESS]: CreatingNetworkSuccessData;
 
   [JOB_STATE_NAME.GET_CONTAINER]: GetContainerData;
   [JOB_STATE_NAME.GET_CONTAINER_FAILED]: GetContainerFailedData;
-  [JOB_STATE_NAME.GET_CONTAINER_PASSED]: GetContainerSucessData;
+  [JOB_STATE_NAME.GET_CONTAINER_PASSED]: GetContainerSuccessData;
 
   [JOB_STATE_NAME.CONTAINER_STARTING]: ContainerStartingData;
   [JOB_STATE_NAME.CONTAINER_FAILED]: ContainerStartingFailedData;
-  [JOB_STATE_NAME.CONTAINER_STARTED]: ContainerStartingSucessData;
+  [JOB_STATE_NAME.CONTAINER_STARTED]: ContainerStartingSuccessData;
 
   [JOB_STATE_NAME.EXPOSED_URL_STARTED]: ExposedUrlStartedData;
 
@@ -376,9 +188,9 @@ export type JobStateData = {
   [JOB_STATE_NAME.OPERATION_FAILED]: OperationFailedData;
   [JOB_STATE_NAME.OPERATION_PASSED]: OperationPassedData;
 
-  [JOB_STATE_NAME.RETREIVING_JOB_DEFINATION]: RetrievingJobDefinationData;
-  [JOB_STATE_NAME.RETREIVED_JOB_DEFINATION]: RetrievedJobDefinationData;
-  [JOB_STATE_NAME.RETREIVING_JOB_DEFINATION_FAILED]: RetrievingJobDefinationFailedData;
+  [JOB_STATE_NAME.RETREIVING_JOB_DEFINATION]: RetrievingJobDefinitionData;
+  [JOB_STATE_NAME.RETREIVED_JOB_DEFINATION]: RetrievedJobDefinitionData;
+  [JOB_STATE_NAME.RETREIVING_JOB_DEFINATION_FAILED]: RetrievingJobDefinitionFailedData;
 
   [JOB_STATE_NAME.JOB_DEFINATION_VALIDATION]: NoneData;
   [JOB_STATE_NAME.JOB_DEFINATION_VALIDATION_PASSED]: NoneData;

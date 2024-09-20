@@ -80,14 +80,14 @@ export async function startNode(
     },
   );
 
-  nodeDispatch(NODE_STATE_NAME.NODE_STARTED, {});
+  nodeDispatch(NODE_STATE_NAME.NODE_STARTED);
 
   try {
-    nodeDispatch(NODE_STATE_NAME.PROVIDER_HEALTH_CHECKING, {});
+    nodeDispatch(NODE_STATE_NAME.PROVIDER_HEALTH_CHECKING);
 
     await node.provider.healthy();
 
-    nodeDispatch(NODE_STATE_NAME.PROVIDER_HEALTH_PASSED, {});
+    nodeDispatch(NODE_STATE_NAME.PROVIDER_HEALTH_PASSED);
   } catch (error) {
     console.log(
       chalk.red(`${chalk.bold(options.provider)} provider not healthy`),
@@ -100,14 +100,14 @@ export async function startNode(
     throw error;
   }
 
-  nodeDispatch(NODE_STATE_NAME.API_SERVER_STARTING, {});
+  nodeDispatch(NODE_STATE_NAME.API_SERVER_STARTING);
 
   spinner = ora(chalk.cyan('Starting API')).start();
 
   try {
     await node.startAPI();
 
-    nodeDispatch(NODE_STATE_NAME.API_SERVER_STARTED, {});
+    nodeDispatch(NODE_STATE_NAME.API_SERVER_STARTED);
   } catch (error) {
     spinner.fail(chalk.red(`Could not start API`));
 
@@ -140,7 +140,7 @@ export async function startNode(
     spinner = ora(chalk.cyan('Retrieving market')).start();
     marketAccount = await node.sdk.jobs.getMarket(market);
 
-    nodeDispatch(NODE_STATE_NAME.RETRIVING_MARKET_PASSED, {});
+    nodeDispatch(NODE_STATE_NAME.RETRIVING_MARKET_PASSED);
 
     spinner.stop();
     console.log(`Market:\t\t${chalk.greenBright.bold(market)}`);
@@ -197,7 +197,7 @@ export async function startNode(
         spinner.text = chalk.cyan('Checking queued status');
         await node.checkQueued();
 
-        nodeDispatch(NODE_STATE_NAME.JOINING_QUEUE, {});
+        nodeDispatch(NODE_STATE_NAME.JOINING_QUEUE);
 
         if (!node.market || node.market.address.toString() !== market) {
           if (node.market) {
@@ -253,10 +253,10 @@ export async function startNode(
           }
         }
 
-        nodeDispatch(NODE_STATE_NAME.JOINING_QUEUE_PASSED, {});
+        nodeDispatch(NODE_STATE_NAME.JOINING_QUEUE_PASSED);
 
         if (node.market) {
-          nodeDispatch(NODE_STATE_NAME.JOINED_QUEUE, {});
+          nodeDispatch(NODE_STATE_NAME.JOINED_QUEUE);
 
           // Currently queued in a market, wait for run
           spinner.color = 'yellow';
@@ -383,7 +383,7 @@ export async function startNode(
             );
             spinner.succeed(chalk.green('Retrieved job definition'));
 
-            jobDispatch(JOB_STATE_NAME.RETREIVED_JOB_DEFINATION, {});
+            jobDispatch(JOB_STATE_NAME.RETREIVED_JOB_DEFINATION);
 
             jobDispatch(JOB_STATE_NAME.STARTING_NEW_FLOW, {
               flow: flowId,
@@ -421,7 +421,7 @@ export async function startNode(
       }
       spinner.stop();
 
-      nodeDispatch(NODE_STATE_NAME.RESTARTING, {});
+      nodeDispatch(NODE_STATE_NAME.RESTARTING);
 
       for (let timer = 10; timer > 0; timer--) {
         spinner.start(chalk.cyan(`Restarting in ${timer}s`));

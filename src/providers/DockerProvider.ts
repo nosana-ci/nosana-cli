@@ -234,7 +234,7 @@ export class DockerProvider extends BasicProvider implements Provider {
         // Allow file locks to reset - hopefully will reduce image not known issue
         await sleep(3);
 
-        jobDispatch(JOB_STATE_NAME.RUN_CONTAINER_OPERATION, {});
+        jobDispatch(JOB_STATE_NAME.RUN_CONTAINER_OPERATION);
 
         container = await this.runOpContainerRun(
           op.args,
@@ -252,7 +252,7 @@ export class DockerProvider extends BasicProvider implements Provider {
         });
       }
 
-      jobDispatch(JOB_STATE_NAME.FINISH_CONTAINER_OPERATION, {});
+      jobDispatch(JOB_STATE_NAME.FINISH_CONTAINER_OPERATION);
 
       return opState;
     };
@@ -399,7 +399,7 @@ export class DockerProvider extends BasicProvider implements Provider {
             `Missing required resource ${createResourceName(resource)}.`,
           );
 
-          jobDispatch(JOB_STATE_NAME.CONTAINER_OPERATION_FAILED, {});
+          jobDispatch(JOB_STATE_NAME.CONTAINER_OPERATION_FAILED);
 
           throw error;
         }

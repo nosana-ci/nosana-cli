@@ -4,7 +4,7 @@ import { NodeState, NodeStateData } from './types.js';
 
 export const dispatch = (
   newState: NodeState,
-  data: NodeStateData[NodeState],
+  data?: NodeStateData[NodeState],
 ) => {
   const stateManager = getNodeStateManager();
 
