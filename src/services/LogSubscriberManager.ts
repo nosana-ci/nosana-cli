@@ -3,6 +3,8 @@ import { ProviderEvents } from '../providers/Provider.js';
 import { NosanaNode } from './NosanaNode.js';
 import Logger from '../providers/modules/logger/index.js';
 import express, { Request, Response } from 'express';
+import { subscribe as NodeSubscribe } from './state/node/subscribe.js';
+import { subscribe as JobSubscribe } from './state/job/subscribe.js';
 
 export type LogEvent = {
   index: number;
@@ -91,6 +93,30 @@ export default class LogSubscriberManager {
   }
 
   public listenToLoggerEvents(logger: EventEmitter, node: NosanaNode) {
+    JobSubscribe((entry) => {
+      this.notifySubscribers({
+        log: JSON.stringify(entry),
+        pending: false,
+        type: '',
+        job: this.getCurrentJob(node),
+        index: this.getEventIndex(),
+        event: 'jobLog',
+      });
+      this.incrementEventIndex();
+    });
+
+    NodeSubscribe((entry) => {
+      this.notifySubscribers({
+        log: JSON.stringify(entry),
+        pending: false,
+        type: '',
+        job: '',
+        index: this.getEventIndex(),
+        event: 'nodeLog',
+      });
+      this.incrementEventIndex();
+    });
+
     logger.on(
       ProviderEvents.INFO_LOG,
       (event: { log: string; type: string; pending: boolean }) => {

@@ -19,7 +19,7 @@ const app = express();
 const port = config.api.port;
 
 let node: NosanaNode;
-let logSubscriberManager: LogSubscriberManager;
+let logSubscriberManager = new LogSubscriberManager();
 
 export const createSignature = async (): Promise<SignatureHeaders> => {
   const nosana: Client = getSDK();
@@ -143,11 +143,32 @@ app.get(
   },
 );
 
+app.post(
+  '/service/stop/:jobId',
+  verifySignatureMiddleware,
+  verifyJobOwnerMiddleware,
+  async (req: Request<{ jobId: string }>, res: Response) => {
+    const jobId = req.params.jobId;
+
+    if (!jobId) {
+      res.status(400).send('jobId path parameter is required');
+      return;
+    }
+
+    try {
+      await node.provider.stopFlow(jobId);
+      res.status(200).send('job stopped successfully');
+      return;
+    } catch (error) {
+      res.status(500).send('Error occured while stopping job');
+    }
+  },
+);
+
 export const api = {
   start: async (nosanaNode: NosanaNode): Promise<number> => {
     node = nosanaNode;
 
-    logSubscriberManager = new LogSubscriberManager();
     logSubscriberManager.listenToLoggerEvents(node.logger, node);
 
     return await new Promise<number>((resolve, reject) => {
