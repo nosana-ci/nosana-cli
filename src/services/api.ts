@@ -166,7 +166,7 @@ app.post(
   },
 );
 
-app.post(
+app.get(
   '/node/info',
   async (req: Request, res: Response) => {
     const nodeStateInstance = getNodeStateManager()
