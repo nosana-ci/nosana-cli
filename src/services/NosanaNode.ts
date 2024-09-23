@@ -30,7 +30,7 @@ export const TUNNEL_IMAGE = 'registry.hub.docker.com/nosana/tunnel:0.1.0';
 import { benchmarkGPU } from '../static/staticsImports.js';
 import { dispatch as nodeDispatch } from './state/node/dispatch.js';
 import { NODE_STATE_NAME } from './state/node/types.js';
-import { getNodeStateManager } from "./state/node/instance.js";
+import { getNodeStateManager } from './state/node/instance.js';
 
 export type NodeStats = {
   sol: number;
@@ -642,7 +642,7 @@ export class NosanaNode {
           throw error;
         }
 
-        getNodeStateManager().setSharedData('devices', devices)
+        getNodeStateManager().setSharedData('devices', devices);
 
         gpus = result.opStates[0].logs[0]!.log!;
 
@@ -663,7 +663,7 @@ export class NosanaNode {
             // in MB
             const availableDiskSpace = parseInt(ds.log);
 
-            getNodeStateManager().setSharedData('disk', availableDiskSpace)
+            getNodeStateManager().setSharedData('disk', availableDiskSpace);
 
             if (config.minDiskSpace > availableDiskSpace) {
               const error = new Error(
