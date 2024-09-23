@@ -44,6 +44,7 @@ export default class JobManager {
   ) {
     await this.nosana.jobs.loadNosanaJobs();
 
+    let init = true;
     const processedIds = new Set<string>();
     const statusEmitter = new StatusEmitter();
 
@@ -61,6 +62,9 @@ export default class JobManager {
 
       jobObj.active_nodes.forEach(async (result, index) => {
         if (!processedIds.has(result.job)) {
+          if (!init) {
+            statusEmitter.emitCreate(result.job, result);
+          }
           processedIds.add(result.job);
           await this.listenToJobUntilComplete(result.job, statusEmitter);
 
@@ -70,16 +74,26 @@ export default class JobManager {
           this.state.set(id, jobObj);
         }
       });
+
+      init = false;
     });
   }
 
   private createListener = async (nodeAddress: string, jobAddress: string) => {
     const headers = await createSignature();
     const listener = listenToEventSource(
-      `https://${nodeAddress}.${config.frp.serverAddr}/status/${jobAddress}`,
+      `https://${nodeAddress}.${config.frp.serverAddr}/status/${jobAddress}?logs=jobLog`,
       headers,
-      (events) => {
-        console.log(events);
+      (events: any[]) => {
+        if (events.length > 0) {
+          if (
+            JSON.parse(events[events.length - 1].log).state === 'FLOW_FINISHED'
+          ) {
+            console.log('closing');
+            listener.close();
+          }
+          console.log(events);
+        }
       },
     );
   };
@@ -142,7 +156,6 @@ export default class JobManager {
         options,
         ({ active_nodes }) => {
           const timeout = active_nodes[0].job_timeout;
-          console.log(recurisveTimeout(timeout, recursive_offset_min));
           if (recursive) {
             setTimeout(() => {
               recurisveLoop(market, job, options);

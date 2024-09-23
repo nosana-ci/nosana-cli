@@ -3,9 +3,14 @@ import { NextFunction } from 'express';
 import { JobRequest, JobResponse, JobObject } from '../types';
 
 function createEventSourceEvent(value: string | object): string {
-  let msg = value;
-  if (typeof msg === 'object') msg = JSON.stringify(msg);
-  return `data: ${msg}\n\n`;
+  let type,
+    msg = value;
+  if (typeof msg === 'object') {
+    // @ts-ignore
+    type = value.event;
+    msg = JSON.stringify({ ...msg, time_stamp: new Date().toString() });
+  }
+  return `data: ${msg}\n${type ? `event: ${type}\n` : ''}\n`;
 }
 
 export async function jobStatus(
@@ -45,8 +50,7 @@ export async function jobStatus(
       res.write(createEventSourceEvent(msg));
     },
     () => {
-      console.log('STOPPING');
-      res.write(createEventSourceEvent({ event: 'stop' }));
+      // res.write(createEventSourceEvent({ event: 'stop' }));
       res.end();
     },
   );

@@ -10,15 +10,18 @@ export type JobRequest<Params = {}, Body = {}> = Request<Params, {}, Body> & {
 export type JobResult = {
   job: string;
   tx: string;
+  ipfs_hash: string;
   job_timeout: number;
   created_at: string;
   ended_at?: string;
   service_url?: string | undefined;
+  status: 'QUEUED' | 'RUNNING' | 'COMPLETED';
 };
 
 export type JobObject = {
   id: string;
   recursive: boolean;
+  created_at: string;
   active_nodes: JobResult[];
   expired_nodes: JobResult[];
 };

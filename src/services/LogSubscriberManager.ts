@@ -15,9 +15,12 @@ export type LogEvent = {
   event: string;
 };
 
+export type LogTypes = 'infoLog' | 'jobLog' | 'containerLog';
+
 export type StatusLogClient = {
   response: Response;
   jobId: string;
+  logType?: LogTypes;
 };
 
 export default class LogSubscriberManager {
@@ -37,11 +40,13 @@ export default class LogSubscriberManager {
     this.subscribers.delete(callback);
   }
 
-  public addClient(response: Response, jobId: string) {
-    this.logStatusClients.push({ response, jobId });
+  public addClient(response: Response, jobId: string, logType?: LogTypes) {
+    this.logStatusClients.push({ response, jobId, logType });
 
-    const events = this.getEvents(jobId);
-    response.write(`data: ${JSON.stringify(events)}\n\n`);
+    const events = this.getEvents(jobId, logType);
+    if (events.length > 0) {
+      response.write(`data: ${JSON.stringify(events)}\n\n`);
+    }
 
     response.on('close', () => {
       this.removeClient(response);
@@ -61,9 +66,11 @@ export default class LogSubscriberManager {
     this.addEvent(log.job, log);
     this.subscribers.forEach((callback) => callback(log));
 
-    this.logStatusClients.forEach((client) => {
-      if (log.job === client.jobId) {
-        client.response.write(`data: ${JSON.stringify([log])}\n\n`);
+    this.logStatusClients.forEach(({ jobId, response, logType }) => {
+      if (log.job === jobId) {
+        if (!logType || logType === log.event) {
+          response.write(`data: ${JSON.stringify([log])}\n\n`);
+        }
       }
     });
   }
@@ -76,8 +83,12 @@ export default class LogSubscriberManager {
     return 'default';
   }
 
-  public getEvents(jobId: string) {
-    return this.events.get(jobId) || [];
+  public getEvents(jobId: string, logType?: LogTypes) {
+    let events = this.events.get(jobId) || [];
+
+    if (logType) events = events.filter(({ event }) => event === logType);
+
+    return events;
   }
 
   public addEvent(jobId: string, log: LogEvent) {

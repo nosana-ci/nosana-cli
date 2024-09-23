@@ -55,6 +55,7 @@ export async function postJobWithOptions(
 
   const result = {
     id,
+    created_at: new Date().toString(),
     recursive: !!recursive,
     active_nodes: nodes,
     expired_nodes: [],

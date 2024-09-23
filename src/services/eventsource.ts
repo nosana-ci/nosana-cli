@@ -9,6 +9,8 @@ export const listenToEventSource = <T>(
 ): EventSource => {
   const eventSource = new EventSource(url, { headers: { ...headers } });
 
+  eventSource.onopen = () => console.log('OPENING');
+
   eventSource.onmessage = (event: MessageEvent) => {
     const data: T = JSON.parse(event.data);
     onMessageCallback(data);

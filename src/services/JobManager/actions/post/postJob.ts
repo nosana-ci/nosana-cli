@@ -53,11 +53,13 @@ export function postJob(
       resolve({
         job: response.job,
         tx: response.tx,
+        ipfs_hash: ipfsHash,
         job_timeout: 1 * market.jobTimeout,
         service_url: isExposedJobOps(job)
           ? `https://${response.job}.${config.frp.serverAddr}`
           : undefined,
         created_at: new Date().toString(),
+        status: 'QUEUED',
       });
     } catch (e) {
       reject((e as Error).message);

@@ -1,4 +1,5 @@
 import express, { Response, NextFunction } from 'express';
+import cors from 'cors';
 
 import JobManager from '../index.js';
 import { handleResponse } from './middeware/responseHandler.js';
@@ -13,6 +14,7 @@ import { JobRequest } from './types/index.js';
 export const jobListener = (port: number, jobManager: JobManager) => {
   const app = express();
 
+  app.use(cors());
   app.use(express.json());
   app.use((req: JobRequest, _: Response, next: NextFunction) => {
     req.jobManager = jobManager;
