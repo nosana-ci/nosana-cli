@@ -1,4 +1,4 @@
-import { Client } from '@nosana/sdk';
+import { Client, sleep } from '@nosana/sdk';
 import { PublicKey } from '@solana/web3.js';
 
 import { postJobWithOptions } from './actions/post/index.js';
@@ -15,7 +15,7 @@ import { StatusEmitter } from './actions/status/statusEmitter.js';
 import { recurisveTimeout } from './actions/post/helpers/getRecursiveTimeout.js';
 
 export default class JobManager {
-  public state: JobManagerState;
+  protected state: JobManagerState;
   private nosana: Client;
   private workers: Map<string, NodeJS.Timeout>;
 
@@ -79,20 +79,38 @@ export default class JobManager {
     });
   }
 
-  private createListener = async (nodeAddress: string, jobAddress: string) => {
+  private createListener = async (
+    nodeAddress: string,
+    jobAddress: string,
+    statusEmitter: StatusEmitter,
+  ) => {
+    // TODO: update node addresss from 1111111111111111111111
+    let listener;
+    await sleep(3);
     const headers = await createSignature();
-    const listener = listenToEventSource(
+    listener = listenToEventSource(
       `https://${nodeAddress}.${config.frp.serverAddr}/status/${jobAddress}?logs=jobLog`,
       headers,
       (events: any[]) => {
         if (events.length > 0) {
-          if (
-            JSON.parse(events[events.length - 1].log).state === 'FLOW_FINISHED'
-          ) {
-            console.log('closing');
-            listener.close();
-          }
-          console.log(events);
+          events.forEach(({ log }) => {
+            const streamableLogs = [
+              'JOB_DEFINATION_VALIDATION',
+              'JOB_DEFINATION_VALIDATION_PASSED',
+              'PULLING_IMAGE',
+              'PULLING_IMAGE_SUCCESS',
+              'CONTAINER_STARTING',
+              'CONTAINER_STARTED',
+            ];
+            const logJSON = JSON.parse(log);
+            if (streamableLogs.includes(logJSON.state)) {
+              statusEmitter.emitProgress(jobAddress, logJSON.state);
+            }
+
+            if (logJSON.state === 'FLOW_FINISHED') {
+              listener!.close();
+            }
+          });
         }
       },
     );
@@ -119,7 +137,7 @@ export default class JobManager {
         if (state !== runState) {
           statusEmitter.emitStatus(jobId, runNode, runState);
         }
-        this.createListener(node, jobId);
+        this.createListener(node, jobId, statusEmitter);
       }
 
       const { node: finalNode, state: finalState } = await waitForJobCompletion(

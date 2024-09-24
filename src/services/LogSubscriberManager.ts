@@ -48,6 +48,7 @@ export default class LogSubscriberManager {
       response.write(`data: ${JSON.stringify(events)}\n\n`);
     }
 
+    // TODO: FIX AS THIS DOES NOT GET CALLED
     response.on('close', () => {
       this.removeClient(response);
     });
@@ -58,7 +59,7 @@ export default class LogSubscriberManager {
       (client) => client.response === response,
     );
     if (index !== -1) {
-      this.logStatusClients.splice(index, 1);
+      this.logStatusClients = this.logStatusClients.splice(index, 1);
     }
   }
 

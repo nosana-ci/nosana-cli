@@ -146,7 +146,6 @@ app.get(
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    res.write(`data: ${JSON.stringify({ logType, query: req.query })}\n\n`);
     logSubscriberManager.addClient(res, jobId, logType);
   },
 );

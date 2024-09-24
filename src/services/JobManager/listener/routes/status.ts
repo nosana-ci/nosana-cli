@@ -1,6 +1,6 @@
 import { NextFunction } from 'express';
 
-import { JobRequest, JobResponse, JobObject } from '../types';
+import { JobRequest, JobResponse, JobObject } from '../types/index.js';
 
 function createEventSourceEvent(value: string | object): string {
   let type,
@@ -50,6 +50,7 @@ export async function jobStatus(
       res.write(createEventSourceEvent(msg));
     },
     () => {
+      // TODO: FIX EVENT STOP MESSAGE
       // res.write(createEventSourceEvent({ event: 'stop' }));
       res.end();
     },

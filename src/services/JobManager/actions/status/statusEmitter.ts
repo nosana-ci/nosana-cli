@@ -22,4 +22,12 @@ export class StatusEmitter extends EventEmitter {
       status,
     });
   }
+
+  emitProgress(job_id: string, step: string) {
+    this.emit('event', {
+      event: 'progress',
+      job_id,
+      step,
+    });
+  }
 }
