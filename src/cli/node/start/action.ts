@@ -125,11 +125,10 @@ export async function startNode(
   if (!market) {
     // If we don't specify a market, try to join test grid
     ({ market, accessKey } = await node.joinTestGrid());
+    // TODO: decouple resources in providers from markets/blockchain/backend stuff,
+    //       that should be part of the node or cli..
+    await node.provider.updateMarketRequiredResources(market);
   }
-
-  // TODO: decouple resources in providers from markets/blockchain/backend stuff,
-  //       that should be part of the node or cli..
-  await node.provider.updateMarketRequiredResources(market);
 
   nodeDispatch(NODE_STATE_NAME.RETRIVING_MARKET, {
     market: market,
