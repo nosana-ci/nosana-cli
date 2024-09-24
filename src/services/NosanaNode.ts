@@ -209,12 +209,12 @@ export class NosanaNode {
               try {
                 const tx = await this.sdk.jobs.quit(this.run!);
                 this.logger.succeed(`Job successfully quit with tx ${tx}`);
-                this.run = undefined;
               } catch (e) {
                 this.logger.fail(chalk.red.bold('Could not quit job'));
                 reject(e);
               }
               await this.provider.stopFlow(this.run!.account.job.toString());
+              this.run = undefined;
               reject('Job expired');
             }
           }
