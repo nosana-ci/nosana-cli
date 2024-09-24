@@ -119,7 +119,7 @@ export default class JobManager {
         if (state !== runState) {
           statusEmitter.emitStatus(jobId, runNode, runState);
         }
-        // this.createListener(node, jobId);
+        this.createListener(node, jobId);
       }
 
       const { node: finalNode, state: finalState } = await waitForJobCompletion(
