@@ -6,6 +6,7 @@ import nacl from 'tweetnacl';
 import { getSDK } from './sdk.js';
 import { Client, Job, Run } from '@nosana/sdk';
 import * as web3 from '@solana/web3.js';
+import { getNodeStateManager } from './state/node/instance.js';
 
 export interface CustomRequest extends Request {
   address?: string;
@@ -171,6 +172,25 @@ app.post(
     }
   },
 );
+
+app.get('/node/info', async (req: Request, res: Response) => {
+  const nodeStateInstance = getNodeStateManager();
+  const firstEntry = nodeStateInstance.getStateHistory()[0];
+  const currentEntry = nodeStateInstance.getCurrentStateEntry();
+
+  const currentTime = new Date().getTime();
+  const firstTime = firstEntry.timestamp.getTime();
+
+  res.status(200).json({
+    node: nodeStateInstance.getSharedData('node'),
+    state: currentEntry,
+    uptime: currentTime - firstTime,
+    info: {
+      gpu: nodeStateInstance.getSharedData('devices'),
+      disk: nodeStateInstance.getSharedData('disk'),
+    },
+  });
+});
 
 export const api = {
   start: async (nosanaNode: NosanaNode): Promise<number> => {

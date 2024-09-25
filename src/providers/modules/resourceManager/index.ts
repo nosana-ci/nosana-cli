@@ -51,7 +51,10 @@ export function createResourceManager(
   const fetchMarketRequiredResources = async (
     market: string,
   ): Promise<void> => {
-    logger.log(chalk.cyan('Fetching latest market resource requirements'));
+    logger.log(
+      chalk.cyan('Fetching latest market resource requirements'),
+      true,
+    );
 
     required_market = market;
 
@@ -60,10 +63,10 @@ export function createResourceManager(
       { params: { path: { id: market } } },
     );
 
-    if (error)
-      throw new Error(
-        `Failed to fetch market resource requirements.\n${error.message}`,
-      );
+    if (error) {
+      logger.fail(chalk.red('Failed to fetch market resource requirements'));
+      throw new Error(error.toString());
+    }
 
     await imageManager.pullMarketRequiredImages(data.required_images);
     await volumeManager.pullMarketRequiredVolumes(

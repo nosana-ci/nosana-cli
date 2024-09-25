@@ -30,6 +30,7 @@ export const TUNNEL_IMAGE = 'registry.hub.docker.com/nosana/tunnel:0.1.0';
 import { benchmarkGPU } from '../static/staticsImports.js';
 import { dispatch as nodeDispatch } from './state/node/dispatch.js';
 import { NODE_STATE_NAME } from './state/node/types.js';
+import { getNodeStateManager } from './state/node/instance.js';
 
 export type NodeStats = {
   sol: number;
@@ -208,12 +209,12 @@ export class NosanaNode {
               try {
                 const tx = await this.sdk.jobs.quit(this.run!);
                 this.logger.succeed(`Job successfully quit with tx ${tx}`);
-                this.run = undefined;
               } catch (e) {
                 this.logger.fail(chalk.red.bold('Could not quit job'));
                 reject(e);
               }
               await this.provider.stopFlow(this.run!.account.job.toString());
+              this.run = undefined;
               reject('Job expired');
             }
           }
@@ -641,6 +642,8 @@ export class NosanaNode {
           throw error;
         }
 
+        getNodeStateManager().setSharedData('devices', devices);
+
         gpus = result.opStates[0].logs[0]!.log!;
 
         if (!result.opStates[1].logs) {
@@ -659,6 +662,9 @@ export class NosanaNode {
           if (ds.log) {
             // in MB
             const availableDiskSpace = parseInt(ds.log);
+
+            getNodeStateManager().setSharedData('disk', availableDiskSpace);
+
             if (config.minDiskSpace > availableDiskSpace) {
               const error = new Error(
                 `Not enough disk space available, found ${
