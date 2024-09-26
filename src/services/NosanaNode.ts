@@ -1,4 +1,6 @@
 import chalk from 'chalk';
+import { BN } from '@coral-xyz/anchor';
+
 import { Client, Job, KeyWallet, Market, Run } from '@nosana/sdk';
 import {
   ClientSubscriptionId,
@@ -15,8 +17,8 @@ import {
   JobDefinition,
   OperationArgsMap,
 } from '../providers/Provider.js';
-import { getRawTransaction } from './sdk.js';
-import { sleep } from '../generic/utils.js';
+import { getNosBalance, getRawTransaction } from './sdk.js';
+import { askYesNoQuestion, sleep } from '../generic/utils.js';
 import { EMPTY_ADDRESS } from './jobs.js';
 import { config } from '../generic/config.js';
 import { PodmanProvider } from '../providers/PodmanProvider.js';
@@ -485,34 +487,170 @@ export class NosanaNode {
       throw error;
     }
 
-    let stake;
+    let addressStake;
+    const minStakeForMarket = marketAccount?.nodeXnosMinimum || 0;
+    const nosBalance = getNosBalance();
+
     try {
       if (printDetailed) {
         this.logger.log(chalk.cyan('Checking stake account'), true);
       }
-      stake = await this.sdk.stake.get(this.address);
+      addressStake = await this.sdk.stake.get(this.address);
     } catch (error: any) {
+      this.logger.fail();
       if (error.message && error.message.includes('Account does not exist')) {
-        this.logger.log(chalk.cyan('Creating stake account'), true);
-        // If no stake account: create empty stake account
-        await this.sdk.stake.create(new PublicKey(this.address), 0, 14);
-        await sleep(2);
-        stake = await this.sdk.stake.get(this.address);
+        if (
+          !nosBalance ||
+          !nosBalance.amount ||
+          Number(nosBalance.amount) < minStakeForMarket
+        ) {
+          throw new Error(
+            chalk.red(
+              `Cannot enter Market, Insufficient NOS Balance of ${
+                Number(nosBalance?.amount || 0) / 1e6
+              } for Top up of Market minimum Stake of ${
+                minStakeForMarket / 1e6
+              }`,
+            ),
+          );
+        }
+
+        this.logger.log(
+          chalk.cyan(
+            `Creating stake account with ${minStakeForMarket / 1e6} NOS.`,
+          ),
+          true,
+        );
+
+        await this.sdk.stake.create(
+          new PublicKey(this.address),
+          minStakeForMarket,
+          14,
+        );
+        await sleep(5);
+
+        try {
+          addressStake = await this.sdk.stake.get(this.address);
+          this.logger.succeed(
+            chalk.green(
+              `Stake account created with ${minStakeForMarket / 1e6} NOS.`,
+            ),
+          );
+        } catch (error: any) {
+          this.logger.fail();
+          throw error;
+        }
       } else {
         nodeDispatch(NODE_STATE_NAME.HEALTH_CHECK_FAILED, {
           error: error,
         });
-
         throw error;
       }
     }
+
     if (printDetailed) {
       this.logger.succeed(
         chalk.green(
-          `Stake found with ${chalk.bold(stake.amount / 1e6)} NOS staked`,
+          `Stake found with ${chalk.bold(
+            addressStake.amount / 1e6,
+          )} NOS staked`,
         ),
       );
     }
+
+    if (addressStake) {
+      const currentStake = Number(addressStake.amount || 0);
+
+      if (minStakeForMarket > 0 && currentStake < minStakeForMarket) {
+        const diff = minStakeForMarket - currentStake;
+        if (
+          !nosBalance ||
+          !nosBalance.uiAmount ||
+          Number(nosBalance.amount) < diff
+        ) {
+          throw new Error(
+            chalk.red(
+              `Cannot enter Market, Insufficient NOS Balance of ${
+                Number(nosBalance?.amount || 0) / 1e6
+              } for Top up of Market minimum Stake of ${
+                minStakeForMarket / 1e6
+              }`,
+            ),
+          );
+        }
+
+        let text = `Market requires a minimum of ${
+          minStakeForMarket / 1e6
+        } NOS to be staked.`;
+
+        if (currentStake > 0) {
+          text += ` You currently have ${currentStake / 1e6} NOS staked.`;
+        }
+
+        console.log(chalk.yellow(text));
+
+        await askYesNoQuestion(
+          chalk.yellow(
+            `Do you want to top up your stake with ${diff / 1e6} NOS? (Y/n):`,
+          ),
+          async () => {
+            try {
+              this.logger.log(chalk.green('Topping up stake amount'), true);
+              await this.sdk.stake.topup(diff);
+
+              await sleep(5);
+
+              addressStake = await this.sdk.stake.get(this.address);
+
+              if (Number(addressStake.amount || 0) >= minStakeForMarket) {
+                this.logger.succeed();
+                console.log(
+                  chalk.green(
+                    `Stake successfully topped up. New stake amount: ${
+                      addressStake.amount / 1e6
+                    } NOS.`,
+                  ),
+                );
+              } else {
+                this.logger.fail();
+                throw new Error(
+                  chalk.red(
+                    `Transaction not completed yet, possibly still pending. Try again.`,
+                  ),
+                );
+              }
+            } catch (topUpError: any) {
+              this.logger.fail();
+              const error = new Error(
+                chalk.red(`Failed to top up stake: ${topUpError.message}`),
+              );
+              nodeDispatch(NODE_STATE_NAME.HEALTH_CHECK_FAILED, {
+                error: error,
+              });
+              throw error;
+            }
+          },
+          () => {
+            const error = new Error(
+              chalk.red(
+                `Cannot enter Market, Insufficient Staked NOS for Market`,
+              ),
+            );
+            nodeDispatch(NODE_STATE_NAME.HEALTH_CHECK_FAILED, {
+              error: error,
+            });
+            throw error;
+          },
+        );
+      }
+    } else {
+      const error = new Error(chalk.red('No stake account found'));
+      nodeDispatch(NODE_STATE_NAME.HEALTH_CHECK_FAILED, {
+        error: error,
+      });
+      throw error;
+    }
+
     try {
       if (
         marketAccount!.nodeAccessKey.toString() === EMPTY_ADDRESS.toString()

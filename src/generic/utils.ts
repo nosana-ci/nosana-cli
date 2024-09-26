@@ -1,5 +1,6 @@
 import { Console } from 'console';
 import { Transform } from 'stream';
+import inquirer from 'inquirer';
 
 /**
  * Method to pause the process
@@ -12,6 +13,42 @@ const sleep = (seconds: number): Promise<void> =>
  * Method to easily get a universal timestamp
  */
 const now = (): number => Math.floor(Date.now() / 1e3);
+
+async function askYesNoQuestion(
+  question: string,
+  onYes: () => Promise<void>,
+  onNo: () => void,
+): Promise<void> {
+  return inquirer
+    .prompt([
+      {
+        type: 'input',
+        name: 'confirm',
+        message: question,
+        default: 'y',
+        validate: (input: string) => {
+          const lowerInput = input.toLowerCase();
+          if (
+            lowerInput === 'y' ||
+            lowerInput === 'yes' ||
+            lowerInput === 'n' ||
+            lowerInput === 'no'
+          ) {
+            return true; // Valid input
+          }
+          return 'Please enter "y" or "yes" for yes or "n" or "no" for no.'; // Repeat question if invalid
+        },
+        filter: (input: string) => input.toLowerCase(), // Normalize input to lowercase
+      },
+    ])
+    .then((answers) => {
+      if (answers.confirm === 'y' || answers.confirm === 'yes') {
+        return onYes();
+      } else {
+        onNo();
+      }
+    });
+}
 
 const clearLine = () => {
   process.stdout.moveCursor(0, -1); // up one line
@@ -62,4 +99,12 @@ function logTable(data: any) {
   }
 }
 
-export { logTable, now, sleep, clearLine, colors, ifStringCastToArray };
+export {
+  logTable,
+  now,
+  sleep,
+  clearLine,
+  askYesNoQuestion,
+  colors,
+  ifStringCastToArray,
+};
