@@ -1,5 +1,4 @@
 import chalk from 'chalk';
-import { BN } from '@coral-xyz/anchor';
 
 import { Client, Job, KeyWallet, Market, Run } from '@nosana/sdk';
 import {
@@ -12,13 +11,9 @@ import {
 import 'rpc-websockets/dist/lib/client.js';
 import { NotQueuedError } from '../generic/errors.js';
 import { CudaCheckResponse } from '../types/cudaCheck.js';
-import {
-  FlowState,
-  JobDefinition,
-  OperationArgsMap,
-} from '../providers/Provider.js';
+import { FlowState, OperationArgsMap } from '../providers/Provider.js';
 import { getNosBalance, getRawTransaction } from './sdk.js';
-import { askYesNoQuestion, sleep } from '../generic/utils.js';
+import { askYesNoQuestion, SECONDS_PER_DAY, sleep } from '../generic/utils.js';
 import { EMPTY_ADDRESS } from './jobs.js';
 import { config } from '../generic/config.js';
 import { PodmanProvider } from '../providers/PodmanProvider.js';
@@ -488,9 +483,6 @@ export class NosanaNode {
     }
 
     let addressStake;
-    const minStakeForMarket = marketAccount?.nodeXnosMinimum || 0;
-    const nosBalance = getNosBalance();
-
     try {
       if (printDetailed) {
         this.logger.log(chalk.cyan('Checking stake account'), true);
@@ -499,43 +491,12 @@ export class NosanaNode {
     } catch (error: any) {
       this.logger.fail();
       if (error.message && error.message.includes('Account does not exist')) {
-        if (
-          !nosBalance ||
-          !nosBalance.amount ||
-          Number(nosBalance.amount) < minStakeForMarket
-        ) {
-          throw new Error(
-            chalk.red(
-              `Cannot enter Market, Insufficient NOS Balance of ${
-                Number(nosBalance?.amount || 0) / 1e6
-              } for Top up of Market minimum Stake of ${
-                minStakeForMarket / 1e6
-              }`,
-            ),
-          );
-        }
-
-        this.logger.log(
-          chalk.cyan(
-            `Creating stake account with ${minStakeForMarket / 1e6} NOS.`,
-          ),
-          true,
-        );
-
-        await this.sdk.stake.create(
-          new PublicKey(this.address),
-          minStakeForMarket,
-          14,
-        );
-        await sleep(5);
+        this.logger.log(chalk.cyan('Creating stake account'), true);
+        await this.sdk.stake.create(new PublicKey(this.address), 0, 14);
+        await sleep(4);
 
         try {
           addressStake = await this.sdk.stake.get(this.address);
-          this.logger.succeed(
-            chalk.green(
-              `Stake account created with ${minStakeForMarket / 1e6} NOS.`,
-            ),
-          );
         } catch (error: any) {
           this.logger.fail();
           throw error;
@@ -553,10 +514,18 @@ export class NosanaNode {
         chalk.green(
           `Stake found with ${chalk.bold(
             addressStake.amount / 1e6,
-          )} NOS staked`,
+          )} NOS staked with unstake duration of ${chalk.bold(
+            addressStake.duration / SECONDS_PER_DAY,
+          )} days`,
         ),
       );
     }
+    // TEMP: set xnosmin
+    if (marketAccount) {
+      marketAccount.nodeXnosMinimum = 0.025 * 1e6;
+    }
+    const minStakeForMarket = Number(marketAccount?.nodeXnosMinimum) || 0;
+    const nosBalance = getNosBalance();
 
     if (addressStake) {
       const currentStake = Number(addressStake.amount || 0);
@@ -584,18 +553,24 @@ export class NosanaNode {
         } NOS to be staked.`;
 
         if (currentStake > 0) {
-          text += ` You currently have ${currentStake / 1e6} NOS staked.`;
+          text += ` You currently have ${chalk.bold(
+            currentStake / 1e6,
+          )} NOS staked.`;
         }
 
         console.log(chalk.yellow(text));
 
         await askYesNoQuestion(
           chalk.yellow(
-            `Do you want to top up your stake with ${diff / 1e6} NOS? (Y/n):`,
+            `Do you want to top up your stake with ${chalk.bold(
+              diff / 1e6,
+            )} NOS with unstake duration of ${chalk.bold(
+              addressStake.duration / SECONDS_PER_DAY,
+            )} days? (Y/n):`,
           ),
           async () => {
             try {
-              this.logger.log(chalk.green('Topping up stake amount'), true);
+              this.logger.log(chalk.cyan('Topping up stake amount'), true);
               await this.sdk.stake.topup(diff);
 
               await sleep(5);

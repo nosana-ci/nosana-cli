@@ -99,6 +99,8 @@ function logTable(data: any) {
   }
 }
 
+const SECONDS_PER_DAY = 24 * 60 * 60;
+
 export {
   logTable,
   now,
@@ -107,4 +109,5 @@ export {
   askYesNoQuestion,
   colors,
   ifStringCastToArray,
+  SECONDS_PER_DAY,
 };
