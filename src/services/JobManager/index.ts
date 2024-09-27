@@ -1,5 +1,4 @@
-import { Client, sleep } from '@nosana/sdk';
-import { PublicKey } from '@solana/web3.js';
+import { Client } from '@nosana/sdk';
 
 import { postJobWithOptions } from './actions/post/index.js';
 import { jobListener } from './listener/index.js';
@@ -7,12 +6,9 @@ import { JobObject, JobPostingOptions } from './listener/types/index.js';
 import { JobDefinition } from '../../providers/Provider.js';
 import { JobManagerState } from './state/index.js';
 import { getSDK } from '../sdk.js';
-import { createSignature } from '../api.js';
-import { listenToEventSource } from '../eventsource.js';
-import { config } from '../../generic/config.js';
-import { waitForJobCompletion, waitForJobRunOrCompletion } from '../jobs.js';
 import { StatusEmitter } from './actions/status/statusEmitter.js';
 import { recurisveTimeout } from './actions/post/helpers/getRecursiveTimeout.js';
+import { listenToJobUntilComplete } from './actions/status/index.js';
 
 export default class JobManager {
   protected state: JobManagerState;
@@ -33,9 +29,6 @@ export default class JobManager {
     clearTimeout(this.workers.get(job));
     return job;
   }
-
-  // TODO: Listen to node status
-  // TODO: Listen for recursive stop
 
   public async status(
     id: string,
@@ -66,7 +59,7 @@ export default class JobManager {
             statusEmitter.emitCreate(result.job, result);
           }
           processedIds.add(result.job);
-          await this.listenToJobUntilComplete(result.job, statusEmitter);
+          await listenToJobUntilComplete(result.job, statusEmitter);
 
           jobObj.expired_nodes.push(result);
           jobObj.active_nodes.splice(index, 1);
@@ -76,76 +69,6 @@ export default class JobManager {
       });
 
       init = false;
-    });
-  }
-
-  private createListener = async (
-    nodeAddress: string,
-    jobAddress: string,
-    statusEmitter: StatusEmitter,
-  ) => {
-    // TODO: update node addresss from 1111111111111111111111
-    let listener;
-    await sleep(3);
-    const headers = await createSignature();
-    listener = listenToEventSource(
-      `https://${nodeAddress}.${config.frp.serverAddr}/status/${jobAddress}?logs=jobLog`,
-      headers,
-      (events: any[]) => {
-        if (events.length > 0) {
-          events.forEach(({ log }) => {
-            const streamableLogs = [
-              'JOB_DEFINATION_VALIDATION',
-              'JOB_DEFINATION_VALIDATION_PASSED',
-              'PULLING_IMAGE',
-              'PULLING_IMAGE_SUCCESS',
-              'CONTAINER_STARTING',
-              'CONTAINER_STARTED',
-            ];
-            const logJSON = JSON.parse(log);
-            if (streamableLogs.includes(logJSON.state)) {
-              statusEmitter.emitProgress(jobAddress, logJSON.state);
-            }
-
-            if (logJSON.state === 'FLOW_FINISHED') {
-              listener!.close();
-            }
-          });
-        }
-      },
-    );
-  };
-
-  private async listenToJobUntilComplete(
-    jobId: string,
-    statusEmitter: StatusEmitter,
-  ) {
-    return new Promise(async (resolve) => {
-      const id = new PublicKey(jobId);
-      const { node, state } = await this.nosana.jobs.get(id);
-
-      statusEmitter.emitStatus(jobId, node, state);
-
-      if (['COMPLETED', 'STOPPED'].includes(`${state}`)) {
-        resolve(true);
-      }
-
-      const { node: runNode, state: runState } =
-        await waitForJobRunOrCompletion(id);
-
-      if (runState === 'RUNNING') {
-        if (state !== runState) {
-          statusEmitter.emitStatus(jobId, runNode, runState);
-        }
-        this.createListener(node, jobId, statusEmitter);
-      }
-
-      const { node: finalNode, state: finalState } = await waitForJobCompletion(
-        id,
-      );
-
-      statusEmitter.emitStatus(jobId, finalNode, finalState);
-      resolve(true);
     });
   }
 
