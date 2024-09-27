@@ -1,7 +1,7 @@
 import ora from 'ora';
 import chalk from 'chalk';
 import { Command } from 'commander';
-import { Client, Job } from '@nosana/sdk';
+import { Client } from '@nosana/sdk';
 import { PublicKey } from '@solana/web3.js';
 import 'rpc-websockets/dist/lib/client.js';
 
@@ -10,9 +10,8 @@ import { getSDK } from '../../../services/sdk.js';
 import { waitForJobRunOrCompletion } from '../../../services/jobs.js';
 import { OUTPUT_EVENTS } from '../../../providers/utils/ouput-formatter/outputEvents.js';
 import { outputFormatSelector } from '../../../providers/utils/ouput-formatter/outputFormatSelector.js';
-import { config } from '../../../generic/config.js';
-import { createSignature } from '../../../services/api.js';
-import { OutputFormatter } from '../../../providers/utils/ouput-formatter/OutputFormatter.js';
+
+import { postStopJobServiceURLWithRetry } from '../../../services/JobManager/actions/stop/postStopJobServiceURLWithRetry.js';
 
 export async function stopJob(
   jobAddress: string,
@@ -23,8 +22,6 @@ export async function stopJob(
 ): Promise<void> {
   const nosana: Client = getSDK();
   const formatter = outputFormatSelector(options.format);
-
-  const headers = await createSignature();
 
   let job;
   console.log('retrieving job...');
@@ -71,11 +68,10 @@ export async function stopJob(
 
       if (job.state === 'RUNNING') {
         clearLine();
-        await postStopJobServiceURLWithRetry(
-          job,
-          jobAddress,
-          formatter,
-          headers,
+        await postStopJobServiceURLWithRetry(job.node, jobAddress, () =>
+          formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_STATUS, {
+            status: 'STOPPED',
+          }),
         );
       }
     } else {
@@ -89,34 +85,4 @@ export async function stopJob(
       error: new Error('Job Not Found'),
     });
   }
-}
-
-async function postStopJobServiceURLWithRetry(
-  job: Job,
-  jobAddress: string,
-  formatter: OutputFormatter,
-  headers: any,
-): Promise<void> {
-  const retryInterval = 5000;
-
-  const intervalId = setInterval(async () => {
-    try {
-      const response = await fetch(
-        `https://${job.node}.${config.frp.serverAddr}/service/stop/${jobAddress}`,
-        {
-          method: 'POST',
-          headers,
-          body: '',
-        },
-      );
-      if (response.status === 200) {
-        clearInterval(intervalId);
-        formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_STATUS, {
-          status: 'STOPPED',
-        });
-      }
-    } catch (error) {
-      // The interval will continue, no need to manually retry here
-    }
-  }, retryInterval);
 }

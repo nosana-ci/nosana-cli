@@ -32,6 +32,10 @@ export class JobManagerState {
     return this.state.list();
   }
 
+  has(key: string): boolean {
+    return this.state.has(key);
+  }
+
   set(
     key: string,
     stateOrCallback:

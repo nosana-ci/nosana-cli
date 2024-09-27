@@ -28,7 +28,7 @@ export const jobListener = (port: number, jobManager: JobManager) => {
 
   // POST Routes
   app.post('/job/post', validateJobPostBody, postJob);
-  app.post('/job/stop/"id', stopJob);
+  app.post('/job/stop/:id', stopJob);
 
   // Put Routes (update replicas)
 

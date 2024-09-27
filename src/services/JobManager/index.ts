@@ -9,6 +9,7 @@ import { getSDK } from '../sdk.js';
 import { StatusEmitter } from './actions/status/statusEmitter.js';
 import { recurisveTimeout } from './actions/post/helpers/getRecursiveTimeout.js';
 import { listenToJobUntilComplete } from './actions/status/index.js';
+import { stopJob } from './actions/stop/index.js';
 
 export default class JobManager {
   protected state: JobManagerState;
@@ -19,15 +20,6 @@ export default class JobManager {
     this.state = new JobManagerState(configPath);
     this.nosana = getSDK();
     this.workers = new Map();
-  }
-
-  public stop(job: string): string | Error {
-    if (!this.workers.has(job)) {
-      return new Error('Failed to find job');
-    }
-
-    clearTimeout(this.workers.get(job));
-    return job;
   }
 
   public async status(
@@ -95,12 +87,15 @@ export default class JobManager {
         market,
         job,
         options,
-        ({ active_nodes }) => {
+        ({ id, active_nodes }) => {
           const timeout = active_nodes[0].job_timeout;
           if (recursive) {
-            setTimeout(() => {
-              recurisveLoop(market, job, options);
-            }, recurisveTimeout(timeout, recursive_offset_min));
+            this.workers.set(
+              id,
+              setTimeout(() => {
+                recurisveLoop(market, job, options);
+              }, recurisveTimeout(timeout, recursive_offset_min)),
+            );
           }
         },
       );
@@ -131,6 +126,60 @@ export default class JobManager {
   public list(): string[] {
     // @ts-ignore
     return this.state.list();
+  }
+
+  public async stop(id: string, waitForRunning = false): Promise<string[]> {
+    await this.nosana.jobs.loadNosanaJobs();
+
+    const localGroup = this.state.get(id);
+    if (localGroup) {
+      const worker = this.workers.get(id);
+      if (worker) {
+        clearTimeout(worker);
+        this.workers.delete(id);
+      }
+
+      const failedJobs: string[] = [];
+
+      await Promise.all(
+        localGroup.active_nodes.map(async ({ job }) => {
+          return new Promise(async (resolve) => {
+            try {
+              await stopJob(job, waitForRunning);
+              resolve(true);
+            } catch {
+              failedJobs.push(job);
+            }
+          });
+        }),
+      );
+
+      this.state.set(id, {
+        ...localGroup,
+        active_nodes: localGroup.active_nodes.filter(({ job }) =>
+          failedJobs.includes(job),
+        ),
+        expired_nodes: [
+          ...localGroup.expired_nodes,
+          ...localGroup.active_nodes
+            .filter(({ job }) => !failedJobs.includes(job))
+            .map((job) => ({
+              ...job,
+              status: 'COMPLETED' as 'COMPLETED',
+            })),
+        ],
+      });
+
+      return failedJobs;
+    } else {
+      try {
+        await stopJob(id, waitForRunning);
+      } catch {
+        return [id];
+      }
+    }
+
+    return [];
   }
 
   public listen(port: number) {
