@@ -520,10 +520,6 @@ export class NosanaNode {
         ),
       );
     }
-    // TEMP: set xnosmin
-    if (marketAccount) {
-      marketAccount.nodeXnosMinimum = 0.025 * 1e6;
-    }
     const minStakeForMarket = Number(marketAccount?.nodeXnosMinimum) || 0;
     const nosBalance = getNosBalance();
 
