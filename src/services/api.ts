@@ -1,4 +1,5 @@
 import express, { Request, Response, NextFunction } from 'express';
+import cors from 'cors';
 import { config } from '../generic/config.js';
 import { NosanaNode } from './NosanaNode.js';
 import LogSubscriberManager from './LogSubscriberManager.js';
@@ -17,6 +18,7 @@ export interface SignatureHeaders {
 }
 
 const app = express();
+app.use(cors());
 const port = config.api.port;
 
 let node: NosanaNode;
