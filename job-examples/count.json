@@ -9,7 +9,7 @@
       "type": "container/run",
       "id": "run-from-cli",
       "args": {
-        "cmd": "for i in `seq 1 10`; do echo $i; sleep 1; done",
+        "cmd": "for i in `seq 1 10000000`; do echo This is log number $i and were still not done; done",
         "image": "ubuntu"
       }
     }

@@ -97,24 +97,24 @@ export async function runJob(
           op.type === 'container/run' &&
           (op.args as OperationArgsMap['container/run']).expose,
       ).length > 0;
-    streamingLogs = true;
-    result = await node.provider.waitForFlowFinish(
-      flow.id,
-      (event: { log: string; type: string }) => {
-        if (!handlingSigInt && !isFlowExposed) {
-          if (event.type === 'stdout') {
-            process.stdout.write(event.log);
-          } else {
-            process.stderr.write(event.log);
-          }
-        }
-      },
-    );
     streamingLogs = false;
-    console.log(
-      'result: ',
-      util.inspect(result, { showHidden: false, depth: null, colors: true }),
-    );
+    // result = await node.provider.waitForFlowFinish(
+    //   flow.id,
+    //   (event: { log: string; type: string }) => {
+    //     if (!handlingSigInt && !isFlowExposed) {
+    //       if (event.type === 'stdout') {
+    //         process.stdout.write(event.log);
+    //       } else {
+    //         process.stderr.write(event.log);
+    //       }
+    //     }
+    //   },
+    // );
+    streamingLogs = false;
+    // console.log(
+    //   'result: ',
+    //   util.inspect(result, { showHidden: false, depth: null, colors: true }),
+    // );
   } catch (error) {
     spinner.fail(chalk.red.bold(error));
   }

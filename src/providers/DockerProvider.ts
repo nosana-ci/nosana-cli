@@ -32,6 +32,8 @@ import { randomUUID } from 'crypto';
 import { createResourceName } from './modules/resourceManager/volumes/index.js';
 import { dispatch as jobDispatch } from '../services/state/job/dispatch.js';
 import { JOB_STATE_NAME } from '../services/state/job/types.js';
+import { getCotnainerInfo } from './utils/getContainerInfo.js';
+import { getCotnainerLogs } from './utils/getContainerLogs.js';
 
 export type RunContainerArgs = {
   name?: string;
@@ -684,7 +686,6 @@ export class DockerProvider extends BasicProvider implements Provider {
 
     return opState;
   }
-
   /**
    * Finish container run, extract results and update opState
    * @param container
@@ -702,14 +703,14 @@ export class DockerProvider extends BasicProvider implements Provider {
     operationResults?: OperationResults | undefined;
     updateOpState: Function;
   }): Promise<void> {
-    if (!containerInfo) containerInfo = await container.inspect();
+    const controller = new AbortController();
+
+    if (!containerInfo) {
+      containerInfo = await getCotnainerInfo(container, 180, controller);
+    }
 
     // op is done, get logs from container and save them in the flow
-    const log = await container.logs({
-      follow: false,
-      stdout: true,
-      stderr: true,
-    });
+    const log = await getCotnainerLogs(container, 180, controller);
     const logs: OpState['logs'] = this.demuxOutput(log);
     const results: OpState['results'] = extractResultsFromLogs(
       logs,
@@ -893,6 +894,7 @@ export class DockerProvider extends BasicProvider implements Provider {
    * @returns demuxOutput
    */
   private demuxOutput = (buffer: Buffer): Log[] => {
+    const start_time = new Date().getTime();
     const output: Log[] = [];
 
     function bufferSlice(end: number) {
@@ -901,7 +903,10 @@ export class DockerProvider extends BasicProvider implements Provider {
       return out;
     }
 
-    while (buffer.length > 0) {
+    while (
+      buffer.length > 0 ||
+      (new Date().getTime() - start_time) / 1000 < 180
+    ) {
       const header = bufferSlice(8);
       const nextDataType = header.readUInt8(0);
       const nextDataLength = header.readUInt32BE(4);
