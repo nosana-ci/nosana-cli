@@ -11,8 +11,7 @@
       "args": {
         "cmd": [],
         "image": "nginx",
-        "expose": 80,
-        "gpu": true
+        "expose": 80
       }
     }
   ]
