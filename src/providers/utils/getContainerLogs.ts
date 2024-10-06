@@ -10,6 +10,9 @@ export function getCotnainerLogs(
     try {
       const logs = await promiseTimeoutWrapper(
         container.logs({
+          follow: false,
+          stdout: true,
+          stderr: true,
           abortSignal: controller.signal,
         }),
         timeout,

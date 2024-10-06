@@ -2,7 +2,7 @@ import { Log, OperationResults, StdOptions } from '../Provider';
 import {
   createResultsObject,
   extractResultFromLog,
-} from './extractResultsFromLogs';
+} from './extractResultsFromLogs.js';
 
 export function extractLogsAndResultsFromLogBuffer(
   logBuffer: Buffer,
