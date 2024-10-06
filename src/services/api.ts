@@ -2,7 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { config } from '../generic/config.js';
 import { NosanaNode } from './NosanaNode.js';
-import LogSubscriberManager from './LogSubscriberManager.js';
+import LogSubscriberManager, { LogTypes } from './LogSubscriberManager.js';
 import nacl from 'tweetnacl';
 import { getSDK } from './sdk.js';
 import { Client, Job, Run } from '@nosana/sdk';
@@ -132,6 +132,13 @@ app.get(
   verifyJobOwnerMiddleware,
   (req: Request, res: Response) => {
     const jobId = req.params.jobId;
+    const logType = req.query.logs as LogTypes | undefined;
+
+    if (logType) {
+      if (!['infoLog', 'jobLog', 'containerLog'].includes(logType)) {
+        res.status(400).send(`Invalid log type: ${logType}`);
+      }
+    }
 
     if (!jobId) {
       res.status(400).send('jobId path parameter is required');
@@ -142,7 +149,7 @@ app.get(
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    logSubscriberManager.addClient(res, jobId);
+    logSubscriberManager.addClient(res, jobId, logType);
   },
 );
 

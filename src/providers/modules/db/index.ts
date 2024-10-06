@@ -2,13 +2,10 @@ import fs from 'fs';
 import os from 'os';
 import { LowSync } from 'lowdb/lib';
 import { JSONFileSyncPreset } from 'lowdb/node';
-import { PostJobResult } from '../../../services/JobManager/actions/post/index.js';
+
 import { Flow } from '../../Provider.js';
 
 export type NodeDb = {
-  jobs: {
-    [key: string]: PostJobResult;
-  };
   flows: { [key: string]: Flow };
   resources: Resources;
 };
@@ -29,7 +26,6 @@ type VolumeResource = ResourceHistory & {
 };
 
 const initial_state = {
-  jobs: {},
   resources: {
     images: {},
     volumes: {},
@@ -58,10 +54,6 @@ export class DB {
 
     if (!this.db.data.flows) {
       this.db.data.flows = initial_state.flows;
-    }
-
-    if (!this.db.data.jobs) {
-      this.db.data.jobs = initial_state.jobs;
     }
 
     this.db.write();
