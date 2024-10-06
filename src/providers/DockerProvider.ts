@@ -21,7 +21,6 @@ import {
 } from './Provider.js';
 import { config } from '../generic/config.js';
 import { getSDK } from '../services/sdk.js';
-import { extractResultsFromLogs } from './utils/extractResultsFromLogs.js';
 import { parseOpArgsCmd } from './utils/parseOpsArgsCmd.js';
 import { createResourceManager } from './modules/resourceManager/index.js';
 import { DockerExtended } from '../docker/index.js';
@@ -34,6 +33,7 @@ import { dispatch as jobDispatch } from '../services/state/job/dispatch.js';
 import { JOB_STATE_NAME } from '../services/state/job/types.js';
 import { getCotnainerInfo } from './utils/getContainerInfo.js';
 import { getCotnainerLogs } from './utils/getContainerLogs.js';
+import { extractLogsAndResultsFromLogBuffer } from './utils/extractLogsAndResultsFromLogBuffer.js';
 
 export type RunContainerArgs = {
   name?: string;
@@ -710,10 +710,9 @@ export class DockerProvider extends BasicProvider implements Provider {
     }
 
     // op is done, get logs from container and save them in the flow
-    const log = await getCotnainerLogs(container, 180, controller);
-    const logs: OpState['logs'] = this.demuxOutput(log);
-    const results: OpState['results'] = extractResultsFromLogs(
-      logs,
+    const logBuffer = await getCotnainerLogs(container, 180, controller);
+    const { logs, results } = extractLogsAndResultsFromLogBuffer(
+      logBuffer,
       operationResults,
     );
 
@@ -887,48 +886,4 @@ export class DockerProvider extends BasicProvider implements Provider {
       throw e;
     }
   }
-
-  /**
-   * input: log Buffer, output stdout & stderr strings
-   * @param buffer
-   * @returns demuxOutput
-   */
-  private demuxOutput = (buffer: Buffer): Log[] => {
-    const start_time = new Date().getTime();
-    const output: Log[] = [];
-
-    function bufferSlice(end: number) {
-      const out = buffer.slice(0, end);
-      buffer = Buffer.from(buffer.slice(end, buffer.length));
-      return out;
-    }
-
-    while (
-      buffer.length > 0 ||
-      (new Date().getTime() - start_time) / 1000 < 180
-    ) {
-      const header = bufferSlice(8);
-      const nextDataType = header.readUInt8(0);
-      const nextDataLength = header.readUInt32BE(4);
-      const content = bufferSlice(nextDataLength);
-      switch (nextDataType) {
-        case 1:
-          output.push({
-            type: 'stdout',
-            log: Buffer.concat([content]).toString('utf8'),
-          });
-          break;
-        case 2:
-          output.push({
-            type: 'stderr',
-            log: Buffer.concat([content]).toString('utf8'),
-          });
-          break;
-        default:
-        // ignore
-      }
-    }
-
-    return output;
-  };
 }
