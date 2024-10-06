@@ -7,11 +7,11 @@
   "ops": [
     {
       "type": "container/run",
-      "id": "Invoke-UI",
+      "id": "nginx",
       "args": {
         "cmd": [],
-        "image": "ghcr.io/invoke-ai/invokeai",
-        "expose": 9090,
+        "image": "nginx",
+        "expose": 80,
         "gpu": true
       }
     }
