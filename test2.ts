@@ -6,11 +6,9 @@ const docker = new Dockerode({
   protocol: 'http',
 });
 
-const container = await docker.getContainer('32322478c084');
+const container = await docker.getContainer('c256310bbdd7');
 
-console.log(new Date());
-
-const buffer = await container.logs({
+const logsbuffer = await container.logs({
   follow: false,
   stdout: true,
   stderr: true,
@@ -51,6 +49,9 @@ const demuxOutput = (buffer: Buffer): any[] => {
   return output;
 };
 
-const res = demuxOutput(buffer);
+const startTime = new Date();
+console.log(startTime);
+const res = demuxOutput(logsbuffer);
 console.log(res[res.length - 1]);
 console.log(new Date());
+console.log(`${(new Date().getTime() - startTime.getTime()) / 1000} secods`);

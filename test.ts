@@ -6,15 +6,7 @@ const docker = new Dockerode({
   protocol: 'http',
 });
 
-// const container = await docker.getContainer('b6415c0ba92d');
-const container = await docker.getContainer('32322478c084');
-// const container = await docker.getContainer('4bad55ca8ec6');
-// const container = await docker.getContainer('45ecb8dff6fe');
-// const container = await docker.getContainer('56e7420d1f59');
-// // const container = await docker.getContainer('743673af103a');
-// const info = await container.inspect();
-
-console.log(new Date());
+const container = await docker.getContainer('c256310bbdd7');
 
 const buffer = await container.logs({
   follow: false,
@@ -119,6 +111,9 @@ function extractLogsAndResultsFromLogBuffer(
   };
 }
 
+const startTime = new Date();
+console.log(startTime);
+
 const res = extractLogsAndResultsFromLogBuffer(buffer, {
   test: 'z',
 });
@@ -126,3 +121,4 @@ const res = extractLogsAndResultsFromLogBuffer(buffer, {
 console.log(res.logs[res.logs.length - 1]);
 
 console.log(new Date());
+console.log(`${(new Date().getTime() - startTime.getTime()) / 1000} secods`);
