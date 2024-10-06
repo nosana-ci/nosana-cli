@@ -1,4 +1,5 @@
 import chalk from 'chalk';
+
 import { Client, Job, KeyWallet, Market, Run } from '@nosana/sdk';
 import {
   ClientSubscriptionId,
@@ -10,13 +11,9 @@ import {
 import 'rpc-websockets/dist/lib/client.js';
 import { NotQueuedError } from '../generic/errors.js';
 import { CudaCheckResponse } from '../types/cudaCheck.js';
-import {
-  FlowState,
-  JobDefinition,
-  OperationArgsMap,
-} from '../providers/Provider.js';
-import { getRawTransaction } from './sdk.js';
-import { sleep } from '../generic/utils.js';
+import { FlowState, OperationArgsMap } from '../providers/Provider.js';
+import { getNosBalance, getRawTransaction } from './sdk.js';
+import { askYesNoQuestion, SECONDS_PER_DAY, sleep } from '../generic/utils.js';
 import { EMPTY_ADDRESS } from './jobs.js';
 import { config } from '../generic/config.js';
 import { PodmanProvider } from '../providers/PodmanProvider.js';
@@ -485,34 +482,146 @@ export class NosanaNode {
       throw error;
     }
 
-    let stake;
+    let addressStake;
     try {
       if (printDetailed) {
         this.logger.log(chalk.cyan('Checking stake account'), true);
       }
-      stake = await this.sdk.stake.get(this.address);
+      addressStake = await this.sdk.stake.get(this.address);
     } catch (error: any) {
+      this.logger.fail();
       if (error.message && error.message.includes('Account does not exist')) {
         this.logger.log(chalk.cyan('Creating stake account'), true);
-        // If no stake account: create empty stake account
         await this.sdk.stake.create(new PublicKey(this.address), 0, 14);
-        await sleep(2);
-        stake = await this.sdk.stake.get(this.address);
+        await sleep(4);
+
+        try {
+          addressStake = await this.sdk.stake.get(this.address);
+        } catch (error: any) {
+          this.logger.fail();
+          throw error;
+        }
       } else {
         nodeDispatch(NODE_STATE_NAME.HEALTH_CHECK_FAILED, {
           error: error,
         });
-
         throw error;
       }
     }
+
     if (printDetailed) {
       this.logger.succeed(
         chalk.green(
-          `Stake found with ${chalk.bold(stake.amount / 1e6)} NOS staked`,
+          `Stake found with ${chalk.bold(
+            addressStake.amount / 1e6,
+          )} NOS staked with unstake duration of ${chalk.bold(
+            addressStake.duration / SECONDS_PER_DAY,
+          )} days`,
         ),
       );
     }
+    const minStakeForMarket = Number(marketAccount?.nodeXnosMinimum) || 0;
+    const nosBalance = getNosBalance();
+
+    if (addressStake) {
+      const currentStake = Number(addressStake.amount || 0);
+
+      if (minStakeForMarket > 0 && currentStake < minStakeForMarket) {
+        const diff = minStakeForMarket - currentStake;
+        if (
+          !nosBalance ||
+          !nosBalance.uiAmount ||
+          Number(nosBalance.amount) < diff
+        ) {
+          throw new Error(
+            chalk.red(
+              `Cannot enter Market, Insufficient NOS Balance of ${
+                Number(nosBalance?.amount || 0) / 1e6
+              } for Top up of Market minimum Stake of ${
+                minStakeForMarket / 1e6
+              }`,
+            ),
+          );
+        }
+
+        let text = `Market requires a minimum of ${
+          minStakeForMarket / 1e6
+        } NOS to be staked.`;
+
+        if (currentStake > 0) {
+          text += ` You currently have ${chalk.bold(
+            currentStake / 1e6,
+          )} NOS staked.`;
+        }
+
+        console.log(chalk.yellow(text));
+
+        await askYesNoQuestion(
+          chalk.yellow(
+            `Do you want to top up your stake with ${chalk.bold(
+              diff / 1e6,
+            )} NOS with unstake duration of ${chalk.bold(
+              addressStake.duration / SECONDS_PER_DAY,
+            )} days? (Y/n):`,
+          ),
+          async () => {
+            try {
+              this.logger.log(chalk.cyan('Topping up stake amount'), true);
+              await this.sdk.stake.topup(diff);
+
+              await sleep(5);
+
+              addressStake = await this.sdk.stake.get(this.address);
+
+              if (Number(addressStake.amount || 0) >= minStakeForMarket) {
+                this.logger.succeed();
+                console.log(
+                  chalk.green(
+                    `Stake successfully topped up. New stake amount: ${
+                      addressStake.amount / 1e6
+                    } NOS.`,
+                  ),
+                );
+              } else {
+                this.logger.fail();
+                throw new Error(
+                  chalk.red(
+                    `Transaction not completed yet, possibly still pending. Try again.`,
+                  ),
+                );
+              }
+            } catch (topUpError: any) {
+              this.logger.fail();
+              const error = new Error(
+                chalk.red(`Failed to top up stake: ${topUpError.message}`),
+              );
+              nodeDispatch(NODE_STATE_NAME.HEALTH_CHECK_FAILED, {
+                error: error,
+              });
+              throw error;
+            }
+          },
+          () => {
+            const error = new Error(
+              chalk.red(
+                `Cannot enter Market, Insufficient Staked NOS for Market`,
+              ),
+            );
+            nodeDispatch(NODE_STATE_NAME.HEALTH_CHECK_FAILED, {
+              error: error,
+            });
+            throw error;
+          },
+        );
+      }
+    } else {
+      const error = new Error(chalk.red('No stake account found'));
+      nodeDispatch(NODE_STATE_NAME.HEALTH_CHECK_FAILED, {
+        error: error,
+      });
+      throw error;
+    }
+
     try {
       if (
         marketAccount!.nodeAccessKey.toString() === EMPTY_ADDRESS.toString()
