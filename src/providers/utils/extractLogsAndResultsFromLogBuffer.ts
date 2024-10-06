@@ -1,3 +1,4 @@
+import { log } from 'console';
 import { Log, OperationResults, StdOptions } from '../Provider';
 import {
   createResultsObject,
@@ -22,6 +23,10 @@ export function extractLogsAndResultsFromLogBuffer(
 
   const timer = setTimeout(() => {
     running = false;
+    logs.push({
+      type: 'nodeerr',
+      log: 'Took too long to retrive all logs',
+    });
   }, expiryTimeout);
 
   while (index < logBuffer.length && running) {
