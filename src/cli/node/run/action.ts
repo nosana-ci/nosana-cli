@@ -97,7 +97,7 @@ export async function runJob(
           op.type === 'container/run' &&
           (op.args as OperationArgsMap['container/run']).expose,
       ).length > 0;
-    streamingLogs = false;
+    streamingLogs = true;
     result = await node.provider.waitForFlowFinish(
       flow.id,
       (event: { log: string; type: string }) => {
