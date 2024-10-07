@@ -43,6 +43,14 @@ export function extractLogsAndResultsFromLogBuffer(
       if (results && operationResults) {
         extractResultFromLog(results, logObj, operationResults);
       }
+
+      if (logs.length >= 24999) {
+        running = false;
+        logs.push({
+          type: 'nodeerr',
+          log: 'Found too many logs...',
+        });
+      }
     }
   }
 
