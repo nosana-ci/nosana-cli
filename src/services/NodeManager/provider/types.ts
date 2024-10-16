@@ -1,12 +1,26 @@
-// TODO: move types to SDK
-import { CronJob } from 'cron';
-import typia from 'typia';
+export type S3Unsecure = {
+  type: 'S3';
+  url?: string;
+  target: string;
+  files?: string[];
+  allowWrite?: boolean;
+  buckets?: { url: string; files?: string[] }[];
+};
 
-import { Resource } from '../types/resources.js';
+export type S3Auth = {
+  REGION: string;
+  ACCESS_KEY_ID: string;
+  SECRET_ACCESS_KEY: string;
+};
 
-/************************
- * Job Definition Types *
- ************************/
+export type S3Secure = S3Unsecure & {
+  IAM: S3Auth;
+};
+
+export type Resource = S3Unsecure | S3Secure;
+
+export type RequiredResource = Omit<Resource, 'target'>;
+
 export type Ops = Array<Operation<OperationType>>;
 
 export interface JobLogicstics {
@@ -141,34 +155,6 @@ export type OpState = {
   };
 };
 
-export const validateJobDefinition =
-  typia.createValidateEquals<JobDefinition>();
-
-export const ProviderEvents: { [key: string]: string } = {
-  STOP_FLOW: 'stopFlowEvent',
-  FLOW_FINISHED: 'flowFinished',
-  INFO_LOG: 'infoLog',
-  CONTAINER_LOG: 'containerLog',
-};
-
-export abstract class Provider {
-  public abstract name: string;
-  abstract run(JobDefinition: JobDefinition, flowStateId?: string): Flow;
-  abstract healthy(): Promise<Boolean>;
-  abstract getFlow(id: string): Flow | undefined;
-  abstract continueFlow(flowId: string): Flow | Promise<Flow>;
-  abstract clearFlow(flowId: string): Promise<void>;
-  abstract stopFlow(flowId: string): Promise<void>;
-  abstract stopFlowOperation(
-    flowId: string,
-    op: Operation<OperationType>,
-  ): Promise<OpState>;
-  abstract finishFlow(flowId: string, status?: string): void;
-  abstract waitForFlowFinish(
-    id: string,
-    logCallback?: Function,
-  ): Promise<FlowState | null>;
-  abstract clearOldFlows(): Promise<void>;
-  public clearFlowsCronJob?: CronJob;
-  abstract updateMarketRequiredResources(market: string): Promise<void>;
-}
+export type ReturnedStatus<T = undefined> =
+  | { status: true; result?: T; error?: never }   // If status is true, result is optional
+  | { status: false; error: Error | unknown; result?: never };  // If status is false, error is required and result is not allowed

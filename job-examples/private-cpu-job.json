@@ -1,0 +1,16 @@
+{
+    "version": "0.1",
+    "type": "container",
+    "logicstics": {
+        "receive": {
+            "type": "api-listen",
+            "args": {}
+        },
+        "send": {
+            "type": "api-listen",
+            "args": {}
+        }
+    },
+    "ops": []
+  }
+  

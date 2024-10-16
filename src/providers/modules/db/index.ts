@@ -11,6 +11,9 @@ export type NodeDb = {
   };
   flows: { [key: string]: Flow };
   resources: Resources;
+  info: {
+    [key: string]: string;
+  };
 };
 
 type Resources = {
@@ -35,6 +38,7 @@ const initial_state = {
     volumes: {},
   },
   flows: {},
+  info: {},
 };
 
 export class DB {
@@ -62,6 +66,10 @@ export class DB {
 
     if (!this.db.data.jobs) {
       this.db.data.jobs = initial_state.jobs;
+    }
+
+    if (!this.db.data.info) {
+      this.db.data.info = initial_state.info;
     }
 
     this.db.write();

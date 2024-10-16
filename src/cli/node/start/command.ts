@@ -1,6 +1,6 @@
 import { Command, Option } from 'commander';
 
-import { startNode } from './action.js';
+import { startNode, startNode1 } from './action.js';
 import {
   networkOption,
   rpcOption,
@@ -30,4 +30,4 @@ export const startNodeCommand = new Command('start')
       'Config path (to store the flows database and other config)',
     ).default('~/.nosana/'),
   )
-  .action(startNode);
+  .action(startNode1);
