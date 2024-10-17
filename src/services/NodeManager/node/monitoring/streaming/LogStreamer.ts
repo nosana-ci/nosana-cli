@@ -1,3 +1,4 @@
+import WebSocket from 'ws';
 import { log, LogObserver } from "../log/NodeLog.js";
 
 export const logStreaming = (() => {

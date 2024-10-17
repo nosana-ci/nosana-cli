@@ -8,12 +8,14 @@ import { JobDefinitionStrategySelector } from "./defination/JobDefinitionStrateg
 import { ResultReturnStrategySelector } from "./result/ResultReturnStrategy.js";
 import { IValidation } from "typia";
 import { validateJobDefinition } from "../../../../providers/Provider.js";
+import { JobExternalUtil } from "./jobExternalUtil.js";
 
 export class JobHandler {
     private id: string | undefined;
     private job: Job | undefined;
 
     private flowHandler: FlowHandler;
+    private jobExternalUtil: JobExternalUtil;
 
     constructor(
         private sdk: SDK,
@@ -21,6 +23,8 @@ export class JobHandler {
         private repository: NodeRepository,
     ){
         this.flowHandler = new FlowHandler(this.provider, repository);
+        this.jobExternalUtil = new JobExternalUtil(sdk, this.repository);
+
         applyLoggingProxyToClass(this)
     }
 
@@ -93,7 +97,7 @@ export class JobHandler {
         if(!flow){
             this.flowHandler.init(this.jobId())
 
-            let jobDefinition: JobDefinition = await this.resolveJobDefinition(job)
+            let jobDefinition: JobDefinition = await this.jobExternalUtil.resolveJobDefinition(this.jobId(), job)
 
             if(!await this.validate(jobDefinition)){
                 return false;
@@ -143,7 +147,7 @@ export class JobHandler {
 
     async finish(run: Run): Promise<void> {
         try {
-            let result = await this.resolveResult(this.jobId())
+            let result = await this.jobExternalUtil.resolveResult(this.jobId())
             const ipfsResult = await this.sdk.ipfs.pin(result as object);
             const bytesArray = this.sdk.ipfs.IpfsHashToByteArray(ipfsResult);
 
@@ -155,50 +159,5 @@ export class JobHandler {
         } catch (e) {
             throw new Error(`Failed to finish job: ${e}`);
         }
-    }
-
-    public async resolveJobDefinition(job: Job): Promise<JobDefinition> {
-        let jobDefinition: JobDefinition = await this.sdk.ipfs.retrieve(
-            job.ipfsJob,
-        );
-
-        if(jobDefinition.logicstics?.receive?.type) {
-            const strategySelector = new JobDefinitionStrategySelector()
-            const strategy = strategySelector.selectStrategy(jobDefinition.logicstics?.receive?.type)
-
-            this.repository.updateflowState(this.jobId(), {
-                status: 'waiting-for-job-defination'
-            })
-
-            jobDefinition = await strategy.load(this.jobId())
-        }
-
-        return jobDefinition;
-    }
-
-    private async resolveResult(id: string): Promise<FlowState> {
-        let result = this.repository.getFlowState(id)
-
-        const jobDefinition = this.repository.getflow(id).jobDefinition
-
-        if(jobDefinition.logicstics?.send?.type) {
-            const strategySelector = new ResultReturnStrategySelector()
-            const strategy = strategySelector.selectStrategy(jobDefinition.logicstics?.send?.type)
-
-            this.repository.updateflowState(id, {
-                status: 'waiting-for-result'
-            })
-
-            await strategy.load(id)
-
-            result = {
-                status: result.status,
-                startTime: result.startTime,
-                endTime: result.endTime,
-                opStates: []
-            }
-        }
-
-        return result;
     }
 }

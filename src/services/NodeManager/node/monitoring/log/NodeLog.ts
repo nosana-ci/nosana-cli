@@ -206,6 +206,36 @@ class NodeLog {
       }
     }
 
+    if(data.class === 'JobExternalUtil'){
+      if(data.method == 'resolveJobDefinition'){
+          if(data.type == 'call'){
+            this.addLog(chalk.cyan(`downloading job definition`));
+          }
+
+          if(data.type == 'error'){
+              this.addLog(chalk.red('downloading job definition failed'))
+          }
+
+          if(data.type == 'return'){
+              this.addLog(chalk.green('downloading job definition success'))
+          } 
+      }
+
+      if(data.method == 'resolveResult'){
+          if(data.type == 'call'){
+              this.addLog(chalk.cyan('sending results'))
+          }
+
+          if(data.type == 'error'){
+            this.addLog(chalk.red('sending results failed'))
+          }
+
+          if(data.type == 'return'){
+            this.addLog(chalk.green('sending results success'))
+          } 
+      }
+  }
+
     if (data.class === 'FlowHandler') {
       if (data.method === 'loadJobDefinition') {
         if (data.type === 'call') {

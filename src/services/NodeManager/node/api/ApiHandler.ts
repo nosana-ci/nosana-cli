@@ -11,6 +11,7 @@ import { NodeRepository } from "../../repository/NodeRepository.js";
 import { applyLoggingProxyToClass, logEmitter, LogEntry } from "../monitoring/proxy/loggingProxy.js";
 import WebSocket from 'ws';
 import { stateStreaming } from "../monitoring/streaming/StateStreamer.js";
+import { logStreaming } from "../monitoring/streaming/LogStreamer.js";
 
 export class ApiHandler {
     private api: Express;
@@ -80,6 +81,8 @@ export class ApiHandler {
                  */
                 if(path == '/log'){
                     const { job } = body;
+
+                    logStreaming().subscribe(ws, job)
                 }
             });
 

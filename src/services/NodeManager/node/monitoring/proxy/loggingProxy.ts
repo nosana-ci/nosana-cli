@@ -25,6 +25,7 @@ export function applyLoggingProxyToClass(instance: any) {
     'flowHandler',
     'apiHandler',
     'repository',
+    'jobExternalUtil',
   ];
 
   properties.forEach(property => {

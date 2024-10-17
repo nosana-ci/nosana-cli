@@ -303,6 +303,40 @@ export class NodeState {
             }
         }
 
+        if(data.class === 'JobExternalUtil'){
+            if(data.method == 'resolveJobDefinition'){
+                if(data.type == 'call'){
+                    this.addState('awaiting-jod-definition', {})
+                }
+
+                if(data.type == 'error'){
+                    this.addState('awaiting-jod-definition-failed', { 
+                         error: `${data.error}` 
+                    })
+                }
+    
+                if(data.type == 'return'){
+                    this.addState('awaiting-jod-definition-success', {})
+                } 
+            }
+
+            if(data.method == 'resolveResult'){
+                if(data.type == 'call'){
+                    this.addState('awaiting-result-send', {})
+                }
+
+                if(data.type == 'error'){
+                    this.addState('awaiting-result-send-failed', { 
+                         error: `${data.error}` 
+                    })
+                }
+    
+                if(data.type == 'return'){
+                    this.addState('awaiting-result-send-success', {})
+                } 
+            }
+        }
+
         if(data.class === 'JobHandler'){
             if(data.method == 'claim'){
                 const job = data.arguments[0];
@@ -531,7 +565,5 @@ export class NodeState {
                 }
             }
         }
-
-        // console.log(data)
     }
 }
