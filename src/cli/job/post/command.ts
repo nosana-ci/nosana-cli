@@ -44,6 +44,7 @@ export const postJobCommand = new Command('post')
     new Option('-i, --image <image>', 'docker image to use').default('ubuntu'),
   )
   .addOption(new Option('-f, --file <path>', 'file with the JSON flow'))
+  .addOption(new Option('-u --url <url>', 'Url path for the JSON flow'))
   .addOption(
     new Option('--wait', 'wait for job to be completed and show result'),
   )
@@ -51,7 +52,7 @@ export const postJobCommand = new Command('post')
     new Option(
       '--download [path]',
       'download external artifacts to specified path  (implies --wait)',
-    ),
+    ).conflicts('file'),
   )
   .addOption(formatOption)
   .addOption(verboseOption)
