@@ -3,6 +3,8 @@ import { NodeRepository } from "../../repository/NodeRepository.js";
 import { JobDefinition, FlowState } from "../../provider/types.js";
 import { JobDefinitionStrategySelector } from "./defination/JobDefinitionStrategy.js";
 import { ResultReturnStrategySelector } from "./result/ResultReturnStrategy.js";
+import { IValidation } from "typia";
+import { validateJobDefinition } from "../../../../providers/Provider.js";
 
 export class JobExternalUtil {
     constructor(
@@ -54,5 +56,20 @@ export class JobExternalUtil {
         }
 
         return result;
+    }
+
+    async validate(id: string, jobDefinition: JobDefinition): Promise<boolean> {
+        const validation: IValidation<JobDefinition> =
+          validateJobDefinition(jobDefinition);
+
+        if (!validation.success) {
+            this.repository.updateflowStateError(id, {
+                status: 'validation-error',
+                errors: validation.errors,
+            })
+            return false;
+        }
+
+        return true;
     }
 }

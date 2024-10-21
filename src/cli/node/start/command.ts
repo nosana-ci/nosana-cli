@@ -31,3 +31,4 @@ export const startNodeCommand = new Command('start')
     ).default('~/.nosana/'),
   )
   .action(startNode1);
+  // .action(startNode);

@@ -24,15 +24,19 @@ export default class NodeManager {
      * because we want the api to be independent from nodes restarts
      */
     this.apiHandler = this.node.api();
+  }
 
-    /**
-     * set up node state processing, observers can connect to it and received state
-     * updates of the node.
-     */
+  async init(): Promise<void> {
+  /**
+   * setup state that any instance can listen to, state produced from the node via logging proxies.
+   * set up node state processing, observers can connect to it and received state
+   * updates of the node.
+   */
     state(this.node.node());
 
     /**
-     * setup state streaming to be done
+     * this is one of the subscriber to @function state(),
+     * this sends states over websockets to the job poster or external services
      */
     stateStreaming(this.node.node());
 
@@ -43,18 +47,17 @@ export default class NodeManager {
     log();
 
     /**
-     * stream logs to log subscribers
+     * this is one of the subscriber to @function log(),
+     * the send the log over websocket to job poster or any external service
      */
-    logStreaming();
+    logStreaming(this.node.node());
 
     /**
-     * print logs in console
+     * this is one of the subscriber to @function log()
+     * this prints the logs to the console.
      */
     consoleLogging()
-  }
-
-  async init(): Promise<void> {
-
+    
     /**
      * start
      *
@@ -81,6 +84,7 @@ export default class NodeManager {
     if(!market){
       try {
         const grid = await this.node.grid()
+        market = grid.market.address.toString()
       } catch (error) {
         return await this.restart(market)
       }
@@ -93,7 +97,7 @@ export default class NodeManager {
      * this checks the health of the container tech,
      * the connectivity, and every other critical system.
      */
-    if(!await this.node.healthcheck()){
+    if(!await this.node.healthcheck(market)){
       /**
        * start
        *

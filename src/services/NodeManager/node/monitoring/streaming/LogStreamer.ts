@@ -1,12 +1,12 @@
 import WebSocket from 'ws';
-import { log, LogObserver } from "../log/NodeLog.js";
+import { log, LogObserver, NodeLogEntry } from "../log/NodeLog.js";
 
 export const logStreaming = (() => {
     let instance: LogStreamer | null = null;
   
-    return () => {
+    return (node: string) => {
       if (!instance) {
-        instance = new LogStreamer();
+        instance = new LogStreamer(node);
       }
       return instance;
     };
@@ -17,17 +17,17 @@ export class LogStreamer implements LogObserver {
   private index: number = 0;
   private clients: Map<string, WebSocket[]> = new Map();
 
-  constructor() {
+  constructor(privatenode: string) {
     log().addObserver(this);
   }
 
   public update(
-    job: string,
-    log: string,
-    timestamp: number,
+    log: NodeLogEntry,
   ) {
-    const logMessage = JSON.stringify({job, log, timestamp, index: this.index });
+    const logMessage = JSON.stringify(log);
     this.index = this.index + 1;
+
+    const job = log.job
     if(job) {
         this.logs.set(job, (this.logs.get(job) ?? []).concat([logMessage]));
         const clients = this.clients.get(job) ?? []

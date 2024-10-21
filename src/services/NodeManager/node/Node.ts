@@ -19,6 +19,7 @@ import { sleep } from '../../../generic/utils.js';
 import { ApiHandler } from './api/ApiHandler.js';
 import { NodeRepository } from "../repository/NodeRepository.js";
 import { BenchmarkHandler, GridData } from "./benchmark/benchmarkHandler.js";
+import { HealthHandler } from "./health/healthHandler.js";
 
 export class BasicNode {
   private apiHandler: ApiHandler;
@@ -26,6 +27,7 @@ export class BasicNode {
   private marketHandler: MarketHandler;
   private jobHandler: JobHandler;
   private benchmarkHandler: BenchmarkHandler;
+  private healthHandler: HealthHandler;
   private repository: NodeRepository;
   private resourceManager: ResourceManager;
   private provider: Provider;
@@ -59,11 +61,14 @@ export class BasicNode {
     this.jobHandler = new JobHandler(this.sdk, this.provider, this.repository);
     this.marketHandler = new MarketHandler(this.sdk);
     this.runHandler = new RunHandler(this.sdk);
+    this.healthHandler = new HealthHandler(this.sdk);
 
     applyLoggingProxyToClass(this);
   }
 
-  async healthcheck(): Promise<boolean> {
+  async healthcheck(market: string): Promise<boolean> {
+    await this.healthHandler.market(market)
+
     return true;
   }
   
@@ -257,17 +262,18 @@ export class BasicNode {
     }
 
     /**
-     * set the market that will be all through the marketHandler for
-     * the rest of this cycle until this job is finished
-     */
-    await this.marketHandler.setMarket(market);
-
-    /**
      * check if the node is already queued in a market and if not
      * this node will join the market, or skip if it is already joined
      */
     let joinedMarket = await this.marketHandler.checkQueuedInMarket();
+
     if (!joinedMarket) {
+      /**
+       * set the market that will be all through the marketHandler for
+       * the rest of this cycle until this job is finished
+       */
+      await this.marketHandler.setMarket(market);
+
       joinedMarket = await this.marketHandler.join(accessKey);
     }
 
@@ -288,6 +294,8 @@ export class BasicNode {
            * once we have found a job in the market we want to stop this queue monitoring
            */
           this.marketHandler.stopMarketQueueMonitoring();
+
+          this.runHandler.stopRunMonitoring();
         } else {
           /**
            * update the market position on queue

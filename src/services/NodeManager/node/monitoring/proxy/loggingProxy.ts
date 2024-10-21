@@ -9,7 +9,7 @@ export interface LogEntry {
   timestamp: string;
   type: 'call' | 'return' | 'error';
   result?: any;
-  error?: string;
+  error?: any;
 }
 
 export function applyLoggingProxyToClass(instance: any) {
@@ -26,6 +26,7 @@ export function applyLoggingProxyToClass(instance: any) {
     'apiHandler',
     'repository',
     'jobExternalUtil',
+    'healthHandler',
   ];
 
   properties.forEach(property => {
@@ -77,7 +78,7 @@ export function createLoggingProxy<T extends object>(target: T): T {
                 })
                 .catch((error) => {
                   logEntry.type = 'error';
-                  logEntry.error = error.message;
+                  logEntry.error = error;
                   logEmitter.emit('log', logEntry);
                   throw error;
                 });
@@ -90,7 +91,7 @@ export function createLoggingProxy<T extends object>(target: T): T {
             }
           } catch (error) {
             logEntry.type = 'error';
-            logEntry.error = (error as any).message;
+            logEntry.error = (error as any);
             logEmitter.emit('log', logEntry);
             throw error;
           }

@@ -99,7 +99,7 @@ export class JobHandler {
 
             let jobDefinition: JobDefinition = await this.jobExternalUtil.resolveJobDefinition(this.jobId(), job)
 
-            if(!await this.validate(jobDefinition)){
+            if(!await this.jobExternalUtil.validate(this.jobId(), jobDefinition)){
                 return false;
             }
 

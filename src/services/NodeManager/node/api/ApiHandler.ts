@@ -33,7 +33,7 @@ export class ApiHandler {
         applyLoggingProxyToClass(this);
     }
 
-    public async start() {
+    public async start(): Promise<string> {
         await this.provider.setUpReverseProxyApi(this.address.toString());
 
         const tunnelServer = `https://${this.address}.${config.frp.serverAddr}`;
@@ -42,6 +42,8 @@ export class ApiHandler {
         initTunnel({ server: tunnelServer, port: this.port });
         await this.listen();
         this.startWebSocketServer();
+
+        return tunnelServer
     }
 
     private async startWebSocketServer() {
@@ -82,7 +84,15 @@ export class ApiHandler {
                 if(path == '/log'){
                     const { job } = body;
 
-                    logStreaming().subscribe(ws, job)
+                    // if(!job){
+                    //     ws.send('Invalid job params')
+                    // }
+
+                    // TODO: do authorization checks
+                    // valid authurization (public key and signature)
+                    // job owner validation
+
+                    logStreaming(this.address.toString()).subscribe(ws, job)
                 }
             });
 

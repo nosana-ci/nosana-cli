@@ -56,10 +56,6 @@ export class MarketHandler {
   public async checkQueuedInMarket(): Promise<Market | undefined> {
     let markets = [];
 
-    if (!this.market) {
-      markets = [this.market];
-    }
-
     markets = await this.sdk.jobs.allMarkets();
 
     for (const market of markets) {
