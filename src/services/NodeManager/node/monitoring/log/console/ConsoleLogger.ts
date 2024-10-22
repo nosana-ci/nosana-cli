@@ -22,6 +22,11 @@ export class ConsoleLogger implements LogObserver {
     }
   
     public update(log: NodeLogEntry) {
+      if(log.type == 'log'){
+        process.stdout.write(log.log)
+        return;
+      }
+
       if(this.pending){
         if(log.type == 'error' || log.method == this.expecting || log.type == 'stop'){
           if(log.type == 'error' && log.method !== this.expecting){
@@ -42,17 +47,6 @@ export class ConsoleLogger implements LogObserver {
             }
             this.pending = false;
           }
-
-          // if(log.method == this.expecting && log.type == 'process'){
-          //   if(log.pending?.isPending){
-          //     this.pending = true;
-          //     this.expecting = log.pending?.expecting;
-          //     this.spinner = ora(log.log).start();
-          //   } else {
-          //     console.log(log.log)
-          //     this.pending = false;
-          //   }
-          // }
         }
       } else {
         if(log.pending?.isPending){
@@ -60,11 +54,7 @@ export class ConsoleLogger implements LogObserver {
           this.expecting = log.pending?.expecting;
           this.spinner = ora(log.log).start();
         } else {
-          if(log.type === 'log'){
-            process.stdout.write(log.log)
-          } else {
-            console.log(log.log)
-          }
+          console.log(log.log)
         }
       }
     }

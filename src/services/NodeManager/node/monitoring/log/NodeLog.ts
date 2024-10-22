@@ -33,7 +33,7 @@ export interface NodeLogEntry {
 
 class NodeLog {
   private observers: LogObserver[] = [];
-  private shared: { [key: string]: string } = {};
+  private shared: { [key: string]: string | boolean } = {};
   private job: string | undefined;
 
   constructor() {
@@ -109,6 +109,14 @@ class NodeLog {
       this.handlePending(data);
     }
 
+    if (data.class === 'BasicNode' && data.method === 'stop') {
+      this.handleStop(data);
+    }
+
+    if (data.class === 'BasicNode' && data.method === 'restartDelay') {
+      this.handleRestart(data);
+    }
+
     if (data.class === 'JobHandler') {
       this.handleJobHandler(data);
     }
@@ -141,6 +149,26 @@ class NodeLog {
           type: 'info',
         });
       }
+
+      if (data.type === 'return') {
+        if(data.result){
+          this.addLog({
+            method: `${data.class}.${data.method}`,
+            job: this.job,
+            log: chalk.green(`action ${chalk.bold(data.arguments[0])}, for flow ${chalk.bold(data.arguments[1].id)} operation ${chalk.bold(data.arguments[1].index)} was completed`),
+            timestamp: Date.now(),
+            type: 'info',
+          });
+        } else {
+          this.addLog({
+            method: `${data.class}.${data.method}`,
+            job: this.job,
+            log: chalk.red(`action ${chalk.bold(data.arguments[0])}, for flow ${chalk.bold(data.arguments[1].id)} operation ${chalk.bold(data.arguments[1].index)} failed`),
+            timestamp: Date.now(),
+            type: 'info',
+          });
+        }
+      }
     }
   }
 
@@ -164,7 +192,7 @@ class NodeLog {
         this.addLog({
           method: `${data.class}.${data.method}`,
           job: this.job,
-          log: chalk.cyan(`validating job defination`),
+          log: chalk.cyan(`validating job definition`),
           timestamp: Date.now(),
           type: 'process',
           pending: { isPending: true, expecting: `${data.class}.${data.method}` },
@@ -176,7 +204,7 @@ class NodeLog {
           this.addLog({
             method: `${data.class}.${data.method}`,
             job: this.job,
-            log: chalk.green(`job defination validated successfully`),
+            log: chalk.green(`job definition validated successfully`),
             timestamp: Date.now(),
             type: 'success',
           });
@@ -184,7 +212,7 @@ class NodeLog {
           this.addLog({
             method: `${data.class}.${data.method}`,
             job: this.job,
-            log: chalk.red(`job defination validation failed`),
+            log: chalk.red(`job definition validation failed`),
             timestamp: Date.now(),
             type: 'error',
           });
@@ -197,7 +225,7 @@ class NodeLog {
         this.addLog({
           method: `${data.class}.${data.method}`,
           job: this.job,
-          log: chalk.cyan(`resolving job defination`),
+          log: chalk.cyan(`resolving job definition`),
           timestamp: Date.now(),
           type: 'process',
           pending: { isPending: true, expecting: `${data.class}.${data.method}` },
@@ -208,7 +236,7 @@ class NodeLog {
         this.addLog({
           method: `${data.class}.${data.method}`,
           job: this.job,
-          log: chalk.green(`job defination retrived successfully`),
+          log: chalk.green(`job definition retrived successfully`),
           timestamp: Date.now(),
           type: 'success',
         });
@@ -218,7 +246,40 @@ class NodeLog {
         this.addLog({
           method: `${data.class}.${data.method}`,
           job: this.job,
-          log: chalk.red(`job defination retrival failed`),
+          log: chalk.red(`job definition retrival failed`),
+          timestamp: Date.now(),
+          type: 'error',
+        });
+      }
+    }
+
+    if (data.method === 'resolveResult') {
+      if (data.type === 'call') {
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          log: chalk.cyan(`resolving job results`),
+          timestamp: Date.now(),
+          type: 'process',
+          pending: { isPending: true, expecting: `${data.class}.${data.method}` },
+        });
+      }
+
+      if (data.type === 'return') {
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          log: chalk.green(`job results resolved successfully`),
+          timestamp: Date.now(),
+          type: 'success',
+        });
+      }
+
+      if (data.type === 'error') {
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          log: chalk.red(`resolving job results failed`),
           timestamp: Date.now(),
           type: 'error',
         });
@@ -448,6 +509,51 @@ class NodeLog {
     }
   }
 
+  private handleStop(data: LogEntry) {
+    if(data.type === 'call'){
+      this.addLog({
+        method: `${data.class}.${data.method}`,
+        job: this.job,
+        log: chalk.cyan(`shutting down node`),
+        timestamp: Date.now(),
+        type: 'process',
+        pending: { isPending: true, expecting: `${data.class}.${data.method}` },
+      });
+    }
+
+    if(data.type === 'return'){
+      this.addLog({
+        method: `${data.class}.${data.method}`,
+        job: this.job,
+        log: chalk.greenBright(`node shutdown successfully`),
+        timestamp: Date.now(),
+        type: 'success',
+      });
+    }
+
+    if(data.type === 'error'){
+      this.addLog({
+        method: `${data.class}.${data.method}`,
+        job: this.job,
+        log: chalk.redBright(`node shutdown failed`),
+        timestamp: Date.now(),
+        type: 'error',
+      });
+    }
+  }
+
+  private handleRestart(data: LogEntry) {
+    if (data.type === 'call') {
+      this.addLog({
+        method: `${data.class}.${data.method}`,
+        job: this.job,
+        log: `${chalk.yellow(`Node is restarting in ${data.arguments[0]} seconds`)}`,
+        timestamp: Date.now(),
+        type: 'info',
+      });
+    }
+  }
+
   private handlePending(data: LogEntry) {
     if (data.type === 'return' && !data.result) {
       this.addLog({
@@ -541,6 +647,38 @@ class NodeLog {
           log: chalk.red(`Error starting job ${chalk.bold(this.job)}`),
           timestamp: Date.now(),
           type: 'error',
+        });
+      }
+    }
+
+    if (data.method === 'finish') {
+      if (data.type === 'call') {
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          log: chalk.cyan(`Job ${chalk.bold(this.job)} is finishing`),
+          timestamp: Date.now(),
+          type: 'info',
+        });
+      }
+
+      if (data.type === 'return') {
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          log: chalk.green(`Job ${chalk.bold(this.job)} finished successfully`),
+          timestamp: Date.now(),
+          type: 'info',
+        });
+      }
+
+      if (data.type === 'error') {
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          log: chalk.red(`Error finishing job ${chalk.bold(this.job)}`),
+          timestamp: Date.now(),
+          type: 'info',
         });
       }
     }
@@ -655,6 +793,23 @@ class NodeLog {
           timestamp: Date.now(),
           type: 'info',
         });
+      }
+    }
+
+    if (data.method === 'expose') {
+      if (data.type === 'return') {
+        if(data.result){
+          this.shared.exposed = true;
+          this.addLog({
+            method: `${data.class}.${data.method}`,
+            job: this.job,
+            log: chalk.green(`job ${chalk.bold(data.arguments[0])} is now exposed`),
+            timestamp: Date.now(),
+            type: 'info',
+          });
+        } else {
+          this.shared.exposed = false;
+        }
       }
     }
   }

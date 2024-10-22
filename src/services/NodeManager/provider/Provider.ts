@@ -205,9 +205,11 @@ export class Provider {
             });
 
             logStream.on('data', (data) => {
-              this.repository.updateOpStateLogs(id, index, data.toString());
+              // this.repository.updateOpStateLogs(id, index, data.toString());
             });
         } else {
+          console.log('I CAME HERE 2')
+
           let result;
           let { status, error } = await this.containerOrchestration.pullImage(
             op.args.image,
