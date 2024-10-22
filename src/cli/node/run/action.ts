@@ -85,9 +85,22 @@ export async function runJob(
     ),
   );
 
-  const jobDefinition: JobDefinition = JSON.parse(
-    fs.readFileSync(jobDefinitionFile, 'utf8'),
-  );
+  let jobDefinition: JobDefinition;
+
+  if (options.url) {
+    try {
+      const data = await fetch(options.url);
+      const json = await data.json();
+      jobDefinition = json;
+    } catch (e) {
+      throw new Error(`Failed to fetch remote job flow.\n${e}`);
+    }
+  } else {
+    if (!jobDefinitionFile) {
+      throw new Error('Missing Job Definition Argument');
+    }
+    jobDefinition = JSON.parse(fs.readFileSync(jobDefinitionFile, 'utf8'));
+  }
   let result: Partial<FlowState> | null = null;
   try {
     flow = node.provider.run(jobDefinition);
