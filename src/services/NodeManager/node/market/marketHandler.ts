@@ -100,7 +100,7 @@ export class MarketHandler {
     }
   }
 
-  public processMarketQueuePosition( market: Market ){
+  public processMarketQueuePosition( market: Market, isFirst: boolean ){
     return {
       position: market.queue.findIndex(
         (e: any) => e.toString() === this.address.toString(),

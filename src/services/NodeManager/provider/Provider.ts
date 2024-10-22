@@ -197,7 +197,10 @@ export class Provider {
           opState.providerId as string,
         );
 
-        if (container.id) {
+        const exist = (await this.containerOrchestration.doesContainerExist(opState.providerId as string)).result
+        const exited = (await this.containerOrchestration.isContainerExited(opState.providerId as string)).result
+
+        if (exist && !exited && container.id) {
           const logStream = await container.logs({
               stdout: true,
               stderr: true,
@@ -205,11 +208,9 @@ export class Provider {
             });
 
             logStream.on('data', (data) => {
-              // this.repository.updateOpStateLogs(id, index, data.toString());
+              this.repository.updateOpStateLogs(id, index, data.toString());
             });
         } else {
-          console.log('I CAME HERE 2')
-
           let result;
           let { status, error } = await this.containerOrchestration.pullImage(
             op.args.image,
@@ -473,10 +474,10 @@ export class Provider {
 
   public stopOperation(type: string, param: { id: string; index: number }): Promise<boolean> {
     if (type == 'container/run') {
-      return this.containerRunOperation(param.id, param.index);
+      return this.containerRunStopOperation(param.id, param.index);
     }
     if (type == 'container/create-volume') {
-      return this.volumeCreateOperation(param.id, param.index);
+      return this.volumeStopOperation(param.id, param.index);
     }
     throw new Error('function not supported');
   }

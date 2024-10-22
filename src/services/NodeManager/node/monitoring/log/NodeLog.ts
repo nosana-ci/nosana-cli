@@ -25,7 +25,7 @@ export interface NodeLogEntryPending {
 export interface NodeLogEntry {
   log: string;
   method: string;
-  type: string; // success, error, info, process, stop, log
+  type: string; // success, error, info, process, stop, log, update
   pending?: NodeLogEntryPending;
   timestamp: number;
   job: string | undefined;
@@ -59,9 +59,6 @@ class NodeLog {
   }
 
   private process(data: LogEntry) {
-    // console.log(data)
-
-
     if (data.class === 'PodmanContainerOrchestration' || data.class === 'DockerContainerOrchestration') {
       const provider = data.class === 'PodmanContainerOrchestration' ? 'podman' : 'docker';
       
@@ -113,7 +110,7 @@ class NodeLog {
       this.handleStop(data);
     }
 
-    if (data.class === 'BasicNode' && data.method === 'restartDelay') {
+    if (data.class === 'BasicNode' && (data.method === 'restartDelay' || data.method === 'delay')) {
       this.handleRestart(data);
     }
 
@@ -463,18 +460,32 @@ class NodeLog {
 
   private handleMarketHandler(data: LogEntry) {
     if (data.method === 'processMarketQueuePosition' && data.type === 'return') {
-      this.addLog({
-        method: `${data.class}.${data.method}`,
-        job: this.job,
-        timestamp: Date.now(),
-        log: chalk.yellow(
-          `${chalk.bgYellow.bold(' QUEUED ')} in market ${chalk.bold(
-            data.arguments[0].address,
-          )} at position ${data.result.position}/${data.result.count}`,
-        ),
-        type: 'process',
-        pending: { isPending: true, expecting: `JobHandler.claim` },
-      });
+      if(data.arguments[1]){
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          timestamp: Date.now(),
+          log: chalk.yellow(
+            `${chalk.bgYellow.bold(' QUEUED ')} in market ${chalk.bold(
+              data.arguments[0].address,
+            )} at position ${data.result.position}/${data.result.count}`,
+          ),
+          type: 'process',
+          pending: { isPending: true, expecting: `JobHandler.claim` },
+        });
+      } else {
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          timestamp: Date.now(),
+          log: chalk.yellow(
+            `${chalk.bgYellow.bold(' QUEUED ')} in market ${chalk.bold(
+              data.arguments[0].address,
+            )} at position ${data.result.position}/${data.result.count}`,
+          ),
+          type: 'update',
+        });
+      }
     }
 
     if (data.method === 'join' && data.type === 'call') {
@@ -543,14 +554,44 @@ class NodeLog {
   }
 
   private handleRestart(data: LogEntry) {
-    if (data.type === 'call') {
-      this.addLog({
-        method: `${data.class}.${data.method}`,
-        job: this.job,
-        log: `${chalk.yellow(`Node is restarting in ${data.arguments[0]} seconds`)}`,
-        timestamp: Date.now(),
-        type: 'info',
-      });
+    if(data.method === 'restartDelay'){
+      if (data.type === 'call') {
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          log: `${chalk.yellow(`Node is restarting in ${data.arguments[0]} seconds`)}`,
+          timestamp: Date.now(),
+          type: 'process',
+          pending: { isPending: true, expecting: `${data.class}.${data.method}` },
+        });
+
+        let count = data.arguments[0];
+        const intervalId = setInterval(() => {
+          this.addLog({
+            method: `${data.class}.${data.method}`,
+            job: this.job,
+            log: `${chalk.yellow(`Node is restarting in ${count} seconds`)}`,
+            timestamp: Date.now(),
+            type: 'update',
+          });
+
+          count--;
+  
+          if (count === 0) {
+            clearInterval(intervalId);
+          }
+        }, 1000);
+      }
+
+      if(data.type == 'return'){
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          log: chalk.yellow(`node has restarted successfully`),
+          timestamp: Date.now(),
+          type: 'success',
+        });
+      }
     }
   }
 

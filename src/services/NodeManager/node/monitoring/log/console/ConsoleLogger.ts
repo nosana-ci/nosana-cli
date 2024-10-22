@@ -28,6 +28,10 @@ export class ConsoleLogger implements LogObserver {
       }
 
       if(this.pending){
+        if(log.type == 'update'){
+          this.spinner.text = log.log;
+          return;
+        }
         if(log.type == 'error' || log.method == this.expecting || log.type == 'stop'){
           if(log.type == 'error' && log.method !== this.expecting){
             this.spinner.stop()

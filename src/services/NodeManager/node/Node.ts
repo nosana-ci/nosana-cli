@@ -280,7 +280,7 @@ export class BasicNode {
     /**
      * check queue position of node in market
      */
-    this.marketHandler.processMarketQueuePosition(joinedMarket);
+    this.marketHandler.processMarketQueuePosition(joinedMarket, true);
 
     /**
      * here we listen to the market queue and listen to any chnages
@@ -294,13 +294,11 @@ export class BasicNode {
            * once we have found a job in the market we want to stop this queue monitoring
            */
           this.marketHandler.stopMarketQueueMonitoring();
-
-          this.runHandler.stopRunMonitoring();
         } else {
           /**
            * update the market position on queue
            */
-          this.marketHandler.processMarketQueuePosition(market);
+          this.marketHandler.processMarketQueuePosition(market, false);
         }
       },
     );
