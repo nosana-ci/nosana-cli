@@ -32,6 +32,15 @@ export class ConsoleLogger implements LogObserver {
           this.spinner.text = log.log;
           return;
         }
+
+        if(log.type == 'add') {
+          console.log(log.log)
+          // this.spinner.text = `${this.spinner.text}\n    ${log.log}`
+          // this.spinner.suffixText();
+          // console.log(this.spinner.text)
+          return;
+        }
+
         if(log.type == 'error' || log.method == this.expecting || log.type == 'stop'){
           if(log.type == 'error' && log.method !== this.expecting){
             this.spinner.stop()
@@ -45,9 +54,21 @@ export class ConsoleLogger implements LogObserver {
             this.pending = false;
           } else {
             if(log.type == 'success'){
-              this.spinner.succeed(log.log)
+              if (this.spinner.text.includes('\n')) {
+                // Split the text by the first newline and keep the part after it
+                const [, rest] = this.spinner.text.split(/\n(.+)/); // Match the first occurrence and keep the rest
+                // Update the spinner text by replacing the part before the first newline
+                this.spinner.succeed(`${log.log}\n${rest}`)
+              } else {
+                this.spinner.succeed(log.log)
+              }
             } else if(log.type == 'error') {
-              this.spinner.fail(log.log)
+              if (this.spinner.text.includes('\n')) {
+                const [, rest] = this.spinner.text.split(/\n(.+)/);
+                this.spinner.fail(`${log.log}\n${rest}`)
+              } else {
+                this.spinner.fail(log.log)
+              }
             }
             this.pending = false;
           }

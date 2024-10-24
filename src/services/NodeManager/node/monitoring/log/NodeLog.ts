@@ -1,6 +1,7 @@
 import chalk, { ChalkInstance } from 'chalk';
 import ora, { Ora } from 'ora';
 import { logEmitter, LogEntry } from '../proxy/loggingProxy.js';
+import { SECONDS_PER_DAY } from "../../../../../generic/utils.js";
 
 export interface LogObserver {
   update(log: NodeLogEntry): void;
@@ -25,7 +26,7 @@ export interface NodeLogEntryPending {
 export interface NodeLogEntry {
   log: string;
   method: string;
-  type: string; // success, error, info, process, stop, log, update
+  type: string; // success, error, info, process, stop, log, update, add
   pending?: NodeLogEntryPending;
   timestamp: number;
   job: string | undefined;
@@ -88,14 +89,14 @@ class NodeLog {
       if(data.method === 'runContainer'){
         this.handleRunContainer(data);
       }
+
+      if (data.method === 'check') {
+        this.handleContainerCheckHandler(data, provider);
+      }
     }
 
     if (data.class === 'ApiHandler') {
       this.handleApiHandler(data);
-    }
-
-    if (data.class === 'HealthHandler' && data.method === 'market') {
-      this.handleMarket(data);
     }
 
     if (data.class === 'MarketHandler') {
@@ -132,6 +133,87 @@ class NodeLog {
 
     if (data.class === 'Provider') {
       this.handleProvider(data);
+    }
+
+    if (data.class === 'HealthHandler') {
+      this.handleHealthHandler(data);
+    }
+
+    if (data.class === 'StakeHandler') {
+      this.handleStakeHandler(data);
+    }
+  }
+
+  private handleContainerCheckHandler(data: LogEntry, provider: string) {
+      if(data.type == 'return'){
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          log: chalk.green(`${chalk.bold(provider)} is running at ${chalk.bold(data.result)}`),
+          timestamp: Date.now(),
+          type: 'info',
+        });
+      }
+  }
+
+  private handleStakeHandler(data: LogEntry) {
+    if(data.method === 'getStakeAccount'){
+      if(data.type == 'return'){
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          log: chalk.green(
+            `Stake found with ${chalk.bold(
+              data.result.amount / 1e6,
+            )} NOS staked with unstake duration of ${chalk.bold(
+              data.result.duration / SECONDS_PER_DAY,
+            )} days`,
+          ),
+          timestamp: Date.now(),
+          type: 'info',
+        });
+      }
+    }
+  }
+
+  private handleHealthHandler(data: LogEntry) {
+    if(data.method === 'run'){
+      if(data.type === 'return'){
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          log: chalk.cyan(`running health check`),
+          timestamp: Date.now(),
+          type: 'process',
+          pending: { isPending: true, expecting: `${data.class}.${data.method}` },
+        });
+
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          log: chalk.green(`health check completed`),
+          timestamp: Date.now(),
+          type: 'success',
+        });
+
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          log: `Market:\t\t${chalk.greenBright.bold(data.arguments[0])}`,
+          timestamp: Date.now(),
+          type: 'stop',
+        });
+      }
+
+      if(data.type === 'error'){
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          log: chalk.green(`health check failed`),
+          timestamp: Date.now(),
+          type: 'error',
+        });
+      }
     }
   }
 
@@ -424,40 +506,6 @@ class NodeLog {
     }
   }
 
-  private handleMarket(data: LogEntry) {
-    if (data.type === 'call') {
-      this.addLog({
-        method: `${data.class}.${data.method}`,
-        job: this.job,
-        log: `${chalk.cyan('Retrieving market')}`,
-        timestamp: Date.now(),
-        type: 'process',
-        pending: { isPending: true, expecting: `${data.class}.${data.method}` },
-      });
-    }
-
-    if (data.type === 'return') {
-      this.shared.market = data.arguments[0];
-      this.addLog({
-        method: `${data.class}.${data.method}`,
-        job: this.job,
-        log: `Market:\t\t${chalk.greenBright.bold(data.arguments[0])}`,
-        timestamp: Date.now(),
-        type: 'stop',
-      });
-    }
-
-    if (data.type === 'error') {
-      this.addLog({
-        method: `${data.class}.${data.method}`,
-        job: this.job,
-        log: chalk.red(`Could not retrieve market ${chalk.bold(data.arguments[0])}`),
-        timestamp: Date.now(),
-        type: 'error',
-      });
-    }
-  }
-
   private handleMarketHandler(data: LogEntry) {
     if (data.method === 'processMarketQueuePosition' && data.type === 'return') {
       if(data.arguments[1]){
@@ -517,6 +565,29 @@ class NodeLog {
         timestamp: Date.now(),
         type: 'error',
       });
+    }
+
+    if(data.method === 'check'){
+      if (data.type === 'return') {
+        this.shared.market = data.arguments[0];
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          log: chalk.green(`market ${chalk.greenBright.bold(data.arguments[0])} checked successfully`),
+          timestamp: Date.now(),
+          type: 'info',
+        });
+      }
+  
+      if (data.type === 'error') {
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          log: chalk.red(`Could not retrieve market ${chalk.bold(data.arguments[0])}`),
+          timestamp: Date.now(),
+          type: 'error',
+        });
+      }
     }
   }
 

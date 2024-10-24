@@ -237,6 +237,16 @@ export class DockerContainerOrchestration
       }
     }
   }
+
+  async check(): Promise<string> {
+    const { status, error } = await this.healthy();
+    if (!status) {
+      throw new Error(
+        `error on container orchestration (docker or podman), error: ${error}`,
+      );
+    }
+    return `${this.protocol}://${this.host}:${this.port}`
+  }
 }
 
 function mapRunContainerArgsToContainerCreateOpts(

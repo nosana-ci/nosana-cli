@@ -20,6 +20,14 @@ export class MarketHandler {
     return this.inMarket;
   }
 
+  public async check(market: string): Promise<Market>{
+    try {
+      return await this.sdk.jobs.getMarket(market)
+    } catch (error) {
+      throw new Error(`Error resolving Market: ${error}`)
+    }
+  }
+
   public async stopMarket(): Promise<boolean> {
     if (this.market) {
       try {

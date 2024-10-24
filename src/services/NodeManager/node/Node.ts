@@ -61,15 +61,17 @@ export class BasicNode {
     this.jobHandler = new JobHandler(this.sdk, this.provider, this.repository);
     this.marketHandler = new MarketHandler(this.sdk);
     this.runHandler = new RunHandler(this.sdk);
-    this.healthHandler = new HealthHandler(this.sdk);
+
+    this.healthHandler = new HealthHandler(this.sdk, this.containerOrchestration, this.marketHandler);
 
     applyLoggingProxyToClass(this);
   }
 
   async healthcheck(market: string): Promise<boolean> {
-    await this.healthHandler.market(market)
-
-    return true;
+    /**
+     * run health check,
+     */
+    return await this.healthHandler.run(market);
   }
   
   async benchmark(): Promise<boolean> {

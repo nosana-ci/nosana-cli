@@ -27,6 +27,7 @@ export interface ContainerOrchestrationInterface {
     doesContainerExist(id: string): Promise<ReturnedStatus<boolean>>
 
     healthy(): Promise<ReturnedStatus>
+    check(): Promise<string>
 
 }
 
