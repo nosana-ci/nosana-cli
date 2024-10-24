@@ -4,12 +4,16 @@ import { EMPTY_ADDRESS } from "../../../jobs.js";
 
 export class KeyHandler {
     private address: PublicKey;
-    private key: PublicKey | undefined  = EMPTY_ADDRESS;
+    private key: PublicKey | undefined = EMPTY_ADDRESS;
 
     constructor(
         private sdk: SDK,
     ){
         this.address = this.sdk.solana.provider!.wallet.publicKey;
+    }
+
+    getAccessKey(): PublicKey | undefined {
+        return this.key;
     }
 
     doesMarketNeedAccessKey(market: Market): boolean {

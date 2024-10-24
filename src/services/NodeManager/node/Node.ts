@@ -20,6 +20,7 @@ import { ApiHandler } from './api/ApiHandler.js';
 import { NodeRepository } from "../repository/NodeRepository.js";
 import { BenchmarkHandler, GridData } from "./benchmark/benchmarkHandler.js";
 import { HealthHandler } from "./health/healthHandler.js";
+import { KeyHandler } from "./key/KeyHandler.js";
 
 export class BasicNode {
   private apiHandler: ApiHandler;
@@ -27,6 +28,7 @@ export class BasicNode {
   private marketHandler: MarketHandler;
   private jobHandler: JobHandler;
   private benchmarkHandler: BenchmarkHandler;
+  private keyHandler: KeyHandler;
   private healthHandler: HealthHandler;
   private repository: NodeRepository;
   private resourceManager: ResourceManager;
@@ -61,8 +63,9 @@ export class BasicNode {
     this.jobHandler = new JobHandler(this.sdk, this.provider, this.repository);
     this.marketHandler = new MarketHandler(this.sdk);
     this.runHandler = new RunHandler(this.sdk);
+    this.keyHandler = new KeyHandler(this.sdk);
 
-    this.healthHandler = new HealthHandler(this.sdk, this.containerOrchestration, this.marketHandler);
+    this.healthHandler = new HealthHandler(this.sdk, this.containerOrchestration, this.marketHandler, this.keyHandler);
 
     applyLoggingProxyToClass(this);
   }
@@ -253,7 +256,7 @@ export class BasicNode {
     return false;
   }
 
-  async queue(market?: string, accessKey?: PublicKey): Promise<void> {
+  async queue(market?: string): Promise<void> {
     /**
      * check if market was specified and if it wasnt select market from list
      */
@@ -276,7 +279,7 @@ export class BasicNode {
        */
       await this.marketHandler.setMarket(market);
 
-      joinedMarket = await this.marketHandler.join(accessKey);
+      joinedMarket = await this.marketHandler.join(this.keyHandler.getAccessKey());
     }
 
     /**

@@ -12,18 +12,17 @@ export class HealthHandler {
 
     private balanceHandler: BalanceHandler;
     private stakeHandler: StakeHandler;
-    private keyHandler: KeyHandler;
 
     constructor(
         private sdk: SDK,
         private containerOrchestration: ContainerOrchestrationInterface,
-        private marketHandler: MarketHandler
+        private marketHandler: MarketHandler,
+        private keyHandler: KeyHandler,
     ){
         this.address = this.sdk.solana.provider!.wallet.publicKey;
 
         this.balanceHandler = new BalanceHandler(this.sdk);
         this.stakeHandler = new StakeHandler(this.sdk);
-        this.keyHandler = new KeyHandler(this.sdk);
 
         applyLoggingProxyToClass(this);
     }
