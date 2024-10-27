@@ -106,8 +106,9 @@ export async function runBenchmark(options: { [key: string]: any }) {
     }
 
     const accept = await confirm({
-      message:
-        'Have you read the Participation Agreement and agree to the terms and conditions contained within?',
+      message: `Have you read the Participation Agreement and agree to the terms and conditions contained within?\nParticipation agreement: ${chalk.blue(
+        'https://drive.google.com/file/d/1dFWCT5Zon08pCPrftdxB9ByvbuDafTwy/view',
+      )}`,
     });
     if (!accept) {
       console.log(
