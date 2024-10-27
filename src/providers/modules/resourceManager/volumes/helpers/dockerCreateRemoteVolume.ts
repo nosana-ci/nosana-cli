@@ -1,11 +1,16 @@
+import { SingleBar, Presets } from 'cli-progress';
+
+import { convertFromBytes } from './convertFromBytes.js';
+import { createS3HelperOpts } from '../definition/s3HelperOpts.js';
 import { DockerExtended } from '../../../../../docker/index.js';
+import Logger from '../../../logger/index.js';
+
 import {
   RequiredResource,
   Resource,
   S3Secure,
 } from '../../../../../types/resources.js';
-import Logger from '../../../logger/index.js';
-import { createS3HelperOpts } from '../definition/s3HelperOpts.js';
+import { extractLogsAndResultsFromLogBuffer } from '../../../../utils/extractLogsAndResultsFromLogBuffer.js';
 
 async function runRemoteDockerVolume(
   volumeName: string,
@@ -23,16 +28,67 @@ async function runRemoteDockerVolume(
 
   await container.start();
 
-  // Wait until container has finished fetching
+  let progressBar: SingleBar | undefined;
+  let formatSize: 'gb' | 'mb' | 'kb' = 'kb';
+
+  const logStream = await container.logs({
+    stdout: true,
+    stderr: false,
+    follow: true,
+  });
+
+  logStream.on('data', (logBuffer) => {
+    try {
+      const logString = logBuffer.toString('utf8');
+      const logJSON = JSON.parse(logString);
+
+      if (!progressBar) {
+        const { value, format } = convertFromBytes(logJSON.size.total);
+        formatSize = format;
+        progressBar = new SingleBar(
+          {
+            format: `{bar} {percentage}% | {value}/{total}${format} | {valueFiles}/{totalFiles} files`,
+          },
+          Presets.shades_classic,
+        );
+        progressBar.start(value, 0, {
+          valueFiles: 0,
+          totalFiles: logJSON.count.total,
+        });
+      } else {
+        const { value } = convertFromBytes(logJSON.size.current, formatSize);
+        progressBar.update(value, {
+          valueFiles: logJSON.count.current,
+        });
+      }
+    } catch {}
+  });
+
   const { StatusCode } = await container.wait({ condition: 'not-running' });
-  await container.remove({ force: true });
+
+  progressBar?.stop();
 
   // If download failed, remove volume
   if (StatusCode !== 0) {
+    const errrorBuffer = await container.logs({
+      stdout: false,
+      stderr: true,
+      follow: false,
+    });
+
+    const { logs } = extractLogsAndResultsFromLogBuffer(
+      errrorBuffer,
+      undefined,
+    );
+
+    console.log(logs);
+
     const volume = await docker.getVolume(volumeName);
     await volume.remove();
     throw new Error('Cannot fetch resource.');
   }
+
+  await container.remove({ force: true });
 }
 
 export async function createRemoteDockerVolume(
