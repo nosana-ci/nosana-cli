@@ -20,6 +20,10 @@ export class MarketHandler {
     return this.inMarket;
   }
 
+  public setInMarket() {
+    this.inMarket =  true;
+  }
+
   public async check(market: string): Promise<Market>{
     try {
       return await this.sdk.jobs.getMarket(market)
@@ -136,7 +140,6 @@ export class MarketHandler {
 
   // Stop monitoring market queue status
   public stopMarketQueueMonitoring(): void {
-    this.inMarket = false;
     if (this.checkQueuedInterval) {
       clearInterval(this.checkQueuedInterval);
       this.checkQueuedInterval = undefined; // Clean up reference

@@ -1,4 +1,4 @@
-import { Client as SDK } from '@nosana/sdk';
+import { Job, Client as SDK } from '@nosana/sdk';
 import { PublicKey } from '@solana/web3.js';
 import express, { Express, Request, Response, NextFunction } from 'express';
 import { Provider } from "../../provider/Provider.js";
@@ -12,6 +12,9 @@ import { applyLoggingProxyToClass, logEmitter, LogEntry } from "../../monitoring
 import WebSocket from 'ws';
 import { stateStreaming } from "../../monitoring/streaming/StateStreamer.js";
 import { logStreaming } from "../../monitoring/streaming/LogStreamer.js";
+import nacl from "tweetnacl";
+import { verifyJobOwnerMiddleware } from "./middlewares/verifyJobOwnerMiddleware.js";
+import { verifySignatureMiddleware } from "./middlewares/verifySignatureMiddleware.js";
 
 export class ApiHandler {
     private api: Express;
@@ -34,6 +37,7 @@ export class ApiHandler {
     }
 
     public async start(): Promise<string> {
+        await this.provider.stopReverseProxyApi(this.address.toString());
         await this.provider.setUpReverseProxyApi(this.address.toString());
 
         const tunnelServer = `https://${this.address}.${config.frp.serverAddr}`;
@@ -55,8 +59,8 @@ export class ApiHandler {
             });
         });
 
-        this.wss.on('connection', (ws) => {
-            ws.on('message', (message) => {
+        this.wss.on('connection', (ws, request) => {
+            ws.on('message', async (message) => {
                 const { path, header, body } = JSON.parse(message.toString());
                 
                 /**
@@ -64,17 +68,33 @@ export class ApiHandler {
                  * sevices to follow a job or node state
                  */
                 if(path == '/status'){
-                    const { job } = body;
 
-                    // if(!job){
-                    //     ws.send('Invalid job params')
-                    // }
-
-                    // TODO: do authorization checks
                     // valid authurization (public key and signature)
-                    // job owner validation
+                    const [nodeAddress, base64Signature] = header.split(':');
+                    const signature = Buffer.from(base64Signature, 'base64');
+                    const publicKey = new PublicKey(nodeAddress);
+                    const message = Buffer.from(config.signMessage);
+                
+                    if (!nacl.sign.detached.verify(message, signature, publicKey.toBytes())) {
+                        ws.send('Invalid signature');
+                        return;
+                    }
 
-                    stateStreaming(this.address.toString()).subscribe(ws, job)
+                    const { jobAddress, address } = body;
+
+                    if(!jobAddress || !address){
+                        ws.send('Invalid job params')
+                    }
+
+                    // job owner validation
+                    const job: Job = await this.sdk.jobs.get(jobAddress);
+  
+                    if (address !== job.project.toString()) {
+                      ws.send('Invalid address');
+                      return;
+                    }
+
+                    stateStreaming(this.address.toString()).subscribe(ws, jobAddress)
                 }
 
                 /**
@@ -82,17 +102,32 @@ export class ApiHandler {
                  * just to show that clients logs, both from the node and the container
                  */
                 if(path == '/log'){
-                    const { job } = body;
-
-                    // if(!job){
-                    //     ws.send('Invalid job params')
-                    // }
-
-                    // TODO: do authorization checks
                     // valid authurization (public key and signature)
-                    // job owner validation
+                    const [nodeAddress, base64Signature] = header.split(':');
+                    const signature = Buffer.from(base64Signature, 'base64');
+                    const publicKey = new PublicKey(nodeAddress);
+                    const message = Buffer.from(config.signMessage);
+                
+                    if (!nacl.sign.detached.verify(message, signature, publicKey.toBytes())) {
+                        ws.send('Invalid signature');
+                        return;
+                    }
 
-                    logStreaming(this.address.toString()).subscribe(ws, job)
+                    const { jobAddress, address } = body;
+
+                    if(!jobAddress || !address){
+                        ws.send('Invalid job params')
+                    }
+
+                    // job owner validation
+                    const job: Job = await this.sdk.jobs.get(jobAddress);
+  
+                    if (address !== job.project.toString()) {
+                      ws.send('Invalid address');
+                      return;
+                    }
+
+                    logStreaming(this.address.toString()).subscribe(ws, jobAddress)
                 }
             });
 
@@ -144,6 +179,53 @@ export class ApiHandler {
 
             res.status(200).send(JSON.stringify(this.repository.getFlowState(id)));
         });
+
+        this.api.post(
+            '/service/stop/:jobId',
+            verifySignatureMiddleware,
+            verifyJobOwnerMiddleware,
+            async (req: Request<{ jobId: string }>, res: Response) => {
+              const jobId = req.params.jobId;
+          
+              if (!jobId) {
+                res.status(400).send('jobId path parameter is required');
+                return;
+              }
+          
+              try {
+                this.eventEmitter.emit('stop-job', jobId);
+
+                res.status(200).send('job stopped successfully');
+                return;
+              } catch (error) {
+                res.status(500).send('Error occured while stopping job');
+              }
+            },
+          );
+          
+          this.api.get(
+            '/service/url/:jobId',
+            verifySignatureMiddleware,
+            (req: Request, res: Response) => {
+              try {
+                const jobId = req.params.jobId;
+          
+                const flow = this.repository.getflow(jobId);
+                const secrets = flow?.state.secrets;
+          
+                if (secrets && secrets[jobId]) {
+                  res
+                    .status(200)
+                    .send(`https://${secrets[jobId]}.${config.frp.serverAddr}`);
+                  return;
+                }
+          
+                res.status(400).send('No exposed url for job id');
+              } catch (error) {
+                res.status(500).send('Error occured getting url');
+              }
+            },
+          );
     }
 
     private async listen(): Promise<number> {
@@ -152,6 +234,7 @@ export class ApiHandler {
     }
 
     public async stop(){
+        await this.provider.stopReverseProxyApi(this.address.toString());
         if (this.server) {
             this.server.close();
         }

@@ -184,7 +184,7 @@ export class BasicNode {
           /**
            * this starts the expiry settings to monitory expiry time
            */
-          this.expiryHandler.init<void>(run, market, async () => {
+          this.expiryHandler.init<void>(run, market, jobAddress, async () => {
             /**
              * upload the result and end the flow, also clean up flow.
              */
@@ -252,7 +252,7 @@ export class BasicNode {
         /**
         * this starts the expiry settings to monitory expiry time
         */
-        this.expiryHandler.init<boolean>(run, market, async () => {
+        this.expiryHandler.init<boolean>(run, market, jobAddress, async () => {
           /**
            * upload the result and end the flow, also clean up flow.
            */
@@ -308,14 +308,16 @@ export class BasicNode {
      */
     let joinedMarket = await this.marketHandler.checkQueuedInMarket();
 
-    if (!joinedMarket) {
-      /**
-       * set the market that will be all through the marketHandler for
-       * the rest of this cycle until this job is finished
-       */
-      await this.marketHandler.setMarket(market);
+    /**
+     * set the market that will be all through the marketHandler for
+     * the rest of this cycle until this job is finished
+     */
+    await this.marketHandler.setMarket(market);
 
+    if (!joinedMarket) {
       joinedMarket = await this.marketHandler.join(this.keyHandler.getAccessKey());
+    } else {
+      this.marketHandler.setInMarket();
     }
 
     /**

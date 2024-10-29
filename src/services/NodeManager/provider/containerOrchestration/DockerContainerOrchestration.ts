@@ -202,7 +202,7 @@ export class DockerContainerOrchestration
         if (containerInfo.State.Status !== 'exited') {
           await container.stop();
         }
-        await container.remove();
+        await container.remove({ force: true });
       }
       return { status: true };
     } catch (error) {

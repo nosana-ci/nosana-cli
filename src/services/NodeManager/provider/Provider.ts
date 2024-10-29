@@ -27,6 +27,40 @@ export class Provider {
     applyLoggingProxyToClass(this);
   }
 
+  public async stopReverseProxyApi(address: string): Promise<boolean> {
+    const tunnel_name = `tunnel-api-${address}`;
+    const frpc_name = `frpc-api-${address}`;
+    const networkName = `api-${address}`;
+
+    try {
+      let status, error, result;
+  
+      // Check if the tunnel container exists and stop/delete it
+      ({ status, error, result } = await this.containerOrchestration.doesContainerExist(tunnel_name));
+      if (status && result) {
+        ({ status, error, result } = await this.containerOrchestration.stopAndDeleteContainer(tunnel_name));
+        if (!status) throw error;
+      }
+  
+      // Check if the frpc container exists and stop/delete it
+      ({ status, error, result } = await this.containerOrchestration.doesContainerExist(frpc_name));
+      if (status && result) {
+        ({ status, error, result } = await this.containerOrchestration.stopAndDeleteContainer(frpc_name));
+        if (!status) throw error;
+      }
+  
+      try {
+        // await this.containerOrchestration.deleteNetwork(networkName);
+      } catch (error) {
+        console.log(error)
+      }
+    } catch (error) {
+      throw error;
+    }
+    
+    return true;
+  }
+
   // set up reverse proxy api for api handler
   public async setUpReverseProxyApi(address: string): Promise<boolean> {
     const frpcImage = 'registry.hub.docker.com/nosana/frpc:0.1.0';
@@ -327,8 +361,8 @@ export class Provider {
             follow: true,
           });
 
-          logStream.on('data', (data) => {
-            this.repository.updateOpStateLogs(id, index, data.toString());
+          logStream.on('data', async (data) => {
+            await this.repository.updateOpStateLogs(id, index, data.toString());
           });
 
           if (op.args.private) {
@@ -338,6 +372,10 @@ export class Provider {
 
           if (!container) {
             throw new Error('provider failed to start container');
+          }
+
+          if (!op.args.expose) {
+            await container.wait();
           }
 
           const info = await container.inspect();

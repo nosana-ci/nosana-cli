@@ -62,7 +62,9 @@ export class JobHandler {
     }
 
     async stop(): Promise<void> {
-        await this.flowHandler.stop(this.jobId())
+        if(this.id){
+            await this.flowHandler.stop(this.jobId())
+        }
         this.clearJob()
     }
 

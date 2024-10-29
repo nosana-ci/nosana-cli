@@ -24,6 +24,8 @@ export default class NodeManager {
      * because we want the api to be independent from nodes restarts
      */
     this.apiHandler = this.node.api();
+
+    this.handleProcessExit();
   }
 
   async init(): Promise<void> {
@@ -212,4 +214,17 @@ export default class NodeManager {
      */
     await this.start(market);
   }
+
+  /**
+   * Set up handling for process exit signals
+   */
+    private handleProcessExit() {
+      const exitHandler = async () => {
+        await this.stop();
+        process.exit();
+      };
+  
+      process.on('SIGINT', exitHandler);  // Handle Ctrl+C
+      process.on('SIGTERM', exitHandler); // Handle termination signals
+    }
 }
