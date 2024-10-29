@@ -1,23 +1,25 @@
-import { ApiHandler } from "./node/api/ApiHandler.js";
+import { ApiHandler } from './node/api/ApiHandler.js';
 import { BasicNode } from './node/Node.js';
-import { createLoggingProxy } from "./monitoring/proxy/loggingProxy.js";
-import { state } from "./monitoring/state/NodeState.js";
-import { stateStreaming } from "./monitoring/streaming/StateStreamer.js";
-import { log } from "./monitoring/log/NodeLog.js";
-import { logStreaming } from "./monitoring/streaming/LogStreamer.js";
-import { consoleLogging } from "./monitoring/log/console/ConsoleLogger.js";
+import { createLoggingProxy } from './monitoring/proxy/loggingProxy.js';
+import { state } from './monitoring/state/NodeState.js';
+import { stateStreaming } from './monitoring/streaming/StateStreamer.js';
+import { log } from './monitoring/log/NodeLog.js';
+import { logStreaming } from './monitoring/streaming/LogStreamer.js';
+import { consoleLogging } from './monitoring/log/console/ConsoleLogger.js';
 
 export default class NodeManager {
   private node: BasicNode;
   private apiHandler: ApiHandler;
 
   constructor() {
-    this.node = createLoggingProxy(new BasicNode({
-      provider: 'podman',
-      url: 'http://localhost:8080',
-      config: '~/.nosana/',
-      port: 5001,
-    }));
+    this.node = createLoggingProxy(
+      new BasicNode({
+        provider: 'podman',
+        url: 'http://localhost:8080',
+        config: '~/.nosana/',
+        port: 5001,
+      }),
+    );
 
     /**
      * the node class makes the api but we pass the api to the NodeManager class
@@ -29,11 +31,11 @@ export default class NodeManager {
   }
 
   async init(): Promise<void> {
-  /**
-   * setup state that any instance can listen to, state produced from the node via logging proxies.
-   * set up node state processing, observers can connect to it and received state
-   * updates of the node.
-   */
+    /**
+     * setup state that any instance can listen to, state produced from the node via logging proxies.
+     * set up node state processing, observers can connect to it and received state
+     * updates of the node.
+     */
     state(this.node.node());
 
     /**
@@ -58,8 +60,8 @@ export default class NodeManager {
      * this is one of the subscriber to @function log()
      * this prints the logs to the console.
      */
-    consoleLogging()
-    
+    consoleLogging();
+
     /**
      * start
      *
@@ -72,19 +74,18 @@ export default class NodeManager {
      * start the api of the node and register all the routes of the nodes,
      * we call this here in the init so the api survives restarts between jobs
      */
-    await this.apiHandler.start()
+    await this.apiHandler.start();
   }
 
   async start(market?: string): Promise<void> {
-
     /**
      * grid
-     * 
+     *
      * if no market was supplied, we will register on the grid and get
      * market and access key recommened for our PC based on benchmark result
      */
-    if(!market){
-      if(!await this.node.benchmark()){
+    if (!market) {
+      if (!(await this.node.benchmark())) {
         /**
          * start
          *
@@ -100,10 +101,10 @@ export default class NodeManager {
        *
        * this benchmarks the node to ensure it can run the jobs.
        * It gets the GPUs, CPUs, and internet speed.
-       * 
+       *
        * if the benchmark fails restart the system
        */
-      if(!await this.node.benchmark()){
+      if (!(await this.node.benchmark())) {
         /**
          * start
          *
@@ -120,7 +121,7 @@ export default class NodeManager {
      * this checks the health of the container tech,
      * the connectivity, and every other critical system.
      */
-    if(!await this.node.healthcheck(market)){
+    if (!(await this.node.healthcheck(market))) {
       /**
        * start
        *
@@ -177,11 +178,11 @@ export default class NodeManager {
   async stop() {
     /**
      * stop api
-     * 
-     * we want to stop the api server, we only do this on complete shutdown and not 
+     *
+     * we want to stop the api server, we only do this on complete shutdown and not
      * restarts after jobs
      */
-    await this.apiHandler.stop()
+    await this.apiHandler.stop();
 
     /**
      * check if the node exists then stop the node, this will involve killing and cleaning
@@ -218,13 +219,13 @@ export default class NodeManager {
   /**
    * Set up handling for process exit signals
    */
-    private handleProcessExit() {
-      const exitHandler = async () => {
-        await this.stop();
-        process.exit();
-      };
-  
-      process.on('SIGINT', exitHandler);  // Handle Ctrl+C
-      process.on('SIGTERM', exitHandler); // Handle termination signals
-    }
+  private handleProcessExit() {
+    const exitHandler = async () => {
+      await this.stop();
+      process.exit();
+    };
+
+    process.on('SIGINT', exitHandler); // Handle Ctrl+C
+    process.on('SIGTERM', exitHandler); // Handle termination signals
+  }
 }

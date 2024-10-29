@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto';
 
 import { config } from '../../../generic/config.js';
-import { ResourceManager } from '../../../providers/modules/resourceManager/index.js'; 
+import { ResourceManager } from '../../../providers/modules/resourceManager/index.js';
 import { Operation } from '../../../providers/Provider.js';
 import { ContainerOrchestrationInterface } from './containerOrchestration/interface.js';
 import { Flow, Log, OperationArgsMap, Resource } from './types.js';
@@ -27,30 +27,36 @@ export class Provider {
 
     try {
       let status, error, result;
-  
+
       // Check if the tunnel container exists and stop/delete it
-      ({ status, error, result } = await this.containerOrchestration.doesContainerExist(tunnel_name));
+      ({ status, error, result } =
+        await this.containerOrchestration.doesContainerExist(tunnel_name));
       if (status && result) {
-        ({ status, error, result } = await this.containerOrchestration.stopAndDeleteContainer(tunnel_name));
+        ({ status, error, result } =
+          await this.containerOrchestration.stopAndDeleteContainer(
+            tunnel_name,
+          ));
         if (!status) throw error;
       }
-  
+
       // Check if the frpc container exists and stop/delete it
-      ({ status, error, result } = await this.containerOrchestration.doesContainerExist(frpc_name));
+      ({ status, error, result } =
+        await this.containerOrchestration.doesContainerExist(frpc_name));
       if (status && result) {
-        ({ status, error, result } = await this.containerOrchestration.stopAndDeleteContainer(frpc_name));
+        ({ status, error, result } =
+          await this.containerOrchestration.stopAndDeleteContainer(frpc_name));
         if (!status) throw error;
       }
-  
+
       try {
         // await this.containerOrchestration.deleteNetwork(networkName);
       } catch (error) {
-        console.log(error)
+        console.log(error);
       }
     } catch (error) {
       throw error;
     }
-    
+
     return true;
   }
 

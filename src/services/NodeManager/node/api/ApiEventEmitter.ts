@@ -1,18 +1,18 @@
 import { EventEmitter } from 'events';
 
 class ApiEventEmitter extends EventEmitter {
-    private static instance: ApiEventEmitter;
+  private static instance: ApiEventEmitter;
 
-    private constructor() {
-        super();
-    }
+  private constructor() {
+    super();
+  }
 
-    public static getInstance(): ApiEventEmitter {
-        if (!ApiEventEmitter.instance) {
-            ApiEventEmitter.instance = new ApiEventEmitter();
-        }
-        return ApiEventEmitter.instance;
+  public static getInstance(): ApiEventEmitter {
+    if (!ApiEventEmitter.instance) {
+      ApiEventEmitter.instance = new ApiEventEmitter();
     }
+    return ApiEventEmitter.instance;
+  }
 }
 
 export default ApiEventEmitter;

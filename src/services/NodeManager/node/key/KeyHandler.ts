@@ -16,7 +16,7 @@ export class KeyHandler {
     return this.market;
   }
 
-  setMarket( market?: PublicKey) {
+  setMarket(market?: PublicKey) {
     this.market = market;
   }
 
@@ -24,7 +24,7 @@ export class KeyHandler {
     return this.key;
   }
 
-  setAccessKey( key?: PublicKey ) {
+  setAccessKey(key?: PublicKey) {
     this.key = key;
   }
 

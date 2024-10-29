@@ -35,10 +35,10 @@ export interface JobLogicstics {
 export type SendJobDefinationLogicsticsTypes = 'api' | 'api-listen';
 
 export interface SendJobDefinationLogicstics {
-  type: SendJobDefinationLogicsticsTypes
+  type: SendJobDefinationLogicsticsTypes;
   args: {
-    endpoint?: string
-  }
+    endpoint?: string;
+  };
 }
 
 /**
@@ -48,10 +48,10 @@ export interface SendJobDefinationLogicstics {
 export type ReceiveJobResultLogicsticsTypes = 'api' | 'api-listen';
 
 export interface ReceiveJobResultLogicstics {
-  type: ReceiveJobResultLogicsticsTypes
+  type: ReceiveJobResultLogicsticsTypes;
   args: {
-    endpoint?: string
-  }
+    endpoint?: string;
+  };
 }
 
 export type JobDefinition = {
@@ -156,5 +156,5 @@ export type OpState = {
 };
 
 export type ReturnedStatus<T = undefined> =
-  | { status: true; result?: T; error?: never }   // If status is true, result is optional
-  | { status: false; error: Error | unknown; result?: never };  // If status is false, error is required and result is not allowed
+  | { status: true; result?: T; error?: never } // If status is true, result is optional
+  | { status: false; error: Error | unknown; result?: never }; // If status is false, error is required and result is not allowed

@@ -5,24 +5,25 @@ import { RunHandler } from './run/runHandler.js';
 import { PublicKey } from '@solana/web3.js';
 import { JobHandler } from './job/jobHandler.js';
 import { DB } from '../../../providers/modules/db/index.js';
-import { ContainerOrchestrationInterface, selectContainerOrchestrationProvider } from '../provider/containerOrchestration/interface.js';
+import {
+  ContainerOrchestrationInterface,
+  selectContainerOrchestrationProvider,
+} from '../provider/containerOrchestration/interface.js';
 import {
   createResourceManager,
   ResourceManager,
 } from '../../../providers/modules/resourceManager/index.js';
 import { Provider } from '../provider/Provider.js';
 import Logger from '../../../providers/modules/logger/index.js';
-import {
-  applyLoggingProxyToClass,
-} from '../monitoring/proxy/loggingProxy.js';
+import { applyLoggingProxyToClass } from '../monitoring/proxy/loggingProxy.js';
 import { sleep } from '../../../generic/utils.js';
 import { ApiHandler } from './api/ApiHandler.js';
-import { NodeRepository } from "../repository/NodeRepository.js";
-import { BenchmarkHandler } from "./benchmark/benchmarkHandler.js";
-import { HealthHandler } from "./health/healthHandler.js";
-import { KeyHandler } from "./key/KeyHandler.js";
-import { ExpiryHandler } from "./expiry/expiryHandler.js";
-import { GridHandler } from "./grid/gridHandler.js";
+import { NodeRepository } from '../repository/NodeRepository.js';
+import { BenchmarkHandler } from './benchmark/benchmarkHandler.js';
+import { HealthHandler } from './health/healthHandler.js';
+import { KeyHandler } from './key/KeyHandler.js';
+import { ExpiryHandler } from './expiry/expiryHandler.js';
+import { GridHandler } from './grid/gridHandler.js';
 
 export class BasicNode {
   private apiHandler: ApiHandler;
@@ -49,8 +50,11 @@ export class BasicNode {
     this.sdk = getSDK();
 
     const db = new DB(options.config).db;
-    this.repository = new NodeRepository(db)
-    this.containerOrchestration = selectContainerOrchestrationProvider(options.provider, options.url);
+    this.repository = new NodeRepository(db);
+    this.containerOrchestration = selectContainerOrchestrationProvider(
+      options.provider,
+      options.url,
+    );
     this.resourceManager = createResourceManager(
       db,
       this.containerOrchestration.getConnection(),
@@ -62,15 +66,29 @@ export class BasicNode {
       this.resourceManager,
     );
 
-    this.apiHandler = new ApiHandler(this.sdk, this.repository, this.provider, options.port);
-    this.gridHandler = new GridHandler(this.sdk, this.repository)
-    this.benchmarkHandler = new BenchmarkHandler(this.sdk, this.provider, this.repository)
+    this.apiHandler = new ApiHandler(
+      this.sdk,
+      this.repository,
+      this.provider,
+      options.port,
+    );
+    this.gridHandler = new GridHandler(this.sdk, this.repository);
+    this.benchmarkHandler = new BenchmarkHandler(
+      this.sdk,
+      this.provider,
+      this.repository,
+    );
     this.jobHandler = new JobHandler(this.sdk, this.provider, this.repository);
     this.marketHandler = new MarketHandler(this.sdk);
     this.runHandler = new RunHandler(this.sdk);
     this.keyHandler = new KeyHandler(this.sdk);
 
-    this.healthHandler = new HealthHandler(this.sdk, this.containerOrchestration, this.marketHandler, this.keyHandler);
+    this.healthHandler = new HealthHandler(
+      this.sdk,
+      this.containerOrchestration,
+      this.marketHandler,
+      this.keyHandler,
+    );
     this.expiryHandler = new ExpiryHandler(this.sdk);
 
     applyLoggingProxyToClass(this);
@@ -82,23 +100,23 @@ export class BasicNode {
      */
     return await this.healthHandler.run(market);
   }
-  
+
   async benchmark(): Promise<boolean> {
     /**
      * check the gpus using a premade job definition
      * this is what we do before every job runs
      */
-    return await this.benchmarkHandler.check()
+    return await this.benchmarkHandler.check();
   }
 
   async recommend(): Promise<string> {
     /**
      * we query the grid to find out if the node has already been onboarded
-     * if it has been onboarded it might have been assigned/recommended a market 
+     * if it has been onboarded it might have been assigned/recommended a market
      * if it has not been onboarded quit the process
      */
-    const nodeData = await this.gridHandler.getNodeStatus()
-    if(nodeData.status !== 'onboarded'){
+    const nodeData = await this.gridHandler.getNodeStatus();
+    if (nodeData.status !== 'onboarded') {
       throw new Error('Node not onboarded yet');
     }
 
@@ -106,14 +124,14 @@ export class BasicNode {
      * this means even tho we have been onbaorded there might be no market assigned to us
      *  so we need to get a recommended one and return it
      */
-    if(!nodeData.market){
-      return await this.gridHandler.recommend()
+    if (!nodeData.market) {
+      return await this.gridHandler.recommend();
     }
 
     /**
      * this means we already have a market recommended to us from onboarding
      */
-    return nodeData.market
+    return nodeData.market;
   }
 
   public api(): ApiHandler {
@@ -133,10 +151,10 @@ export class BasicNode {
 
   async start(): Promise<void> {
     /**
-     * get an instance to the container 
+     * get an instance to the container
      */
-    await this.containerOrchestration.getConnection()
-    
+    await this.containerOrchestration.getConnection();
+
     /**
      * check if the container is fine and healthy
      */
@@ -180,7 +198,7 @@ export class BasicNode {
          * check if the job is expired if it is quit the job,
          * if not continue to start
          */
-        if(!this.expiryHandler.expired(run, market)){
+        if (!this.expiryHandler.expired(run, market)) {
           /**
            * this starts the expiry settings to monitory expiry time
            */
@@ -191,13 +209,13 @@ export class BasicNode {
             await this.jobHandler.finish(run);
 
             resolve();
-          })
+          });
 
           /**
            * Start the job, this includes downloading the job defination, starting the flow
            * checking if flow is existing, if the job fails to start we quit the job
            */
-          await this.jobHandler.start(job)
+          await this.jobHandler.start(job);
 
           /**
            * actually run the flow if the job and carry out the task, using the flow handler
@@ -208,8 +226,8 @@ export class BasicNode {
           /**
            * wait for the job to expire before continue if the setup was successful
            */
-          if(success && this.jobHandler.exposed()){
-            await this.expiryHandler.waitUntilExpired()
+          if (success && this.jobHandler.exposed()) {
+            await this.expiryHandler.waitUntilExpired();
           }
         }
 
@@ -248,10 +266,10 @@ export class BasicNode {
       //  * check if the job is expired if it is quit the job,
       //  * if not continue to start
       //  */
-      if(!this.expiryHandler.expired(run, market)){
+      if (!this.expiryHandler.expired(run, market)) {
         /**
-        * this starts the expiry settings to monitory expiry time
-        */
+         * this starts the expiry settings to monitory expiry time
+         */
         this.expiryHandler.init<boolean>(run, market, jobAddress, async () => {
           /**
            * upload the result and end the flow, also clean up flow.
@@ -259,14 +277,14 @@ export class BasicNode {
           await this.jobHandler.finish(run);
 
           return true;
-        })
+        });
 
         /**
          * Start the job, this includes downloading the job defination, starting the flow
          * checking if flow is existing, if the job fails to start we quit the job
          * and return true, this will cause the application to restart as it just finished a job
          */
-        await this.jobHandler.start(job)
+        await this.jobHandler.start(job);
 
         /**
          * actually run the flow if the job and carry out the task, using the flow handler
@@ -277,7 +295,7 @@ export class BasicNode {
         /**
          * wait for the job to expire before continue if the setup was successful
          */
-        if(success && this.jobHandler.exposed()){
+        if (success && this.jobHandler.exposed()) {
           await this.expiryHandler.waitUntilExpired();
         }
       }
@@ -315,7 +333,9 @@ export class BasicNode {
     await this.marketHandler.setMarket(market);
 
     if (!joinedMarket) {
-      joinedMarket = await this.marketHandler.join(this.keyHandler.getAccessKey());
+      joinedMarket = await this.marketHandler.join(
+        this.keyHandler.getAccessKey(),
+      );
     } else {
       this.marketHandler.setInMarket();
     }

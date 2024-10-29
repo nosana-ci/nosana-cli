@@ -245,7 +245,7 @@ export class DockerContainerOrchestration
         `error on container orchestration (docker or podman), error: ${error}`,
       );
     }
-    return `${this.protocol}://${this.host}:${this.port}`
+    return `${this.protocol}://${this.host}:${this.port}`;
   }
 }
 

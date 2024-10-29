@@ -8,7 +8,7 @@ import {
   VersionedTransaction,
 } from '@solana/web3.js';
 import { getRawTransaction } from '../../../sdk.js';
-import { sleep } from "../../../../generic/utils.js";
+import { sleep } from '../../../../generic/utils.js';
 
 export interface NodeData {
   market?: string;
@@ -18,10 +18,7 @@ export interface NodeData {
 export class GridHandler {
   private address: PublicKey;
 
-  constructor(
-    private sdk: SDK,
-    private repository: NodeRepository,
-  ) {
+  constructor(private sdk: SDK, private repository: NodeRepository) {
     this.address = this.sdk.solana.provider!.wallet.publicKey;
     applyLoggingProxyToClass(this);
   }
@@ -52,7 +49,7 @@ export class GridHandler {
 
       return {
         status: data.status,
-        market: data.marketAddress, 
+        market: data.marketAddress,
       };
     } catch (error: unknown) {
       if (
@@ -79,35 +76,41 @@ export class GridHandler {
     const signature = await this.getAuthSignature();
 
     try {
-        let market: string
-        const response = await fetch(
-            `${config.backendUrl}/nodes/${this.address}/check-market`,
-            {
-              method: 'POST',
-              headers: {
-                Authorization: `${this.address}:${signature}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ gpus }),
-            },
-          );
+      let market: string;
+      const response = await fetch(
+        `${config.backendUrl}/nodes/${this.address}/check-market`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `${this.address}:${signature}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ gpus }),
+        },
+      );
 
-          let data: any = await response.json();
+      let data: any = await response.json();
 
-          if (!data || (data.name === 'Error' && data.message) || !data.marketAddress) {
-            if (data.message.includes('Assigned market doesnt support current GPU')) {
-              data = await this.changeMarket();
-              market = data.newMarket
-            } else {
-              throw new Error(data.message);
-            }
-          } else {
-            market = data.marketAddress
-          }
+      if (
+        !data ||
+        (data.name === 'Error' && data.message) ||
+        !data.marketAddress
+      ) {
+        if (
+          data.message.includes('Assigned market doesnt support current GPU')
+        ) {
+          data = await this.changeMarket();
+          market = data.newMarket;
+        } else {
+          throw new Error(data.message);
+        }
+      } else {
+        market = data.marketAddress;
+      }
 
-          return market;
+      return market;
     } catch (error) {
-        throw error;   
+      throw error;
     }
   }
 
@@ -128,14 +131,13 @@ export class GridHandler {
       try {
         const txnSignature = await this.signAndSendTransaction(data.tx);
         await this.confirmTransaction(txnSignature);
-        
+
         await sleep(30);
-  
-        await this.syncNodeAfterMint()
+
+        await this.syncNodeAfterMint();
       } catch (error) {
         throw new Error(`Failed to mint access key: ${error}`);
       }
-      
     } catch (error: unknown) {
       throw new Error(
         'Something went wrong with minting your access key, please try again. ' +
@@ -144,53 +146,57 @@ export class GridHandler {
     }
   }
 
-  private async signAndSendTransaction(txData: any): Promise<string | undefined> {
+  private async signAndSendTransaction(
+    txData: any,
+  ): Promise<string | undefined> {
     const feePayer = (this.sdk.solana.provider?.wallet as KeyWallet).payer;
-    const recoveredTransaction = await getRawTransaction(Uint8Array.from(Object.values(txData)));
+    const recoveredTransaction = await getRawTransaction(
+      Uint8Array.from(Object.values(txData)),
+    );
 
     if (recoveredTransaction instanceof VersionedTransaction) {
-        recoveredTransaction.sign([feePayer]);
+      recoveredTransaction.sign([feePayer]);
     } else {
-        recoveredTransaction.partialSign(feePayer);
+      recoveredTransaction.partialSign(feePayer);
     }
 
     const txnSignature = await this.sdk.solana.connection?.sendRawTransaction(
-        recoveredTransaction.serialize(),
+      recoveredTransaction.serialize(),
     );
 
     return txnSignature;
-}
+  }
 
-private async confirmTransaction(txnSignature: string | undefined): Promise<void> {
-    const latestBlockHash = await this.sdk.solana.connection?.getLatestBlockhash();
+  private async confirmTransaction(
+    txnSignature: string | undefined,
+  ): Promise<void> {
+    const latestBlockHash =
+      await this.sdk.solana.connection?.getLatestBlockhash();
     if (latestBlockHash && txnSignature) {
-        const confirmStrategy: BlockheightBasedTransactionConfirmationStrategy = {
-            blockhash: latestBlockHash.blockhash,
-            lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
-            signature: txnSignature,
-        };
-        await this.sdk.solana.connection?.confirmTransaction(confirmStrategy);
+      const confirmStrategy: BlockheightBasedTransactionConfirmationStrategy = {
+        blockhash: latestBlockHash.blockhash,
+        lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+        signature: txnSignature,
+      };
+      await this.sdk.solana.connection?.confirmTransaction(confirmStrategy);
     } else {
-        throw new Error('Could not confirm minting transaction');
+      throw new Error('Could not confirm minting transaction');
     }
-}
+  }
 
   private async syncNodeAfterMint(): Promise<any> {
     try {
-        const response = await fetch(
-            `${config.backendUrl}/nodes/sync-node`,
-            {
-                method: 'POST',
-                headers: {
-                    Authorization: `${this.address}:${await this.getAuthSignature()}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ address: this.address }),
-            },
-        );
-        return response.json();
+      const response = await fetch(`${config.backendUrl}/nodes/sync-node`, {
+        method: 'POST',
+        headers: {
+          Authorization: `${this.address}:${await this.getAuthSignature()}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ address: this.address }),
+      });
+      return response.json();
     } catch (error) {
-        throw error;
+      throw error;
     }
   }
 }

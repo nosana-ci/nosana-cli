@@ -3,14 +3,10 @@ import { FlowHandler } from '../flow/flowHandler.js';
 import { Provider } from '../../provider/Provider.js';
 import { applyLoggingProxyToClass } from '../../monitoring/proxy/loggingProxy.js';
 import { NodeRepository } from '../../repository/NodeRepository.js';
-import {
-  benchmarkGPU,
-} from '../../../../static/staticsImports.js';
+import { benchmarkGPU } from '../../../../static/staticsImports.js';
 import { CudaCheckResponse } from '../../../../types/cudaCheck.js';
 import { config } from '../../../../generic/config.js';
-import {
-  PublicKey,
-} from '@solana/web3.js';
+import { PublicKey } from '@solana/web3.js';
 
 export class BenchmarkHandler {
   private flowHandler: FlowHandler;

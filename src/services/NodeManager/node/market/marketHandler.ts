@@ -21,14 +21,14 @@ export class MarketHandler {
   }
 
   public setInMarket() {
-    this.inMarket =  true;
+    this.inMarket = true;
   }
 
-  public async check(market: string): Promise<Market>{
+  public async check(market: string): Promise<Market> {
     try {
-      return await this.sdk.jobs.getMarket(market)
+      return await this.sdk.jobs.getMarket(market);
     } catch (error) {
-      throw new Error(`Error resolving Market: ${error}`)
+      throw new Error(`Error resolving Market: ${error}`);
     }
   }
 
@@ -106,19 +106,20 @@ export class MarketHandler {
   public async leave(): Promise<void> {
     if (this.market && this.inMarket) {
       try {
-        await this.sdk.jobs.stop(this.market.address)
+        await this.sdk.jobs.stop(this.market.address);
       } catch (error) {}
-      this.inMarket = false
+      this.inMarket = false;
     }
   }
 
-  public processMarketQueuePosition( market: Market, isFirst: boolean ){
+  public processMarketQueuePosition(market: Market, isFirst: boolean) {
     return {
-      position: market.queue.findIndex(
-        (e: any) => e.toString() === this.address.toString(),
-      ) + 1,
-      count: market.queue.length
-    }
+      position:
+        market.queue.findIndex(
+          (e: any) => e.toString() === this.address.toString(),
+        ) + 1,
+      count: market.queue.length,
+    };
   }
 
   public async startMarketQueueMonitoring(
@@ -147,8 +148,8 @@ export class MarketHandler {
   }
 
   public async stop(): Promise<void> {
-    this.stopMarketQueueMonitoring()
-    await this.leave()
-    this.clear()
+    this.stopMarketQueueMonitoring();
+    await this.leave();
+    this.clear();
   }
 }

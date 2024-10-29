@@ -1,5 +1,3 @@
-import { DockerContainerOrchestration } from "./DockerContainerOrchestration.js";
+import { DockerContainerOrchestration } from './DockerContainerOrchestration.js';
 
-export class PodmanContainerOrchestration extends DockerContainerOrchestration {
-    
-}
+export class PodmanContainerOrchestration extends DockerContainerOrchestration {}

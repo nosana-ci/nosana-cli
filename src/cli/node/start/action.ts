@@ -18,7 +18,7 @@ import { dispatch as nodeDispatch } from '../../../services/state/node/dispatch.
 import { dispatch as jobDispatch } from '../../../services/state/job/dispatch.js';
 import { NODE_STATE_NAME } from '../../../services/state/node/types.js';
 import { JOB_STATE_NAME } from '../../../services/state/job/types.js';
-import NodeManager from "../../../services/NodeManager/index.js";
+import NodeManager from '../../../services/NodeManager/index.js';
 
 let node: NosanaNode;
 let spinner: Ora;
@@ -30,9 +30,8 @@ export async function startNode1(
   },
   cmd: Command,
 ): Promise<void> {
-
   // testing jobManager
-  const nodeManager = new NodeManager()
+  const nodeManager = new NodeManager();
 
   await nodeManager.init();
   await nodeManager.start(market);

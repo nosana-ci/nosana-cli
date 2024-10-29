@@ -1,2 +1,1 @@
-import { JobDefinition, OpState } from "../../provider/types.js";
-
+import { JobDefinition, OpState } from '../../provider/types.js';
