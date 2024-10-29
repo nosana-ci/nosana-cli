@@ -1,5 +1,5 @@
 import { Client as SDK, Market, Run } from '@nosana/sdk';
-import { ClientSubscriptionId, PublicKey } from '@solana/web3.js';
+import { PublicKey } from '@solana/web3.js';
 
 export class MarketHandler {
   private market: Market | undefined;

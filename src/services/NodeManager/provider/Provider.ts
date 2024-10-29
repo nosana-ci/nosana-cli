@@ -15,7 +15,7 @@ import {
 } from './types.js';
 import { createResourceName } from '../../../providers/modules/resourceManager/volumes/index.js';
 import { extractResultsFromLogs } from '../../../providers/utils/extractResultsFromLogs.js';
-import { applyLoggingProxyToClass, createLoggingProxy } from "../node/monitoring/proxy/loggingProxy.js";
+import { applyLoggingProxyToClass, createLoggingProxy } from "../monitoring/proxy/loggingProxy.js";
 import { NodeRepository } from "../repository/NodeRepository.js";
 
 export class Provider {
@@ -339,8 +339,6 @@ export class Provider {
           if (!container) {
             throw new Error('provider failed to start container');
           }
-
-          await container.wait();
 
           const info = await container.inspect();
           const logs = demuxOutput(

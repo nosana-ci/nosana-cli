@@ -193,6 +193,18 @@ export class NodeState {
             }
         }
 
+        if (data.class === 'HealthHandler'){
+            if(data.method === 'run'){
+                if(data.type === 'return'){
+                    this.addState('health-check-running', {})
+                }
+          
+                if(data.type === 'error'){
+                    this.addState('health-check-failed', {})
+                }
+            }
+        }
+
         if (data.class === 'BasicNode'){
             if(data.method == 'start'){
                 if(data.type == 'call'){
@@ -285,38 +297,44 @@ export class NodeState {
             }
         }
 
-        if(data.class === 'FlowHandler'){
-            if(data.method == 'exposed'){
+        if(data.class === 'ExpiryHandler'){
+            if (data.method === 'init') {
                 if(data.type == 'return'){
-                    if(data.result == true){
-                        this.shared.expose = 'true'
-                        this.addState('job-exposing', { 
-                            node: this.shared.node,
-                            market: this.shared.market, 
-                            job : this.shared.job,
-                            exposed: this.shared.expose,
-                        })
-                    }else {
-                        this.shared.expose = 'false'
-                    }
+                    this.addState('job-expiry-init', {
+                        expiry: data.result
+                    })
                 }
             }
+
+            if (data.method === 'waitUntilExpired') {
+                if(data.type == 'call'){
+                    this.addState('awaiting-job-expire', {})
+                }
+
+                if(data.type == 'call'){
+                    this.addState('job-finish', {})
+                }
+            }
+        }
+
+        if(data.class === 'FlowHandler'){
+
         }
 
         if(data.class === 'JobExternalUtil'){
             if(data.method == 'resolveJobDefinition'){
                 if(data.type == 'call'){
-                    this.addState('awaiting-jod-definition', {})
+                    this.addState('awaiting-job-definition', {})
                 }
 
                 if(data.type == 'error'){
-                    this.addState('awaiting-jod-definition-failed', { 
+                    this.addState('awaiting-job-definition-failed', { 
                          error: `${data.error}` 
                     })
                 }
     
                 if(data.type == 'return'){
-                    this.addState('awaiting-jod-definition-success', {})
+                    this.addState('awaiting-job-definition-success', {})
                 } 
             }
 
@@ -368,7 +386,7 @@ export class NodeState {
                 } 
             }
 
-            if(data.method == 'start'){
+            if(data.method == 'resume'){
                 if(data.type == 'return'){
                     this.addState('job-resuming', { 
                         node: this.shared.node,
@@ -411,6 +429,22 @@ export class NodeState {
                        })
                     }
                 } 
+            }
+
+            if(data.method == 'exposed'){
+                if(data.type == 'return'){
+                    if(data.result == true){
+                        this.shared.expose = 'true'
+                        this.addState('job-exposing', { 
+                            node: this.shared.node,
+                            market: this.shared.market, 
+                            job : this.shared.job,
+                            exposed: this.shared.expose,
+                        })
+                    }else {
+                        this.shared.expose = 'false'
+                    }
+                }
             }
 
             if(data.method == 'run'){

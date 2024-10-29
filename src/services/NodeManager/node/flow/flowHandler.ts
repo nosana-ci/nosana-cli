@@ -8,7 +8,7 @@ import {
 } from '../../provider/types.js';
 import { Provider } from '../../provider/Provider.js';
 import { NodeRepository } from "../../repository/NodeRepository.js";
-import { applyLoggingProxyToClass } from "../monitoring/proxy/loggingProxy.js";
+import { applyLoggingProxyToClass } from "../../monitoring/proxy/loggingProxy.js";
 
 export class FlowHandler {
   constructor(
@@ -58,6 +58,11 @@ export class FlowHandler {
           }
         }
       }
+
+      this.repository.updateflowState(id, {
+        status: 'success',
+        endTime: Date.now()
+      })
     
     return this.repository.getflow(id);
   }

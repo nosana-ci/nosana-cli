@@ -3,7 +3,7 @@ import { PublicKey } from "@solana/web3.js";
 import { MarketHandler } from "../market/marketHandler.js";
 import { BalanceHandler } from "../balance/BalanceHandler.js";
 import { KeyHandler } from "../key/KeyHandler.js";
-import { applyLoggingProxyToClass } from "../monitoring/proxy/loggingProxy.js";
+import { applyLoggingProxyToClass } from "../../monitoring/proxy/loggingProxy.js";
 import { StakeHandler } from "../stake/StakeHandler.js";
 import { ContainerOrchestrationInterface } from "../../provider/containerOrchestration/interface.js";
 import { askYesNoQuestion } from "../../../../generic/utils.js";

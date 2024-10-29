@@ -1,11 +1,11 @@
 import { ApiHandler } from "./node/api/ApiHandler.js";
 import { BasicNode } from './node/Node.js';
-import { createLoggingProxy } from "./node/monitoring/proxy/loggingProxy.js";
-import { state } from "./node/monitoring/state/NodeState.js";
-import { stateStreaming } from "./node/monitoring/streaming/StateStreamer.js";
-import { log } from "./node/monitoring/log/NodeLog.js";
-import { logStreaming } from "./node/monitoring/streaming/LogStreamer.js";
-import { consoleLogging } from "./node/monitoring/log/console/ConsoleLogger.js";
+import { createLoggingProxy } from "./monitoring/proxy/loggingProxy.js";
+import { state } from "./monitoring/state/NodeState.js";
+import { stateStreaming } from "./monitoring/streaming/StateStreamer.js";
+import { log } from "./monitoring/log/NodeLog.js";
+import { logStreaming } from "./monitoring/streaming/LogStreamer.js";
+import { consoleLogging } from "./monitoring/log/console/ConsoleLogger.js";
 
 export default class NodeManager {
   private node: BasicNode;
@@ -82,11 +82,32 @@ export default class NodeManager {
      * market and access key recommened for our PC based on benchmark result
      */
     if(!market){
-      try {
-        const grid = await this.node.grid()
-        market = grid.market.address.toString()
-      } catch (error) {
-        return await this.restart(market)
+      if(!await this.node.benchmark()){
+        /**
+         * start
+         *
+         * recursively start the the process again by calling the restart function
+         */
+        return await this.restart(market);
+      }
+
+      market = await this.node.recommend();
+    } else {
+      /**
+       * benchmark
+       *
+       * this benchmarks the node to ensure it can run the jobs.
+       * It gets the GPUs, CPUs, and internet speed.
+       * 
+       * if the benchmark fails restart the system
+       */
+      if(!await this.node.benchmark()){
+        /**
+         * start
+         *
+         * recursively start the the process again by calling the restart function
+         */
+        return await this.restart(market);
       }
     }
 
@@ -98,23 +119,6 @@ export default class NodeManager {
      * the connectivity, and every other critical system.
      */
     if(!await this.node.healthcheck(market)){
-      /**
-       * start
-       *
-       * recursively start the the process again by calling the restart function
-       */
-      return await this.restart(market);
-    }
-
-    /**
-     * benchmark
-     *
-     * this benchmarks the node to ensure it can run the jobs.
-     * It gets the GPUs, CPUs, and internet speed.
-     * 
-     * if the benchmark fails restart the system
-     */
-    if(!await this.node.benchmark()){
       /**
        * start
        *

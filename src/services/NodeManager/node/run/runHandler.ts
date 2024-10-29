@@ -77,18 +77,6 @@ export class RunHandler {
                 },
             },
         ];
-
-        // Set interval to check run status every 5 minutes
-        this.getRunsInterval = setInterval(async () => {
-            try {
-                const run: Run | undefined = await this.checkRun();
-                if (run) {
-                    await updateCallback(run);
-                }
-            } catch (e) {
-                console.warn('\nCould not check for new runs:', e);
-            }
-        }, 6000 * 5);
     
         // Set up real-time listener for run status changes
         this.runSubscriptionId = this.sdk.jobs.connection!.onProgramAccountChange(
@@ -111,6 +99,29 @@ export class RunHandler {
             'confirmed',
             coderFilters,
         );
+
+        // Set interval to check run status every 5 minutes
+        this.getRunsInterval = setInterval(async () => {
+            try {
+                const run: Run | undefined = await this.checkRun();
+                if (run) {
+                    await updateCallback(run);
+                }
+            } catch (e) {
+                console.warn('\nCould not check for new runs:', e);
+            }
+        }, 6000 * 5);
+
+        await (async () => {
+            try {
+                const run: Run | undefined = await this.checkRun();
+                if (run) {
+                    await updateCallback(run);
+                }
+            } catch (e) {
+                console.warn('\nCould not check for new runs:', e);
+            }
+        })();
     }
 
     // Stop monitoring run status

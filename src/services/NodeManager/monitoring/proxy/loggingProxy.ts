@@ -28,7 +28,9 @@ export function applyLoggingProxyToClass(instance: any) {
     'jobExternalUtil',
     'healthHandler',
     'stakeHandler',
-  ];
+    'expiryHandler',
+    'benchmarkHandler',
+  ]; 
 
   properties.forEach(property => {
     if (instance.hasOwnProperty(property)) {

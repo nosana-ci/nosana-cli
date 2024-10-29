@@ -63,6 +63,10 @@ export class JobExternalUtil {
           validateJobDefinition(jobDefinition);
 
         if (!validation.success) {
+            this.repository.updateflowState(id, {
+                endTime: Date.now(),
+                status: 'failed'
+            })
             this.repository.updateflowStateError(id, {
                 status: 'validation-error',
                 errors: validation.errors,

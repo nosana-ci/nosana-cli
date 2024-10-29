@@ -2,7 +2,7 @@ import { Job, Market, Run, Client as SDK } from "@nosana/sdk";
 import { FlowState, JobDefinition } from "../../provider/types.js";
 import { FlowHandler } from "../flow/flowHandler.js";
 import { Provider } from "../../provider/Provider.js";
-import { applyLoggingProxyToClass } from "../monitoring/proxy/loggingProxy.js";
+import { applyLoggingProxyToClass } from "../../monitoring/proxy/loggingProxy.js";
 import { NodeRepository } from "../../repository/NodeRepository.js";
 import { JobDefinitionStrategySelector } from "./defination/JobDefinitionStrategy.js";
 import { ResultReturnStrategySelector } from "./result/ResultReturnStrategy.js";
@@ -66,12 +66,6 @@ export class JobHandler {
         this.clearJob()
     }
 
-    public isJobExpired(run: Run, market: Market): boolean {
-        const now = Date.now() / 1000;
-        // @ts-expect-error Type is wrong, its not a number but a BN
-        return run.account.time.toNumber() + (market.jobTimeout * 1.5) < now;
-    }
-
     async validate(jobDefinition: JobDefinition): Promise<boolean> {
         const validation: IValidation<JobDefinition> =
           validateJobDefinition(jobDefinition);
@@ -85,10 +79,6 @@ export class JobHandler {
         }
 
         return true;
-    }
-
-    async expired(market: Market, run: Run): Promise<boolean> {
-        return this.isJobExpired(run, market)
     }
 
     async start(job: Job): Promise<boolean> {
@@ -111,8 +101,18 @@ export class JobHandler {
         return true;
     }
 
-    async run(): Promise<void> {
-        await this.flowHandler.run(this.jobId())
+    async run(): Promise<boolean> {
+        if(this.repository.getFlowState(this.jobId()).status == 'failed'){
+            return false;
+        }
+
+        await this.flowHandler.run(this.jobId());
+
+        if(this.repository.getFlowState(this.jobId()).status == 'failed'){
+            return false;
+        }
+
+        return true;
     }
 
     async quit(run: Run): Promise<void> {
@@ -120,29 +120,8 @@ export class JobHandler {
         await this.flowHandler.stop(this.jobId())
     }
 
-    async wait(run: Run, market: Market): Promise<void> {
-        if(this.repository.getFlowState(this.jobId()).status == 'failed'){
-            return;
-        }
-
-        if (this.flowHandler.exposed(this.jobId())) {
-            const expirationTime = (run.account.time as number) + (market.jobTimeout * 1.5);
-            const waitTimeInSeconds = expirationTime - (Date.now() / 1000);
-            
-            if (waitTimeInSeconds > 0) {
-                const waitTimeInMilliseconds = waitTimeInSeconds * 1000;
-                await this.idle(waitTimeInMilliseconds);
-            }
-        }
-
-        this.repository.updateflowState(this.jobId(), {
-            status: 'success',
-            endTime: Date.now()
-        })
-    }
-
-    async idle(waitTimeInMilliseconds: number): Promise<void> {
-        await new Promise(resolve => setTimeout(resolve, waitTimeInMilliseconds));
+    exposed(): boolean {
+        return this.flowHandler.exposed(this.jobId())
     }
 
     async finish(run: Run): Promise<void> {

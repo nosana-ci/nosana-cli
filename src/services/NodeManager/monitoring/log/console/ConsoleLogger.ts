@@ -35,9 +35,6 @@ export class ConsoleLogger implements LogObserver {
 
         if(log.type == 'add') {
           console.log(log.log)
-          // this.spinner.text = `${this.spinner.text}\n    ${log.log}`
-          // this.spinner.suffixText();
-          // console.log(this.spinner.text)
           return;
         }
 

@@ -1,7 +1,7 @@
 import chalk, { ChalkInstance } from 'chalk';
 import ora, { Ora } from 'ora';
 import { logEmitter, LogEntry } from '../proxy/loggingProxy.js';
-import { SECONDS_PER_DAY } from "../../../../../generic/utils.js";
+import { SECONDS_PER_DAY } from "../../../../generic/utils.js";
 
 export interface LogObserver {
   update(log: NodeLogEntry): void;
@@ -115,6 +115,14 @@ class NodeLog {
       this.handleRestart(data);
     }
 
+    if (data.class === 'BasicNode' && data.method === 'benchmark') {
+      this.handleBenchmark(data);
+    }
+
+    if (data.class === 'BasicNode' && data.method === 'recommend') {
+      this.handleRecommend(data);
+    }
+
     if (data.class === 'JobHandler') {
       this.handleJobHandler(data);
     }
@@ -141,6 +149,121 @@ class NodeLog {
 
     if (data.class === 'StakeHandler') {
       this.handleStakeHandler(data);
+    }
+
+    if(data.class === 'ExpiryHandler'){
+      this.handleExpiryHandler(data)
+    }
+  }
+
+  private handleRecommend(data: LogEntry){
+    if (data.type === 'call') {
+      this.addLog({
+        method: `${data.class}.${data.method}`,
+        job: this.job,
+        log: chalk.cyan(`Grid is recommending market for Node`),
+        timestamp: Date.now(),
+        type: 'info',
+      });
+    }
+    if (data.type === 'return') {
+      this.addLog({
+        method: `${data.class}.${data.method}`,
+        job: this.job,
+        log: chalk.green(`Grid recommended ${chalk.bold(data.result)} market to Node successfully`),
+        timestamp: Date.now(),
+        type: 'success',
+      });
+    }
+    if (data.type === 'error') {
+      this.addLog({
+        method: `${data.class}.${data.method}`,
+        job: this.job,
+        log: chalk.red(`Error recommended market to Node`),
+        timestamp: Date.now(),
+        type: 'error',
+      });
+    }
+  }
+
+  private handleBenchmark(data: LogEntry){
+    if (data.type === 'call') {
+      this.addLog({
+        method: `${data.class}.${data.method}`,
+        job: this.job,
+        log: chalk.cyan(`Benchmark is running`),
+        timestamp: Date.now(),
+        type: 'info',
+      });
+    }
+    if (data.type === 'return') {
+      this.addLog({
+        method: `${data.class}.${data.method}`,
+        job: this.job,
+        log: chalk.green(`Benchmark completed started successfully`),
+        timestamp: Date.now(),
+        type: 'success',
+      });
+    }
+    if (data.type === 'error') {
+      this.addLog({
+        method: `${data.class}.${data.method}`,
+        job: this.job,
+        log: chalk.red(`Benchmark failed`),
+        timestamp: Date.now(),
+        type: 'error',
+      });
+    }
+  }
+
+  private handleExpiryHandler(data: LogEntry){
+    if(data.method === 'init'){
+      if (data.type === 'return') {
+        this.shared.expiry = data.result;
+      }
+    }
+
+    if (data.method === 'waitUntilExpired') {
+      if (data.type === 'call') {
+        if(this.shared.exposed){
+          const date = new Date(parseInt(this.shared.expiry as string));
+          const dateString = date.toLocaleString('en-GB', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+          })
+
+          this.addLog({
+            method: `${data.class}.${data.method}`,
+            job: this.job,
+            log: chalk.cyanBright(`Waiting for job ${chalk.bold(this.job)} to finish (${chalk.bold(dateString)})`),
+            timestamp: Date.now(),
+            type: 'info',
+          });
+        } else {
+          this.addLog({
+            method: `${data.class}.${data.method}`,
+            job: this.job,
+            log: chalk.cyanBright(`Waiting for job ${chalk.bold(this.job)}  to finish`),
+            timestamp: Date.now(),
+            type: 'info',
+          });
+        }
+      }
+
+      if (data.type === 'return') {
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          log: chalk.yellow(`job ${chalk.bold(data.arguments[0])} is now expired`),
+          timestamp: Date.now(),
+          type: 'info',
+        });
+      }
     }
   }
 
@@ -679,6 +802,23 @@ class NodeLog {
   }
 
   private handleJobHandler(data: LogEntry) {
+    if (data.method === 'exposed') {
+      if (data.type === 'return') {
+        if(data.result){
+          this.shared.exposed = true;
+          this.addLog({
+            method: `${data.class}.${data.method}`,
+            job: this.job,
+            log: chalk.green(`job ${chalk.bold(this.job)} is now exposed`),
+            timestamp: Date.now(),
+            type: 'info',
+          });
+        } else {
+          this.shared.exposed = false;
+        }
+      }
+    }
+
     if (data.method === 'claim') {
       if (data.type === 'call') {
         this.job = data.arguments[0];
@@ -687,7 +827,7 @@ class NodeLog {
           job: this.job,
           timestamp: Date.now(),
           type: 'stop',
-          log: '',
+          log: chalk.green(`node has found job ${chalk.bold(data.arguments[0])}`)
         })
 
         this.addLog({
@@ -905,23 +1045,6 @@ class NodeLog {
           timestamp: Date.now(),
           type: 'info',
         });
-      }
-    }
-
-    if (data.method === 'expose') {
-      if (data.type === 'return') {
-        if(data.result){
-          this.shared.exposed = true;
-          this.addLog({
-            method: `${data.class}.${data.method}`,
-            job: this.job,
-            log: chalk.green(`job ${chalk.bold(data.arguments[0])} is now exposed`),
-            timestamp: Date.now(),
-            type: 'info',
-          });
-        } else {
-          this.shared.exposed = false;
-        }
       }
     }
   }
