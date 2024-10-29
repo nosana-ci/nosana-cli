@@ -25,14 +25,15 @@ describe('runNodeCommand', () => {
     expect(runNodeCommand.args[0]).toBe('job definition path');
   });
 
-  it('should have 3 options', () => {
-    expect(runNodeCommand.options.length).toBe(3);
+  it('should have 4 options', () => {
+    expect(runNodeCommand.options.length).toBe(4);
   });
 
   it.each([
     ['--provider', undefined, 'podman'],
     ['--config', '-c', '~/.nosana/'],
     ['--podman', '--docker', 'http://localhost:8080'],
+    ['--url', undefined, undefined],
   ])('should have %s option', (long, short, defaultValue) => {
     const option = runNodeCommand.options.find((i) => i.long === long);
     expect(option?.long).toBe(long);

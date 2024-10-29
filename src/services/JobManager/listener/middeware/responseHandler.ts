@@ -9,8 +9,6 @@ export function handleResponse(req: Request, res: Response) {
     res.send(res.locals.result);
   }
 
-  res.send();
-
   console.log(
     `INFO:  ${req.get('host')} - "${req.method} ${
       req.path

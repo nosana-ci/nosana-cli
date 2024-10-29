@@ -45,13 +45,16 @@ export const postJobCommand = new Command('post')
   )
   .addOption(new Option('-f, --file <path>', 'file with the JSON flow'))
   .addOption(
+    new Option('--url <url>', 'Url path for the JSON flow').conflicts('file'),
+  )
+  .addOption(
     new Option('--wait', 'wait for job to be completed and show result'),
   )
   .addOption(
     new Option(
       '--download [path]',
       'download external artifacts to specified path  (implies --wait)',
-    ),
+    ).conflicts('file'),
   )
   .addOption(formatOption)
   .addOption(verboseOption)

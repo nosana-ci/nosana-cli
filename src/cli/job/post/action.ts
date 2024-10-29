@@ -38,6 +38,14 @@ export async function run(
   let json_flow: { [key: string]: any }; // TODO: add JSON flow type
   if (options.file) {
     json_flow = JSON.parse(fs.readFileSync(options.file, 'utf8'));
+  } else if (options.url) {
+    try {
+      const data = await fetch(options.url);
+      const json = await data.json();
+      json_flow = json;
+    } catch (e) {
+      throw new Error(`Failed to fetch remote job flow.\n${e}`);
+    }
   } else {
     switch (options.type) {
       case 'container':
@@ -73,6 +81,7 @@ export async function run(
       json_flow.global.gpu = true;
     }
   }
+
   const artifactId = 'artifact-' + randomUUID();
   if (options.output) {
     return formatter.throw(
