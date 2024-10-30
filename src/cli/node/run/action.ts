@@ -55,6 +55,7 @@ export async function runJob(
     options.provider,
     options.podman,
     options.config,
+    options.gpu,
   );
   node.logger.override(
     ProviderEvents.INFO_LOG,

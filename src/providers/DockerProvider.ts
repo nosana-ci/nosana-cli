@@ -61,8 +61,14 @@ export class DockerProvider extends BasicProvider implements Provider {
   public port: string;
   public protocol: 'https' | 'http' | 'ssh';
   public name: string = 'docker';
+  public gpu: string;
 
-  constructor(server: string, configLocation: string, logger?: Logger) {
+  constructor(
+    server: string,
+    configLocation: string,
+    logger?: Logger,
+    gpu = 'all',
+  ) {
     super(configLocation, logger);
 
     const { host, port, protocol } = createSeverObject(server);
@@ -70,6 +76,7 @@ export class DockerProvider extends BasicProvider implements Provider {
     this.host = host;
     this.port = port;
     this.protocol = protocol;
+    this.gpu = gpu;
 
     this.docker = new DockerExtended({
       host: this.host,
@@ -563,7 +570,9 @@ export class DockerProvider extends BasicProvider implements Provider {
     const devices = gpu
       ? [
           {
-            Count: -1,
+            ...(this.gpu === 'all'
+              ? { Count: -1 }
+              : { DeviceIDs: this.gpu.split(',') }),
             Driver: 'nvidia',
             Capabilities: [['gpu']],
           },

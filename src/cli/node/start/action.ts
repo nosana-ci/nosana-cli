@@ -69,7 +69,13 @@ export async function startNode(
   });
 
   console.log(`Provider:\t${chalk.greenBright.bold(options.provider)}`);
-  node = new NosanaNode(sdk, options.provider, options.podman, options.config);
+  node = new NosanaNode(
+    sdk,
+    options.provider,
+    options.podman,
+    options.config,
+    options.gpu,
+  );
 
   node.logger.override(
     ProviderEvents.INFO_LOG,
