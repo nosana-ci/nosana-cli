@@ -572,7 +572,7 @@ export class DockerProvider extends BasicProvider implements Provider {
           {
             ...(this.gpu === 'all'
               ? { Count: -1 }
-              : { device_ids: this.gpu.split(',') }),
+              : { DeviceIDs: this.gpu.split(',') }),
             Driver: 'nvidia',
             Capabilities: [['gpu']],
           },
