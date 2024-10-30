@@ -272,17 +272,17 @@ class NodeLog {
         }
       }
 
-      if (data.type === 'return') {
-        this.addLog({
-          method: `${data.class}.${data.method}`,
-          job: this.job,
-          log: chalk.yellow(
-            `job ${chalk.bold(data.arguments[0])} is now expired`,
-          ),
-          timestamp: Date.now(),
-          type: 'info',
-        });
-      }
+      // if (data.type === 'return') {
+      //   this.addLog({
+      //     method: `${data.class}.${data.method}`,
+      //     job: this.job,
+      //     log: chalk.yellow(
+      //       `job ${this.job} is now expired`,
+      //     ),
+      //     timestamp: Date.now(),
+      //     type: 'info',
+      //   });
+      // }
     }
   }
 
@@ -1155,6 +1155,19 @@ class NodeLog {
           method: `${data.class}.${data.method}`,
           job: this.job,
           log: chalk.cyan(`flow ${chalk.bold(data.arguments[0])} is running`),
+          timestamp: Date.now(),
+          type: 'info',
+        });
+      }
+    }
+
+    if(data.method === 'operationExposed'){
+      if (data.type === 'return') {
+        this.shared.exposed = true;
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          log: chalk.green(`Job ${chalk.bold(this.job)} is now exposed (${chalk.bold(data.result)})`),
           timestamp: Date.now(),
           type: 'info',
         });

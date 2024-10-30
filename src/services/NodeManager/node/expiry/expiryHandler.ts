@@ -2,6 +2,7 @@ import { Client as SDK, Market, Run } from '@nosana/sdk';
 import { PublicKey } from '@solana/web3.js';
 import BN from 'bn.js';
 import ApiEventEmitter from '../api/ApiEventEmitter.js';
+import { jobEmitter } from "../job/jobHandler.js";
 
 export class ExpiryHandler {
   private address: PublicKey;
@@ -85,6 +86,12 @@ export class ExpiryHandler {
   public async waitUntilExpired(): Promise<void> {
     return new Promise<void>((resolve) => {
       this.resolveExpiryPromise = resolve;
+
+      // Listen for the job completion event
+      jobEmitter.once('run-completed', (data) => {
+        resolve();
+      });
+
       this.startOrResetTimer();
     });
   }

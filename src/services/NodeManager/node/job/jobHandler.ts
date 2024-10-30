@@ -9,6 +9,9 @@ import { ResultReturnStrategySelector } from './result/ResultReturnStrategy.js';
 import { IValidation } from 'typia';
 import { validateJobDefinition } from '../../../../providers/Provider.js';
 import { JobExternalUtil } from './jobExternalUtil.js';
+import EventEmitter from "events";
+
+export const jobEmitter = new EventEmitter();
 
 export class JobHandler {
   private id: string | undefined;
@@ -26,6 +29,10 @@ export class JobHandler {
     this.jobExternalUtil = new JobExternalUtil(sdk, this.repository);
 
     applyLoggingProxyToClass(this);
+
+    jobEmitter.on('run-exposed', (data) => {
+      this.flowHandler.operationExposed(data.id)
+    });
   }
 
   public get(): Job | undefined {
@@ -105,15 +112,21 @@ export class JobHandler {
   }
 
   async run(): Promise<boolean> {
+    let status;
+
     if (this.repository.getFlowState(this.jobId()).status == 'failed') {
+      jobEmitter.emit('run-completed', { id: this.jobId(), status: false });
       return false;
     }
 
     await this.flowHandler.run(this.jobId());
 
     if (this.repository.getFlowState(this.jobId()).status == 'failed') {
+      jobEmitter.emit('run-completed', { id: this.jobId(), status: false });
       return false;
     }
+
+    jobEmitter.emit('run-completed', { id: this.jobId(), status: true });
 
     return true;
   }

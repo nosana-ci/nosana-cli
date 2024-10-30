@@ -10,6 +10,8 @@ import { applyLoggingProxyToClass } from '../monitoring/proxy/loggingProxy.js';
 import { NodeRepository } from '../repository/NodeRepository.js';
 import { promiseTimeoutWrapper } from '../../../generic/timeoutPromiseWrapper.js';
 import { extractLogsAndResultsFromLogBuffer } from '../../../providers/utils/extractLogsAndResultsFromLogBuffer.js';
+import Dockerode from "dockerode";
+import { jobEmitter } from "../node/job/jobHandler.js";
 
 export class Provider {
   constructor(
@@ -208,6 +210,36 @@ export class Provider {
     return true;
   }
 
+  private async startServiceExposedUrlHealthCheck(id: string, container: Dockerode.Container, port: number) {
+    const interval = setInterval(async () => {
+        try {
+            const exec = await container.exec({
+                Cmd: ['curl', '-s', `localhost:${port}`],
+                AttachStdout: true,
+                AttachStderr: true,
+            });
+
+            const stream = await exec.start({ Detach: false, Tty: false });
+            const output = await new Promise((resolve, reject) => {
+                let result = '';
+                stream.on('data', data => {
+                    result += data.toString();
+                });
+                stream.on('end', () => resolve(result));
+                stream.on('error', reject);
+            });
+
+            if (output) {
+              // raise an event
+              jobEmitter.emit('run-exposed', { id });
+              clearInterval(interval); // Stop further checks
+            }
+        } catch (error) {
+            console.log(`Service on port ${port} not ready yet, retrying...`);
+        }
+    }, 2000);
+  }
+
   async containerRunOperation(id: string, index: number): Promise<boolean> {
     const frpcImage = 'registry.hub.docker.com/nosana/frpc:0.1.0';
     const s3HelperImage =
@@ -315,6 +347,8 @@ export class Provider {
           // we will stream out a url for the job
           // link will be logged out if public
           const link = `https://${prefix}.${config.frp.serverAddr}`;
+
+          this.repository.updateflowStateSecret(flow.id, { url: link })
         }
 
         if (op.args.resources) {
@@ -375,14 +409,11 @@ export class Provider {
           this.repository.updateOpStateLogs(id, index, data.toString());
         });
 
-        if (op.args.private) {
-          // do stuffs partaining to private jobs
-          // the result and jobdefination will be secretly sent
+        if(op.args.expose){
+          await this.startServiceExposedUrlHealthCheck(id, container, op.args.expose)
         }
 
-        if (!op.args.expose) {
-          await container.wait();
-        }
+        await container.wait();
 
         const controller = new AbortController();
 

@@ -221,14 +221,13 @@ export class BasicNode {
            * actually run the flow if the job and carry out the task, using the flow handler
            * and the providers
            */
-          const success = await this.jobHandler.run();
+          // const success = await this.jobHandler.run();
+          this.jobHandler.run();
 
           /**
            * wait for the job to expire before continue if the setup was successful
            */
-          if (success && this.jobHandler.exposed()) {
-            await this.expiryHandler.waitUntilExpired();
-          }
+          await this.expiryHandler.waitUntilExpired();
         }
 
         /**
@@ -290,14 +289,12 @@ export class BasicNode {
          * actually run the flow if the job and carry out the task, using the flow handler
          * and the providers
          */
-        const success = await this.jobHandler.run();
+        this.jobHandler.run();
 
         /**
          * wait for the job to expire before continue if the setup was successful
          */
-        if (success && this.jobHandler.exposed()) {
-          await this.expiryHandler.waitUntilExpired();
-        }
+        await this.expiryHandler.waitUntilExpired();
       }
 
       /**

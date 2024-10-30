@@ -43,6 +43,11 @@ export class NodeRepository {
     this.db.write();
   }
 
+  public getFlowSecret(id: string, key: string): string | undefined {
+    const secrets = this.db.data.flows[id]?.state?.secrets ?? {};
+    return secrets[key];
+  }
+
   public updateflowStateError(id: string, error: Error | unknown): void {
     if (!this.db.data.flows[id]?.state?.errors) {
       this.db.data.flows[id].state.errors = [];
