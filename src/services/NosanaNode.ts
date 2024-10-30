@@ -60,6 +60,7 @@ export class NosanaNode {
     providerName = 'podman',
     providerUrl = 'http://localhost:8080',
     configLocation = '~/.nosana/',
+    gpu = 'all',
   ) {
     this.logger = new Logger();
     switch (providerName) {
@@ -68,6 +69,7 @@ export class NosanaNode {
           providerUrl,
           configLocation,
           this.logger,
+          gpu,
         );
         break;
       case 'docker':
@@ -76,6 +78,7 @@ export class NosanaNode {
           providerUrl,
           configLocation,
           this.logger,
+          gpu,
         );
         break;
     }

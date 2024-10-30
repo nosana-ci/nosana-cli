@@ -8,8 +8,13 @@ export class PodmanProvider extends DockerProvider {
   private apiUrl: string;
   public name: string = 'podman';
 
-  constructor(podman: string, configLocation: string, logger?: Logger) {
-    super(podman, configLocation, logger);
+  constructor(
+    podman: string,
+    configLocation: string,
+    logger?: Logger,
+    gpu = 'all',
+  ) {
+    super(podman, configLocation, logger, gpu);
     this.apiUrl = `${this.protocol}://${this.host}:${this.port}/v4.5.0/libpod`;
   }
 
@@ -35,7 +40,7 @@ export class PodmanProvider extends DockerProvider {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(createPodmanRunOptions(image, args)),
+        body: JSON.stringify(createPodmanRunOptions(image, args, this.gpu)),
       });
 
       // start container

@@ -6,6 +6,7 @@ import {
   rpcOption,
   walletOption,
 } from '../../sharedOptions/index.js';
+import { gpuOption } from '../../sharedOptions/--gpu.js';
 
 export const startNodeCommand = new Command('start')
   .description('Start Nosana Node')
@@ -30,4 +31,5 @@ export const startNodeCommand = new Command('start')
       'Config path (to store the flows database and other config)',
     ).default('~/.nosana/'),
   )
+  .addOption(gpuOption)
   .action(startNode);
