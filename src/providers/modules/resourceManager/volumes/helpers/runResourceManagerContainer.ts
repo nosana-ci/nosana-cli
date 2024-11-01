@@ -35,9 +35,8 @@ export async function runResourceManagerContainer(
 
   logStream.on('data', (logBuffer) => {
     try {
-      const logString = logBuffer.toString('utf8');
-      const logJSON = JSON.parse(logString);
-
+      const logString: string = logBuffer.toString('utf8');
+      const logJSON = JSON.parse(logString.slice(8, logString.length - 1));
       if (!progressBar) {
         const { value, format } = convertFromBytes(logJSON.size.total);
         formatSize = format;
@@ -61,34 +60,32 @@ export async function runResourceManagerContainer(
   });
 
   const { StatusCode } = await container.wait({ condition: 'not-running' });
-  console.log({ StatusCode });
   controller.abort();
 
   progressBar?.stop();
 
   // If download failed, remove volume
   if (StatusCode !== 0) {
-    console.log('If error');
+    console.log('error');
     const errrorBuffer = await container.logs({
       follow: false,
-      stdout: true,
-      stderr: false,
+      stdout: false,
+      stderr: true,
     });
-
-    console.log(errrorBuffer.toString());
 
     const { logs } = extractLogsAndResultsFromLogBuffer(
       errrorBuffer,
       undefined,
     );
 
-    console.log('Error logs');
-    console.log(logs);
+    await container.remove({ force: true });
 
     const volume = await docker.getVolume(volumeName);
     await volume.remove();
-    await container.remove({ force: true });
-    throw new Error('Cannot fetch resource.');
+
+    const lastLog = logs[logs.length - 1].log?.replaceAll('\n', '');
+    const jsonLog = lastLog ? JSON.parse(lastLog) : { message: 'Unkown Error' };
+    throw new Error(jsonLog.message);
   }
 
   await container.remove({ force: true });
