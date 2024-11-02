@@ -1,4 +1,4 @@
-import { Container, Volume, VolumeCreateResponse } from "dockerode"
+import { Container, ImageInfo, Image, Volume, VolumeCreateResponse, VolumeInspectInfo } from "dockerode"
 import { ReturnedStatus } from "../types.js"
 import { DockerContainerOrchestration } from "./DockerContainerOrchestration.js"
 import { PodmanContainerOrchestration } from "./PodmanContainerOrchestration.js"
@@ -7,6 +7,9 @@ export interface ContainerOrchestrationInterface {
     getConnection(): any
 
     pullImage(image: string): Promise<ReturnedStatus>
+    hasImage(image: string): Promise<boolean>
+    getImage(image: string): Promise<Image>
+    listImages(): Promise<ImageInfo[]>
     deleteImage(image: string): Promise<ReturnedStatus>
 
     createNetwork(name: string): Promise<ReturnedStatus>
@@ -14,6 +17,9 @@ export interface ContainerOrchestrationInterface {
 
     createVolume(name: string): Promise<ReturnedStatus<VolumeCreateResponse>>
     getVolume(name: string): Promise<ReturnedStatus<Volume>>
+    hasVolume(name: string): Promise<boolean>
+    getRawVolume(name: string): Promise<Volume>
+    listVolumes(): Promise<VolumeInspectInfo[]>
     deleteVolume(name: string): Promise<ReturnedStatus>
 
     getContainersByName(names: string[]): Promise<Container[]>
