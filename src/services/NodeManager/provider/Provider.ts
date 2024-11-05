@@ -12,6 +12,7 @@ import { extractLogsAndResultsFromLogBuffer } from '../../../providers/utils/ext
 import { ResourceManager } from '../node/resource/resourceManager.js';
 import Dockerode from 'dockerode';
 import { jobEmitter } from '../node/job/jobHandler.js';
+import { s3HelperImage } from '../../../providers/modules/resourceManager/volumes/definition/s3HelperOpts.js';
 
 export class Provider {
   constructor(
@@ -246,8 +247,6 @@ export class Provider {
 
   async containerRunOperation(id: string, index: number): Promise<boolean> {
     const frpcImage = 'registry.hub.docker.com/nosana/frpc:0.1.0';
-    const s3HelperImage =
-      'registry.hub.docker.com/nosana/remote-resource-helper:0.4.0';
 
     const flow = this.repository.getflow(id);
     const opState = this.repository.getOpState(id, index);
