@@ -155,10 +155,11 @@ export class VolumeManager {
     const { StatusCode } = await container.wait({ condition: 'not-running' });
     controller.abort();
 
-    this.progress.stop(`downloading resource volume resource ${name} stopped`);
-
     // If download failed, remove volume
     if (StatusCode !== 0) {
+      this.progress.stop(
+        `downloading resource volume resource ${name} stopped`,
+      );
       const errrorBuffer = await container.logs({
         follow: false,
         stdout: false,
@@ -179,11 +180,11 @@ export class VolumeManager {
         ? JSON.parse(lastLog)
         : { message: 'Unkown Error' };
       throw new Error(jsonLog.message);
-    } else {
-      this.progress.stop(
-        `downloading resource volume resource ${name} completed`,
-      );
     }
+
+    this.progress.stop(
+      `downloading resource volume resource ${name} completed`,
+    );
 
     await this.containerOrchestration.stopAndDeleteContainer(container.id);
   }
