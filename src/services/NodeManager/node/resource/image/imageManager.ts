@@ -1,7 +1,7 @@
-import { ContainerOrchestrationInterface } from '../../../provider/containerOrchestration/interface';
-import { NodeRepository } from '../../../repository/NodeRepository';
-import { hoursSinceDate } from '../helpers/hoursSunceDate';
-import { repoTagsContainsImage } from '../helpers/repoTagsContainsImage';
+import { ContainerOrchestrationInterface } from '../../../provider/containerOrchestration/interface.js';
+import { NodeRepository } from '../../../repository/NodeRepository.js';
+import { hoursSinceDate } from '../helpers/hoursSunceDate.js';
+import { repoTagsContainsImage } from '../helpers/repoTagsContainsImage.js';
 
 export class ImageManager {
   private fetched: boolean = false;

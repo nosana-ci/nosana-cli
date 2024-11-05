@@ -1,5 +1,5 @@
-import { nosanaBucket } from '../../../../../providers/modules/resourceManager/volumes/definition/s3HelperOpts';
-import { RequiredResource } from '../../../provider/types';
+import { nosanaBucket } from '../../../../../providers/modules/resourceManager/volumes/definition/s3HelperOpts.js';
+import { RequiredResource } from '../../../provider/types.js';
 
 export function createResourceName(resource: RequiredResource) {
   if (resource.url)

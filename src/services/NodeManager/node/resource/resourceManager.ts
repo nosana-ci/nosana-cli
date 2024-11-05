@@ -1,8 +1,8 @@
-import { clientSelector } from '../../../../api/client';
-import { ContainerOrchestrationInterface } from '../../provider/containerOrchestration/interface';
-import { NodeRepository } from '../../repository/NodeRepository';
-import { ImageManager } from './image/imageManager';
-import { VolumeManager } from './volume/volumeManager';
+import { clientSelector } from '../../../../api/client.js';
+import { ContainerOrchestrationInterface } from '../../provider/containerOrchestration/interface.js';
+import { NodeRepository } from '../../repository/NodeRepository.js';
+import { ImageManager } from './image/imageManager.js';
+import { VolumeManager } from './volume/volumeManager.js';
 
 export class ResourceManager {
   private required_market: string | undefined;
