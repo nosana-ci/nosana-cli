@@ -7,26 +7,26 @@ import {
   OpState,
 } from '../../provider/types.js';
 import { Provider } from '../../provider/Provider.js';
-import { NodeRepository } from "../../repository/NodeRepository.js";
-import { applyLoggingProxyToClass } from "../monitoring/proxy/loggingProxy.js";
+import { NodeRepository } from '../../repository/NodeRepository.js';
+import { applyLoggingProxyToClass } from '../../monitoring/proxy/loggingProxy.js';
 
 export class FlowHandler {
-  constructor(
-    private provider: Provider,
-    private repository: NodeRepository
-  ) {
+  constructor(private provider: Provider, private repository: NodeRepository) {
     applyLoggingProxyToClass(this);
   }
 
-  public init(id: string) : void {
-    this.repository.setflow(id, this.createInitFlow(id))
+  public init(id: string): void {
+    this.repository.setflow(id, this.createInitFlow(id));
   }
 
   public start(id: string, jobDefinition: JobDefinition): Flow {
-    this.repository.setflow(id, this.createNewFlow(id, jobDefinition))
+    this.repository.setflow(id, this.createNewFlow(id, jobDefinition));
 
     for (let i = 0; i < jobDefinition.ops.length; i++) {
-      this.repository.addOpstate(id, this.createOpNewState(jobDefinition.ops[i].id))
+      this.repository.addOpstate(
+        id,
+        this.createOpNewState(jobDefinition.ops[i].id),
+      );
     }
 
     return this.repository.getflow(id);
@@ -39,26 +39,31 @@ export class FlowHandler {
   public async run(id: string): Promise<Flow> {
     const flow = this.repository.getflow(id);
 
-      for (let i = 0; i < flow.jobDefinition.ops.length; i++) {
-        const op = flow.jobDefinition.ops[i];
-        const opState = this.repository.getOpState(id, i);
+    for (let i = 0; i < flow.jobDefinition.ops.length; i++) {
+      const op = flow.jobDefinition.ops[i];
+      const opState = this.repository.getOpState(id, i);
 
-        if (!opState.endTime) {
-          try {
-            if(!await this.provider.runOperation(op.type, {id, index: i})){
-              break;
-            }
-          } catch (error) {
-            this.repository.updateflowStateError(id, error)
-            this.repository.updateflowState(id, {
-              endTime: Date.now(),
-              status: 'failed'
-            })
+      if (!opState.endTime) {
+        try {
+          if (!(await this.provider.runOperation(op.type, { id, index: i }))) {
             break;
           }
+        } catch (error) {
+          this.repository.updateflowStateError(id, error);
+          this.repository.updateflowState(id, {
+            endTime: Date.now(),
+            status: 'failed',
+          });
+          break;
         }
       }
-    
+    }
+
+    this.repository.updateflowState(id, {
+      status: 'success',
+      endTime: Date.now(),
+    });
+
     return this.repository.getflow(id);
   }
 
@@ -69,24 +74,24 @@ export class FlowHandler {
         const op = flow.jobDefinition.ops[i];
 
         try {
-          await this.provider.stopOperation(op.type, {id, index: i});
+          await this.provider.stopOperation(op.type, { id, index: i });
         } catch (_) {}
       }
     } catch (_) {}
 
     this.repository.updateflowState(id, {
       endTime: Date.now(),
-      status: 'stopped'
-    })
+      status: 'stopped',
+    });
   }
 
   private createInitFlow(id: string): Flow {
     return {
       id,
       jobDefinition: {
-        version: "",
-        type: "container",
-        ops: []
+        version: '',
+        type: 'container',
+        ops: [],
       },
       state: {
         status: 'init',
@@ -114,21 +119,38 @@ export class FlowHandler {
 
   private createOpNewState(id: string): OpState {
     return {
-        operationId: id,
-        providerId: null,
-        status: 'pending',
-        startTime: null,
-        endTime: null,
-        exitCode: null,
-        logs: [],
+      operationId: id,
+      providerId: null,
+      status: 'pending',
+      startTime: null,
+      endTime: null,
+      exitCode: null,
+      logs: [],
     };
   }
 
   public exposed(id: string): boolean {
-    return this.repository.getflow(id).jobDefinition.ops.some(
+    return this.repository
+      .getflow(id)
+      .jobDefinition.ops.some(
+        (op: Operation<OperationType>) =>
+          op.type === 'container/run' &&
+          (op.args as OperationArgsMap['container/run']).expose !== undefined,
+      );
+  }
+
+  public private(id: string): boolean {
+    return this.repository
+      .getflow(id)
+      .jobDefinition.ops.some(
       (op: Operation<OperationType>) =>
         op.type === 'container/run' &&
-        (op.args as OperationArgsMap['container/run']).expose !== undefined,
-    )
-}
+        (op.args as OperationArgsMap['container/run']).expose !== undefined &&
+        (op.args as OperationArgsMap['container/run']).private === true,
+    );
+  }
+
+  public operationExposed(id: string): string {
+    return this.repository.getFlowSecret(id, 'url') ?? 'private'
+  }
 }

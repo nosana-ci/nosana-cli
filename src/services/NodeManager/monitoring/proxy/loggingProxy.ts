@@ -28,9 +28,11 @@ export function applyLoggingProxyToClass(instance: any) {
     'jobExternalUtil',
     'healthHandler',
     'stakeHandler',
+    'expiryHandler',
+    'benchmarkHandler',
   ];
 
-  properties.forEach(property => {
+  properties.forEach((property) => {
     if (instance.hasOwnProperty(property)) {
       const value = instance[property];
       instance[property] = createLoggingProxy(value);
@@ -42,9 +44,11 @@ export function createLoggingProxy<T extends object>(target: T): T {
   const className = Object.getPrototypeOf(target).constructor.name;
 
   const formatArguments = (args: any[]) => {
-    return args.map(arg => {
+    return args.map((arg) => {
       if (typeof arg === 'function') {
-        return arg.constructor.name === 'AsyncFunction' ? '[AsyncFunction]' : '[Function]';
+        return arg.constructor.name === 'AsyncFunction'
+          ? '[AsyncFunction]'
+          : '[Function]';
       }
       return arg;
     });
@@ -92,7 +96,7 @@ export function createLoggingProxy<T extends object>(target: T): T {
             }
           } catch (error) {
             logEntry.type = 'error';
-            logEntry.error = (error as any);
+            logEntry.error = error as any;
             logEmitter.emit('log', logEntry);
             throw error;
           }

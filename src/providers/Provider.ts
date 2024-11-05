@@ -21,10 +21,10 @@ export interface JobLogicstics {
 export type SendJobDefinationLogicsticsTypes = 'api' | 'api-listen';
 
 export interface SendJobDefinationLogicstics {
-  type: SendJobDefinationLogicsticsTypes
+  type: SendJobDefinationLogicsticsTypes;
   args: {
-    endpoint?: string
-  }
+    endpoint?: string;
+  };
 }
 
 /**
@@ -34,10 +34,10 @@ export interface SendJobDefinationLogicstics {
 export type ReceiveJobResultLogicsticsTypes = 'api' | 'api-listen';
 
 export interface ReceiveJobResultLogicstics {
-  type: ReceiveJobResultLogicsticsTypes
+  type: ReceiveJobResultLogicsticsTypes;
   args: {
-    endpoint?: string
-  }
+    endpoint?: string;
+  };
 }
 
 export type JobDefinition = {

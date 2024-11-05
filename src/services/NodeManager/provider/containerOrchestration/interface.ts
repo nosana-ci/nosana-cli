@@ -4,7 +4,7 @@ import { DockerContainerOrchestration } from "./DockerContainerOrchestration.js"
 import { PodmanContainerOrchestration } from "./PodmanContainerOrchestration.js"
 
 export interface ContainerOrchestrationInterface {
-    getConnection(): any
+  getConnection(): any;
 
     pullImage(image: string): Promise<ReturnedStatus>
     hasImage(image: string): Promise<boolean>
@@ -12,8 +12,8 @@ export interface ContainerOrchestrationInterface {
     listImages(): Promise<ImageInfo[]>
     deleteImage(image: string): Promise<ReturnedStatus>
 
-    createNetwork(name: string): Promise<ReturnedStatus>
-    deleteNetwork(name: string): Promise<ReturnedStatus>
+  createNetwork(name: string): Promise<ReturnedStatus>;
+  deleteNetwork(name: string): Promise<ReturnedStatus>;
 
     createVolume(name?: string): Promise<ReturnedStatus<VolumeCreateResponse>>
     getVolume(name: string): Promise<ReturnedStatus<Volume>>
@@ -22,7 +22,7 @@ export interface ContainerOrchestrationInterface {
     listVolumes(): Promise<VolumeInspectInfo[]>
     deleteVolume(name: string): Promise<ReturnedStatus>
 
-    getContainersByName(names: string[]): Promise<Container[]>
+  getContainersByName(names: string[]): Promise<Container[]>;
 
     getContainer(id: string): Promise<Container>
     runContainer(args: RunContainerArgs): Promise<ReturnedStatus<Container>>
@@ -36,33 +36,35 @@ export interface ContainerOrchestrationInterface {
     healthy(): Promise<ReturnedStatus>
     check(): Promise<string>
 
+  healthy(): Promise<ReturnedStatus>;
+  check(): Promise<string>;
 }
 
 export type RunContainerArgs = {
-    name?: string;
-    networks?: { [key: string]: {} };
-    cmd?: string[];
-    gpu?: boolean;
-    network_mode?: 'bridge' | 'host' | 'none';
-    volumes?: Array<{
-      dest: string;
-      name: string;
-      readonly?: boolean;
-    }>;
-    env?: { [key: string]: string };
-    work_dir?: string;
-    entrypoint?: string | string[];
-  };
+  name?: string;
+  networks?: { [key: string]: {} };
+  cmd?: string[];
+  gpu?: boolean;
+  network_mode?: 'bridge' | 'host' | 'none';
+  volumes?: Array<{
+    dest: string;
+    name: string;
+    readonly?: boolean;
+  }>;
+  env?: { [key: string]: string };
+  work_dir?: string;
+  entrypoint?: string | string[];
+};
 
-  export function selectContainerOrchestrationProvider(
-    provider: string,
-    url: string,
-  ): ContainerOrchestrationInterface {
-    switch (provider) {
-      case 'podman':
-        return new PodmanContainerOrchestration(url);
-      case 'docker':
-      default:
-        return new DockerContainerOrchestration(url);
-    }
+export function selectContainerOrchestrationProvider(
+  provider: string,
+  url: string,
+): ContainerOrchestrationInterface {
+  switch (provider) {
+    case 'podman':
+      return new PodmanContainerOrchestration(url);
+    case 'docker':
+    default:
+      return new DockerContainerOrchestration(url);
   }
+}
