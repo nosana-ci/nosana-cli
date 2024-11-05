@@ -1,6 +1,10 @@
 import ora, { Ora } from 'ora';
 import { SingleBar } from 'cli-progress';
-import { log, LogObserver, NodeLogEntry } from "../../../../monitoring/log/NodeLog";
+import {
+  log,
+  LogObserver,
+  NodeLogEntry,
+} from '../../../../monitoring/log/NodeLog';
 
 export const consoleLogging = (() => {
   let instance: ConsoleLogger | null = null;
@@ -26,7 +30,7 @@ export class ConsoleLogger implements LogObserver {
 
   public update(log: NodeLogEntry) {
     if (log.type == 'process-bar-start') {
-      if(this.pending){
+      if (this.pending) {
         this.spinner.stop();
       }
       if (this.progressBar) {

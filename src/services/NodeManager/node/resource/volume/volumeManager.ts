@@ -1,15 +1,22 @@
 import { Presets } from 'cli-progress';
-import { RequiredResource, Resource, S3Secure } from "../../../provider/types.js";
-import { createS3HelperOpts, nosanaBucket } from "../../../../../providers/modules/resourceManager/volumes/definition/s3HelperOpts.js";
-import { convertFromBytes } from "../../../../../providers/modules/resourceManager/volumes/helpers/convertFromBytes.js";
-import { extractLogsAndResultsFromLogBuffer } from "../../../../../providers/utils/extractLogsAndResultsFromLogBuffer.js";
-import { applyLoggingProxyToClass } from "../../../monitoring/proxy/loggingProxy.js";
-import { ContainerOrchestrationInterface } from "../../../provider/containerOrchestration/interface";
-import { NodeRepository } from "../../../repository/NodeRepository.js";
-import { ProgressBarReporter } from "../../utils/progressBarReporter.js";
-import { createResourceName } from "../helpers/createResourceName.js";
-import { hasDockerVolume } from "../helpers/hasDockerVolume.js";
-import { hoursSinceDate } from "../helpers/hoursSunceDate.js";
+import {
+  RequiredResource,
+  Resource,
+  S3Secure,
+} from '../../../provider/types.js';
+import {
+  createS3HelperOpts,
+  nosanaBucket,
+} from '../../../../../providers/modules/resourceManager/volumes/definition/s3HelperOpts.js';
+import { convertFromBytes } from '../../../../../providers/modules/resourceManager/volumes/helpers/convertFromBytes.js';
+import { extractLogsAndResultsFromLogBuffer } from '../../../../../providers/utils/extractLogsAndResultsFromLogBuffer.js';
+import { applyLoggingProxyToClass } from '../../../monitoring/proxy/loggingProxy.js';
+import { ContainerOrchestrationInterface } from '../../../provider/containerOrchestration/interface';
+import { NodeRepository } from '../../../repository/NodeRepository.js';
+import { ProgressBarReporter } from '../../utils/progressBarReporter.js';
+import { createResourceName } from '../helpers/createResourceName.js';
+import { hasDockerVolume } from '../helpers/hasDockerVolume.js';
+import { hoursSinceDate } from '../helpers/hoursSunceDate.js';
 
 export class VolumeManager {
   private fetched: boolean = false;
