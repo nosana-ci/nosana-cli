@@ -1,4 +1,5 @@
 import { logEmitter, LogEntry } from '../proxy/loggingProxy.js';
+import { classifyState } from './classifyState.js';
 
 export interface StateObserver {
   update(
@@ -46,7 +47,7 @@ export class NodeState {
   public getNodeInfo() {
     return {
       ...this.info,
-      state: this.status,
+      state: classifyState(this.status),
     };
   }
 
