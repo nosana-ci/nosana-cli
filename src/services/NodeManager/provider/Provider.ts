@@ -4,7 +4,6 @@ import { config } from '../../../generic/config.js';
 import { Operation } from '../../../providers/Provider.js';
 import { ContainerOrchestrationInterface } from './containerOrchestration/interface.js';
 import { Flow, Log, OperationArgsMap, Resource } from './types.js';
-import { createResourceName } from '../../../providers/modules/resourceManager/volumes/index.js';
 import { applyLoggingProxyToClass } from '../monitoring/proxy/loggingProxy.js';
 import { NodeRepository } from '../repository/NodeRepository.js';
 import { promiseTimeoutWrapper } from '../../../generic/timeoutPromiseWrapper.js';
@@ -247,7 +246,7 @@ export class Provider {
 
   async containerRunOperation(id: string, index: number): Promise<boolean> {
     const frpcImage = 'registry.hub.docker.com/nosana/frpc:0.1.0';
-
+ 
     const flow = this.repository.getflow(id);
     const opState = this.repository.getOpState(id, index);
     const op = flow.jobDefinition.ops[index] as Operation<'container/run'>;
@@ -362,10 +361,10 @@ export class Provider {
             throw error;
           }
 
+          const resourceVolumes = await this.resourceManager.getResourceVolumes(op.args.resources ?? [])
+
           try {
-            volumes.push(
-              ...(await getResourceVolumes(this.resourceManager, op.args)),
-            );
+            volumes.push(...resourceVolumes);
           } catch (error) {
             throw error;
           }
@@ -409,7 +408,7 @@ export class Provider {
         });
 
         logStream.on('data', (data) => {
-          this.repository.updateOpStateLogs(id, index, data.toString());
+          this.repository.displayLog(data.toString());
         });
 
         if (op.args.expose) {
@@ -625,30 +624,6 @@ function getVolumes(arg: OperationArgsMap['container/run'], flow: Flow) {
         name: flow.id + '-' + volume.name,
       });
     }
-  }
-  return volumes;
-}
-
-async function getResourceVolumes(
-  resourceManager: ResourceManager,
-  args: OperationArgsMap['container/run'],
-) {
-  const volumes: { dest: string; name: string; readonly?: boolean }[] = [];
-
-  for (const resource of args.resources as Resource[]) {
-    await resourceManager.volumes.createRemoteVolume(resource);
-    if ((await resourceManager.volumes.hasVolume(resource)) === false) {
-      const error = new Error(
-        `Missing required resource ${createResourceName(resource)}.`,
-      );
-      throw error;
-    }
-
-    volumes.push({
-      dest: resource.target,
-      name: await resourceManager.volumes.getVolume(resource)!,
-      readonly: resource.allowWrite ? false : true,
-    });
   }
   return volumes;
 }

@@ -104,10 +104,21 @@ export class NodeRepository {
     return this.db.data.resources.images[image];
   }
 
+  public createImageResource(
+    image: string,
+    fields: ResourceHistory,
+  ): void {
+    this.db.data.resources.images[image] = fields
+    this.db.write();
+  }
+
   public updateImageResource(
     image: string,
-    updatedFields: { [key: string]: any },
+    updatedFields: Partial<ResourceHistory> | ResourceHistory,
   ): void {
+    if(!this.db.data.resources.images[image]){
+      this.createImageResource(image, updatedFields as ResourceHistory)
+    }
     Object.assign(this.db.data.resources.images[image], updatedFields);
     this.db.write();
   }
@@ -125,10 +136,21 @@ export class NodeRepository {
     return this.db.data.resources.volumes[volume];
   }
 
+  public createVolumeResource(
+    volume: string,
+    fields: VolumeResource,
+  ): void {
+    this.db.data.resources.volumes[volume] = fields
+    this.db.write();
+  }
+
   public updateVolumeResource(
     volume: string,
-    updatedFields: { [key: string]: any },
+    updatedFields: Partial<VolumeResource> | VolumeResource,
   ): void {
+    if(!this.db.data.resources.volumes[volume]){
+      this.createVolumeResource(volume, updatedFields as VolumeResource)
+    }
     Object.assign(this.db.data.resources.volumes[volume], updatedFields);
     this.db.write();
   }
@@ -136,5 +158,9 @@ export class NodeRepository {
   public deleteVolumeResource(volume: string): void {
     delete this.db.data.resources.volumes[volume];
     this.db.write();
+  }
+
+  public displayLog(log: string){
+    return log;
   }
 }

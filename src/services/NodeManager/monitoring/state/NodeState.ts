@@ -190,6 +190,28 @@ export class NodeState {
       if (data.method == 'runContainer') {
         if (data.type == 'call') {
           this.addState('running-container', {
+            image: data.arguments[0].Image,
+          });
+        }
+
+        if (data.type == 'return') {
+          if (data.result.status == true) {
+            this.addState('running-container-success', {
+              image: data.arguments[0].Image,
+              id: data.result.result.id,
+            });
+          } else {
+            this.addState('running-container-failed', {
+              image: data.arguments[0].Image,
+              error: data.result.error,
+            });
+          }
+        }
+      }
+
+      if (data.method == 'runFlowContainer') {
+        if (data.type == 'call') {
+          this.addState('running-container', {
             image: data.arguments[0],
             name: data.arguments[1].name,
           });
@@ -653,6 +675,35 @@ export class NodeState {
         if (data.type == 'return') {
           this.addState('api-stopped', { node: this.shared.node });
         }
+      }
+    }
+
+    if (data.class === 'ProgressBarReporter') {
+      if (data.method === 'start' && data.type == 'call') {
+        this.addState('process-bar-start', { 
+          desc: data.arguments[0],
+          optProgressBar: data.arguments[1],
+          total: data.arguments[2],
+          startValue: data.arguments[3],
+          payload: data.arguments[4],
+          progressBarPreset: data.arguments[5],
+        });
+      }
+
+      if (data.method === 'update' && data.type == 'call') {
+        this.addState('process-bar-update', { 
+          desc: data.arguments[0],
+          current: data.arguments[0],
+          payload: data.arguments[1],
+        });
+      }
+
+      if (data.method === 'stop' && data.type == 'call') {
+        this.addState('process-bar-stop', { 
+          desc: data.arguments[0],
+          current: data.arguments[0],
+          payload: data.arguments[1],
+        });
       }
     }
   }

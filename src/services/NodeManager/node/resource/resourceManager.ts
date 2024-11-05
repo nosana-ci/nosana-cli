@@ -1,6 +1,8 @@
 import { clientSelector } from '../../../../api/client.js';
 import { ContainerOrchestrationInterface } from '../../provider/containerOrchestration/interface.js';
+import { OperationArgsMap, Resource } from "../../provider/types.js";
 import { NodeRepository } from '../../repository/NodeRepository.js';
+import { createResourceName } from "./helpers/createResourceName.js";
 import { ImageManager } from './image/imageManager.js';
 import { VolumeManager } from './volume/volumeManager.js';
 
@@ -48,5 +50,32 @@ export class ResourceManager {
   public async prune(): Promise<void> {
     await this.images.pruneImages();
     await this.volumes.pruneVolumes();
+  }
+
+  public async getResourceVolumes(
+    resources: Resource[],
+  ): Promise<{
+      dest: string;
+      name: string;
+      readonly?: boolean;
+    }[]> {
+    const volumes: { dest: string; name: string; readonly?: boolean }[] = [];
+
+    for (const resource of resources) {
+      await this.volumes.createRemoteVolume(resource);
+      if ((await this.volumes.hasVolume(resource)) === false) {
+        const error = new Error(
+          `Missing required resource ${createResourceName(resource)}.`,
+        );
+        throw error;
+      }
+  
+      volumes.push({
+        dest: resource.target,
+        name: await this.volumes.getVolume(resource)!,
+        readonly: resource.allowWrite ? false : true,
+      });
+    }
+    return volumes;
   }
 }

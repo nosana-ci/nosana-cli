@@ -5,6 +5,7 @@ import {
   Volume,
   VolumeCreateResponse,
   VolumeInspectInfo,
+  ContainerCreateOptions,
 } from 'dockerode';
 import { ReturnedStatus } from '../types.js';
 import { DockerContainerOrchestration } from './DockerContainerOrchestration.js';
@@ -32,7 +33,7 @@ export interface ContainerOrchestrationInterface {
   getContainersByName(names: string[]): Promise<Container[]>;
 
   getContainer(id: string): Promise<Container>;
-  runContainer(args: RunContainerArgs): Promise<ReturnedStatus<Container>>;
+  runContainer(args: ContainerCreateOptions): Promise<ReturnedStatus<Container>>;
   runFlowContainer(
     image: string,
     args: RunContainerArgs,

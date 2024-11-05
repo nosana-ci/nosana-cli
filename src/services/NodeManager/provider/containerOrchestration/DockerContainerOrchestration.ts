@@ -189,7 +189,7 @@ export class DockerContainerOrchestration
   }
 
   async runContainer(
-    args: RunContainerArgs,
+    args: ContainerCreateOptions,
   ): Promise<ReturnedStatus<Container>> {
     try {
       const container = await this.docker.createContainer(args);

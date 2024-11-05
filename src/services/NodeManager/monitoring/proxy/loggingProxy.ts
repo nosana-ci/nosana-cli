@@ -30,6 +30,7 @@ export function applyLoggingProxyToClass(instance: any) {
     'stakeHandler',
     'expiryHandler',
     'benchmarkHandler',
+    'progressBarReporter',
   ];
 
   properties.forEach((property) => {

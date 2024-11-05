@@ -1,5 +1,6 @@
 import { Presets } from 'cli-progress';
 import {
+  OperationArgsMap,
   RequiredResource,
   Resource,
   S3Secure,
@@ -21,13 +22,13 @@ import { hoursSinceDate } from '../helpers/hoursSunceDate.js';
 export class VolumeManager {
   private fetched: boolean = false;
   private market_required_volumes: RequiredResource[] = [];
-  private progress: ProgressBarReporter;
+  private progressBarReporter: ProgressBarReporter;
 
   constructor(
     private containerOrchestration: ContainerOrchestrationInterface,
     private repository: NodeRepository,
   ) {
-    this.progress = new ProgressBarReporter();
+    this.progressBarReporter = new ProgressBarReporter();
 
     applyLoggingProxyToClass(this);
   }
@@ -50,7 +51,7 @@ export class VolumeManager {
     const resourceName = createResourceName(resource);
     const savedResource = this.repository.getVolumeResource(
       createResourceName(resource),
-    ).volume;
+    )?.volume;
 
     if (savedResource) {
       this.setVolume(resourceName, savedResource);
@@ -66,8 +67,12 @@ export class VolumeManager {
       }
 
       // @ts-ignore **PODMAN returns name not Name**
-      if (response.result.name) volumeName = response.result.name;
-      else volumeName = response.result.Name;
+      if (response.result.name){
+        // @ts-ignore **PODMAN returns name not Name**
+        volumeName = response.result.name;
+      } else {
+        volumeName = response.result.Name;
+      }
 
       if (resource.url) {
         await this.runResourceManagerContainer(volumeName, {
@@ -97,9 +102,8 @@ export class VolumeManager {
   ): Promise<void> {
     const { url, files } = resource;
 
-    const response = await this.containerOrchestration.runContainer(
-      createS3HelperOpts(name, { url, files }, (resource as S3Secure).IAM),
-    );
+    const args = createS3HelperOpts(name, { url, files }, (resource as S3Secure).IAM)
+    const response = await this.containerOrchestration.runContainer(args);
 
     if (response.error || !response.result) {
       throw Error('container failed to start');
@@ -129,7 +133,7 @@ export class VolumeManager {
           const { value, format } = convertFromBytes(logJSON.size.total);
           formatSize = format;
 
-          this.progress.start(
+          this.progressBarReporter.start(
             `downloading resource volume resource ${name}`,
             {
               format: `{bar} {percentage}% | {value}/{total}${format} | {valueFiles}/{totalFiles} files`,
@@ -145,7 +149,7 @@ export class VolumeManager {
         } else if (logJSON.event === 'status') {
           const { value } = convertFromBytes(logJSON.size.current, formatSize);
 
-          this.progress.update(value, {
+          this.progressBarReporter.update(value, {
             valueFiles: logJSON.count.current,
           });
         }
@@ -157,7 +161,7 @@ export class VolumeManager {
 
     // If download failed, remove volume
     if (StatusCode !== 0) {
-      this.progress.stop(
+      this.progressBarReporter.stop(
         `downloading resource volume resource ${name} stopped`,
       );
       const errrorBuffer = await container.logs({
@@ -182,7 +186,7 @@ export class VolumeManager {
       throw new Error(jsonLog.message);
     }
 
-    this.progress.stop(
+    this.progressBarReporter.stop(
       `downloading resource volume resource ${name} completed`,
     );
 
@@ -191,7 +195,7 @@ export class VolumeManager {
 
   public async setVolume(bucket: string, volume: string): Promise<void> {
     const volumeObj = this.repository.getVolumeResource(bucket);
-    this.repository.updateImageResource(bucket, {
+    this.repository.updateVolumeResource(bucket, {
       volume,
       required: this.market_required_volumes.some(
         (vol) => createResourceName(vol) === bucket,
@@ -204,7 +208,7 @@ export class VolumeManager {
   public async hasVolume(resource: Resource): Promise<boolean> {
     const volume = this.repository.getVolumeResource(
       createResourceName(resource),
-    ).volume;
+    )?.volume;
     if (!volume) {
       return false;
     }

@@ -30,5 +30,5 @@ export const startNodeCommand = new Command('start')
       'Config path (to store the flows database and other config)',
     ).default('~/.nosana/'),
   )
-  // .action(startNode1);
-.action(startNode);
+  .action(startNode1);
+// .action(startNode);

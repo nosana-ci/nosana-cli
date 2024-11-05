@@ -95,6 +95,10 @@ class NodeLog {
         this.handleRunContainer(data);
       }
 
+      if (data.method === 'runFlowContainer') {
+        this.handleRunFlowContainer(data);
+      }
+
       if (data.method === 'check') {
         this.handleContainerCheckHandler(data, provider);
       }
@@ -219,8 +223,13 @@ class NodeLog {
         });
       }
     }
+    
     if (data.class === 'ExpiryHandler') {
       this.handleExpiryHandler(data);
+    }
+
+    if (data.class === 'ResourceManager') {
+      this.handleResourceManager(data);
     }
   }
 
@@ -255,6 +264,48 @@ class NodeLog {
         timestamp: Date.now(),
         type: 'error',
       });
+    }
+  }
+
+  private handleResourceManager(data: LogEntry) {
+    if(data.method === 'getResourceVolumes'){
+      if (data.type === 'call') {
+        let urls = data.arguments[0]
+        .map((item: { url: any; }) => item.url)
+        .filter((url: any) => url)
+        .join(', ')
+
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          log: chalk.cyan(`Downloading resource ${urls}`),
+          timestamp: Date.now(),
+          type: 'info',
+        });
+      }
+      if (data.type === 'return') {
+        let urls = data.arguments[0]
+        .map((item: { url: any; }) => item.url)
+        .filter((url: any) => url)
+        .join(', ')
+
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          log: chalk.green(`Downloaded resource ${urls}`),
+          timestamp: Date.now(),
+          type: 'success',
+        });
+      }
+      if (data.type === 'error') {
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          log: chalk.red(`${data.error}`),
+          timestamp: Date.now(),
+          type: 'error',
+        });
+      }
     }
   }
 
@@ -476,12 +527,12 @@ class NodeLog {
   }
 
   private handleNodeRepository(data: LogEntry) {
-    if (data.method === 'updateOpStateLogs') {
+    if (data.method === 'displayLog') {
       if (data.type === 'call') {
         this.addLog({
           method: `${data.class}.${data.method}`,
           job: this.job,
-          log: data.arguments[2],
+          log: data.arguments[0],
           timestamp: Date.now(),
           type: 'log',
         });
@@ -694,6 +745,35 @@ class NodeLog {
   }
 
   private handleRunContainer(data: LogEntry) {
+    if (data.type === 'call') {
+      this.addLog({
+        method: `${data.class}.${data.method}`,
+        job: this.job,
+        log: `${chalk.cyan(
+          `starting container ${chalk.bold(data.arguments[0].Image)}`,
+        )}`,
+        timestamp: Date.now(),
+        type: 'process',
+        pending: { isPending: true, expecting: `${data.class}.${data.method}` },
+      });
+    }
+
+    if (data.type === 'return') {
+      this.addLog({
+        method: `${data.class}.${data.method}`,
+        job: this.job,
+        timestamp: Date.now(),
+        type: data.result.status ? 'success' : 'error',
+        log: data.result.status
+          ? chalk.green(`running container ${chalk.bold(data.arguments[0].Image)}`)
+          : chalk.red(
+              `error starting container ${chalk.bold(data.arguments[0].Image)}`,
+            ),
+      });
+    }
+  }
+
+  private handleRunFlowContainer(data: LogEntry) {
     if (data.type === 'call') {
       this.addLog({
         method: `${data.class}.${data.method}`,
