@@ -1,5 +1,6 @@
 import ora, { Ora } from "ora";
 import { log, LogObserver, NodeLogEntry } from "../NodeLog.js";
+import { SingleBar } from "cli-progress";
 
 export const consoleLogging = (() => {
     let instance: ConsoleLogger | null = null;
@@ -15,6 +16,8 @@ export const consoleLogging = (() => {
 export class ConsoleLogger implements LogObserver {
     private pending: boolean = false;
     private expecting: string | undefined;
+    private progressBar: SingleBar | undefined;
+
     spinner!: Ora;
     
     constructor() {
@@ -22,6 +25,25 @@ export class ConsoleLogger implements LogObserver {
     }
   
     public update(log: NodeLogEntry) {
+      if(log.type == 'process-bar-start'){
+        if(this.progressBar){
+          this.progressBar.stop()
+        }
+
+        this.progressBar = new SingleBar(log.payload?.optProgressBar, log.payload.progressBarPreset);
+        this.progressBar.start(log.payload?.total, log.payload?.startValue, log.payload?.payload);
+      }
+
+      if(log.type == 'process-bar-update'){
+        this.progressBar?.update(log.payload?.current, log.payload?.payload);
+      }
+
+      if(log.type == 'process-bar-stop'){
+        this.progressBar?.stop();
+        this.progressBar = undefined;
+      }
+
+
       if(log.type == 'log'){
         process.stdout.write(log.log)
         return;

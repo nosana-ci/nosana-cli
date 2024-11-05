@@ -26,10 +26,11 @@ export interface NodeLogEntryPending {
 export interface NodeLogEntry {
   log: string;
   method: string;
-  type: string; // success, error, info, process, stop, log, update, add
+  type: string; // success, error, info, process, stop, log, update, process-bar, add
   pending?: NodeLogEntryPending;
   timestamp: number;
   job: string | undefined;
+  payload?: any;
 }
 
 class NodeLog {
@@ -141,6 +142,67 @@ class NodeLog {
 
     if (data.class === 'StakeHandler') {
       this.handleStakeHandler(data);
+    }
+
+    if (data.class === 'ProgressBarReporter') {
+      if(data.method === 'start' && data.type == 'call'){
+        // log that the info of the start
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          log: chalk.cyan(data.arguments[0]),
+          timestamp: Date.now(),
+          type: 'info',
+        });
+
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          timestamp: Date.now(),
+          type: 'process-bar-start',
+          log: '',
+          payload: {
+            optProgressBar: data.arguments[1],
+            total: data.arguments[2],
+            startValue: data.arguments[3],
+            payload: data.arguments[4],
+            progressBarPreset: data.arguments[5],
+          }
+        });
+      }
+
+      if(data.method === 'update' && data.type == 'call'){
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          timestamp: Date.now(),
+          type: 'process-bar-update',
+          log: '',
+          payload: {
+            current: data.arguments[0], 
+            payload: data.arguments[1]
+          }
+        });
+      }
+
+      if(data.method === 'stop' && data.type == 'call'){
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          timestamp: Date.now(),
+          type: 'process-bar-stop',
+          log: ''
+        });
+
+        // log that the info of the start
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          log: chalk.cyan(data.arguments[0]),
+          timestamp: Date.now(),
+          type: 'info',
+        });
+      }
     }
   }
 

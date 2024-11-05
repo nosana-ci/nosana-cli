@@ -6,10 +6,6 @@ import { PublicKey } from '@solana/web3.js';
 import { JobHandler } from './job/jobHandler.js';
 import { DB } from '../../../providers/modules/db/index.js';
 import { ContainerOrchestrationInterface, selectContainerOrchestrationProvider } from '../provider/containerOrchestration/interface.js';
-import {
-  createResourceManager,
-  ResourceManager,
-} from '../../../providers/modules/resourceManager/index.js';
 import { Provider } from '../provider/Provider.js';
 import Logger from '../../../providers/modules/logger/index.js';
 import {
@@ -20,6 +16,7 @@ import { ApiHandler } from './api/ApiHandler.js';
 import { NodeRepository } from "../repository/NodeRepository.js";
 import { BenchmarkHandler, GridData } from "./benchmark/benchmarkHandler.js";
 import { HealthHandler } from "./health/healthHandler.js";
+import { ResourceManager } from "./resource/resourceManager.js";
 
 export class BasicNode {
   private apiHandler: ApiHandler;
@@ -45,11 +42,8 @@ export class BasicNode {
     const db = new DB(options.config).db;
     this.repository = new NodeRepository(db)
     this.containerOrchestration = selectContainerOrchestrationProvider(options.provider, options.url);
-    this.resourceManager = createResourceManager(
-      db,
-      this.containerOrchestration.getConnection(),
-      new Logger(),
-    );
+    this.resourceManager = new ResourceManager(this.containerOrchestration, this.repository,)
+
     this.provider = new Provider(
       this.containerOrchestration,
       this.repository,

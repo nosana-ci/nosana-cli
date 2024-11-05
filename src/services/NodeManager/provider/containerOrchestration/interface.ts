@@ -15,7 +15,7 @@ export interface ContainerOrchestrationInterface {
     createNetwork(name: string): Promise<ReturnedStatus>
     deleteNetwork(name: string): Promise<ReturnedStatus>
 
-    createVolume(name: string): Promise<ReturnedStatus<VolumeCreateResponse>>
+    createVolume(name?: string): Promise<ReturnedStatus<VolumeCreateResponse>>
     getVolume(name: string): Promise<ReturnedStatus<Volume>>
     hasVolume(name: string): Promise<boolean>
     getRawVolume(name: string): Promise<Volume>
@@ -25,7 +25,8 @@ export interface ContainerOrchestrationInterface {
     getContainersByName(names: string[]): Promise<Container[]>
 
     getContainer(id: string): Promise<Container>
-    runContainer(image: string, args: RunContainerArgs): Promise<ReturnedStatus<Container>>
+    runContainer(args: RunContainerArgs): Promise<ReturnedStatus<Container>>
+    runFlowContainer(image: string, args: RunContainerArgs): Promise<ReturnedStatus<Container>>
     stopContainer(id: string): Promise<ReturnedStatus>
     deleteContainer(id: string): Promise<ReturnedStatus>
     stopAndDeleteContainer(id: string): Promise<ReturnedStatus>

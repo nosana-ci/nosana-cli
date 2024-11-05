@@ -1,7 +1,6 @@
 import { randomUUID } from 'crypto';
 
 import { config } from '../../../generic/config.js';
-import { ResourceManager } from '../../../providers/modules/resourceManager/index.js';
 import { Operation } from '../../../providers/Provider.js';
 import { ContainerOrchestrationInterface } from './containerOrchestration/interface.js';
 import { Flow, Log, OperationArgsMap, Resource } from './types.js';
@@ -10,6 +9,7 @@ import { applyLoggingProxyToClass } from '../node/monitoring/proxy/loggingProxy.
 import { NodeRepository } from '../repository/NodeRepository.js';
 import { promiseTimeoutWrapper } from '../../../generic/timeoutPromiseWrapper.js';
 import { extractLogsAndResultsFromLogBuffer } from '../../../providers/utils/extractLogsAndResultsFromLogBuffer.js';
+import { ResourceManager } from "../node/resource/resourceManager.js";
 
 export class Provider {
   constructor(
@@ -64,7 +64,7 @@ export class Provider {
 
       if (!result) {
         ({ status, error, result } =
-          await this.containerOrchestration.runContainer(tunnelImage, {
+          await this.containerOrchestration.runFlowContainer(tunnelImage, {
             name: tunnel_name,
             networks,
             env: {
@@ -91,7 +91,7 @@ export class Provider {
           }
 
           ({ status, error, result } =
-            await this.containerOrchestration.runContainer(tunnelImage, {
+            await this.containerOrchestration.runFlowContainer(tunnelImage, {
               name: tunnel_name,
               networks,
               env: {
@@ -111,7 +111,7 @@ export class Provider {
 
       if (!result) {
         ({ status, error, result } =
-          await this.containerOrchestration.runContainer(frpcImage, {
+          await this.containerOrchestration.runFlowContainer(frpcImage, {
             name: 'frpc-api-' + address,
             cmd: ['-c', '/etc/frp/frpc.toml'],
             networks,
@@ -144,7 +144,7 @@ export class Provider {
           }
 
           ({ status, error, result } =
-            await this.containerOrchestration.runContainer(frpcImage, {
+            await this.containerOrchestration.runFlowContainer(frpcImage, {
               name: 'frpc-api-' + address,
               cmd: ['-c', '/etc/frp/frpc.toml'],
               networks,
@@ -254,7 +254,7 @@ export class Provider {
           }
 
           ({ status, error, result } =
-            await this.containerOrchestration.runContainer(frpcImage, {
+            await this.containerOrchestration.runFlowContainer(frpcImage, {
               name: 'frpc-' + name,
               cmd: ['-c', '/etc/frp/frpc.toml'],
               networks,
@@ -295,7 +295,7 @@ export class Provider {
         }
 
         ({ status, error, result } =
-          await this.containerOrchestration.runContainer(
+          await this.containerOrchestration.runFlowContainer(
             op.args.image ?? flow.jobDefinition.global?.image!,
             {
               name,

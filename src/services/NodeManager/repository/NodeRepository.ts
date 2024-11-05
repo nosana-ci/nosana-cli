@@ -100,7 +100,7 @@ export class NodeRepository {
     return this.db.data.resources.images[image];
   }
 
-  public updateImageResource(image: string, updatedFields: { [key: string]: string; }): void {
+  public updateImageResource(image: string, updatedFields: { [key: string]: any; }): void {
     Object.assign(this.db.data.resources.images[image], updatedFields);
     this.db.write();
   }
@@ -118,7 +118,7 @@ export class NodeRepository {
     return this.db.data.resources.volumes[volume];
   }
 
-  public updateVolumeResource(volume: string, updatedFields: { [key: string]: string; }): void {
+  public updateVolumeResource(volume: string, updatedFields: { [key: string]: any; }): void {
     Object.assign(this.db.data.resources.volumes[volume], updatedFields);
     this.db.write();
   }

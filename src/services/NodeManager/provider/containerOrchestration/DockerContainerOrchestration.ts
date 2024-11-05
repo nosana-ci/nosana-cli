@@ -123,7 +123,7 @@ export class DockerContainerOrchestration
   }
 
   async createVolume(
-    name: string,
+    name?: string,
   ): Promise<ReturnedStatus<VolumeCreateResponse>> {
     try {
       const volume = await this.docker.createVolume({ Name: name });
@@ -189,6 +189,18 @@ export class DockerContainerOrchestration
   }
 
   async runContainer(
+    args: RunContainerArgs,
+  ): Promise<ReturnedStatus<Container>> {
+    try {
+      const container = await this.docker.createContainer(args);
+      await container.start();
+      return { status: true, result: container };
+    } catch (error) {
+      return { status: false, error };
+    }
+  }
+
+  async runFlowContainer(
     image: string,
     args: RunContainerArgs,
   ): Promise<ReturnedStatus<Container>> {
