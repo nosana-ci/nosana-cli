@@ -37,7 +37,7 @@ export async function runResourceManagerContainer(
     try {
       const logString: string = logBuffer.toString('utf8');
       const logJSON = JSON.parse(logString.slice(8, logString.length - 1));
-      if (!progressBar) {
+      if (!progressBar && logJSON.event === 'status') {
         const { value, format } = convertFromBytes(logJSON.size.total);
         formatSize = format;
         progressBar = new SingleBar(
@@ -50,7 +50,7 @@ export async function runResourceManagerContainer(
           valueFiles: 0,
           totalFiles: logJSON.count.total,
         });
-      } else {
+      } else if (progressBar && logJSON.event === 'status') {
         const { value } = convertFromBytes(logJSON.size.current, formatSize);
         progressBar.update(value, {
           valueFiles: logJSON.count.current,

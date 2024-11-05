@@ -124,7 +124,7 @@ export class VolumeManager {
         const logString: string = logBuffer.toString('utf8');
         const logJSON = JSON.parse(logString.slice(8, logString.length - 1));
 
-        if (!start) {
+        if (!start && logJSON.event === 'status') {
           start = true;
           const { value, format } = convertFromBytes(logJSON.size.total);
           formatSize = format;
@@ -142,7 +142,7 @@ export class VolumeManager {
             },
             Presets.shades_classic,
           );
-        } else {
+        } else if (logJSON.event === 'status') {
           const { value } = convertFromBytes(logJSON.size.current, formatSize);
 
           this.progress.update(value, {
@@ -155,12 +155,10 @@ export class VolumeManager {
     const { StatusCode } = await container.wait({ condition: 'not-running' });
     controller.abort();
 
+    this.progress.stop(`downloading resource volume resource ${name} stopped`);
+
     // If download failed, remove volume
     if (StatusCode !== 0) {
-      this.progress.stop(
-        `downloading resource volume resource ${name} stopped`,
-      );
-
       const errrorBuffer = await container.logs({
         follow: false,
         stdout: false,
