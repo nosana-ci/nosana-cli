@@ -33,7 +33,9 @@ export interface ContainerOrchestrationInterface {
   getContainersByName(names: string[]): Promise<Container[]>;
 
   getContainer(id: string): Promise<Container>;
-  runContainer(args: ContainerCreateOptions): Promise<ReturnedStatus<Container>>;
+  runContainer(
+    args: ContainerCreateOptions,
+  ): Promise<ReturnedStatus<Container>>;
   runFlowContainer(
     image: string,
     args: RunContainerArgs,

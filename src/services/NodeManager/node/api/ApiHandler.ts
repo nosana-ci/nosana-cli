@@ -6,6 +6,7 @@ import { config } from '../../../../generic/config.js';
 import { initTunnel } from '../../../tunnel.js';
 import { sleep } from '../../../../generic/utils.js';
 import { Server } from 'http';
+import cors from 'cors';
 import ApiEventEmitter from './ApiEventEmitter.js';
 import { NodeRepository } from '../../repository/NodeRepository.js';
 import {
@@ -19,6 +20,7 @@ import { logStreaming } from '../../monitoring/streaming/LogStreamer.js';
 import nacl from 'tweetnacl';
 import { verifyJobOwnerMiddleware } from './middlewares/verifyJobOwnerMiddleware.js';
 import { verifySignatureMiddleware } from './middlewares/verifySignatureMiddleware.js';
+import { state } from '../../monitoring/state/NodeState.js';
 
 export class ApiHandler {
   private api: Express;
@@ -35,6 +37,7 @@ export class ApiHandler {
   ) {
     this.address = this.sdk.solana.provider!.wallet.publicKey;
     this.api = express();
+    this.api.use(cors());
     this.registerRoutes();
 
     applyLoggingProxyToClass(this);
@@ -244,6 +247,17 @@ export class ApiHandler {
         } catch (error) {
           res.status(500).send('Error occured getting url');
         }
+      },
+    );
+
+    this.api.get(
+      '/node/info',
+      verifySignatureMiddleware,
+      (req: Request, res: Response) => {
+        res.status(200).json({
+          ...state(this.address.toString()).getNodeInfo(),
+          info: this.repository.getNodeInfo(),
+        });
       },
     );
   }

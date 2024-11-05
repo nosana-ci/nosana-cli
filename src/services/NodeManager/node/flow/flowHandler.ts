@@ -153,4 +153,16 @@ export class FlowHandler {
   public operationExposed(id: string): string {
     return this.repository.getFlowSecret(id, 'url') ?? 'private';
   }
+
+  public async clearOldFlows(): Promise<void> {
+    const date = new Date();
+    date.setDate(date.getDate() - 3);
+
+    for (const id in this.repository.getFlows()) {
+      const flow = this.repository.getflow(id);
+      if (flow.state.endTime && flow.state.endTime < date.valueOf()) {
+        this.repository.deleteflow(id);
+      }
+    }
+  }
 }

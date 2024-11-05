@@ -67,7 +67,7 @@ export class VolumeManager {
       }
 
       // @ts-ignore **PODMAN returns name not Name**
-      if (response.result.name){
+      if (response.result.name) {
         // @ts-ignore **PODMAN returns name not Name**
         volumeName = response.result.name;
       } else {
@@ -102,7 +102,11 @@ export class VolumeManager {
   ): Promise<void> {
     const { url, files } = resource;
 
-    const args = createS3HelperOpts(name, { url, files }, (resource as S3Secure).IAM)
+    const args = createS3HelperOpts(
+      name,
+      { url, files },
+      (resource as S3Secure).IAM,
+    );
     const response = await this.containerOrchestration.runContainer(args);
 
     if (response.error || !response.result) {

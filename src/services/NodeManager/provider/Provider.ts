@@ -246,7 +246,7 @@ export class Provider {
 
   async containerRunOperation(id: string, index: number): Promise<boolean> {
     const frpcImage = 'registry.hub.docker.com/nosana/frpc:0.1.0';
- 
+
     const flow = this.repository.getflow(id);
     const opState = this.repository.getOpState(id, index);
     const op = flow.jobDefinition.ops[index] as Operation<'container/run'>;
@@ -361,7 +361,9 @@ export class Provider {
             throw error;
           }
 
-          const resourceVolumes = await this.resourceManager.getResourceVolumes(op.args.resources ?? [])
+          const resourceVolumes = await this.resourceManager.getResourceVolumes(
+            op.args.resources ?? [],
+          );
 
           try {
             volumes.push(...resourceVolumes);

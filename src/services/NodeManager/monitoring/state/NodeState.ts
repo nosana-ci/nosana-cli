@@ -21,6 +21,7 @@ export const state = (() => {
 
 export class NodeState {
   private shared: { [key: string]: string } = {};
+  private info: { [key: string]: any } = {};
 
   private status: string = 'none';
   private state: { [key: string]: any } = {};
@@ -32,10 +33,21 @@ export class NodeState {
   private observers: StateObserver[] = [];
 
   constructor(node: string) {
+    this.info = {
+      node,
+      uptime: new Date(),
+    };
     this.shared = {
       node,
     };
     logEmitter.on('log', (data: LogEntry) => this.process(data));
+  }
+
+  public getNodeInfo() {
+    return {
+      ...this.info,
+      state: this.status,
+    };
   }
 
   public addObserver(observer: StateObserver) {
@@ -680,7 +692,7 @@ export class NodeState {
 
     if (data.class === 'ProgressBarReporter') {
       if (data.method === 'start' && data.type == 'call') {
-        this.addState('process-bar-start', { 
+        this.addState('process-bar-start', {
           desc: data.arguments[0],
           optProgressBar: data.arguments[1],
           total: data.arguments[2],
@@ -691,7 +703,7 @@ export class NodeState {
       }
 
       if (data.method === 'update' && data.type == 'call') {
-        this.addState('process-bar-update', { 
+        this.addState('process-bar-update', {
           desc: data.arguments[0],
           current: data.arguments[0],
           payload: data.arguments[1],
@@ -699,7 +711,7 @@ export class NodeState {
       }
 
       if (data.method === 'stop' && data.type == 'call') {
-        this.addState('process-bar-stop', { 
+        this.addState('process-bar-stop', {
           desc: data.arguments[0],
           current: data.arguments[0],
           payload: data.arguments[1],

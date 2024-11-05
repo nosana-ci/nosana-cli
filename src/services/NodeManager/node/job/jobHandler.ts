@@ -155,4 +155,8 @@ export class JobHandler {
       throw new Error(`Failed to finish job: ${e}`);
     }
   }
+
+  async clearOldJobs(): Promise<void> {
+    await this.flowHandler.clearOldFlows();
+  }
 }

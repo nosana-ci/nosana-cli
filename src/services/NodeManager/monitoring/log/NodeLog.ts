@@ -223,7 +223,7 @@ class NodeLog {
         });
       }
     }
-    
+
     if (data.class === 'ExpiryHandler') {
       this.handleExpiryHandler(data);
     }
@@ -268,12 +268,12 @@ class NodeLog {
   }
 
   private handleResourceManager(data: LogEntry) {
-    if(data.method === 'getResourceVolumes'){
+    if (data.method === 'getResourceVolumes') {
       if (data.type === 'call') {
         let urls = data.arguments[0]
-        .map((item: { url: any; }) => item.url)
-        .filter((url: any) => url)
-        .join(', ')
+          .map((item: { url: any }) => item.url)
+          .filter((url: any) => url)
+          .join(', ');
 
         this.addLog({
           method: `${data.class}.${data.method}`,
@@ -285,9 +285,9 @@ class NodeLog {
       }
       if (data.type === 'return') {
         let urls = data.arguments[0]
-        .map((item: { url: any; }) => item.url)
-        .filter((url: any) => url)
-        .join(', ')
+          .map((item: { url: any }) => item.url)
+          .filter((url: any) => url)
+          .join(', ');
 
         this.addLog({
           method: `${data.class}.${data.method}`,
@@ -765,7 +765,9 @@ class NodeLog {
         timestamp: Date.now(),
         type: data.result.status ? 'success' : 'error',
         log: data.result.status
-          ? chalk.green(`running container ${chalk.bold(data.arguments[0].Image)}`)
+          ? chalk.green(
+              `running container ${chalk.bold(data.arguments[0].Image)}`,
+            )
           : chalk.red(
               `error starting container ${chalk.bold(data.arguments[0].Image)}`,
             ),

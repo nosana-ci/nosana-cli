@@ -13,8 +13,17 @@ export class NodeRepository {
     return this.db.data.flows[id];
   }
 
+  public getFlows(): { [key: string]: Flow } {
+    return this.db.data.flows;
+  }
+
   public setflow(id: string, flow: Flow): void {
     this.db.data.flows[id] = flow;
+    this.db.write();
+  }
+
+  public deleteflow(id: string): void {
+    delete this.db.data.flows[id];
     this.db.write();
   }
 
@@ -104,11 +113,8 @@ export class NodeRepository {
     return this.db.data.resources.images[image];
   }
 
-  public createImageResource(
-    image: string,
-    fields: ResourceHistory,
-  ): void {
-    this.db.data.resources.images[image] = fields
+  public createImageResource(image: string, fields: ResourceHistory): void {
+    this.db.data.resources.images[image] = fields;
     this.db.write();
   }
 
@@ -116,8 +122,8 @@ export class NodeRepository {
     image: string,
     updatedFields: Partial<ResourceHistory> | ResourceHistory,
   ): void {
-    if(!this.db.data.resources.images[image]){
-      this.createImageResource(image, updatedFields as ResourceHistory)
+    if (!this.db.data.resources.images[image]) {
+      this.createImageResource(image, updatedFields as ResourceHistory);
     }
     Object.assign(this.db.data.resources.images[image], updatedFields);
     this.db.write();
@@ -136,11 +142,8 @@ export class NodeRepository {
     return this.db.data.resources.volumes[volume];
   }
 
-  public createVolumeResource(
-    volume: string,
-    fields: VolumeResource,
-  ): void {
-    this.db.data.resources.volumes[volume] = fields
+  public createVolumeResource(volume: string, fields: VolumeResource): void {
+    this.db.data.resources.volumes[volume] = fields;
     this.db.write();
   }
 
@@ -148,8 +151,8 @@ export class NodeRepository {
     volume: string,
     updatedFields: Partial<VolumeResource> | VolumeResource,
   ): void {
-    if(!this.db.data.resources.volumes[volume]){
-      this.createVolumeResource(volume, updatedFields as VolumeResource)
+    if (!this.db.data.resources.volumes[volume]) {
+      this.createVolumeResource(volume, updatedFields as VolumeResource);
     }
     Object.assign(this.db.data.resources.volumes[volume], updatedFields);
     this.db.write();
@@ -160,7 +163,7 @@ export class NodeRepository {
     this.db.write();
   }
 
-  public displayLog(log: string){
+  public displayLog(log: string) {
     return log;
   }
 }

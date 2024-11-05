@@ -361,6 +361,10 @@ export class BasicNode {
     );
   }
 
+  public async maintaniance() {
+    this.jobHandler.clearOldJobs();
+  }
+
   public async restartDelay(time: number) {
     for (let timer = time; timer > 0; timer--) {
       await sleep(1);

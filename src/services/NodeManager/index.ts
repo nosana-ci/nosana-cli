@@ -79,6 +79,11 @@ export default class NodeManager {
 
   async start(market?: string): Promise<void> {
     /**
+     * maintaniance
+     */
+    await this.node.maintaniance();
+
+    /**
      * grid
      *
      * if no market was supplied, we will register on the grid and get

@@ -1,6 +1,6 @@
 import ora, { Ora } from 'ora';
 import { log, LogObserver, NodeLogEntry } from '../NodeLog.js';
-import { SingleBar } from "cli-progress";
+import { SingleBar } from 'cli-progress';
 
 export const consoleLogging = (() => {
   let instance: ConsoleLogger | null = null;

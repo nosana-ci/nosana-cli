@@ -1,8 +1,8 @@
 import { clientSelector } from '../../../../api/client.js';
 import { ContainerOrchestrationInterface } from '../../provider/containerOrchestration/interface.js';
-import { OperationArgsMap, Resource } from "../../provider/types.js";
+import { OperationArgsMap, Resource } from '../../provider/types.js';
 import { NodeRepository } from '../../repository/NodeRepository.js';
-import { createResourceName } from "./helpers/createResourceName.js";
+import { createResourceName } from './helpers/createResourceName.js';
 import { ImageManager } from './image/imageManager.js';
 import { VolumeManager } from './volume/volumeManager.js';
 
@@ -52,13 +52,13 @@ export class ResourceManager {
     await this.volumes.pruneVolumes();
   }
 
-  public async getResourceVolumes(
-    resources: Resource[],
-  ): Promise<{
+  public async getResourceVolumes(resources: Resource[]): Promise<
+    {
       dest: string;
       name: string;
       readonly?: boolean;
-    }[]> {
+    }[]
+  > {
     const volumes: { dest: string; name: string; readonly?: boolean }[] = [];
 
     for (const resource of resources) {
@@ -69,7 +69,7 @@ export class ResourceManager {
         );
         throw error;
       }
-  
+
       volumes.push({
         dest: resource.target,
         name: await this.volumes.getVolume(resource)!,
