@@ -2,7 +2,7 @@ import { Client as SDK, Market, Run } from '@nosana/sdk';
 import { PublicKey } from '@solana/web3.js';
 import BN from 'bn.js';
 import ApiEventEmitter from '../api/ApiEventEmitter.js';
-import { jobEmitter } from "../job/jobHandler.js";
+import { jobEmitter } from '../job/jobHandler.js';
 
 export class ExpiryHandler {
   private address: PublicKey;

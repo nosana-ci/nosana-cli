@@ -5,7 +5,10 @@ import { RunHandler } from './run/runHandler.js';
 import { PublicKey } from '@solana/web3.js';
 import { JobHandler } from './job/jobHandler.js';
 import { DB } from '../../../providers/modules/db/index.js';
-import { ContainerOrchestrationInterface, selectContainerOrchestrationProvider } from '../provider/containerOrchestration/interface.js';
+import {
+  ContainerOrchestrationInterface,
+  selectContainerOrchestrationProvider,
+} from '../provider/containerOrchestration/interface.js';
 import { Provider } from '../provider/Provider.js';
 import Logger from '../../../providers/modules/logger/index.js';
 import { applyLoggingProxyToClass } from '../monitoring/proxy/loggingProxy.js';
@@ -17,7 +20,7 @@ import { HealthHandler } from './health/healthHandler.js';
 import { KeyHandler } from './key/KeyHandler.js';
 import { ExpiryHandler } from './expiry/expiryHandler.js';
 import { GridHandler } from './grid/gridHandler.js';
-import { ResourceManager } from "./resource/resourceManager.js";
+import { ResourceManager } from './resource/resourceManager.js';
 
 export class BasicNode {
   private apiHandler: ApiHandler;
@@ -44,9 +47,15 @@ export class BasicNode {
     this.sdk = getSDK();
 
     const db = new DB(options.config).db;
-    this.repository = new NodeRepository(db)
-    this.containerOrchestration = selectContainerOrchestrationProvider(options.provider, options.url);
-    this.resourceManager = new ResourceManager(this.containerOrchestration, this.repository)
+    this.repository = new NodeRepository(db);
+    this.containerOrchestration = selectContainerOrchestrationProvider(
+      options.provider,
+      options.url,
+    );
+    this.resourceManager = new ResourceManager(
+      this.containerOrchestration,
+      this.repository,
+    );
 
     this.provider = new Provider(
       this.containerOrchestration,

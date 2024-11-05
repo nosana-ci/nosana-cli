@@ -160,7 +160,7 @@ class NodeLog {
     }
 
     if (data.class === 'ProgressBarReporter') {
-      if(data.method === 'start' && data.type == 'call'){
+      if (data.method === 'start' && data.type == 'call') {
         // log that the info of the start
         this.addLog({
           method: `${data.class}.${data.method}`,
@@ -182,11 +182,11 @@ class NodeLog {
             startValue: data.arguments[3],
             payload: data.arguments[4],
             progressBarPreset: data.arguments[5],
-          }
+          },
         });
       }
 
-      if(data.method === 'update' && data.type == 'call'){
+      if (data.method === 'update' && data.type == 'call') {
         this.addLog({
           method: `${data.class}.${data.method}`,
           job: this.job,
@@ -194,19 +194,19 @@ class NodeLog {
           type: 'process-bar-update',
           log: '',
           payload: {
-            current: data.arguments[0], 
-            payload: data.arguments[1]
-          }
+            current: data.arguments[0],
+            payload: data.arguments[1],
+          },
         });
       }
 
-      if(data.method === 'stop' && data.type == 'call'){
+      if (data.method === 'stop' && data.type == 'call') {
         this.addLog({
           method: `${data.class}.${data.method}`,
           job: this.job,
           timestamp: Date.now(),
           type: 'process-bar-stop',
-          log: ''
+          log: '',
         });
 
         // log that the info of the start
@@ -1222,13 +1222,17 @@ class NodeLog {
       }
     }
 
-    if(data.method === 'operationExposed'){
+    if (data.method === 'operationExposed') {
       if (data.type === 'return') {
         this.shared.exposed = true;
         this.addLog({
           method: `${data.class}.${data.method}`,
           job: this.job,
-          log: chalk.green(`Job ${chalk.bold(this.job)} is now exposed (${chalk.bold(data.result)})`),
+          log: chalk.green(
+            `Job ${chalk.bold(this.job)} is now exposed (${chalk.bold(
+              data.result,
+            )})`,
+          ),
           timestamp: Date.now(),
           type: 'info',
         });

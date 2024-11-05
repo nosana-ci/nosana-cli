@@ -1,266 +1,287 @@
-import { Presets } from "cli-progress";
-import { createS3HelperOpts, nosanaBucket } from "../../../../../providers/modules/resourceManager/volumes/definition/s3HelperOpts";
-import { convertFromBytes } from "../../../../../providers/modules/resourceManager/volumes/helpers/convertFromBytes";
-import { extractLogsAndResultsFromLogBuffer } from "../../../../../providers/utils/extractLogsAndResultsFromLogBuffer";
-import { ContainerOrchestrationInterface } from "../../../provider/containerOrchestration/interface";
-import { RequiredResource, Resource, S3Secure } from "../../../provider/types";
-import { NodeRepository } from "../../../repository/NodeRepository";
-import { ProgressBarReporter } from "../../utils/progressBarReporter";
-import { createResourceName } from "../helpers/createResourceName";
-import { applyLoggingProxyToClass } from "../../monitoring/proxy/loggingProxy";
-import { hasDockerVolume } from "../helpers/hasDockerVolume";
-import { hoursSinceDate } from "../helpers/hoursSunceDate";
+import { Presets } from 'cli-progress';
+import {
+  createS3HelperOpts,
+  nosanaBucket,
+} from '../../../../../providers/modules/resourceManager/volumes/definition/s3HelperOpts';
+import { convertFromBytes } from '../../../../../providers/modules/resourceManager/volumes/helpers/convertFromBytes';
+import { extractLogsAndResultsFromLogBuffer } from '../../../../../providers/utils/extractLogsAndResultsFromLogBuffer';
+import { ContainerOrchestrationInterface } from '../../../provider/containerOrchestration/interface';
+import { RequiredResource, Resource, S3Secure } from '../../../provider/types';
+import { NodeRepository } from '../../../repository/NodeRepository';
+import { ProgressBarReporter } from '../../utils/progressBarReporter';
+import { createResourceName } from '../helpers/createResourceName';
+import { applyLoggingProxyToClass } from '../../monitoring/proxy/loggingProxy';
+import { hasDockerVolume } from '../helpers/hasDockerVolume';
+import { hoursSinceDate } from '../helpers/hoursSunceDate';
 
 export class VolumeManager {
-    private fetched: boolean = false;
-    private market_required_volumes: RequiredResource[] = [] ;
-    private progress: ProgressBarReporter;
+  private fetched: boolean = false;
+  private market_required_volumes: RequiredResource[] = [];
+  private progress: ProgressBarReporter;
 
-    constructor(
-        private containerOrchestration: ContainerOrchestrationInterface,
-        private repository: NodeRepository
-    ) {
-        this.progress = new ProgressBarReporter();
+  constructor(
+    private containerOrchestration: ContainerOrchestrationInterface,
+    private repository: NodeRepository,
+  ) {
+    this.progress = new ProgressBarReporter();
 
-        applyLoggingProxyToClass(this);
+    applyLoggingProxyToClass(this);
+  }
+
+  public async pullMarketRequiredVolumes(
+    remoteResources: RequiredResource[],
+  ): Promise<void> {
+    this.fetched = true;
+    this.market_required_volumes = remoteResources;
+
+    const savedVolumes = this.repository.getVolumesResources();
+    for (const resource of this.market_required_volumes) {
+      if (!savedVolumes[createResourceName(resource)]) {
+        await this.createRemoteVolume(resource);
+      }
     }
-    
-    public async pullMarketRequiredVolumes(remoteResources: RequiredResource[]): Promise<void> {
-        this.fetched = true;
-        this.market_required_volumes = remoteResources;
+  }
 
-        const savedVolumes = this.repository.getVolumesResources();
-        for (const resource of this.market_required_volumes) {
-            if (!savedVolumes[createResourceName(resource)]) {
-              await this.createRemoteVolume(resource);
-            }
-          }
-    }
+  public async createRemoteVolume(resource: RequiredResource): Promise<string> {
+    const resourceName = createResourceName(resource);
+    const savedResource = this.repository.getVolumeResource(
+      createResourceName(resource),
+    ).volume;
 
-    public async createRemoteVolume(resource: RequiredResource): Promise<string> {
-        const resourceName = createResourceName(resource);
-        const savedResource = this.repository.getVolumeResource(createResourceName(resource)).volume;
-    
-        if (savedResource) {
-          this.setVolume(resourceName, savedResource);
-          return savedResource;
-        }
-
-        try {
-            let volumeName: string;
-            const response = await this.containerOrchestration.createVolume();
-
-            if(response.error || !response.result){
-                throw response.error;
-            }
-          
-            // @ts-ignore **PODMAN returns name not Name**
-            if (response.result.name) volumeName = response.result.name;
-            else volumeName = response.result.Name;
-
-            if (resource.url) {
-                await this.runResourceManagerContainer(volumeName, {
-                    url: resource.url,
-                    files: resource.files,
-                })
-            }
-            else {
-                for (const bucket of resource.buckets!) {
-                    await this.runResourceManagerContainer(volumeName, bucket)
-                }
-            }
-
-            this.setVolume(resourceName, volumeName);
-
-            return volumeName;
-        } catch (err) {
-            throw new Error((err as Error).message);
-        }
+    if (savedResource) {
+      this.setVolume(resourceName, savedResource);
+      return savedResource;
     }
 
-    private async runResourceManagerContainer(name: string, resource: {
-        url: string;
-        files?: string[];
-    }): Promise<void>{
-        const { url, files } = resource;
+    try {
+      let volumeName: string;
+      const response = await this.containerOrchestration.createVolume();
 
-        const response = await this.containerOrchestration.runContainer(
-            createS3HelperOpts(name, { url, files }, (resource as S3Secure).IAM),
-        );
+      if (response.error || !response.result) {
+        throw response.error;
+      }
 
-        if(response.error || !response.result){
-            throw Error('container failed to start')
-        }
+      // @ts-ignore **PODMAN returns name not Name**
+      if (response.result.name) volumeName = response.result.name;
+      else volumeName = response.result.Name;
 
-        const controller = new AbortController();
-
-        const container = response.result;
-      
-        const logStream = await container.logs({
-          stdout: true,
-          stderr: false,
-          follow: true,
-          abortSignal: controller.signal,
+      if (resource.url) {
+        await this.runResourceManagerContainer(volumeName, {
+          url: resource.url,
+          files: resource.files,
         });
-      
-        let start = false;
-        let formatSize: 'gb' | 'mb' | 'kb' = 'kb';
+      } else {
+        for (const bucket of resource.buckets!) {
+          await this.runResourceManagerContainer(volumeName, bucket);
+        }
+      }
 
-        logStream.on('data', (logBuffer) => {
-            try {
-                const logString: string = logBuffer.toString('utf8');
-                const logJSON = JSON.parse(logString.slice(8, logString.length - 1));
+      this.setVolume(resourceName, volumeName);
 
-                if(!start){
-                    start = true;
-                    const { value, format } = convertFromBytes(logJSON.size.total);
-                    formatSize = format;
+      return volumeName;
+    } catch (err) {
+      throw new Error((err as Error).message);
+    }
+  }
 
-                    this.progress.start(
-                        `downloading resource volume resource ${name}`,
-                        {
-                            format: `{bar} {percentage}% | {value}/{total}${format} | {valueFiles}/{totalFiles} files`,
-                        },
-                        value,
-                        0,
-                        {
-                            valueFiles: 0,
-                            totalFiles: logJSON.count.total,
-                        },
-                        Presets.shades_classic,
-                    )
-                } else {
-                    const { value } = convertFromBytes(logJSON.size.current, formatSize);
+  private async runResourceManagerContainer(
+    name: string,
+    resource: {
+      url: string;
+      files?: string[];
+    },
+  ): Promise<void> {
+    const { url, files } = resource;
 
-                    this.progress.update(
-                        value,
-                        {
-                            valueFiles: logJSON.count.current,
-                        }
-                    )
-                }
-            } catch (error) {}
-        })
+    const response = await this.containerOrchestration.runContainer(
+      createS3HelperOpts(name, { url, files }, (resource as S3Secure).IAM),
+    );
 
-        const { StatusCode } = await container.wait({ condition: 'not-running' });
-        controller.abort();
+    if (response.error || !response.result) {
+      throw Error('container failed to start');
+    }
 
+    const controller = new AbortController();
 
-        // If download failed, remove volume
-        if (StatusCode !== 0) {
-            this.progress.stop(`downloading resource volume resource ${name} stopped`)
+    const container = response.result;
 
-            const errrorBuffer = await container.logs({
-            follow: false,
-            stdout: false,
-            stderr: true,
-            });
+    const logStream = await container.logs({
+      stdout: true,
+      stderr: false,
+      follow: true,
+      abortSignal: controller.signal,
+    });
 
-            const { logs } = extractLogsAndResultsFromLogBuffer(
-            errrorBuffer,
-            undefined,
-            );
+    let start = false;
+    let formatSize: 'gb' | 'mb' | 'kb' = 'kb';
 
-            await container.remove({ force: true });
+    logStream.on('data', (logBuffer) => {
+      try {
+        const logString: string = logBuffer.toString('utf8');
+        const logJSON = JSON.parse(logString.slice(8, logString.length - 1));
 
-            await this.containerOrchestration.deleteVolume(name);
+        if (!start) {
+          start = true;
+          const { value, format } = convertFromBytes(logJSON.size.total);
+          formatSize = format;
 
-            const lastLog = logs[logs.length - 1].log?.replaceAll('\n', '');
-            const jsonLog = lastLog ? JSON.parse(lastLog) : { message: 'Unkown Error' };
-            throw new Error(jsonLog.message);
+          this.progress.start(
+            `downloading resource volume resource ${name}`,
+            {
+              format: `{bar} {percentage}% | {value}/{total}${format} | {valueFiles}/{totalFiles} files`,
+            },
+            value,
+            0,
+            {
+              valueFiles: 0,
+              totalFiles: logJSON.count.total,
+            },
+            Presets.shades_classic,
+          );
         } else {
-            this.progress.stop(`downloading resource volume resource ${name} completed`)
-        }
+          const { value } = convertFromBytes(logJSON.size.current, formatSize);
 
-        await this.containerOrchestration.stopAndDeleteContainer(container.id)
+          this.progress.update(value, {
+            valueFiles: logJSON.count.current,
+          });
+        }
+      } catch (error) {}
+    });
+
+    const { StatusCode } = await container.wait({ condition: 'not-running' });
+    controller.abort();
+
+    // If download failed, remove volume
+    if (StatusCode !== 0) {
+      this.progress.stop(
+        `downloading resource volume resource ${name} stopped`,
+      );
+
+      const errrorBuffer = await container.logs({
+        follow: false,
+        stdout: false,
+        stderr: true,
+      });
+
+      const { logs } = extractLogsAndResultsFromLogBuffer(
+        errrorBuffer,
+        undefined,
+      );
+
+      await container.remove({ force: true });
+
+      await this.containerOrchestration.deleteVolume(name);
+
+      const lastLog = logs[logs.length - 1].log?.replaceAll('\n', '');
+      const jsonLog = lastLog
+        ? JSON.parse(lastLog)
+        : { message: 'Unkown Error' };
+      throw new Error(jsonLog.message);
+    } else {
+      this.progress.stop(
+        `downloading resource volume resource ${name} completed`,
+      );
     }
 
-    public async setVolume(bucket: string, volume: string): Promise<void> {
-        const volumeObj = this.repository.getVolumeResource(bucket);
-        this.repository.updateImageResource(bucket, {
-            volume,
-            required: this.market_required_volumes.some(
-              (vol) => createResourceName(vol) === bucket,
-            ),
-            lastUsed: new Date(),
-            usage: volumeObj?.usage + 1 || 1,
-        })
+    await this.containerOrchestration.stopAndDeleteContainer(container.id);
+  }
+
+  public async setVolume(bucket: string, volume: string): Promise<void> {
+    const volumeObj = this.repository.getVolumeResource(bucket);
+    this.repository.updateImageResource(bucket, {
+      volume,
+      required: this.market_required_volumes.some(
+        (vol) => createResourceName(vol) === bucket,
+      ),
+      lastUsed: new Date(),
+      usage: volumeObj?.usage + 1 || 1,
+    });
+  }
+
+  public async hasVolume(resource: Resource): Promise<boolean> {
+    const volume = this.repository.getVolumeResource(
+      createResourceName(resource),
+    ).volume;
+    if (!volume) {
+      return false;
     }
 
-    public async hasVolume(resource: Resource): Promise<boolean> {
-        const volume = this.repository.getVolumeResource(createResourceName(resource)).volume;
-        if (!volume){
-            return false;
-        }
+    const dockerHasVolume = await this.containerOrchestration.hasVolume(volume);
 
-        const dockerHasVolume = await this.containerOrchestration.hasVolume(volume)
-
-        if (!dockerHasVolume) {
-            this.repository.deleteVolumeResource(createResourceName(resource))
-        }
-
-        return dockerHasVolume;
+    if (!dockerHasVolume) {
+      this.repository.deleteVolumeResource(createResourceName(resource));
     }
 
-    public async getVolume(resource: RequiredResource | Resource): Promise<string> {
-        return this.repository.getVolumeResource(createResourceName(resource))?.volume;
-    };
+    return dockerHasVolume;
+  }
 
-    public async pruneVolumes(): Promise<void> {
-        const cachedVolumes = await this.containerOrchestration.listVolumes();
-        const dbVolume = Object.entries(this.repository.getVolumesResources());
-    
-        for (const { Name } of cachedVolumes) {
-          const dbEntry = dbVolume.find((vol) => vol[1].volume === Name);
-    
-          if (dbEntry && dbEntry[1].required) continue;
-    
-          await this.containerOrchestration.deleteVolume(Name)
+  public async getVolume(
+    resource: RequiredResource | Resource,
+  ): Promise<string> {
+    return this.repository.getVolumeResource(createResourceName(resource))
+      ?.volume;
+  }
 
-          if (dbEntry){
-            this.repository.deleteVolumeResource(dbEntry[0])
-          }
-        }
-      };
+  public async pruneVolumes(): Promise<void> {
+    const cachedVolumes = await this.containerOrchestration.listVolumes();
+    const dbVolume = Object.entries(this.repository.getVolumesResources());
 
-    public async resyncResourcesDB(): Promise<void> {
-        const savedVolumes = await this.containerOrchestration.listVolumes()
+    for (const { Name } of cachedVolumes) {
+      const dbEntry = dbVolume.find((vol) => vol[1].volume === Name);
 
-        for (const [resource, value] of Object.entries(this.repository.getVolumesResources())) {
-            // RENAME NOSANA S3 BUCKETS TO CLOUDFRONT
-            if (resource.includes('s3://nos-ai-models-qllsn32u')) {
-                this.repository.updateVolumeResource(`${resource.replace('s3://nos-ai-models-qllsn32u', nosanaBucket)}`, value)
-                this.repository.deleteVolumeResource(resource)
-            }
-        }
+      if (dbEntry && dbEntry[1].required) continue;
 
-        for (const [resource, { volume, lastUsed, required }] of Object.entries(
-            this.repository.getVolumesResources(),
-          )) {
-            if (!hasDockerVolume(volume, savedVolumes)) {
-                this.repository.deleteVolumeResource(resource)
-              continue;
-            }
-      
-            if (
-              (!this.fetched && required) ||
-              this.market_required_volumes.some(
-                (vol) => createResourceName(vol) === resource,
-              )
-            ){
-                continue;
-            }
-      
-            const hoursSinceLastUsed = hoursSinceDate(new Date(lastUsed));
-      
-            if (hoursSinceLastUsed > 24) {
-              try {
-                await this.containerOrchestration.deleteVolume(volume)
-                this.repository.deleteVolumeResource(volume)
-              } catch (err) {
-                const message = (err as { json: { message: string } }).json.message;
-              }
-            }
-        }
+      await this.containerOrchestration.deleteVolume(Name);
+
+      if (dbEntry) {
+        this.repository.deleteVolumeResource(dbEntry[0]);
+      }
     }
+  }
+
+  public async resyncResourcesDB(): Promise<void> {
+    const savedVolumes = await this.containerOrchestration.listVolumes();
+
+    for (const [resource, value] of Object.entries(
+      this.repository.getVolumesResources(),
+    )) {
+      // RENAME NOSANA S3 BUCKETS TO CLOUDFRONT
+      if (resource.includes('s3://nos-ai-models-qllsn32u')) {
+        this.repository.updateVolumeResource(
+          `${resource.replace('s3://nos-ai-models-qllsn32u', nosanaBucket)}`,
+          value,
+        );
+        this.repository.deleteVolumeResource(resource);
+      }
+    }
+
+    for (const [resource, { volume, lastUsed, required }] of Object.entries(
+      this.repository.getVolumesResources(),
+    )) {
+      if (!hasDockerVolume(volume, savedVolumes)) {
+        this.repository.deleteVolumeResource(resource);
+        continue;
+      }
+
+      if (
+        (!this.fetched && required) ||
+        this.market_required_volumes.some(
+          (vol) => createResourceName(vol) === resource,
+        )
+      ) {
+        continue;
+      }
+
+      const hoursSinceLastUsed = hoursSinceDate(new Date(lastUsed));
+
+      if (hoursSinceLastUsed > 24) {
+        try {
+          await this.containerOrchestration.deleteVolume(volume);
+          this.repository.deleteVolumeResource(volume);
+        } catch (err) {
+          const message = (err as { json: { message: string } }).json.message;
+        }
+      }
+    }
+  }
 }

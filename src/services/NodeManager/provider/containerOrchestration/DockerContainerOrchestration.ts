@@ -80,7 +80,7 @@ export class DockerContainerOrchestration
 
   async hasImage(image: string): Promise<boolean> {
     if (await this.docker.hasImage(image)) {
-      return true
+      return true;
     }
     return false;
   }
@@ -92,7 +92,7 @@ export class DockerContainerOrchestration
   async listImages(): Promise<ImageInfo[]> {
     return this.docker.listImages();
   }
-  
+
   async deleteImage(image: string): Promise<ReturnedStatus> {
     try {
       if (await this.docker.hasImage(image)) {
@@ -136,7 +136,7 @@ export class DockerContainerOrchestration
   async hasVolume(name: string): Promise<boolean> {
     try {
       const volumes = await this.docker.listVolumes();
-      return volumes.Volumes.some(volume => volume.Name === name);
+      return volumes.Volumes.some((volume) => volume.Name === name);
     } catch (error) {
       return false;
     }

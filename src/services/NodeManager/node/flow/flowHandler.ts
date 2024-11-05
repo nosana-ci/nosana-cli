@@ -143,14 +143,14 @@ export class FlowHandler {
     return this.repository
       .getflow(id)
       .jobDefinition.ops.some(
-      (op: Operation<OperationType>) =>
-        op.type === 'container/run' &&
-        (op.args as OperationArgsMap['container/run']).expose !== undefined &&
-        (op.args as OperationArgsMap['container/run']).private === true,
-    );
+        (op: Operation<OperationType>) =>
+          op.type === 'container/run' &&
+          (op.args as OperationArgsMap['container/run']).expose !== undefined &&
+          (op.args as OperationArgsMap['container/run']).private === true,
+      );
   }
 
   public operationExposed(id: string): string {
-    return this.repository.getFlowSecret(id, 'url') ?? 'private'
+    return this.repository.getFlowSecret(id, 'url') ?? 'private';
   }
 }

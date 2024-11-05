@@ -1,4 +1,8 @@
-import { NodeDb, ResourceHistory, VolumeResource } from '../../../providers/modules/db/index.js';
+import {
+  NodeDb,
+  ResourceHistory,
+  VolumeResource,
+} from '../../../providers/modules/db/index.js';
 import { LowSync } from 'lowdb';
 import { Flow, OpState, FlowState, Log } from '../provider/types.js';
 
@@ -92,15 +96,18 @@ export class NodeRepository {
     return this.db.data.info;
   }
 
-  public getImagesResources(): { [key: string]: ResourceHistory; } {
+  public getImagesResources(): { [key: string]: ResourceHistory } {
     return this.db.data.resources.images;
   }
-  
+
   public getImageResource(image: string): ResourceHistory {
     return this.db.data.resources.images[image];
   }
 
-  public updateImageResource(image: string, updatedFields: { [key: string]: any; }): void {
+  public updateImageResource(
+    image: string,
+    updatedFields: { [key: string]: any },
+  ): void {
     Object.assign(this.db.data.resources.images[image], updatedFields);
     this.db.write();
   }
@@ -110,7 +117,7 @@ export class NodeRepository {
     this.db.write();
   }
 
-  public getVolumesResources(): { [key: string]: VolumeResource; } {
+  public getVolumesResources(): { [key: string]: VolumeResource } {
     return this.db.data.resources.volumes;
   }
 
@@ -118,7 +125,10 @@ export class NodeRepository {
     return this.db.data.resources.volumes[volume];
   }
 
-  public updateVolumeResource(volume: string, updatedFields: { [key: string]: any; }): void {
+  public updateVolumeResource(
+    volume: string,
+    updatedFields: { [key: string]: any },
+  ): void {
     Object.assign(this.db.data.resources.volumes[volume], updatedFields);
     this.db.write();
   }
