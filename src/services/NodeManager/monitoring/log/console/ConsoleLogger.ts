@@ -8,6 +8,7 @@ export const consoleLogging = (() => {
   return () => {
     if (!instance) {
       instance = new ConsoleLogger();
+      instance.addObserver();
     }
     return instance;
   };
@@ -20,13 +21,17 @@ export class ConsoleLogger implements LogObserver {
 
   spinner!: Ora;
 
-  constructor() {
+  constructor() {}
+
+  addObserver() {
     log().addObserver(this);
   }
 
-  public update(log: NodeLogEntry) {
+  public update(log: NodeLogEntry, isNode: boolean = true) {
     if (log.type == 'log') {
-      process.stdout.write(log.log);
+      if (!isNode) {
+        process.stdout.write(log.log);
+      }
       return;
     }
 

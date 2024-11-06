@@ -33,6 +33,10 @@ import { createSignature } from '../../../services/api.js';
 import EventSource from 'eventsource';
 import { OutputFormatter } from '../../../providers/utils/ouput-formatter/OutputFormatter.js';
 import { isPrivate } from '../../../generic/ops-util.js';
+import {
+  closeWebSocketLogs,
+  listenToWebSocketLogs,
+} from '../../../services/websocket.js';
 
 export async function getJob(
   jobAddress: string,
@@ -47,6 +51,8 @@ export async function getJob(
   const logSubscriberManager = new LogSubscriberManager();
   let listener: EventSource | null = null;
   const headers = await createSignature();
+
+  let ws;
 
   let job;
   console.log('retrieving job...');
@@ -108,18 +114,25 @@ export async function getJob(
 
         const ipfsJob = await nosana.ipfs.retrieve(job.ipfsJob);
 
+        // handle job logs the new way using websockets
+
         if (isPrivate(ipfsJob)) {
           await fetchServiceURLWithRetry(job, jobAddress, formatter, headers);
         }
 
-        const logger = new Logger();
-        listener = listenToEventSource<LogEvent[]>(
-          `https://${job.node}.${config.frp.serverAddr}/status/${jobAddress}`,
-          headers,
-          (events) => {
-            logSubscriberManager.handleRemoteLogEvents(events, logger);
-          },
+        ws = listenToWebSocketLogs(
+          `https://${job.node}.${config.frp.serverAddr}`,
+          jobAddress,
         );
+
+        // const logger = new Logger();
+        // listener = listenToEventSource<LogEvent[]>(
+        //   `https://${job.node}.${config.frp.serverAddr}/status/${jobAddress}`,
+        //   headers,
+        //   (events) => {
+        //     logSubscriberManager.handleRemoteLogEvents(events, logger);
+        //   },
+        // );
 
         job = await waitForJobCompletion(new PublicKey(jobAddress));
       }
@@ -261,6 +274,10 @@ export async function getJob(
         formatter.output(OUTPUT_EVENTS.OUTPUT_CANNOT_LOG_RESULT, null);
       }
     }
+  }
+
+  if (ws) {
+    closeWebSocketLogs(ws);
   }
 
   if (listener) {

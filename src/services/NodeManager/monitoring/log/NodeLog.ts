@@ -1004,9 +1004,12 @@ class NodeLog {
         type: 'error',
       });
     }
+    this.job = undefined;
   }
 
   private handleRestart(data: LogEntry) {
+    this.job = undefined;
+
     if (data.method === 'restartDelay') {
       if (data.type === 'call') {
         this.addLog({
@@ -1188,6 +1191,7 @@ class NodeLog {
       }
 
       if (data.type === 'return') {
+        this.job = undefined;
         this.addLog({
           method: `${data.class}.${data.method}`,
           job: this.job,
@@ -1198,6 +1202,7 @@ class NodeLog {
       }
 
       if (data.type === 'error') {
+        this.job = undefined;
         this.addLog({
           method: `${data.class}.${data.method}`,
           job: this.job,
