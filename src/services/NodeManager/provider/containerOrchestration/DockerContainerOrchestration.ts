@@ -209,6 +209,7 @@ export class DockerContainerOrchestration
         mapRunContainerArgsToContainerCreateOpts(image, args),
       );
       await container.start();
+      console.log(container);
       return { status: true, result: container };
     } catch (error) {
       return { status: false, error };

@@ -38,19 +38,14 @@ export class BasicNode {
   private containerOrchestration: ContainerOrchestrationInterface;
 
   private sdk: Client;
-  constructor(options: {
-    provider: string;
-    url: string;
-    config: string;
-    port: number;
-  }) {
+  constructor(options: { [key: string]: any }) {
     this.sdk = getSDK();
 
     const db = new DB(options.config).db;
     this.repository = new NodeRepository(db);
     this.containerOrchestration = selectContainerOrchestrationProvider(
       options.provider,
-      options.url,
+      options.podman,
     );
     this.resourceManager = new ResourceManager(
       this.containerOrchestration,
