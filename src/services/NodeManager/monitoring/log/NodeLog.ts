@@ -268,6 +268,42 @@ class NodeLog {
   }
 
   private handleResourceManager(data: LogEntry) {
+    if (data.method === 'fetchMarketRequiredResources') {
+      if (data.type === 'call') {
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          log: chalk.cyan(`fetching market required resources`),
+          timestamp: Date.now(),
+          type: 'process',
+          pending: {
+            isPending: true,
+            expecting: `${data.class}.${data.method}`,
+          },
+        });
+      }
+
+      if (data.type === 'return') {
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          log: chalk.green(`fetching market required resources successful`),
+          timestamp: Date.now(),
+          type: 'success',
+        });
+      }
+
+      if (data.type === 'error') {
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          log: chalk.red(`fetching market required resources failed`),
+          timestamp: Date.now(),
+          type: 'error',
+        });
+      }
+    }
+
     if (data.method === 'getResourceVolumes') {
       if (data.type === 'call') {
         let urls = data.arguments[0]

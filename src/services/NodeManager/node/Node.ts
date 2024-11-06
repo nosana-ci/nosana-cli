@@ -163,6 +163,12 @@ export class BasicNode {
     }
   }
 
+  async setup(market: string): Promise<void> {
+    if (this.sdk.nodes.config.network !== 'devnet') {
+      await this.resourceManager.fetchMarketRequiredResources(market);
+    }
+  }
+
   async run(): Promise<void> {
     await new Promise<void>(async (resolve) => {
       await this.runHandler.startRunMonitoring(async (run: Run) => {
