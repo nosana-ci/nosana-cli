@@ -491,13 +491,13 @@ class NodeLog {
           type: 'success',
         });
 
-        this.addLog({
-          method: `${data.class}.${data.method}`,
-          job: this.job,
-          log: `Market:\t\t${chalk.greenBright.bold(data.arguments[0])}`,
-          timestamp: Date.now(),
-          type: 'stop',
-        });
+        // this.addLog({
+        //   method: `${data.class}.${data.method}`,
+        //   job: this.job,
+        //   log: `Market:\t\t${chalk.greenBright.bold(data.arguments[0])}`,
+        //   timestamp: Date.now(),
+        //   type: 'stop',
+        // });
       }
 
       if (data.type === 'error') {
@@ -909,28 +909,28 @@ class NodeLog {
     }
 
     if (data.method === 'join' && data.type === 'call') {
-      this.addLog({
-        method: `${data.class}.${data.method}`,
-        job: this.job,
-        log: `${chalk.cyan(
-          `Joining market ${chalk.bold(this.shared.market)}`,
-        )}`,
-        timestamp: Date.now(),
-        type: 'process',
-        pending: { isPending: true, expecting: `${data.class}.${data.method}` },
-      });
+      // this.addLog({
+      //   method: `${data.class}.${data.method}`,
+      //   job: this.job,
+      //   log: `${chalk.cyan(
+      //     `Joining market ${chalk.bold(this.shared.market)}`,
+      //   )}`,
+      //   timestamp: Date.now(),
+      //   type: 'process',
+      //   pending: { isPending: true, expecting: `${data.class}.${data.method}` },
+      // });
     }
 
     if (data.method === 'join' && data.type === 'return') {
-      this.addLog({
-        method: `${data.class}.${data.method}`,
-        job: this.job,
-        log: chalk.greenBright(
-          `Joined market ${chalk.bold(this.shared.market)}`,
-        ),
-        timestamp: Date.now(),
-        type: 'success',
-      });
+      // this.addLog({
+      //   method: `${data.class}.${data.method}`,
+      //   job: this.job,
+      //   log: chalk.greenBright(
+      //     `Joined market ${chalk.bold(this.shared.market)}`,
+      //   ),
+      //   timestamp: Date.now(),
+      //   type: 'success',
+      // });
     }
 
     if (data.method === 'join' && data.type === 'error') {
@@ -1016,7 +1016,9 @@ class NodeLog {
           method: `${data.class}.${data.method}`,
           job: this.job,
           log: `${chalk.yellow(
-            `Node is restarting in ${data.arguments[0]} seconds`,
+            `${chalk.bgYellow.bold(' RESTARTING ')} in ${chalk.bold(
+              data.arguments[0],
+            )} seconds`,
           )}`,
           timestamp: Date.now(),
           type: 'process',
@@ -1031,7 +1033,11 @@ class NodeLog {
           this.addLog({
             method: `${data.class}.${data.method}`,
             job: this.job,
-            log: `${chalk.yellow(`Node is restarting in ${count} seconds`)}`,
+            log: `${chalk.yellow(
+              `${chalk.bgYellow.bold(' RESTARTING ')} in ${chalk.bold(
+                count,
+              )} seconds`,
+            )}`,
             timestamp: Date.now(),
             type: 'update',
           });
@@ -1057,15 +1063,15 @@ class NodeLog {
   }
 
   private handlePending(data: LogEntry) {
-    if (data.type === 'return' && !data.result) {
-      this.addLog({
-        method: `${data.class}.${data.method}`,
-        job: this.job,
-        log: `${chalk.yellow('No pending job found')}`,
-        timestamp: Date.now(),
-        type: 'info',
-      });
-    }
+    // if (data.type === 'return' && !data.result) {
+    //   this.addLog({
+    //     method: `${data.class}.${data.method}`,
+    //     job: this.job,
+    //     log: `${chalk.yellow('No pending job found')}`,
+    //     timestamp: Date.now(),
+    //     type: 'info',
+    //   });
+    // }
   }
 
   private handleJobHandler(data: LogEntry) {
@@ -1191,7 +1197,6 @@ class NodeLog {
       }
 
       if (data.type === 'return') {
-        this.job = undefined;
         this.addLog({
           method: `${data.class}.${data.method}`,
           job: this.job,
@@ -1199,10 +1204,10 @@ class NodeLog {
           timestamp: Date.now(),
           type: 'info',
         });
+        this.job = undefined;
       }
 
       if (data.type === 'error') {
-        this.job = undefined;
         this.addLog({
           method: `${data.class}.${data.method}`,
           job: this.job,
@@ -1210,6 +1215,7 @@ class NodeLog {
           timestamp: Date.now(),
           type: 'info',
         });
+        this.job = undefined;
       }
     }
   }

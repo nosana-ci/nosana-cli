@@ -12,16 +12,7 @@ export default class NodeManager {
   private apiHandler: ApiHandler;
 
   constructor(options: { [key: string]: any }) {
-    const defaultConfig = {
-      provider: 'podman',
-      url: 'http://localhost:8080',
-      config: '~/.nosana/',
-      port: 5001,
-    };
-
-    const nodeConfig = { ...defaultConfig, ...options };
-
-    this.node = createLoggingProxy(new BasicNode(nodeConfig));
+    this.node = createLoggingProxy(new BasicNode(options));
 
     /**
      * the node class makes the api but we pass the api to the NodeManager class

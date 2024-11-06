@@ -1,6 +1,7 @@
 import ora, { Ora } from 'ora';
 import { log, LogObserver, NodeLogEntry } from '../NodeLog.js';
 import { SingleBar } from 'cli-progress';
+import chalk from 'chalk';
 
 export const consoleLogging = (() => {
   let instance: ConsoleLogger | null = null;
@@ -19,6 +20,8 @@ export class ConsoleLogger implements LogObserver {
   private expecting: string | undefined;
   private progressBar: SingleBar | undefined;
 
+  private running: boolean = false;
+
   spinner!: Ora;
 
   constructor() {}
@@ -28,6 +31,19 @@ export class ConsoleLogger implements LogObserver {
   }
 
   public update(log: NodeLogEntry, isNode: boolean = true) {
+    if (log.job && isNode) {
+      if (this.pending) {
+        this.spinner.stop();
+      }
+
+      this.spinner = ora(
+        chalk.green(
+          `${chalk.bgGreen.bold(' RUNNING ')} job ${chalk.bold(log.job)}`,
+        ),
+      ).start();
+      return;
+    }
+
     if (log.type == 'log') {
       if (!isNode) {
         process.stdout.write(log.log);

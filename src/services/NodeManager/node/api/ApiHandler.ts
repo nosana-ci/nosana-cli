@@ -37,7 +37,7 @@ export class ApiHandler {
   ) {
     this.address = this.sdk.solana.provider!.wallet.publicKey;
     this.api = express();
-    this.api.use(cors());
+    // this.api.use(cors());
     this.registerRoutes();
 
     applyLoggingProxyToClass(this);
@@ -252,7 +252,7 @@ export class ApiHandler {
 
     this.api.get(
       '/node/info',
-      verifySignatureMiddleware,
+      // verifySignatureMiddleware,
       (req: Request, res: Response) => {
         res.status(200).json({
           ...state(this.address.toString()).getNodeInfo(),
