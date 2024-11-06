@@ -11,15 +11,17 @@ export default class NodeManager {
   private node: BasicNode;
   private apiHandler: ApiHandler;
 
-  constructor() {
-    this.node = createLoggingProxy(
-      new BasicNode({
-        provider: 'podman',
-        url: 'http://localhost:8080',
-        config: '~/.nosana/',
-        port: 5001,
-      }),
-    );
+  constructor(options: { [key: string]: any }) {
+    const defaultConfig = {
+      provider: 'podman',
+      url: 'http://localhost:8080',
+      config: '~/.nosana/',
+      port: 5001,
+    };
+
+    const nodeConfig = { ...defaultConfig, ...options };
+
+    this.node = createLoggingProxy(new BasicNode(nodeConfig));
 
     /**
      * the node class makes the api but we pass the api to the NodeManager class
@@ -79,6 +81,11 @@ export default class NodeManager {
 
   async start(market?: string): Promise<void> {
     /**
+     * maintaniance
+     */
+    await this.node.maintaniance();
+
+    /**
      * grid
      *
      * if no market was supplied, we will register on the grid and get
@@ -113,6 +120,13 @@ export default class NodeManager {
         return await this.restart(market);
       }
     }
+
+    /**
+     * setup
+     *
+     * this sets up everything need, downloads needed resources ...
+     */
+    await this.node.setup(market);
 
     // TODO: health check
     /**

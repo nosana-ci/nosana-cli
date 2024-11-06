@@ -1,4 +1,8 @@
-import { NodeDb } from '../../../providers/modules/db/index.js';
+import {
+  NodeDb,
+  ResourceHistory,
+  VolumeResource,
+} from '../../../providers/modules/db/index.js';
 import { LowSync } from 'lowdb';
 import { Flow, OpState, FlowState, Log } from '../provider/types.js';
 
@@ -9,8 +13,17 @@ export class NodeRepository {
     return this.db.data.flows[id];
   }
 
+  public getFlows(): { [key: string]: Flow } {
+    return this.db.data.flows;
+  }
+
   public setflow(id: string, flow: Flow): void {
     this.db.data.flows[id] = flow;
+    this.db.write();
+  }
+
+  public deleteflow(id: string): void {
+    delete this.db.data.flows[id];
     this.db.write();
   }
 
@@ -90,5 +103,67 @@ export class NodeRepository {
     [key: string]: string;
   } {
     return this.db.data.info;
+  }
+
+  public getImagesResources(): { [key: string]: ResourceHistory } {
+    return this.db.data.resources.images;
+  }
+
+  public getImageResource(image: string): ResourceHistory {
+    return this.db.data.resources.images[image];
+  }
+
+  public createImageResource(image: string, fields: ResourceHistory): void {
+    this.db.data.resources.images[image] = fields;
+    this.db.write();
+  }
+
+  public updateImageResource(
+    image: string,
+    updatedFields: Partial<ResourceHistory> | ResourceHistory,
+  ): void {
+    if (!this.db.data.resources.images[image]) {
+      this.createImageResource(image, updatedFields as ResourceHistory);
+    }
+    Object.assign(this.db.data.resources.images[image], updatedFields);
+    this.db.write();
+  }
+
+  public deleteImageResource(image: string): void {
+    delete this.db.data.resources.images[image];
+    this.db.write();
+  }
+
+  public getVolumesResources(): { [key: string]: VolumeResource } {
+    return this.db.data.resources.volumes;
+  }
+
+  public getVolumeResource(volume: string): VolumeResource {
+    return this.db.data.resources.volumes[volume];
+  }
+
+  public createVolumeResource(volume: string, fields: VolumeResource): void {
+    this.db.data.resources.volumes[volume] = fields;
+    this.db.write();
+  }
+
+  public updateVolumeResource(
+    volume: string,
+    updatedFields: Partial<VolumeResource> | VolumeResource,
+  ): void {
+    if (!this.db.data.resources.volumes[volume]) {
+      this.createVolumeResource(volume, updatedFields as VolumeResource);
+    }
+    Object.assign(this.db.data.resources.volumes[volume], updatedFields);
+    this.db.write();
+  }
+
+  public deleteVolumeResource(volume: string): void {
+    delete this.db.data.resources.volumes[volume];
+    this.db.write();
+  }
+
+  public displayLog(log: string) {
+    return log;
   }
 }

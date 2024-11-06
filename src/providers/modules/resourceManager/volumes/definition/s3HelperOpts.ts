@@ -3,7 +3,7 @@ import { ContainerCreateOptions } from 'dockerode';
 import { S3Auth } from '../../../../../types/resources.js';
 
 export const s3HelperImage =
-  'registry.hub.docker.com/nosana/remote-resource-helper:0.4.0';
+  'registry.hub.docker.com/nosana/resource-manager:1.0.17';
 
 export const nosanaBucket = 'https://models.nosana.io';
 
@@ -18,11 +18,10 @@ export const createS3HelperOpts = (
   AttachStdin: false,
   AttachStdout: true,
   AttachStderr: true,
-  Tty: true,
+  Tty: false,
   OpenStdin: false,
   StdinOnce: false,
   Cmd: [
-    'index.js',
     s3.url.replace('s3://nos-ai-models-qllsn32u', nosanaBucket),
     s3.files ? s3.files.join(',') : '',
   ],

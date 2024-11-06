@@ -9,7 +9,7 @@ import { ResultReturnStrategySelector } from './result/ResultReturnStrategy.js';
 import { IValidation } from 'typia';
 import { validateJobDefinition } from '../../../../providers/Provider.js';
 import { JobExternalUtil } from './jobExternalUtil.js';
-import EventEmitter from "events";
+import EventEmitter from 'events';
 
 export const jobEmitter = new EventEmitter();
 
@@ -31,7 +31,7 @@ export class JobHandler {
     applyLoggingProxyToClass(this);
 
     jobEmitter.on('run-exposed', (data) => {
-      this.flowHandler.operationExposed(data.id)
+      this.flowHandler.operationExposed(data.id);
     });
   }
 
@@ -154,5 +154,9 @@ export class JobHandler {
     } catch (e) {
       throw new Error(`Failed to finish job: ${e}`);
     }
+  }
+
+  async clearOldJobs(): Promise<void> {
+    await this.flowHandler.clearOldFlows();
   }
 }

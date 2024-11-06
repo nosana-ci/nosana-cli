@@ -1,9 +1,12 @@
 import {
   Container,
   ContainerCreateOptions,
+  ImageInfo,
+  Image,
   MountSettings,
   Volume,
   VolumeCreateResponse,
+  VolumeInspectInfo,
 } from 'dockerode';
 import { DockerExtended } from '../../../../docker/index.js';
 import { createSeverObject } from '../../../../providers/utils/createServerObject.js';
@@ -75,6 +78,21 @@ export class DockerContainerOrchestration
     }
   }
 
+  async hasImage(image: string): Promise<boolean> {
+    if (await this.docker.hasImage(image)) {
+      return true;
+    }
+    return false;
+  }
+
+  async getImage(image: string): Promise<Image> {
+    return this.docker.getImage(image);
+  }
+
+  async listImages(): Promise<ImageInfo[]> {
+    return this.docker.listImages();
+  }
+
   async deleteImage(image: string): Promise<ReturnedStatus> {
     try {
       if (await this.docker.hasImage(image)) {
@@ -105,7 +123,7 @@ export class DockerContainerOrchestration
   }
 
   async createVolume(
-    name: string,
+    name?: string,
   ): Promise<ReturnedStatus<VolumeCreateResponse>> {
     try {
       const volume = await this.docker.createVolume({ Name: name });
@@ -115,6 +133,19 @@ export class DockerContainerOrchestration
     }
   }
 
+  async hasVolume(name: string): Promise<boolean> {
+    try {
+      const volumes = await this.docker.listVolumes();
+      return volumes.Volumes.some((volume) => volume.Name === name);
+    } catch (error) {
+      return false;
+    }
+  }
+
+  async listVolumes(): Promise<VolumeInspectInfo[]> {
+    return (await this.docker.listVolumes()).Volumes;
+  }
+
   async getVolume(name: string): Promise<ReturnedStatus<Volume>> {
     try {
       const volume = this.docker.getVolume(name);
@@ -122,6 +153,10 @@ export class DockerContainerOrchestration
     } catch (error) {
       return { status: false, error };
     }
+  }
+
+  async getRawVolume(name: string): Promise<Volume> {
+    return this.docker.getVolume(name);
   }
 
   async deleteVolume(name: string): Promise<ReturnedStatus> {
@@ -154,6 +189,18 @@ export class DockerContainerOrchestration
   }
 
   async runContainer(
+    args: ContainerCreateOptions,
+  ): Promise<ReturnedStatus<Container>> {
+    try {
+      const container = await this.docker.createContainer(args);
+      await container.start();
+      return { status: true, result: container };
+    } catch (error) {
+      return { status: false, error };
+    }
+  }
+
+  async runFlowContainer(
     image: string,
     args: RunContainerArgs,
   ): Promise<ReturnedStatus<Container>> {

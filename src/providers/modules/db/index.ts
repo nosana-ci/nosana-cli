@@ -13,18 +13,18 @@ export type NodeDb = {
   };
 };
 
-type Resources = {
+export type Resources = {
   images: { [key: string]: ResourceHistory };
   volumes: { [key: string]: VolumeResource };
 };
 
-type ResourceHistory = {
+export type ResourceHistory = {
   lastUsed: Date;
   usage: number;
   required: boolean;
 };
 
-type VolumeResource = ResourceHistory & {
+export type VolumeResource = ResourceHistory & {
   volume: string;
 };
 

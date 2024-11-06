@@ -1,4 +1,5 @@
 import { logEmitter, LogEntry } from '../proxy/loggingProxy.js';
+import { classifyState } from './classifyState.js';
 
 export interface StateObserver {
   update(
@@ -21,6 +22,7 @@ export const state = (() => {
 
 export class NodeState {
   private shared: { [key: string]: string } = {};
+  private info: { [key: string]: any } = {};
 
   private status: string = 'none';
   private state: { [key: string]: any } = {};
@@ -32,10 +34,21 @@ export class NodeState {
   private observers: StateObserver[] = [];
 
   constructor(node: string) {
+    this.info = {
+      node,
+      uptime: new Date(),
+    };
     this.shared = {
       node,
     };
     logEmitter.on('log', (data: LogEntry) => this.process(data));
+  }
+
+  public getNodeInfo() {
+    return {
+      ...this.info,
+      state: classifyState(this.status),
+    };
   }
 
   public addObserver(observer: StateObserver) {
@@ -188,6 +201,28 @@ export class NodeState {
       }
 
       if (data.method == 'runContainer') {
+        if (data.type == 'call') {
+          this.addState('running-container', {
+            image: data.arguments[0].Image,
+          });
+        }
+
+        if (data.type == 'return') {
+          if (data.result.status == true) {
+            this.addState('running-container-success', {
+              image: data.arguments[0].Image,
+              id: data.result.result.id,
+            });
+          } else {
+            this.addState('running-container-failed', {
+              image: data.arguments[0].Image,
+              error: data.result.error,
+            });
+          }
+        }
+      }
+
+      if (data.method == 'runFlowContainer') {
         if (data.type == 'call') {
           this.addState('running-container', {
             image: data.arguments[0],
@@ -653,6 +688,35 @@ export class NodeState {
         if (data.type == 'return') {
           this.addState('api-stopped', { node: this.shared.node });
         }
+      }
+    }
+
+    if (data.class === 'ProgressBarReporter') {
+      if (data.method === 'start' && data.type == 'call') {
+        this.addState('process-bar-start', {
+          desc: data.arguments[0],
+          optProgressBar: data.arguments[1],
+          total: data.arguments[2],
+          startValue: data.arguments[3],
+          payload: data.arguments[4],
+          progressBarPreset: data.arguments[5],
+        });
+      }
+
+      if (data.method === 'update' && data.type == 'call') {
+        this.addState('process-bar-update', {
+          desc: data.arguments[0],
+          current: data.arguments[0],
+          payload: data.arguments[1],
+        });
+      }
+
+      if (data.method === 'stop' && data.type == 'call') {
+        this.addState('process-bar-stop', {
+          desc: data.arguments[0],
+          current: data.arguments[0],
+          payload: data.arguments[1],
+        });
       }
     }
   }

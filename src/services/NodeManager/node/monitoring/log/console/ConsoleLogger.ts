@@ -1,6 +1,10 @@
 import ora, { Ora } from 'ora';
-import { log, LogObserver, NodeLogEntry } from '../NodeLog.js';
 import { SingleBar } from 'cli-progress';
+import {
+  log,
+  LogObserver,
+  NodeLogEntry,
+} from '../../../../monitoring/log/NodeLog';
 
 export const consoleLogging = (() => {
   let instance: ConsoleLogger | null = null;
@@ -25,11 +29,6 @@ export class ConsoleLogger implements LogObserver {
   }
 
   public update(log: NodeLogEntry) {
-    if (log.type == 'log') {
-      process.stdout.write(log.log);
-      return;
-    }
-
     if (log.type == 'process-bar-start') {
       if (this.pending) {
         this.spinner.stop();
@@ -47,18 +46,19 @@ export class ConsoleLogger implements LogObserver {
         log.payload?.startValue,
         log.payload?.payload,
       );
-
-      return;
     }
 
     if (log.type == 'process-bar-update') {
       this.progressBar?.update(log.payload?.current, log.payload?.payload);
-      return;
     }
 
     if (log.type == 'process-bar-stop') {
       this.progressBar?.stop();
       this.progressBar = undefined;
+    }
+
+    if (log.type == 'log') {
+      process.stdout.write(log.log);
       return;
     }
 
@@ -70,6 +70,9 @@ export class ConsoleLogger implements LogObserver {
 
       if (log.type == 'add') {
         console.log(log.log);
+        // this.spinner.text = `${this.spinner.text}\n    ${log.log}`
+        // this.spinner.suffixText();
+        // console.log(this.spinner.text)
         return;
       }
 

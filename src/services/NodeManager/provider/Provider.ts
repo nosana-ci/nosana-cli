@@ -1,17 +1,17 @@
 import { randomUUID } from 'crypto';
 
 import { config } from '../../../generic/config.js';
-import { ResourceManager } from '../../../providers/modules/resourceManager/index.js';
 import { Operation } from '../../../providers/Provider.js';
 import { ContainerOrchestrationInterface } from './containerOrchestration/interface.js';
 import { Flow, Log, OperationArgsMap, Resource } from './types.js';
-import { createResourceName } from '../../../providers/modules/resourceManager/volumes/index.js';
 import { applyLoggingProxyToClass } from '../monitoring/proxy/loggingProxy.js';
 import { NodeRepository } from '../repository/NodeRepository.js';
 import { promiseTimeoutWrapper } from '../../../generic/timeoutPromiseWrapper.js';
 import { extractLogsAndResultsFromLogBuffer } from '../../../providers/utils/extractLogsAndResultsFromLogBuffer.js';
-import Dockerode from "dockerode";
-import { jobEmitter } from "../node/job/jobHandler.js";
+import { ResourceManager } from '../node/resource/resourceManager.js';
+import Dockerode from 'dockerode';
+import { jobEmitter } from '../node/job/jobHandler.js';
+import { s3HelperImage } from '../../../providers/modules/resourceManager/volumes/definition/s3HelperOpts.js';
 
 export class Provider {
   constructor(
@@ -106,7 +106,7 @@ export class Provider {
 
       if (!result) {
         ({ status, error, result } =
-          await this.containerOrchestration.runContainer(tunnelImage, {
+          await this.containerOrchestration.runFlowContainer(tunnelImage, {
             name: tunnel_name,
             networks,
             env: {
@@ -133,7 +133,7 @@ export class Provider {
           }
 
           ({ status, error, result } =
-            await this.containerOrchestration.runContainer(tunnelImage, {
+            await this.containerOrchestration.runFlowContainer(tunnelImage, {
               name: tunnel_name,
               networks,
               env: {
@@ -153,7 +153,7 @@ export class Provider {
 
       if (!result) {
         ({ status, error, result } =
-          await this.containerOrchestration.runContainer(frpcImage, {
+          await this.containerOrchestration.runFlowContainer(frpcImage, {
             name: 'frpc-api-' + address,
             cmd: ['-c', '/etc/frp/frpc.toml'],
             networks,
@@ -186,7 +186,7 @@ export class Provider {
           }
 
           ({ status, error, result } =
-            await this.containerOrchestration.runContainer(frpcImage, {
+            await this.containerOrchestration.runFlowContainer(frpcImage, {
               name: 'frpc-api-' + address,
               cmd: ['-c', '/etc/frp/frpc.toml'],
               networks,
@@ -210,40 +210,42 @@ export class Provider {
     return true;
   }
 
-  private async startServiceExposedUrlHealthCheck(id: string, container: Dockerode.Container, port: number) {
+  private async startServiceExposedUrlHealthCheck(
+    id: string,
+    container: Dockerode.Container,
+    port: number,
+  ) {
     const interval = setInterval(async () => {
-        try {
-            const exec = await container.exec({
-                Cmd: ['curl', '-s', `localhost:${port}`],
-                AttachStdout: true,
-                AttachStderr: true,
-            });
+      try {
+        const exec = await container.exec({
+          Cmd: ['curl', '-s', `localhost:${port}`],
+          AttachStdout: true,
+          AttachStderr: true,
+        });
 
-            const stream = await exec.start({ Detach: false, Tty: false });
-            const output = await new Promise((resolve, reject) => {
-                let result = '';
-                stream.on('data', data => {
-                    result += data.toString();
-                });
-                stream.on('end', () => resolve(result));
-                stream.on('error', reject);
-            });
+        const stream = await exec.start({ Detach: false, Tty: false });
+        const output = await new Promise((resolve, reject) => {
+          let result = '';
+          stream.on('data', (data) => {
+            result += data.toString();
+          });
+          stream.on('end', () => resolve(result));
+          stream.on('error', reject);
+        });
 
-            if (output) {
-              // raise an event
-              jobEmitter.emit('run-exposed', { id });
-              clearInterval(interval); // Stop further checks
-            }
-        } catch (error) {
-            console.log(`Service on port ${port} not ready yet, retrying...`);
+        if (output) {
+          // raise an event
+          jobEmitter.emit('run-exposed', { id });
+          clearInterval(interval); // Stop further checks
         }
+      } catch (error) {
+        console.log(`Service on port ${port} not ready yet, retrying...`);
+      }
     }, 2000);
   }
 
   async containerRunOperation(id: string, index: number): Promise<boolean> {
     const frpcImage = 'registry.hub.docker.com/nosana/frpc:0.1.0';
-    const s3HelperImage =
-      'registry.hub.docker.com/nosana/remote-resource-helper:0.4.0';
 
     const flow = this.repository.getflow(id);
     const opState = this.repository.getOpState(id, index);
@@ -326,7 +328,7 @@ export class Provider {
           }
 
           ({ status, error, result } =
-            await this.containerOrchestration.runContainer(frpcImage, {
+            await this.containerOrchestration.runFlowContainer(frpcImage, {
               name: 'frpc-' + name,
               cmd: ['-c', '/etc/frp/frpc.toml'],
               networks,
@@ -348,7 +350,7 @@ export class Provider {
           // link will be logged out if public
           const link = `https://${prefix}.${config.frp.serverAddr}`;
 
-          this.repository.updateflowStateSecret(flow.id, { url: link })
+          this.repository.updateflowStateSecret(flow.id, { url: link });
         }
 
         if (op.args.resources) {
@@ -359,17 +361,19 @@ export class Provider {
             throw error;
           }
 
+          const resourceVolumes = await this.resourceManager.getResourceVolumes(
+            op.args.resources ?? [],
+          );
+
           try {
-            volumes.push(
-              ...(await getResourceVolumes(this.resourceManager, op.args)),
-            );
+            volumes.push(...resourceVolumes);
           } catch (error) {
             throw error;
           }
         }
 
         ({ status, error, result } =
-          await this.containerOrchestration.runContainer(
+          await this.containerOrchestration.runFlowContainer(
             op.args.image ?? flow.jobDefinition.global?.image!,
             {
               name,
@@ -406,11 +410,15 @@ export class Provider {
         });
 
         logStream.on('data', (data) => {
-          this.repository.updateOpStateLogs(id, index, data.toString());
+          this.repository.displayLog(data.toString());
         });
 
-        if(op.args.expose){
-          await this.startServiceExposedUrlHealthCheck(id, container, op.args.expose)
+        if (op.args.expose) {
+          await this.startServiceExposedUrlHealthCheck(
+            id,
+            container,
+            op.args.expose,
+          );
         }
 
         await container.wait();
@@ -618,30 +626,6 @@ function getVolumes(arg: OperationArgsMap['container/run'], flow: Flow) {
         name: flow.id + '-' + volume.name,
       });
     }
-  }
-  return volumes;
-}
-
-async function getResourceVolumes(
-  resourceManager: ResourceManager,
-  args: OperationArgsMap['container/run'],
-) {
-  const volumes: { dest: string; name: string; readonly?: boolean }[] = [];
-
-  for (const resource of args.resources as Resource[]) {
-    await resourceManager.volumes.createRemoteVolume(resource);
-    if ((await resourceManager.volumes.hasVolume(resource)) === false) {
-      const error = new Error(
-        `Missing required resource ${createResourceName(resource)}.`,
-      );
-      throw error;
-    }
-
-    volumes.push({
-      dest: resource.target,
-      name: await resourceManager.volumes.getVolume(resource)!,
-      readonly: resource.allowWrite ? false : true,
-    });
   }
   return volumes;
 }

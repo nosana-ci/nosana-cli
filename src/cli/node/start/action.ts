@@ -23,21 +23,20 @@ import NodeManager from '../../../services/NodeManager/index.js';
 let node: NosanaNode;
 let spinner: Ora;
 
-export async function startNode1(
+export async function startNode(
   market: string,
   options: {
     [key: string]: any;
   },
   cmd: Command,
 ): Promise<void> {
-  // testing jobManager
-  const nodeManager = new NodeManager();
+  const nodeManager = new NodeManager(options);
 
   await nodeManager.init();
   await nodeManager.start(market);
 }
 
-export async function startNode(
+export async function startNode1(
   market: string,
   options: {
     [key: string]: any;

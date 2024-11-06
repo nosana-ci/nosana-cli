@@ -9,10 +9,6 @@ import {
   ContainerOrchestrationInterface,
   selectContainerOrchestrationProvider,
 } from '../provider/containerOrchestration/interface.js';
-import {
-  createResourceManager,
-  ResourceManager,
-} from '../../../providers/modules/resourceManager/index.js';
 import { Provider } from '../provider/Provider.js';
 import Logger from '../../../providers/modules/logger/index.js';
 import { applyLoggingProxyToClass } from '../monitoring/proxy/loggingProxy.js';
@@ -24,6 +20,7 @@ import { HealthHandler } from './health/healthHandler.js';
 import { KeyHandler } from './key/KeyHandler.js';
 import { ExpiryHandler } from './expiry/expiryHandler.js';
 import { GridHandler } from './grid/gridHandler.js';
+import { ResourceManager } from './resource/resourceManager.js';
 
 export class BasicNode {
   private apiHandler: ApiHandler;
@@ -55,11 +52,11 @@ export class BasicNode {
       options.provider,
       options.url,
     );
-    this.resourceManager = createResourceManager(
-      db,
-      this.containerOrchestration.getConnection(),
-      new Logger(),
+    this.resourceManager = new ResourceManager(
+      this.containerOrchestration,
+      this.repository,
     );
+
     this.provider = new Provider(
       this.containerOrchestration,
       this.repository,
@@ -163,6 +160,12 @@ export class BasicNode {
       throw new Error(
         `error on container orchestration (docker or podman), error: ${error}`,
       );
+    }
+  }
+
+  async setup(market: string): Promise<void> {
+    if (this.sdk.nodes.config.network !== 'devnet') {
+      await this.resourceManager.fetchMarketRequiredResources(market);
     }
   }
 
@@ -362,6 +365,10 @@ export class BasicNode {
         }
       },
     );
+  }
+
+  public async maintaniance() {
+    this.jobHandler.clearOldJobs();
   }
 
   public async restartDelay(time: number) {
