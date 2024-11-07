@@ -275,11 +275,11 @@ class NodeLog {
           job: this.job,
           log: chalk.cyan(`fetching market required resources`),
           timestamp: Date.now(),
-          type: 'process',
-          pending: {
-            isPending: true,
-            expecting: `${data.class}.${data.method}`,
-          },
+          type: 'info',
+          // pending: {
+          //   isPending: true,
+          //   expecting: `${data.class}.${data.method}`,
+          // },
         });
       }
 
@@ -504,7 +504,7 @@ class NodeLog {
         this.addLog({
           method: `${data.class}.${data.method}`,
           job: this.job,
-          log: chalk.green(`health check failed`),
+          log: chalk.red(`health check failed: ${data.error}`),
           timestamp: Date.now(),
           type: 'error',
         });
