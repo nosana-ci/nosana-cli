@@ -37,11 +37,11 @@ export class ResourceManager {
         '/api/markets/{id}/required-resources',
         { params: { path: { id: market } } },
       );
-  
+
       if (error) {
         throw new Error(error.toString());
       }
-  
+
       await this.images.pullMarketRequiredImages(data.required_images);
       await this.volumes.pullMarketRequiredVolumes(
         data.required_remote_resources,

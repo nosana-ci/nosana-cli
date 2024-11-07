@@ -1,4 +1,4 @@
-import { applyLoggingProxyToClass } from "../../../monitoring/proxy/loggingProxy.js";
+import { applyLoggingProxyToClass } from '../../../monitoring/proxy/loggingProxy.js';
 import { ContainerOrchestrationInterface } from '../../../provider/containerOrchestration/interface.js';
 import { NodeRepository } from '../../../repository/NodeRepository.js';
 import { hoursSinceDate } from '../helpers/hoursSunceDate.js';
