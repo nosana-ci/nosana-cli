@@ -32,19 +32,23 @@ export class ResourceManager {
   public async fetchMarketRequiredResources(market: string): Promise<void> {
     this.required_market = market;
 
-    const { data, error } = await clientSelector().GET(
-      '/api/markets/{id}/required-resources',
-      { params: { path: { id: market } } },
-    );
-
-    if (error) {
-      throw new Error(error.toString());
+    try {
+      const { data, error } = await clientSelector().GET(
+        '/api/markets/{id}/required-resources',
+        { params: { path: { id: market } } },
+      );
+  
+      if (error) {
+        throw new Error(error.toString());
+      }
+  
+      await this.images.pullMarketRequiredImages(data.required_images);
+      await this.volumes.pullMarketRequiredVolumes(
+        data.required_remote_resources,
+      );
+    } catch (error) {
+      throw error;
     }
-
-    await this.images.pullMarketRequiredImages(data.required_images);
-    await this.volumes.pullMarketRequiredVolumes(
-      data.required_remote_resources,
-    );
   }
 
   public async prune(): Promise<void> {

@@ -31,6 +31,8 @@ export class BenchmarkHandler {
     this.flowHandler.start(id, benchmarkGPU);
     const result = await this.flowHandler.run(id);
 
+    this.repository.deleteflow(result.id);
+
     if (result && result.state.status === 'success') {
       await this.processSuccess(result.state.opStates);
     } else if (result && result.state.status === 'failed') {

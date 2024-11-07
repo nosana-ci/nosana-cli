@@ -1,3 +1,4 @@
+import { applyLoggingProxyToClass } from "../../../monitoring/proxy/loggingProxy.js";
 import { ContainerOrchestrationInterface } from '../../../provider/containerOrchestration/interface.js';
 import { NodeRepository } from '../../../repository/NodeRepository.js';
 import { hoursSinceDate } from '../helpers/hoursSunceDate.js';
@@ -10,7 +11,9 @@ export class ImageManager {
   constructor(
     private containerOrchestration: ContainerOrchestrationInterface,
     private repository: NodeRepository,
-  ) {}
+  ) {
+    applyLoggingProxyToClass(this);
+  }
 
   public async pullMarketRequiredImages(
     required_images: string[],
