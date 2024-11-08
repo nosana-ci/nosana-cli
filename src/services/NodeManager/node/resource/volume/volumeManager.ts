@@ -8,6 +8,7 @@ import {
 import {
   createS3HelperOpts,
   nosanaBucket,
+  s3HelperImage,
 } from '../../../../../providers/modules/resourceManager/volumes/definition/s3HelperOpts.js';
 import { convertFromBytes } from '../../../../../providers/modules/resourceManager/volumes/helpers/convertFromBytes.js';
 import { extractLogsAndResultsFromLogBuffer } from '../../../../../providers/utils/extractLogsAndResultsFromLogBuffer.js';
@@ -38,6 +39,14 @@ export class VolumeManager {
   ): Promise<void> {
     this.fetched = true;
     this.market_required_volumes = remoteResources;
+
+    const hasResourceManagerImage = await this.containerOrchestration.hasImage(
+      s3HelperImage,
+    );
+
+    if (!hasResourceManagerImage) {
+      await this.containerOrchestration.pullImage(s3HelperImage);
+    }
 
     const savedVolumes = this.repository.getVolumesResources();
     for (const resource of this.market_required_volumes) {
