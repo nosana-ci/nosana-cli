@@ -1,7 +1,6 @@
 import { KeyWallet, Market, Run, Client as SDK } from '@nosana/sdk';
 import { applyLoggingProxyToClass } from '../../monitoring/proxy/loggingProxy.js';
 import { NodeRepository } from '../../repository/NodeRepository.js';
-import { config } from '../../../../generic/config.js';
 import {
   BlockheightBasedTransactionConfirmationStrategy,
   PublicKey,
@@ -9,6 +8,7 @@ import {
 } from '@solana/web3.js';
 import { getRawTransaction } from '../../../sdk.js';
 import { sleep } from '../../../../generic/utils.js';
+import { configs } from '../../configs/nodeConfigs.js';
 
 export interface NodeData {
   market?: string;
@@ -25,7 +25,7 @@ export class GridHandler {
 
   private async getAuthSignature(): Promise<string> {
     const signature = (await this.sdk.solana.signMessage(
-      config.signMessage,
+      configs().signMessage,
     )) as Uint8Array;
     return Buffer.from(signature).toString('base64');
   }
@@ -33,7 +33,7 @@ export class GridHandler {
   public async getNodeStatus(): Promise<NodeData> {
     try {
       const response = await fetch(
-        `${config.backendUrl}/nodes/${this.address}`,
+        `${configs().backendUrl}/nodes/${this.address}`,
         {
           method: 'GET',
           headers: {
@@ -78,7 +78,7 @@ export class GridHandler {
     try {
       let market: string;
       const response = await fetch(
-        `${config.backendUrl}/nodes/${this.address}/check-market`,
+        `${configs().backendUrl}/nodes/${this.address}/check-market`,
         {
           method: 'POST',
           headers: {
@@ -116,14 +116,17 @@ export class GridHandler {
 
   private async changeMarket(): Promise<void> {
     try {
-      const response = await fetch(`${config.backendUrl}/nodes/change-market`, {
-        method: 'POST',
-        headers: {
-          Authorization: `${this.address}:${await this.getAuthSignature()}`,
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        `${configs().backendUrl}/nodes/change-market`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `${this.address}:${await this.getAuthSignature()}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ address: this.address }),
         },
-        body: JSON.stringify({ address: this.address }),
-      });
+      );
 
       const data = await response.json();
       if (!data || data.name === 'Error') throw new Error(data.message);
@@ -186,7 +189,7 @@ export class GridHandler {
 
   private async syncNodeAfterMint(): Promise<any> {
     try {
-      const response = await fetch(`${config.backendUrl}/nodes/sync-node`, {
+      const response = await fetch(`${configs().backendUrl}/nodes/sync-node`, {
         method: 'POST',
         headers: {
           Authorization: `${this.address}:${await this.getAuthSignature()}`,

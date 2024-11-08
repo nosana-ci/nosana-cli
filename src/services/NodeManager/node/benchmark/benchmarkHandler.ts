@@ -5,8 +5,8 @@ import { applyLoggingProxyToClass } from '../../monitoring/proxy/loggingProxy.js
 import { NodeRepository } from '../../repository/NodeRepository.js';
 import { benchmarkGPU } from '../../../../static/staticsImports.js';
 import { CudaCheckResponse } from '../../../../types/cudaCheck.js';
-import { config } from '../../../../generic/config.js';
 import { PublicKey } from '@solana/web3.js';
+import { configs } from '../../configs/nodeConfigs.js';
 
 export class BenchmarkHandler {
   private flowHandler: FlowHandler;
@@ -23,10 +23,6 @@ export class BenchmarkHandler {
   }
 
   async check(): Promise<boolean> {
-    if (this.sdk.nodes.config.network == 'devnet') {
-      return true;
-    }
-
     const id = this.generateRandomId(32);
     this.flowHandler.start(id, benchmarkGPU);
     const result = await this.flowHandler.run(id);
@@ -103,11 +99,13 @@ export class BenchmarkHandler {
 
         this.repository.updateNodeInfo({ disk: `${availableDiskSpace}` });
 
-        if (config.minDiskSpace > availableDiskSpace) {
+        if (configs().minDiskSpace > availableDiskSpace) {
           throw new Error(
             `Not enough disk space available. Found ${
               availableDiskSpace / 1000
-            } GB available. Needs at least ${config.minDiskSpace / 1000} GB.`,
+            } GB available. Needs at least ${
+              configs().minDiskSpace / 1000
+            } GB.`,
           );
         }
       } else {

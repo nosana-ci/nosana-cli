@@ -2,7 +2,6 @@ import { Job, Client as SDK } from '@nosana/sdk';
 import { PublicKey } from '@solana/web3.js';
 import express, { Express, Request, Response, NextFunction } from 'express';
 import { Provider } from '../../provider/Provider.js';
-import { config } from '../../../../generic/config.js';
 import { initTunnel } from '../../../tunnel.js';
 import { sleep } from '../../../../generic/utils.js';
 import { Server } from 'http';
@@ -21,6 +20,7 @@ import nacl from 'tweetnacl';
 import { verifyJobOwnerMiddleware } from './middlewares/verifyJobOwnerMiddleware.js';
 import { verifySignatureMiddleware } from './middlewares/verifySignatureMiddleware.js';
 import { state } from '../../monitoring/state/NodeState.js';
+import { configs } from '../../configs/nodeConfigs.js';
 
 export class ApiHandler {
   private api: Express;
@@ -47,7 +47,7 @@ export class ApiHandler {
     await this.provider.stopReverseProxyApi(this.address.toString());
     await this.provider.setUpReverseProxyApi(this.address.toString());
 
-    const tunnelServer = `https://${this.address}.${config.frp.serverAddr}`;
+    const tunnelServer = `https://${this.address}.${configs().frp.serverAddr}`;
 
     await sleep(3);
     initTunnel({ server: tunnelServer, port: this.port });
@@ -79,7 +79,7 @@ export class ApiHandler {
           const [nodeAddress, base64Signature] = header.split(':');
           const signature = Buffer.from(base64Signature, 'base64');
           const publicKey = new PublicKey(nodeAddress);
-          const message = Buffer.from(config.signMessage);
+          const message = Buffer.from(configs().signMessage);
 
           if (
             !nacl.sign.detached.verify(message, signature, publicKey.toBytes())
@@ -114,7 +114,7 @@ export class ApiHandler {
           const [nodeAddress, base64Signature] = header.split(':');
           const signature = Buffer.from(base64Signature, 'base64');
           const publicKey = new PublicKey(nodeAddress);
-          const message = Buffer.from(config.signMessage);
+          const message = Buffer.from(configs().signMessage);
 
           if (
             !nacl.sign.detached.verify(message, signature, publicKey.toBytes())
@@ -239,7 +239,7 @@ export class ApiHandler {
           if (secrets && secrets[jobId]) {
             res
               .status(200)
-              .send(`https://${secrets[jobId]}.${config.frp.serverAddr}`);
+              .send(`https://${secrets[jobId]}.${configs().frp.serverAddr}`);
             return;
           }
 

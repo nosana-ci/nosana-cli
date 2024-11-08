@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import nacl from 'tweetnacl';
 import { PublicKey } from '@solana/web3.js';
-import { config } from '../../../../../generic/config.js';
+import { configs } from '../../../configs/nodeConfigs.js';
 
 export const verifySignatureMiddleware = (
   req: Request,
@@ -17,7 +17,7 @@ export const verifySignatureMiddleware = (
     return res.status(400).send('Invalid Authorization format');
 
   const signature = Buffer.from(base64Signature, 'base64');
-  const message = Buffer.from(config.signMessage);
+  const message = Buffer.from(configs().signMessage);
   const publicKey = new PublicKey(address);
 
   const isValidSignature = nacl.sign.detached.verify(
