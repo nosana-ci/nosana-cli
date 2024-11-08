@@ -10,7 +10,7 @@
       "id": "cpu",
       "args": {
         "cmd": "cat /proc/cpuinfo  | grep name | uniq;",
-        "image": "registry.hub.docker.com/nosana/stats:v1.0.4",
+        "image": "registry.hub.docker.com/nosana/stats:v1.0.6",
         "env": {
           "DEBUG": "1"
         }
@@ -21,7 +21,7 @@
       "id": "ram",
       "args": {
         "cmd": "grep MemTotal /proc/meminfo | awk '{print $2 / 1024 \"MB\"}';",
-        "image": "registry.hub.docker.com/nosana/stats:v1.0.4",
+        "image": "registry.hub.docker.com/nosana/stats:v1.0.6",
         "env": {
           "DEBUG": "1"
         }
@@ -32,7 +32,7 @@
       "id": "disk-space",
       "args": {
         "cmd": "df -h --output=size --total | awk 'END {print $1}';",
-        "image": "registry.hub.docker.com/nosana/stats:v1.0.4",
+        "image": "registry.hub.docker.com/nosana/stats:v1.0.6",
         "env": {
           "DEBUG": "1"
         }
@@ -43,7 +43,7 @@
       "id": "country",
       "args": {
         "cmd": "(curl -ks https://ipinfo.io/$(curl -ks https://ipinfo.io/ip) | jq -r \".country\") || true;",
-        "image": "registry.hub.docker.com/nosana/stats:v1.0.4",
+        "image": "registry.hub.docker.com/nosana/stats:v1.0.6",
         "env": {
           "DEBUG": "1"
         }
@@ -54,7 +54,7 @@
       "id": "bandwidth",
       "args": {
         "cmd": "speedtest-cli --simple || true;",
-        "image": "registry.hub.docker.com/nosana/stats:v1.0.4",
+        "image": "registry.hub.docker.com/nosana/stats:v1.0.6",
         "env": {
           "DEBUG": "1"
         }
@@ -65,7 +65,7 @@
       "id": "gpu",
       "args": {
         "cmd": ["./cuda_check"],
-        "image": "registry.hub.docker.com/nosana/stats:v1.0.4",
+        "image": "registry.hub.docker.com/nosana/stats:v1.0.6",
         "env": {
           "DEBUG": "1"
         },
