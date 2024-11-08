@@ -110,7 +110,7 @@ export class VolumeManager {
     const response = await this.containerOrchestration.runContainer(args);
 
     if (response.error || !response.result) {
-      throw Error('container failed to start');
+      throw Error(`container failed to start, ${response.error}`);
     }
 
     const controller = new AbortController();
