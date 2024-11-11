@@ -33,7 +33,23 @@ export async function startNode(
   const nodeManager = new NodeManager(options);
 
   await nodeManager.init();
-  await nodeManager.start(market);
+  try {
+    await nodeManager.start(market);
+  } catch (e) {
+    const error = e as any;
+
+    const formattedError = `
+    ========== ERROR ==========
+    Timestamp: ${new Date().toISOString()}
+    Error Name: ${error.name || 'Unknown Error'}
+    Message: ${error.message || 'No message available'}
+    ============================
+    `;
+
+    console.error(formattedError);
+    await nodeManager.stop()
+    process.exit();
+  }
 }
 
 export async function startNode1(

@@ -1,4 +1,4 @@
-import { Client as SDK } from '@nosana/sdk';
+import { Flow, Client as SDK } from '@nosana/sdk';
 import { FlowHandler } from '../flow/flowHandler.js';
 import { Provider } from '../../provider/Provider.js';
 import { applyLoggingProxyToClass } from '../../monitoring/proxy/loggingProxy.js';
@@ -24,20 +24,31 @@ export class BenchmarkHandler {
 
   async check(): Promise<boolean> {
     const id = this.generateRandomId(32);
+    
     this.flowHandler.start(id, benchmarkGPU);
-    const result = await this.flowHandler.run(id);
 
-    this.repository.deleteflow(result.id);
-
-    if (result && result.state.status === 'success') {
-      await this.processSuccess(result.state.opStates);
-    } else if (result && result.state.status === 'failed') {
-      this.processFailure(result.state.opStates);
-    } else {
-      throw new Error('Cannot find results');
+    let result: Flow | undefined;
+    try {
+      result = await this.flowHandler.run(id);
+    } catch (error) {
+      throw error
     }
 
-    return true;
+    if(result){
+      this.repository.deleteflow(result.id);
+
+      if (result && result.state.status === 'success') {
+        await this.processSuccess(result.state.opStates);
+      } else if (result && result.state.status === 'failed') {
+        this.processFailure(result.state.opStates);
+      } else {
+        throw new Error('Cannot find results');
+      }
+  
+      return true;
+    }
+
+    return false;
   }
 
   private async processSuccess(opStates: any[]): Promise<void> {
@@ -76,6 +87,12 @@ export class BenchmarkHandler {
   private async handleGPUBenchmark(opState: any): Promise<void> {
     if (!opState || !opState.logs || !opState.logs[0]) {
       throw new Error('Cannot find GPU benchmark output');
+    }
+
+    try {
+      JSON.parse(opState.logs[0].log!)
+    } catch (error) {
+      throw new Error('GPU benchmark returned with no devices');
     }
 
     const { devices } = JSON.parse(opState.logs[0].log!) as CudaCheckResponse;

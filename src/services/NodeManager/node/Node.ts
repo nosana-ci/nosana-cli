@@ -94,6 +94,10 @@ export class BasicNode {
   }
 
   async benchmark(): Promise<boolean> {
+    if (this.sdk.nodes.config.network === 'devnet') {
+      return true;
+    }
+
     /**
      * check the gpus using a premade job definition
      * this is what we do before every job runs
@@ -159,9 +163,11 @@ export class BasicNode {
   }
 
   async setup(market: string): Promise<void> {
-    if (this.sdk.nodes.config.network !== 'devnet') {
-      await this.resourceManager.fetchMarketRequiredResources(market);
+    if (this.sdk.nodes.config.network === 'devnet') {
+      return;
     }
+
+    await this.resourceManager.fetchMarketRequiredResources(market);
   }
 
   async run(): Promise<void> {

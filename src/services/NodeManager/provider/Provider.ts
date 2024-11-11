@@ -49,10 +49,9 @@ export class Provider {
         if (!status) throw error;
       }
 
-      try {
-        // await this.containerOrchestration.deleteNetwork(networkName);
-      } catch (error) {
-        console.log(error);
+      // check if network then delete
+      if(await this.containerOrchestration.hasNetwork(networkName)){
+        await this.containerOrchestration.deleteNetwork(networkName);
       }
     } catch (error) {
       throw error;

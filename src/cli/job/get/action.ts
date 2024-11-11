@@ -37,6 +37,7 @@ import {
   closeWebSocketLogs,
   listenToWebSocketLogs,
 } from '../../../services/websocket.js';
+import { configs, NodeConfigs } from "../../../services/NodeManager/configs/nodeConfigs.js";
 
 export async function getJob(
   jobAddress: string,
@@ -121,7 +122,7 @@ export async function getJob(
         }
 
         ws = listenToWebSocketLogs(
-          `https://${job.node}.${config.frp.serverAddr}`,
+          `https://${job.node}.${configs(options).frp.serverAddr}`,
           jobAddress,
         );
 

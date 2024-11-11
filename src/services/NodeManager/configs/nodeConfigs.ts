@@ -31,8 +31,11 @@ export class NodeConfigs {
   }
 }
 
-export const configs = (): configType => {
-  console.log(process.env.BACKEND_URL);
+export const configs = (options? : { [key: string]: any }): configType => {
+  if(options){
+    new NodeConfigs().loadVariablesToEnv(options)
+  }
+
   return {
     backendUrl:
       process.env.BACKEND_URL || 'https://dashboard.k8s.prd.nos.ci/api',

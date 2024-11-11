@@ -113,9 +113,14 @@ export class DockerContainerOrchestration
     }
   }
 
+  async hasNetwork(name: string): Promise<boolean> {
+    const networks = await this.docker.listNetworks();
+    return networks.some((network) => network.Name === name);
+  }
+
   async deleteNetwork(name: string): Promise<ReturnedStatus> {
     try {
-      this.docker.getNetwork(name).remove();
+      await this.docker.getNetwork(name).remove();
       return { status: true };
     } catch (error) {
       return { status: false, error };
@@ -247,7 +252,10 @@ export class DockerContainerOrchestration
       const container = this.docker.getContainer(containerId);
       if (container.id) {
         const containerInfo = await container.inspect();
-        if (containerInfo.State.Status !== 'exited') {
+        if (
+          containerInfo.State.Status !== 'exited'
+          && containerInfo.State.Status !== 'stopped'
+        ) {
           await container.stop();
         }
         await container.remove({ force: true });
