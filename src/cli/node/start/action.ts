@@ -47,7 +47,7 @@ export async function startNode(
     `;
 
     console.error(formattedError);
-    await nodeManager.stop()
+    await nodeManager.stop();
     process.exit();
   }
 }

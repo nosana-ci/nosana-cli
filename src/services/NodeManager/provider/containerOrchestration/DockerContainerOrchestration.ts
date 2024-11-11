@@ -253,8 +253,8 @@ export class DockerContainerOrchestration
       if (container.id) {
         const containerInfo = await container.inspect();
         if (
-          containerInfo.State.Status !== 'exited'
-          && containerInfo.State.Status !== 'stopped'
+          containerInfo.State.Status !== 'exited' &&
+          containerInfo.State.Status !== 'stopped'
         ) {
           await container.stop();
         }

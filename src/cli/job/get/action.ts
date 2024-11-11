@@ -37,7 +37,10 @@ import {
   closeWebSocketLogs,
   listenToWebSocketLogs,
 } from '../../../services/websocket.js';
-import { configs, NodeConfigs } from "../../../services/NodeManager/configs/nodeConfigs.js";
+import {
+  configs,
+  NodeConfigs,
+} from '../../../services/NodeManager/configs/nodeConfigs.js';
 
 export async function getJob(
   jobAddress: string,

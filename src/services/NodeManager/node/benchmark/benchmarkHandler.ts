@@ -24,17 +24,17 @@ export class BenchmarkHandler {
 
   async check(): Promise<boolean> {
     const id = this.generateRandomId(32);
-    
+
     this.flowHandler.start(id, benchmarkGPU);
 
     let result: Flow | undefined;
     try {
       result = await this.flowHandler.run(id);
     } catch (error) {
-      throw error
+      throw error;
     }
 
-    if(result){
+    if (result) {
       this.repository.deleteflow(result.id);
 
       if (result && result.state.status === 'success') {
@@ -44,7 +44,7 @@ export class BenchmarkHandler {
       } else {
         throw new Error('Cannot find results');
       }
-  
+
       return true;
     }
 
@@ -90,7 +90,7 @@ export class BenchmarkHandler {
     }
 
     try {
-      JSON.parse(opState.logs[0].log!)
+      JSON.parse(opState.logs[0].log!);
     } catch (error) {
       throw new Error('GPU benchmark returned with no devices');
     }

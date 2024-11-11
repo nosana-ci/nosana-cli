@@ -31,9 +31,9 @@ export class NodeConfigs {
   }
 }
 
-export const configs = (options? : { [key: string]: any }): configType => {
-  if(options){
-    new NodeConfigs().loadVariablesToEnv(options)
+export const configs = (options?: { [key: string]: any }): configType => {
+  if (options) {
+    new NodeConfigs().loadVariablesToEnv(options);
   }
 
   return {
