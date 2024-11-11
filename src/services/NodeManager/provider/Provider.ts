@@ -1,6 +1,4 @@
 import { randomUUID } from 'crypto';
-
-import { config } from '../../../generic/config.js';
 import { Operation } from '../../../providers/Provider.js';
 import { ContainerOrchestrationInterface } from './containerOrchestration/interface.js';
 import { Flow, Log, OperationArgsMap, Resource } from './types.js';
@@ -12,6 +10,7 @@ import { ResourceManager } from '../node/resource/resourceManager.js';
 import Dockerode from 'dockerode';
 import { jobEmitter } from '../node/job/jobHandler.js';
 import { s3HelperImage } from '../../../providers/modules/resourceManager/volumes/definition/s3HelperOpts.js';
+import { configs } from '../configs/nodeConfigs.js';
 
 export class Provider {
   constructor(
@@ -50,10 +49,9 @@ export class Provider {
         if (!status) throw error;
       }
 
-      try {
-        // await this.containerOrchestration.deleteNetwork(networkName);
-      } catch (error) {
-        console.log(error);
+      // check if network then delete
+      if (await this.containerOrchestration.hasNetwork(networkName)) {
+        await this.containerOrchestration.deleteNetwork(networkName);
       }
     } catch (error) {
       throw error;
@@ -158,12 +156,12 @@ export class Provider {
             cmd: ['-c', '/etc/frp/frpc.toml'],
             networks,
             env: {
-              FRP_SERVER_ADDR: config.frp.serverAddr,
-              FRP_SERVER_PORT: config.frp.serverPort.toString(),
+              FRP_SERVER_ADDR: configs().frp.serverAddr,
+              FRP_SERVER_PORT: configs().frp.serverPort.toString(),
               FRP_NAME: 'API-' + address,
               FRP_LOCAL_IP: tunnel_name,
               FRP_LOCAL_PORT: tunnel_port.toString(),
-              FRP_CUSTOM_DOMAIN: address + '.' + config.frp.serverAddr,
+              FRP_CUSTOM_DOMAIN: address + '.' + configs().frp.serverAddr,
             },
           }));
         if (!status) {
@@ -191,12 +189,12 @@ export class Provider {
               cmd: ['-c', '/etc/frp/frpc.toml'],
               networks,
               env: {
-                FRP_SERVER_ADDR: config.frp.serverAddr,
-                FRP_SERVER_PORT: config.frp.serverPort.toString(),
+                FRP_SERVER_ADDR: configs().frp.serverAddr,
+                FRP_SERVER_PORT: configs().frp.serverPort.toString(),
                 FRP_NAME: 'API-' + address,
                 FRP_LOCAL_IP: tunnel_name,
                 FRP_LOCAL_PORT: tunnel_port.toString(),
-                FRP_CUSTOM_DOMAIN: address + '.' + config.frp.serverAddr,
+                FRP_CUSTOM_DOMAIN: address + '.' + configs().frp.serverAddr,
               },
             }));
           if (!status) {
@@ -304,16 +302,17 @@ export class Provider {
         };
 
         const networks: { [key: string]: {} } = {};
-        networks[name] = {};
-
-        ({ status, error } = await this.containerOrchestration.createNetwork(
-          name,
-        ));
-        if (!status) {
-          throw error;
-        }
 
         if (op.args.expose) {
+          networks[name] = {};
+
+          ({ status, error } = await this.containerOrchestration.createNetwork(
+            name,
+          ));
+          if (!status) {
+            throw error;
+          }
+
           const exposedUrlSecret = randomUUID();
           this.repository.updateflowStateSecret(id, {
             exposedUrl: exposedUrlSecret,
@@ -333,12 +332,12 @@ export class Provider {
               cmd: ['-c', '/etc/frp/frpc.toml'],
               networks,
               env: {
-                FRP_SERVER_ADDR: config.frp.serverAddr,
-                FRP_SERVER_PORT: config.frp.serverPort.toString(),
+                FRP_SERVER_ADDR: configs().frp.serverAddr,
+                FRP_SERVER_PORT: configs().frp.serverPort.toString(),
                 FRP_NAME: name,
                 FRP_LOCAL_IP: name,
                 FRP_LOCAL_PORT: op.args.expose.toString(),
-                FRP_CUSTOM_DOMAIN: prefix + '.' + config.frp.serverAddr,
+                FRP_CUSTOM_DOMAIN: prefix + '.' + configs().frp.serverAddr,
                 NOSANA_ID: flow.id,
               },
             }));
@@ -348,7 +347,7 @@ export class Provider {
 
           // we will stream out a url for the job
           // link will be logged out if public
-          const link = `https://${prefix}.${config.frp.serverAddr}`;
+          const link = `https://${prefix}.${configs().frp.serverAddr}`;
 
           this.repository.updateflowStateSecret(flow.id, { url: link });
         }

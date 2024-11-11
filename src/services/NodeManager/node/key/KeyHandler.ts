@@ -1,7 +1,7 @@
 import { Market, Client as SDK } from '@nosana/sdk';
 import { PublicKey } from '@solana/web3.js';
 import { EMPTY_ADDRESS } from '../../../jobs.js';
-import { config } from '../../../../generic/config.js';
+import { configs } from '../../configs/nodeConfigs.js';
 
 export class KeyHandler {
   private address: PublicKey;
@@ -55,7 +55,7 @@ export class KeyHandler {
 
   async join(): Promise<void> {
     const signature = (await this.sdk.solana.signMessage(
-      config.signMessage,
+      configs().signMessage,
     )) as Uint8Array;
     const base64Signature = Buffer.from(signature).toString('base64');
     // If we don't specify a market, try to get the correct market from the backend
@@ -63,7 +63,7 @@ export class KeyHandler {
       // Check if node is onboarded and has received access key
       // if not call onboard endpoint to create access key tx
       const response = await fetch(
-        `${config.backendUrl}/nodes/${this.address}`,
+        `${configs().backendUrl}/nodes/${this.address}`,
         {
           method: 'GET',
           headers: {

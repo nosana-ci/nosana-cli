@@ -21,6 +21,7 @@ export interface ContainerOrchestrationInterface {
   deleteImage(image: string): Promise<ReturnedStatus>;
 
   createNetwork(name: string): Promise<ReturnedStatus>;
+  hasNetwork(name: string): Promise<boolean>;
   deleteNetwork(name: string): Promise<ReturnedStatus>;
 
   createVolume(name?: string): Promise<ReturnedStatus<VolumeCreateResponse>>;

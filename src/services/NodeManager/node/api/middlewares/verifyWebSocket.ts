@@ -2,8 +2,8 @@
 import WebSocket from 'ws';
 import { PublicKey } from '@solana/web3.js';
 import nacl from 'tweetnacl';
-import { config } from '../../../../../generic/config.js';
 import { Request } from 'express';
+import { configs } from '../../../configs/nodeConfigs';
 
 export const verifyWebSocketConnection = (
   ws: WebSocket,
@@ -19,7 +19,7 @@ export const verifyWebSocketConnection = (
   const [address, base64Signature] = authHeader.split(':');
   const signature = Buffer.from(base64Signature, 'base64');
   const publicKey = new PublicKey(address);
-  const message = Buffer.from(config.signMessage);
+  const message = Buffer.from(configs().signMessage);
 
   if (!nacl.sign.detached.verify(message, signature, publicKey.toBytes())) {
     ws.close(4002, 'Invalid signature');

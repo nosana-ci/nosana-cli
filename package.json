@@ -8,7 +8,7 @@
   "type": "module",
   "scripts": {
     "dev": "npx cross-env APP_ENV=development ts-node src/index.ts",
-    "build": "npm run prepare && tsc && cp .env.production ./dist/",
+    "build": "npm run prepare && tsc && cp .env.production ./dist/ && cp .env.dev ./dist/",
     "generate": "openapi-typescript http://dashboard.k8s.prd.nos.ci/api/swagger/json -o ./src/api/schema.d.ts",
     "test": "APP_ENV=development DOCKER_CERT_PATH= jest --watch",
     "test:coverage": "APP_ENV=development DOCKER_CERT_PATH= jest --coverage",
