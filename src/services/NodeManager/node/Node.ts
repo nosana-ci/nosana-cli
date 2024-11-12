@@ -368,7 +368,7 @@ export class BasicNode {
     this.jobHandler.clearOldJobs();
   }
 
-  public exit(){
+  public exit() {
     this.exiting = true;
   }
 

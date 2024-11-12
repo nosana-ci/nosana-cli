@@ -232,8 +232,8 @@ export default class NodeManager {
     const exitHandler = async () => {
       if (this.exiting) return;
       this.exiting = true;
-      this.node.exit()
-  
+      this.node.exit();
+
       await this.stop();
       process.exit();
     };

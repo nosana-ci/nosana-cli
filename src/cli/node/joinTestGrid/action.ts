@@ -15,7 +15,7 @@ import {
 import { PodmanProvider } from '../../../providers/PodmanProvider.js';
 import { getSDK } from '../../../services/sdk.js';
 import { jobDefinition } from '../../../static/staticsImports.js';
-import { configs } from "../../../services/NodeManager/configs/nodeConfigs.js";
+import { configs } from '../../../services/NodeManager/configs/nodeConfigs.js';
 
 let flow: Flow | undefined;
 let provider: Provider;
@@ -141,23 +141,20 @@ export async function runBenchmark(options: { [key: string]: any }) {
       )) as Uint8Array;
       const base64Signature = Buffer.from(signature).toString('base64');
 
-      const response = await fetch(
-        `${conf.backendUrl}/nodes/join-test-grid`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `${node}:${base64Signature}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            nodeAddress: node,
-            results: result.opStates,
-            email: answers.email,
-            discord: answers.discord,
-            twitter: answers.twitter,
-          }),
+      const response = await fetch(`${conf.backendUrl}/nodes/join-test-grid`, {
+        method: 'POST',
+        headers: {
+          Authorization: `${node}:${base64Signature}`,
+          'Content-Type': 'application/json',
         },
-      );
+        body: JSON.stringify({
+          nodeAddress: node,
+          results: result.opStates,
+          email: answers.email,
+          discord: answers.discord,
+          twitter: answers.twitter,
+        }),
+      });
       const data = await response.json();
       if ((data && data.name === 'Error') || data.errors) {
         if (data.errors) {

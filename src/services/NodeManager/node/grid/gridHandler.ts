@@ -139,7 +139,7 @@ export class GridHandler {
 
       await this.syncNodeAfterMint();
 
-      return data
+      return data;
     } catch (error: unknown) {
       throw new Error(
         'Something went wrong with minting your access key, please try again. ' +

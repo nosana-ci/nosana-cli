@@ -7,7 +7,7 @@ import { benchmarkGPU } from '../../../../static/staticsImports.js';
 import { CudaCheckResponse } from '../../../../types/cudaCheck.js';
 import { PublicKey } from '@solana/web3.js';
 import { configs } from '../../configs/nodeConfigs.js';
-import { mockedBenchmarkOpstate } from "./mockBenchmark.js";
+import { mockedBenchmarkOpstate } from './mockBenchmark.js';
 
 export class BenchmarkHandler {
   private flowHandler: FlowHandler;
@@ -38,20 +38,24 @@ export class BenchmarkHandler {
     if (result) {
       this.repository.deleteflow(result.id);
 
-    // check if the status is failed and if we are in devnet
-    // this is for testing when we are on devnet without GPU
-    if (this.sdk.nodes.config.network === 'devnet' && result && result.state.status === 'failed' ) {
-      result.state.opStates = mockedBenchmarkOpstate
-      result.state.status = 'success'
-    }
+      // check if the status is failed and if we are in devnet
+      // this is for testing when we are on devnet without GPU
+      if (
+        this.sdk.nodes.config.network === 'devnet' &&
+        result &&
+        result.state.status === 'failed'
+      ) {
+        result.state.opStates = mockedBenchmarkOpstate;
+        result.state.status = 'success';
+      }
 
-    if (result && result.state.status === 'success') {
-      await this.processSuccess(result.state.opStates);
-    } else if (result && result.state.status === 'failed') {
-      this.processFailure(result.state.opStates);
-    } else {
-      throw new Error('Cannot find results');
-    }
+      if (result && result.state.status === 'success') {
+        await this.processSuccess(result.state.opStates);
+      } else if (result && result.state.status === 'failed') {
+        this.processFailure(result.state.opStates);
+      } else {
+        throw new Error('Cannot find results');
+      }
 
       return true;
     }
@@ -76,14 +80,14 @@ export class BenchmarkHandler {
         const { error } = JSON.parse(
           opStates[0].logs[0].log!,
         ) as CudaCheckResponse;
-  
+
         if (error) {
           errors.push(
             'GPU benchmark failed. Ensure NVidia Cuda runtime drivers and NVidia Container Toolkit are correctly configured.',
           );
         }
       } catch (error) {
-        errors.push('GPU benchmark returned with no devices.')
+        errors.push('GPU benchmark returned with no devices.');
       }
     }
 
@@ -101,7 +105,7 @@ export class BenchmarkHandler {
       throw new Error('Cannot find GPU benchmark output');
     }
 
-    let log = opState.logs[0].log!
+    let log = opState.logs[0].log!;
 
     try {
       JSON.parse(log);
