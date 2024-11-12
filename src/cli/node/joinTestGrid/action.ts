@@ -13,9 +13,9 @@ import {
   FlowState,
 } from '../../../providers/Provider.js';
 import { PodmanProvider } from '../../../providers/PodmanProvider.js';
-import { config } from '../../../generic/config.js';
 import { getSDK } from '../../../services/sdk.js';
 import { jobDefinition } from '../../../static/staticsImports.js';
+import { configs } from "../../../services/NodeManager/configs/nodeConfigs.js";
 
 let flow: Flow | undefined;
 let provider: Provider;
@@ -134,13 +134,15 @@ export async function runBenchmark(options: { [key: string]: any }) {
 
   if (result && result.status === 'success' && result.opStates && answers) {
     try {
+      const conf = configs(options);
+
       const signature = (await nosana.solana.signMessage(
-        config.signMessage,
+        conf.signMessage,
       )) as Uint8Array;
       const base64Signature = Buffer.from(signature).toString('base64');
 
       const response = await fetch(
-        `${config.backendUrl}/nodes/join-test-grid`,
+        `${conf.backendUrl}/nodes/join-test-grid`,
         {
           method: 'POST',
           headers: {

@@ -11,6 +11,7 @@ import { NodeConfigs } from './configs/nodeConfigs.js';
 export default class NodeManager {
   private node: BasicNode;
   private apiHandler: ApiHandler;
+  private exiting = false;
 
   constructor(options: { [key: string]: any }) {
     this.node = createLoggingProxy(new BasicNode(options));
@@ -229,6 +230,10 @@ export default class NodeManager {
    */
   private handleProcessExit() {
     const exitHandler = async () => {
+      if (this.exiting) return;
+      this.exiting = true;
+      this.node.exit()
+  
       await this.stop();
       process.exit();
     };

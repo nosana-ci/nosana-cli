@@ -97,7 +97,8 @@ export class GridHandler {
         !data.marketAddress
       ) {
         if (
-          data.message.includes('Assigned market doesnt support current GPU')
+          data.message.includes('Assigned market doesnt support current GPU') ||
+          data.message.includes('Node doesnt have an assigned market yet')
         ) {
           data = await this.changeMarket();
           market = data.newMarket;
@@ -114,7 +115,7 @@ export class GridHandler {
     }
   }
 
-  private async changeMarket(): Promise<void> {
+  private async changeMarket(): Promise<any> {
     try {
       const response = await fetch(
         `${configs().backendUrl}/nodes/change-market`,
@@ -131,16 +132,14 @@ export class GridHandler {
       const data = await response.json();
       if (!data || data.name === 'Error') throw new Error(data.message);
 
-      try {
-        const txnSignature = await this.signAndSendTransaction(data.tx);
-        await this.confirmTransaction(txnSignature);
+      const txnSignature = await this.signAndSendTransaction(data.tx);
+      await this.confirmTransaction(txnSignature);
 
-        await sleep(30);
+      await sleep(30);
 
-        await this.syncNodeAfterMint();
-      } catch (error) {
-        throw new Error(`Failed to mint access key: ${error}`);
-      }
+      await this.syncNodeAfterMint();
+
+      return data
     } catch (error: unknown) {
       throw new Error(
         'Something went wrong with minting your access key, please try again. ' +
