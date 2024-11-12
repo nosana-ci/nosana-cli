@@ -1,26 +1,23 @@
+import { Server } from 'http';
+import express, { Express, NextFunction, Request, Response } from 'express';
+import WebSocket from 'ws';
 import { Job, Client as SDK } from '@nosana/sdk';
 import { PublicKey } from '@solana/web3.js';
-import express, { Express, Request, Response, NextFunction } from 'express';
+
 import { Provider } from '../../provider/Provider.js';
 import { initTunnel } from '../../../tunnel.js';
 import { sleep } from '../../../../generic/utils.js';
-import { Server } from 'http';
-import cors from 'cors';
 import ApiEventEmitter from './ApiEventEmitter.js';
 import { NodeRepository } from '../../repository/NodeRepository.js';
-import {
-  applyLoggingProxyToClass,
-  logEmitter,
-  LogEntry,
-} from '../../monitoring/proxy/loggingProxy.js';
-import WebSocket from 'ws';
+import { applyLoggingProxyToClass } from '../../monitoring/proxy/loggingProxy.js';
 import { stateStreaming } from '../../monitoring/streaming/StateStreamer.js';
 import { logStreaming } from '../../monitoring/streaming/LogStreamer.js';
 import nacl from 'tweetnacl';
 import { verifyJobOwnerMiddleware } from './middlewares/verifyJobOwnerMiddleware.js';
 import { verifySignatureMiddleware } from './middlewares/verifySignatureMiddleware.js';
-import { state } from '../../monitoring/state/NodeState.js';
 import { configs } from '../../configs/nodeConfigs.js';
+import { NodeAPIRequest } from './types/index.js';
+import { nodeInfoRoute } from './routes/get/node/info.js';
 
 export class ApiHandler {
   private api: Express;
@@ -152,6 +149,13 @@ export class ApiHandler {
       res.send(this.address);
     });
 
+    this.api.use((req: NodeAPIRequest, _: Response, next: NextFunction) => {
+      req.repository = this.repository;
+      req.eventEmitter = this.eventEmitter;
+      req.address = this.address;
+      next();
+    });
+
     this.api.post(
       '/job-definition/:id',
       express.json(),
@@ -253,11 +257,13 @@ export class ApiHandler {
     this.api.get(
       '/node/info',
       // verifySignatureMiddleware,
-      (req: Request, res: Response) => {
-        res.status(200).json({
-          ...state(this.address.toString()).getNodeInfo(),
-          info: this.repository.getNodeInfo(),
-        });
+      nodeInfoRoute,
+    );
+
+    this.api.post(
+      '/node/validate',
+      (req: Request<{}, unknown, string>, res) => {
+        const a = req.body;
       },
     );
   }
