@@ -17,7 +17,14 @@ import { verifyJobOwnerMiddleware } from './middlewares/verifyJobOwnerMiddleware
 import { verifySignatureMiddleware } from './middlewares/verifySignatureMiddleware.js';
 import { configs } from '../../configs/nodeConfigs.js';
 import { NodeAPIRequest } from './types/index.js';
-import { nodeInfoRoute } from './routes/get/node/info.js';
+import {
+  getNodeInfoRoute,
+  getJobDefinitionRoute,
+  getServiceUrlRoute,
+  postJobDefinitionRoute,
+  postServiceStopRoute,
+  postNodeValidate,
+} from './routes/index.js';
 
 export class ApiHandler {
   private api: Express;
@@ -145,10 +152,7 @@ export class ApiHandler {
   }
 
   private async registerRoutes() {
-    this.api.get('/', (req: Request, res: Response) => {
-      res.send(this.address);
-    });
-
+    // Attach require objects to routes
     this.api.use((req: NodeAPIRequest, _: Response, next: NextFunction) => {
       req.repository = this.repository;
       req.eventEmitter = this.eventEmitter;
@@ -156,116 +160,29 @@ export class ApiHandler {
       next();
     });
 
+    // GET Routes
+    this.api.get('/', (_: Request, res: Response) => res.send(this.address));
+    this.api.get('/job-definition/:id', express.json(), getJobDefinitionRoute);
+    this.api.get('/node/info', getNodeInfoRoute);
+    this.api.get(
+      '/service/url/:jobId',
+      verifySignatureMiddleware,
+      getServiceUrlRoute,
+    );
+
+    // POST Routes
     this.api.post(
       '/job-definition/:id',
       express.json(),
-      (req: Request, res: Response) => {
-        const id = req.params.id;
-        const jobDefinition = req.body.jobDefinition;
-        if (!jobDefinition || !id) {
-          return res.status(400).send('job definition parameters not provided');
-        }
-
-        if (!this.repository.getFlowState(id)) {
-          return res.status(400).send('invalid job id');
-        }
-
-        if (
-          this.repository.getFlowState(id).status !==
-          'waiting-for-job-defination'
-        ) {
-          return res
-            .status(400)
-            .send('cannot send job defination at this time');
-        }
-
-        this.eventEmitter.emit('job-definition', { jobDefinition, id });
-        res.status(200).send('Job definition received');
-      },
+      postJobDefinitionRoute,
     );
-
-    this.api.get(
-      '/job-definition/:id',
-      express.json(),
-      (req: Request, res: Response) => {
-        const id = req.params.id;
-        if (!id) {
-          return res.status(400).send('job id parameter not provided');
-        }
-
-        if (!this.repository.getFlowState(id)) {
-          return res.status(400).send('invalid job id');
-        }
-
-        if (this.repository.getFlowState(id).status !== 'waiting-for-result') {
-          return res.status(400).send('cannot get job result at this time');
-        }
-
-        this.eventEmitter.emit('job-result', { id });
-
-        res.status(200).send(JSON.stringify(this.repository.getFlowState(id)));
-      },
-    );
-
     this.api.post(
       '/service/stop/:jobId',
       verifySignatureMiddleware,
       verifyJobOwnerMiddleware,
-      async (req: Request<{ jobId: string }>, res: Response) => {
-        const jobId = req.params.jobId;
-
-        if (!jobId) {
-          res.status(400).send('jobId path parameter is required');
-          return;
-        }
-
-        try {
-          this.eventEmitter.emit('stop-job', jobId);
-
-          res.status(200).send('job stopped successfully');
-          return;
-        } catch (error) {
-          res.status(500).send('Error occured while stopping job');
-        }
-      },
+      postServiceStopRoute,
     );
-
-    this.api.get(
-      '/service/url/:jobId',
-      verifySignatureMiddleware,
-      (req: Request, res: Response) => {
-        try {
-          const jobId = req.params.jobId;
-
-          const flow = this.repository.getflow(jobId);
-          const secrets = flow?.state.secrets;
-
-          if (secrets && secrets[jobId]) {
-            res
-              .status(200)
-              .send(`https://${secrets[jobId]}.${configs().frp.serverAddr}`);
-            return;
-          }
-
-          res.status(400).send('No exposed url for job id');
-        } catch (error) {
-          res.status(500).send('Error occured getting url');
-        }
-      },
-    );
-
-    this.api.get(
-      '/node/info',
-      // verifySignatureMiddleware,
-      nodeInfoRoute,
-    );
-
-    this.api.post(
-      '/node/validate',
-      (req: Request<{}, unknown, string>, res) => {
-        const a = req.body;
-      },
-    );
+    this.api.post('/node/validate', postNodeValidate);
   }
 
   private async listen(): Promise<number> {
