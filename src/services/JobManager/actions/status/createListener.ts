@@ -2,7 +2,7 @@ import { sleep } from '@nosana/sdk';
 import { StatusEmitter } from './statusEmitter.js';
 import { createSignature } from '../../../api.js';
 import { listenToEventSource } from '../../../eventsource.js';
-import { config } from '../../../../generic/config.js';
+import { configs } from '../../../NodeManager/configs/nodeConfigs.js';
 
 export async function createListener(
   nodeAddress: string,
@@ -13,7 +13,9 @@ export async function createListener(
   await sleep(3);
   const headers = await createSignature();
   listener = listenToEventSource(
-    `https://${nodeAddress}.${config.frp.serverAddr}/status/${jobAddress}?logs=jobLog`,
+    `https://${nodeAddress}.${
+      configs().frp.serverAddr
+    }/status/${jobAddress}?logs=jobLog`,
     headers,
     (events: any[]) => {
       if (events.length > 0) {
