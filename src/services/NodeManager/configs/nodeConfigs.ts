@@ -1,6 +1,8 @@
 import dotenv from 'dotenv';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
+import { Client } from '@nosana/sdk';
+import { getSDK } from '../../sdk.js';
 
 export type configType = {
   backendUrl: string;
@@ -34,6 +36,11 @@ export class NodeConfigs {
 export const configs = (options?: { [key: string]: any }): configType => {
   if (options) {
     new NodeConfigs().loadVariablesToEnv(options);
+  } else {
+    const nosana: Client = getSDK();
+    new NodeConfigs().loadVariablesToEnv({
+      network: nosana.solana.config.network,
+    });
   }
 
   return {

@@ -2,7 +2,6 @@ import { getSDK } from '../../sdk.js';
 import { MarketHandler } from './market/marketHandler.js';
 import { Client, Market, Run } from '@nosana/sdk';
 import { RunHandler } from './run/runHandler.js';
-import { PublicKey } from '@solana/web3.js';
 import { JobHandler } from './job/jobHandler.js';
 import { DB } from '../../../providers/modules/db/index.js';
 import {
@@ -36,6 +35,7 @@ export class BasicNode {
   private resourceManager: ResourceManager;
   private provider: Provider;
   private containerOrchestration: ContainerOrchestrationInterface;
+  private exiting = false;
 
   private sdk: Client;
   constructor(options: { [key: string]: any }) {
@@ -94,10 +94,6 @@ export class BasicNode {
   }
 
   async benchmark(): Promise<boolean> {
-    if (this.sdk.nodes.config.network === 'devnet') {
-      return true;
-    }
-
     /**
      * check the gpus using a premade job definition
      * this is what we do before every job runs
@@ -370,6 +366,10 @@ export class BasicNode {
 
   public async maintaniance() {
     this.jobHandler.clearOldJobs();
+  }
+
+  public exit() {
+    this.exiting = true;
   }
 
   public async restartDelay(time: number) {

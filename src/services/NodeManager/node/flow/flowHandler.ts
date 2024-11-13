@@ -46,7 +46,11 @@ export class FlowHandler {
       if (!opState.endTime) {
         try {
           if (!(await this.provider.runOperation(op.type, { id, index: i }))) {
-            break;
+            this.repository.updateflowState(id, {
+              endTime: Date.now(),
+              status: 'failed',
+            });
+            return this.repository.getflow(id);
           }
         } catch (error) {
           this.repository.updateflowStateError(id, error);
@@ -54,7 +58,7 @@ export class FlowHandler {
             endTime: Date.now(),
             status: 'failed',
           });
-          break;
+          return this.repository.getflow(id);
         }
       }
     }

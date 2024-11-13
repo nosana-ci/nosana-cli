@@ -28,7 +28,6 @@ import Logger from '../../../providers/modules/logger/index.js';
 import LogSubscriberManager, {
   LogEvent,
 } from '../../../services/LogSubscriberManager.js';
-import { config } from '../../../generic/config.js';
 import { createSignature } from '../../../services/api.js';
 import EventSource from 'eventsource';
 import { OutputFormatter } from '../../../providers/utils/ouput-formatter/OutputFormatter.js';
@@ -300,7 +299,9 @@ async function fetchServiceURLWithRetry(
   const intervalId = setInterval(async () => {
     try {
       const response = await fetch(
-        `https://${job.node}.${config.frp.serverAddr}/service/url/${jobAddress}`,
+        `https://${job.node}.${
+          configs().frp.serverAddr
+        }/service/url/${jobAddress}`,
         { method: 'GET', headers },
       );
 

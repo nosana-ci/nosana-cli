@@ -119,6 +119,10 @@ class NodeLog {
       this.handleStop(data);
     }
 
+    if (data.class === 'BasicNode' && data.method === 'exit') {
+      this.handleExit(data);
+    }
+
     if (
       data.class === 'BasicNode' &&
       (data.method === 'restartDelay' || data.method === 'delay')
@@ -969,6 +973,25 @@ class NodeLog {
           type: 'error',
         });
       }
+    }
+  }
+
+  private handleExit(data: LogEntry) {
+    if (data.type === 'call') {
+      this.addLog({
+        method: `${data.class}.${data.method}`,
+        job: this.job,
+        timestamp: Date.now(),
+        type: 'stop',
+        log: '',
+      });
+      this.addLog({
+        method: `${data.class}.${data.method}`,
+        job: this.job,
+        log: chalk.cyan(`node shutdown initiated`),
+        timestamp: Date.now(),
+        type: 'info',
+      });
     }
   }
 
