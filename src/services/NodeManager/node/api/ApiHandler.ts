@@ -1,34 +1,41 @@
 import { Server } from 'http';
 import express, { Express, NextFunction, Request, Response } from 'express';
 import WebSocket from 'ws';
-import { Job, Client as SDK } from '@nosana/sdk';
+import { Client as SDK } from '@nosana/sdk';
 import { PublicKey } from '@solana/web3.js';
 
+import ApiEventEmitter from './ApiEventEmitter.js';
+import { configs } from '../../configs/nodeConfigs.js';
+import { FlowHandler } from '../flow/flowHandler.js';
+import { sleep } from '../../../../generic/utils.js';
+import { NodeAPIRequest } from './types/index.js';
+import { stateStreaming } from '../../monitoring/streaming/StateStreamer.js';
+import { applyLoggingProxyToClass } from '../../monitoring/proxy/loggingProxy.js';
 import { Provider } from '../../provider/Provider.js';
 import { initTunnel } from '../../../tunnel.js';
-import { sleep } from '../../../../generic/utils.js';
-import ApiEventEmitter from './ApiEventEmitter.js';
 import { NodeRepository } from '../../repository/NodeRepository.js';
-import { applyLoggingProxyToClass } from '../../monitoring/proxy/loggingProxy.js';
-import { stateStreaming } from '../../monitoring/streaming/StateStreamer.js';
-import { logStreaming } from '../../monitoring/streaming/LogStreamer.js';
-import nacl from 'tweetnacl';
-import { verifyJobOwnerMiddleware } from './middlewares/verifyJobOwnerMiddleware.js';
-import { verifySignatureMiddleware } from './middlewares/verifySignatureMiddleware.js';
-import { configs } from '../../configs/nodeConfigs.js';
-import { NodeAPIRequest } from './types/index.js';
+
+import {
+  verifyJobOwnerMiddleware,
+  verifySignatureMiddleware,
+  verifyBackendSignatureMiddleware,
+} from './middlewares/index.js';
+
 import {
   getNodeInfoRoute,
   getJobDefinitionRoute,
   getServiceUrlRoute,
   postJobDefinitionRoute,
   postServiceStopRoute,
-  postNodeValidate,
+  postNodeValidation,
+  wssLogRoute,
+  wssStatusRoute,
 } from './routes/index.js';
 
 export class ApiHandler {
   private api: Express;
   private address: PublicKey;
+  private flowHandler: FlowHandler;
   private server: Server | null = null;
   private wss: WebSocket.Server | null = null; // WebSocket server
   private eventEmitter = ApiEventEmitter.getInstance();
@@ -43,6 +50,7 @@ export class ApiHandler {
     this.api = express();
     // this.api.use(cors());
     this.registerRoutes();
+    this.flowHandler = new FlowHandler(this.provider, repository);
 
     applyLoggingProxyToClass(this);
   }
@@ -70,78 +78,19 @@ export class ApiHandler {
       });
     });
 
-    this.wss.on('connection', (ws, request) => {
+    this.wss.on('connection', (ws, _) => {
       ws.on('message', async (message) => {
         const { path, header, body } = JSON.parse(message.toString());
 
-        /**
-         * this is to handle state streaming, this would be used for external
-         * sevices to follow a job or node state
-         */
-        if (path == '/status') {
-          // valid authurization (public key and signature)
-          const [nodeAddress, base64Signature] = header.split(':');
-          const signature = Buffer.from(base64Signature, 'base64');
-          const publicKey = new PublicKey(nodeAddress);
-          const message = Buffer.from(configs().signMessage);
-
-          if (
-            !nacl.sign.detached.verify(message, signature, publicKey.toBytes())
-          ) {
-            ws.send('Invalid signature');
-            return;
-          }
-
-          const { jobAddress, address } = body;
-
-          if (!jobAddress || !address) {
-            ws.send('Invalid job params');
-          }
-
-          // job owner validation
-          const job: Job = await this.sdk.jobs.get(jobAddress);
-
-          if (address !== job.project.toString()) {
-            ws.send('Invalid address');
-            return;
-          }
-
-          stateStreaming(this.address.toString()).subscribe(ws, jobAddress);
-        }
-
-        /**
-         * this is for log streaming, this is going to be used by the basic job poster
-         * just to show that clients logs, both from the node and the container
-         */
-        if (path == '/log') {
-          // valid authurization (public key and signature)
-          const [nodeAddress, base64Signature] = header.split(':');
-          const signature = Buffer.from(base64Signature, 'base64');
-          const publicKey = new PublicKey(nodeAddress);
-          const message = Buffer.from(configs().signMessage);
-
-          if (
-            !nacl.sign.detached.verify(message, signature, publicKey.toBytes())
-          ) {
-            ws.send('Invalid signature');
-            return;
-          }
-
-          const { jobAddress, address } = body;
-
-          if (!jobAddress || !address) {
-            ws.send('Invalid job params');
-          }
-
-          // job owner validation
-          const job: Job = await this.sdk.jobs.get(jobAddress);
-
-          if (address !== job.project.toString()) {
-            ws.send('Invalid address');
-            return;
-          }
-
-          logStreaming(this.address.toString()).subscribe(ws, jobAddress);
+        switch (path) {
+          case '/log':
+            await wssLogRoute(header, body, this.address, this.sdk, ws);
+            break;
+          case '/status':
+            await wssStatusRoute(header, body, this.address, this.sdk, ws);
+            break;
+          default:
+            ws.close(404);
         }
       });
 
@@ -157,6 +106,7 @@ export class ApiHandler {
       req.repository = this.repository;
       req.eventEmitter = this.eventEmitter;
       req.address = this.address;
+      req.flowHandler = this.flowHandler;
       next();
     });
 
@@ -182,7 +132,11 @@ export class ApiHandler {
       verifyJobOwnerMiddleware,
       postServiceStopRoute,
     );
-    this.api.post('/node/validate', postNodeValidate);
+    this.api.post(
+      '/node/validate',
+      verifyBackendSignatureMiddleware,
+      postNodeValidation,
+    );
   }
 
   private async listen(): Promise<number> {

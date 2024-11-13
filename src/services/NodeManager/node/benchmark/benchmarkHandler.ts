@@ -23,7 +23,7 @@ export class BenchmarkHandler {
   }
 
   async check(): Promise<boolean> {
-    const id = this.generateRandomId(32);
+    const id = this.flowHandler.generateRandomId(32);
 
     this.flowHandler.start(id, benchmarkGPU);
 
@@ -129,9 +129,5 @@ export class BenchmarkHandler {
         throw new Error(`Can't find disk space output`);
       }
     }
-  }
-
-  private generateRandomId(length: number): string {
-    return [...Array(length)].map(() => Math.random().toString(36)[2]).join('');
   }
 }
