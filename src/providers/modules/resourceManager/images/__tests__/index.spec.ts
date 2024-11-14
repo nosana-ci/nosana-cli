@@ -18,7 +18,7 @@ const initial_db_images = {
     usage: 1,
     required: false,
   },
-  'registry.hub.docker.com/nosana/stats:v1.0.6': {
+  'registry.hub.docker.com/nosana/stats:v1.0.7': {
     lastUsed: new Date('2024-07-09T14:50:58.800Z'),
     usage: 1,
     required: true,
@@ -47,7 +47,7 @@ describe('createImageManager', () => {
     // TODO: Fix test
     it.skip('should sync images db on creation and return helper functions', async () => {
       const { mock_db, mock_dockerode, mock_logger } = setup([
-        'registry.hub.docker.com/nosana/stats:v1.0.6',
+        'registry.hub.docker.com/nosana/stats:v1.0.7',
       ]);
       expect(mock_db.data.resources.images).toEqual(initial_db_images);
 
@@ -55,7 +55,7 @@ describe('createImageManager', () => {
       await im.resyncImagesDB();
 
       expect(mock_db.data.resources.images).toEqual({
-        'registry.hub.docker.com/nosana/stats:v1.0.6': {
+        'registry.hub.docker.com/nosana/stats:v1.0.7': {
           lastUsed: new Date('2024-07-09T14:50:58.800Z'),
           usage: 1,
           required: true,
@@ -69,7 +69,7 @@ describe('createImageManager', () => {
     it.skip('should only remove none required expired images from db and docker', async () => {
       const { mock_db, mock_dockerode, mock_logger } = setup([
         'docker.io/ubuntu',
-        'registry.hub.docker.com/nosana/stats:v1.0.6',
+        'registry.hub.docker.com/nosana/stats:v1.0.7',
       ]);
 
       let dockerImages = await mock_dockerode.listImages();
@@ -78,7 +78,7 @@ describe('createImageManager', () => {
 
       expect(dockerImages.map((x) => (x as CorrectedImageInfo).Names)).toEqual([
         ['docker.io/ubuntu'],
-        ['registry.hub.docker.com/nosana/stats:v1.0.6'],
+        ['registry.hub.docker.com/nosana/stats:v1.0.7'],
       ]);
 
       const im = createImageManager(mock_db, mock_dockerode, mock_logger);
@@ -87,7 +87,7 @@ describe('createImageManager', () => {
       dockerImages = await mock_dockerode.listImages();
 
       expect(dockerImages.map((x) => (x as CorrectedImageInfo).Names)).toEqual([
-        ['registry.hub.docker.com/nosana/stats:v1.0.6'],
+        ['registry.hub.docker.com/nosana/stats:v1.0.7'],
       ]);
     });
   });
@@ -95,7 +95,7 @@ describe('createImageManager', () => {
   describe('setImage', () => {
     test('when image is not in db, should create new db record', () => {
       const { mock_db, mock_dockerode, mock_logger } = setup(
-        ['registry.hub.docker.com/nosana/stats:v1.0.6'],
+        ['registry.hub.docker.com/nosana/stats:v1.0.7'],
         false,
       );
 
@@ -112,7 +112,7 @@ describe('createImageManager', () => {
 
     test('when image is in db, should update image usage and last used', () => {
       const { mock_db, mock_dockerode, mock_logger } = setup(
-        ['registry.hub.docker.com/nosana/stats:v1.0.6'],
+        ['registry.hub.docker.com/nosana/stats:v1.0.7'],
         false,
       );
 

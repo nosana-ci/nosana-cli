@@ -10,7 +10,7 @@
       "id": "gpu-stats",
       "args": {
         "cmd": ["./cuda_check"],
-        "image": "registry.hub.docker.com/nosana/stats:v1.0.6",
+        "image": "registry.hub.docker.com/nosana/stats:v1.0.7",
         "env": {
           "DEBUG": "1"
         },
