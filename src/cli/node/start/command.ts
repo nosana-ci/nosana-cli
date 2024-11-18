@@ -30,4 +30,10 @@ export const startNodeCommand = new Command('start')
       'Config path (to store the flows database and other config)',
     ).default('~/.nosana/'),
   )
+  .addOption(
+    new Option(
+    '--cuda <id>',
+    'ID of the GPU to expose (e.g., 0, 1)'
+   ).default('0')
+  )
   .action(startNode);
