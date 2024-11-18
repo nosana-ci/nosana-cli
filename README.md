@@ -88,6 +88,7 @@ Options:
 ```
   --provider <provider>     provider used to run the job (choices: "docker", "podman", default: "podman")
   -w, --wallet <wallet>     path to wallet private key (default: "~/.nosana/nosana_key.json")
+  -c, --config <path>       Config path (to store the flows database and other config, default('~/.nosana/'))
   --docker, --podman <URI>  Podman/Docker connection URI (default: "http://localhost:8080")
   -h, --help                display help for command
 ```
@@ -107,14 +108,16 @@ $ nosana job post echo hello world --wait
 All available options for `post`:
 
 ```
---airdrop                request an airdrop when low on SOL on devnet (default: true)
---gpu                    enable GPU on node
--o, --output <path>      specify which folder inside the container you want to upload
---type <type>            type to run (default: "container")
--i, --image <image>      docker image to use (default: "ubuntu")
---f, --file <path>       file with the JSON flow
---wait                   wait for job to be completed and show result
---download               download external artifacts (implies --wait)
+--airdrop                 request an airdrop when low on SOL on devnet (default: true)
+--gpu                     enable GPU on node
+-o, --output <path>       specify which folder inside the container you want to upload
+-m, --market <market>     market slug or address
+--url <link-to-json-file> uploaded file with the JSON flow 
+--type <type>             type to run (default: "container")
+-i, --image <image>       docker image to use (default: "ubuntu")
+--f, --file <path>        file with the JSON flow
+--wait                    wait for job to be completed and show result
+--download                download external artifacts (implies --wait)
 ```
 
 ## Documentation
