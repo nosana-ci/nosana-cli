@@ -1,6 +1,7 @@
 import { DockerProvider, type RunContainerArgs } from './DockerProvider.js';
 import { ifStringCastToArray } from '../generic/utils.js';
 import { Container } from 'dockerode';
+import { cudaDevice as cudaDeviceSource1 } from '../../cli/node/start/action.js';
 
 export class PodmanProvider extends DockerProvider {
   private apiUrl: string;
@@ -9,6 +10,11 @@ export class PodmanProvider extends DockerProvider {
     super(podman, configLocation);
     this.apiUrl = `${this.protocol}://${this.host}:${this.port}/v4.5.0/libpod`;
   }
+
+const cudaVisibleDevices = (cudaDeviceSource1 && cudaDeviceSource1 !== '') 
+    ? cudaDeviceSource1
+    : '0';
+
 
   // Docker API is not compatible when creating/starting a container with GPU support
   // in podman. Therefore we use the libpod API to create and start the container.
@@ -20,7 +26,10 @@ export class PodmanProvider extends DockerProvider {
       cmd,
       gpu,
       volumes,
-      env,
+      env: {							
+      ...env,							
+      CUDA_VISIBLE_DEVICES: cudaVisibleDevices,			
+  	  },
       work_dir,
       entrypoint,
     }: RunContainerArgs,
@@ -41,7 +50,10 @@ export class PodmanProvider extends DockerProvider {
       ...(entrypoint
         ? { entrypoint: ifStringCastToArray(entrypoint) }
         : undefined),
-      env,
+      env: {							
+      ...env,							
+      CUDA_VISIBLE_DEVICES: cudaVisibleDevices,			
+  	  },
       devices,
       netns: { nsmode: 'bridge' },
       Networks: networks,
