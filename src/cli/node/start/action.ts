@@ -37,12 +37,13 @@ let provider: Provider;
 let run: Run | void;
 let selectedMarket: Market | void;
 let spinner: Ora;
-
+export let cudaDevice;
 export async function startNode(
   market: string,
   options: {
     [key: string]: any;
   },
+  cudaDevice = options.cuda;
   cmd: Command,
 ): Promise<void> {
   /*************
