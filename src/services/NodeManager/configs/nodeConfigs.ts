@@ -39,7 +39,10 @@ export const configs = (options?: { [key: string]: any }): configType => {
   } else {
     const nosana: Client = getSDK();
     new NodeConfigs().loadVariablesToEnv({
-      network: nosana.solana.config.network,
+      // TODO: add environment to solana config (network is rpc url)
+      network: nosana.solana.config.network.includes('mainnet')
+        ? 'mainnet'
+        : 'devnet',
     });
   }
 
