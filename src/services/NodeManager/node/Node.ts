@@ -6,20 +6,19 @@ import { JobHandler } from './job/jobHandler.js';
 import { DB } from '../../../providers/modules/db/index.js';
 import {
   ContainerOrchestrationInterface,
-  selectContainerOrchestrationProvider,
 } from '../provider/containerOrchestration/interface.js';
 import { Provider } from '../provider/Provider.js';
-import Logger from '../../../providers/modules/logger/index.js';
 import { applyLoggingProxyToClass } from '../monitoring/proxy/loggingProxy.js';
 import { sleep } from '../../../generic/utils.js';
 import { ApiHandler } from './api/ApiHandler.js';
 import { NodeRepository } from '../repository/NodeRepository.js';
 import { BenchmarkHandler } from './benchmark/benchmarkHandler.js';
 import { HealthHandler } from './health/healthHandler.js';
-import { KeyHandler } from './key/KeyHandler.js';
+import { KeyHandler } from './key/keyHandler.js';
 import { ExpiryHandler } from './expiry/expiryHandler.js';
 import { GridHandler } from './grid/gridHandler.js';
 import { ResourceManager } from './resource/resourceManager.js';
+import { selectContainerOrchestrationProvider } from "../provider/containerOrchestration/selectContainerOrchestration.js";
 
 export class BasicNode {
   private apiHandler: ApiHandler;
@@ -159,10 +158,6 @@ export class BasicNode {
   }
 
   async setup(market: string): Promise<void> {
-    if (this.sdk.nodes.config.network === 'devnet') {
-      return;
-    }
-
     await this.resourceManager.fetchMarketRequiredResources(market);
   }
 

@@ -108,3 +108,60 @@ export function createLoggingProxy<T extends object>(target: T): T {
     },
   });
 }
+
+export function createFunctionLoggingProxy<T extends (...args: any[]) => any>(
+  func: T,
+  classLabel: string = 'StandaloneFunction'
+): T {
+  const formatArguments = (args: any[]) => {
+    return args.map((arg) => {
+      if (typeof arg === 'function') {
+        return arg.constructor.name === 'AsyncFunction'
+          ? '[AsyncFunction]'
+          : '[Function]';
+      }
+      return arg;
+    });
+  };
+
+  return ((...args: Parameters<T>): ReturnType<T> => {
+    const logEntry: LogEntry = {
+      class: classLabel,
+      method: func.name || '[anonymous]',
+      arguments: formatArguments(args),
+      timestamp: new Date().toISOString(),
+      type: 'call',
+    };
+
+    logEmitter.emit('log', logEntry);
+
+    try {
+      const result = func(...args);
+      if (result instanceof Promise) {
+        return result
+          .then((resolvedValue) => {
+            logEntry.type = 'return';
+            logEntry.result = resolvedValue;
+            logEmitter.emit('log', logEntry);
+            return resolvedValue as ReturnType<T>;
+          })
+          .catch((error) => {
+            logEntry.type = 'error';
+            logEntry.error = error;
+            logEmitter.emit('log', logEntry);
+            throw error;
+          }) as ReturnType<T>;
+      } else {
+        logEntry.type = 'return';
+        logEntry.result = result;
+        logEmitter.emit('log', logEntry);
+        return result;
+      }
+    } catch (error) {
+      logEntry.type = 'error';
+      logEntry.error = error as any;
+      logEmitter.emit('log', logEntry);
+      throw error;
+    }
+  }) as T;
+}

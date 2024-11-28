@@ -8,7 +8,7 @@ import { getSDK } from '../../../sdk.js';
 import { hasSufficientBalance } from './helpers/hasSufficientBalance.js';
 import { isExposedJobOps } from '../utils/isExposedJob.js';
 import { JobResult } from '../../listener/types/index.js';
-import { configs } from '../../../NodeManager/configs/nodeConfigs.js';
+import { configs } from '../../../NodeManager/configs/configs.js';
 
 export function postJob(
   marketAddress: string,

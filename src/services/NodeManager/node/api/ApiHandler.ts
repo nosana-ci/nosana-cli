@@ -20,7 +20,7 @@ import nacl from 'tweetnacl';
 import { verifyJobOwnerMiddleware } from './middlewares/verifyJobOwnerMiddleware.js';
 import { verifySignatureMiddleware } from './middlewares/verifySignatureMiddleware.js';
 import { state } from '../../monitoring/state/NodeState.js';
-import { configs } from '../../configs/nodeConfigs.js';
+import { configs } from '../../configs/configs.js';
 
 export class ApiHandler {
   private api: Express;
@@ -154,6 +154,8 @@ export class ApiHandler {
 
     this.api.post(
       '/job-definition/:id',
+      verifySignatureMiddleware,
+      verifyJobOwnerMiddleware,
       express.json(),
       (req: Request, res: Response) => {
         const id = req.params.id;
@@ -182,6 +184,8 @@ export class ApiHandler {
 
     this.api.get(
       '/job-definition/:id',
+      verifySignatureMiddleware,
+      verifyJobOwnerMiddleware,
       express.json(),
       (req: Request, res: Response) => {
         const id = req.params.id;

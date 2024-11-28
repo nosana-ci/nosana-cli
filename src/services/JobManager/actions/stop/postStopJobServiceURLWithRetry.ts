@@ -1,5 +1,5 @@
 import { createSignature } from '../../../api.js';
-import { configs } from '../../../NodeManager/configs/nodeConfigs.js';
+import { configs } from '../../../NodeManager/configs/configs.js';
 
 export async function postStopJobServiceURLWithRetry(
   nodeAddress: string,

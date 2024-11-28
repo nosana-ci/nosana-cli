@@ -1,8 +1,6 @@
-import dotenv from 'dotenv';
-import { dirname, resolve } from 'path';
-import { fileURLToPath } from 'url';
 import { Client } from '@nosana/sdk';
 import { getSDK } from '../../sdk.js';
+import { NodeConfigs } from "./NodeConfigs.js";
 
 export type configType = {
   backendUrl: string;
@@ -18,27 +16,12 @@ export type configType = {
   minDiskSpace: number;
 };
 
-export class NodeConfigs {
-  constructor() {}
-
-  loadVariablesToEnv(options: { [key: string]: any }) {
-    const env = options.network === 'mainnet' ? 'production' : 'dev';
-
-    const modulePath = dirname(fileURLToPath(import.meta.url));
-
-    dotenv.config({
-      path: resolve(modulePath, `../../../../.env.${env}`),
-      override: true,
-    });
-  }
-}
-
 export const configs = (options?: { [key: string]: any }): configType => {
   if (options) {
-    new NodeConfigs().loadVariablesToEnv(options);
+    NodeConfigs.loadVariablesToEnv(options);
   } else {
     const nosana: Client = getSDK();
-    new NodeConfigs().loadVariablesToEnv({
+     NodeConfigs.loadVariablesToEnv({
       network: nosana.solana.config.network,
     });
   }

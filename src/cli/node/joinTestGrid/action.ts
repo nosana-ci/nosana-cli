@@ -15,7 +15,7 @@ import {
 import { PodmanProvider } from '../../../providers/PodmanProvider.js';
 import { getSDK } from '../../../services/sdk.js';
 import { jobDefinition } from '../../../static/staticsImports.js';
-import { configs } from '../../../services/NodeManager/configs/nodeConfigs.js';
+import { configs } from '../../../services/NodeManager/configs/configs.js';
 
 let flow: Flow | undefined;
 let provider: Provider;

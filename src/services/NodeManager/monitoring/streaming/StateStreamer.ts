@@ -40,7 +40,7 @@ export class StateStreamer implements StateObserver {
       );
       const clients = this.clients.get(state.job) ?? [];
       clients.forEach((ws) => {
-        ws.send(stateMessage);
+        ws.send(JSON.stringify({data: stateMessage, path: 'state'}));
       });
     }
     this.states.set(
@@ -55,7 +55,7 @@ export class StateStreamer implements StateObserver {
 
     states.forEach((state) => {
       if (ws.readyState === WebSocket.OPEN) {
-        ws.send(state);
+        ws.send(JSON.stringify({data: state, path: 'state'}));
       }
     });
   }

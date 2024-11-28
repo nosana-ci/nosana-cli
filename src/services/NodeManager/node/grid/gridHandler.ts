@@ -8,7 +8,7 @@ import {
 } from '@solana/web3.js';
 import { getRawTransaction } from '../../../sdk.js';
 import { sleep } from '../../../../generic/utils.js';
-import { configs } from '../../configs/nodeConfigs.js';
+import { configs } from '../../configs/configs.js';
 
 export interface NodeData {
   market?: string;

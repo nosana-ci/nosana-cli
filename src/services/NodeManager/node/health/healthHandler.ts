@@ -1,8 +1,8 @@
 import { Market, Client as SDK } from '@nosana/sdk';
 import { PublicKey } from '@solana/web3.js';
 import { MarketHandler } from '../market/marketHandler.js';
-import { BalanceHandler } from '../balance/BalanceHandler.js';
-import { KeyHandler } from '../key/KeyHandler.js';
+import { BalanceHandler } from '../balance/balanceHandler.js';
+import { KeyHandler } from '../key/keyHandler.js';
 import { applyLoggingProxyToClass } from '../../monitoring/proxy/loggingProxy.js';
 import { StakeHandler } from '../stake/StakeHandler.js';
 import { ContainerOrchestrationInterface } from '../../provider/containerOrchestration/interface.js';

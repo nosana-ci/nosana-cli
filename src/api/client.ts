@@ -1,7 +1,7 @@
 import createClient from 'openapi-fetch';
 
 import { paths } from './schema.js';
-import { configs } from '../services/NodeManager/configs/nodeConfigs.js';
+import { configs } from '../services/NodeManager/configs/configs.js';
 
 type CreateClient = ReturnType<typeof createClient<paths>>;
 

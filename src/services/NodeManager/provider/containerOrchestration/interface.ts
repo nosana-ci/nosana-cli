@@ -8,8 +8,6 @@ import {
   ContainerCreateOptions,
 } from 'dockerode';
 import { ReturnedStatus } from '../types.js';
-import { DockerContainerOrchestration } from './DockerContainerOrchestration.js';
-import { PodmanContainerOrchestration } from './PodmanContainerOrchestration.js';
 
 export interface ContainerOrchestrationInterface {
   getConnection(): any;
@@ -69,16 +67,3 @@ export type RunContainerArgs = {
   work_dir?: string;
   entrypoint?: string | string[];
 };
-
-export function selectContainerOrchestrationProvider(
-  provider: string,
-  url: string,
-): ContainerOrchestrationInterface {
-  switch (provider) {
-    case 'podman':
-      return new PodmanContainerOrchestration(url);
-    case 'docker':
-    default:
-      return new DockerContainerOrchestration(url);
-  }
-}

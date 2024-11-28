@@ -2,7 +2,7 @@ import WebSocket from 'ws';
 import { Client } from '@nosana/sdk';
 import { getSDK } from './sdk.js';
 import { ConsoleLogger } from './NodeManager/monitoring/log/console/ConsoleLogger.js';
-import { configs } from './NodeManager/configs/nodeConfigs.js';
+import { configs } from './NodeManager/configs/configs.js';
 
 const logger = new ConsoleLogger();
 

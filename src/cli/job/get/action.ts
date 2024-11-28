@@ -38,8 +38,7 @@ import {
 } from '../../../services/websocket.js';
 import {
   configs,
-  NodeConfigs,
-} from '../../../services/NodeManager/configs/nodeConfigs.js';
+} from '../../../services/NodeManager/configs/configs.js';
 
 export async function getJob(
   jobAddress: string,

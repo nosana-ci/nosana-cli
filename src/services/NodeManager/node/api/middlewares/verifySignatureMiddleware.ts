@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import nacl from 'tweetnacl';
 import { PublicKey } from '@solana/web3.js';
-import { configs } from '../../../configs/nodeConfigs.js';
+import { configs } from '../../../configs/configs.js';
 
 export const verifySignatureMiddleware = (
   req: Request,
