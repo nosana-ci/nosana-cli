@@ -705,7 +705,6 @@ export class NodeState {
 
       if (data.method === 'update' && data.type == 'call') {
         this.addState('process-bar-update', {
-          desc: data.arguments[0],
           current: data.arguments[0],
           payload: data.arguments[1],
         });
@@ -714,8 +713,31 @@ export class NodeState {
       if (data.method === 'stop' && data.type == 'call') {
         this.addState('process-bar-stop', {
           desc: data.arguments[0],
-          current: data.arguments[0],
-          payload: data.arguments[1],
+        });
+      }
+    }
+
+    if (data.class === 'MultiProgressBarReporter') {
+      if (data.method === 'start' && data.type == 'call') {
+        this.addState('multi-process-bar-start', {
+          desc: data.arguments[0],
+          optProgressBar: data.arguments[1],
+          total: data.arguments[2],
+          startValue: data.arguments[3],
+          payload: data.arguments[4],
+          progressBarPreset: data.arguments[5],
+        });
+      }
+
+      if (data.method === 'update' && data.type == 'call') {
+        this.addState('multi-process-bar-update', {
+          event: data.arguments[0],
+        });
+      }
+
+      if (data.method === 'stop' && data.type == 'call') {
+        this.addState('multi-process-bar-stop', {
+          desc: data.arguments[0],
         });
       }
     }

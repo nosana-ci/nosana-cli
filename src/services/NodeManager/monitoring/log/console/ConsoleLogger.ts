@@ -1,7 +1,8 @@
 import ora, { Ora } from 'ora';
 import { log, LogObserver, NodeLogEntry } from '../NodeLog.js';
-import { SingleBar } from 'cli-progress';
+import { MultiBar, Presets, SingleBar } from 'cli-progress';
 import chalk from 'chalk';
+import { convertFromBytes } from "../../../../../providers/modules/resourceManager/volumes/helpers/convertFromBytes.js";
 
 export const consoleLogging = (() => {
   let instance: ConsoleLogger | null = null;
@@ -19,6 +20,9 @@ export class ConsoleLogger implements LogObserver {
   private pending: boolean = false;
   private expecting: string | undefined;
   private progressBar: SingleBar | undefined;
+  private layerIds: Map<string, SingleBar> | undefined;
+  private multiProgressBar: MultiBar | undefined;
+  // private currentOp
 
   private running: boolean = false;
 
@@ -51,6 +55,15 @@ export class ConsoleLogger implements LogObserver {
       return;
     }
 
+    // if(log.type == 'pause-spinner') {
+    //   if (this.pending) {
+    //     this.spinner.clear();
+    //     console.log(log.log);
+    //     const spinnerText = this.spinner.text
+    //   }
+    //   return
+    // }
+
     if (log.type == 'process-bar-start') {
       if (this.pending) {
         this.spinner.stop();
@@ -82,6 +95,81 @@ export class ConsoleLogger implements LogObserver {
       this.progressBar = undefined;
       return;
     }
+
+    if (log.type == 'multi-process-bar-start') {
+      if (this.pending) {
+        this.spinner.stop();
+      }
+      if (this.multiProgressBar) {
+        this.multiProgressBar.stop();
+      }
+
+      if(!this.layerIds){
+        this.layerIds = new Map<string, SingleBar>()
+      }
+
+      this.multiProgressBar = new MultiBar(
+        {
+          fps: 200,
+          clearOnComplete: false,
+          hideCursor: true,
+          ...log.payload?.optProgressBar
+        },
+        Presets.shades_grey,
+      );
+
+      return;
+    }
+
+    if (log.type == 'multi-process-bar-update') {
+      const { id, status, progressDetail } = log.payload?.event;
+
+      if (status === 'Pulling fs layer') return;
+
+      let progressBar = this.layerIds?.get(id);
+
+      if (status === 'Downloading') {
+        const { current, total } = progressDetail;
+
+        const { value } = convertFromBytes(current);
+        const { format, value: totalValue } = convertFromBytes(total);
+        if (!progressBar) {
+          progressBar = this.multiProgressBar?.create(totalValue, value, {
+            status,
+            layerId: id,
+            format,
+          });
+          this.layerIds?.set(id, progressBar as SingleBar);
+        }
+        progressBar?.update(value, { status });
+        return;
+      }
+
+      if (status === 'Download complete' || status === 'Already exists') {
+        let progressBar = this.layerIds?.get(id);
+        if (!progressBar) {
+          progressBar = this.multiProgressBar?.create(100, 100, {
+            status,
+            layerId: id,
+            format: "kb",
+          });
+        }
+        progressBar?.update(progressBar?.getTotal(), { status });
+      }
+
+      if (progressBar) {
+        progressBar.update(progressBar.getTotal(), { status });
+      }
+      return;
+    }
+
+    if (log.type == 'multi-process-bar-stop') {
+      this.multiProgressBar?.stop();
+      this.multiProgressBar = undefined;
+      this.layerIds = undefined 
+      return;
+    }
+
 
     if (this.pending) {
       if (log.type == 'update') {
