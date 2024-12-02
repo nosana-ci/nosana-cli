@@ -35,8 +35,10 @@ export const listenToWebSocketLogs = (url: string, job: string) => {
     };
 
     ws.on('message', (message) => {
-      const data = JSON.parse(message.toString());
-      logger.update(data, false);
+      const response = JSON.parse(message.toString());
+      if(response.path === 'log'){
+        logger.update(JSON.parse(response.data), false);
+      }
     });
 
     ws.send(JSON.stringify(message));
