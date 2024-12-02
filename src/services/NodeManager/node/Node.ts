@@ -193,11 +193,11 @@ export class BasicNode {
          * check if the job is expired if it is quit the job,
          * if not continue to start
          */
-        if (!this.expiryHandler.expired(run, market)) {
+        if (!this.expiryHandler.expired(run, job)) {
           /**
            * this starts the expiry settings to monitory expiry time
            */
-          this.expiryHandler.init<void>(run, market, jobAddress, async () => {
+          this.expiryHandler.init<void>(run, job, jobAddress, async () => {
             /**
              * upload the result and end the flow, also clean up flow.
              */
@@ -260,11 +260,11 @@ export class BasicNode {
       //  * check if the job is expired if it is quit the job,
       //  * if not continue to start
       //  */
-      if (!this.expiryHandler.expired(run, market)) {
+      if (!this.expiryHandler.expired(run, job)) {
         /**
          * this starts the expiry settings to monitory expiry time
          */
-        this.expiryHandler.init<boolean>(run, market, jobAddress, async () => {
+        this.expiryHandler.init<boolean>(run, job, jobAddress, async () => {
           /**
            * upload the result and end the flow, also clean up flow.
            */
