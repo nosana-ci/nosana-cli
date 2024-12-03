@@ -7,7 +7,7 @@ import { marketCommand } from './market/index.js';
 import { OUTPUT_EVENTS } from '../providers/utils/ouput-formatter/outputEvents.js';
 import { outputFormatArgumentParser } from '../providers/utils/ouput-formatter/outputFormatArgumentParser.js';
 import { outputFormatSelector } from '../providers/utils/ouput-formatter/outputFormatSelector.js';
-import { configs } from "../services/NodeManager/configs/configs.js";
+import { configs } from '../services/NodeManager/configs/configs.js';
 
 export const createNosanaCLI = (version: string) =>
   new Command()

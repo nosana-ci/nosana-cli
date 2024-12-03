@@ -75,7 +75,7 @@ export class ConsoleLogger implements LogObserver {
       this.progressBar = new SingleBar(
         {
           ...log.payload?.optProgressBar,
-          clearOnComplete: true
+          clearOnComplete: true,
         },
         log.payload.progressBarPreset,
       );
