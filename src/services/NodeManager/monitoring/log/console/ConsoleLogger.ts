@@ -2,7 +2,7 @@ import ora, { Ora } from 'ora';
 import { log, LogObserver, NodeLogEntry } from '../NodeLog.js';
 import { MultiBar, Presets, SingleBar } from 'cli-progress';
 import chalk from 'chalk';
-import { convertFromBytes } from "../../../../../providers/modules/resourceManager/volumes/helpers/convertFromBytes.js";
+import { convertFromBytes } from '../../../../../providers/modules/resourceManager/volumes/helpers/convertFromBytes.js';
 
 export const consoleLogging = (() => {
   let instance: ConsoleLogger | null = null;
@@ -104,8 +104,8 @@ export class ConsoleLogger implements LogObserver {
         this.multiProgressBar.stop();
       }
 
-      if(!this.layerIds){
-        this.layerIds = new Map<string, SingleBar>()
+      if (!this.layerIds) {
+        this.layerIds = new Map<string, SingleBar>();
       }
 
       this.multiProgressBar = new MultiBar(
@@ -113,7 +113,7 @@ export class ConsoleLogger implements LogObserver {
           fps: 200,
           clearOnComplete: false,
           hideCursor: true,
-          ...log.payload?.optProgressBar
+          ...log.payload?.optProgressBar,
         },
         Presets.shades_grey,
       );
@@ -151,7 +151,7 @@ export class ConsoleLogger implements LogObserver {
           progressBar = this.multiProgressBar?.create(100, 100, {
             status,
             layerId: id,
-            format: "kb",
+            format: 'kb',
           });
         }
         progressBar?.update(progressBar?.getTotal(), { status });
@@ -166,10 +166,9 @@ export class ConsoleLogger implements LogObserver {
     if (log.type == 'multi-process-bar-stop') {
       this.multiProgressBar?.stop();
       this.multiProgressBar = undefined;
-      this.layerIds = undefined 
+      this.layerIds = undefined;
       return;
     }
-
 
     if (this.pending) {
       if (log.type == 'update') {

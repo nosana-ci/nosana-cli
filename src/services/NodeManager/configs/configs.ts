@@ -1,6 +1,4 @@
-import { Client } from '@nosana/sdk';
-import { getSDK } from '../../sdk.js';
-import { NodeConfigs } from "./NodeConfigs.js";
+import { NodeConfigsSingleton } from './NodeConfigs.js';
 
 export type configType = {
   backendUrl: string;
@@ -17,14 +15,7 @@ export type configType = {
 };
 
 export const configs = (options?: { [key: string]: any }): configType => {
-  if (options) {
-    NodeConfigs.loadVariablesToEnv(options);
-  } else {
-    const nosana: Client = getSDK();
-     NodeConfigs.loadVariablesToEnv({
-      network: nosana.solana.config.network,
-    });
-  }
+  NodeConfigsSingleton.getInstance(options);
 
   return {
     backendUrl:
