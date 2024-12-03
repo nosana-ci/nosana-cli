@@ -73,7 +73,10 @@ export class ConsoleLogger implements LogObserver {
       }
 
       this.progressBar = new SingleBar(
-        log.payload?.optProgressBar,
+        {
+          ...log.payload?.optProgressBar,
+          clearOnComplete: true
+        },
         log.payload.progressBarPreset,
       );
       this.progressBar.start(
@@ -111,7 +114,7 @@ export class ConsoleLogger implements LogObserver {
       this.multiProgressBar = new MultiBar(
         {
           fps: 200,
-          clearOnComplete: false,
+          clearOnComplete: true,
           hideCursor: true,
           ...log.payload?.optProgressBar,
         },
