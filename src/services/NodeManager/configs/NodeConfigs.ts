@@ -3,35 +3,35 @@ import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 
 export class NodeConfigs {
-    private options: { [key: string]: any };
+  private options: { [key: string]: any };
 
-    constructor(options: { [key: string]: any }) {
-      this.options = options
-    }
-
-    loadVariablesToEnv() {
-      const network = this.options.network ? this.options.network : 'mainnet'
-      const env = network === 'mainnet' ? 'production' : 'dev';
-
-      const modulePath = dirname(fileURLToPath(import.meta.url));
-  
-      dotenv.config({
-        path: resolve(modulePath, `../../../../.env.${env}`),
-        override: true,
-      });
-    }
+  constructor(options: { [key: string]: any }) {
+    this.options = options;
   }
-  
-  export class NodeConfigsSingleton {
-    private static instance: NodeConfigs | null = null;
-  
-    private constructor() {}
-  
-    static getInstance(options?: { [key: string]: any }): NodeConfigs {
-      if (!NodeConfigsSingleton.instance) {
-        NodeConfigsSingleton.instance = new NodeConfigs(options || {});
-        NodeConfigsSingleton.instance.loadVariablesToEnv()
-      }
-      return NodeConfigsSingleton.instance;
-    }
+
+  loadVariablesToEnv() {
+    const network = this.options.network ? this.options.network : 'mainnet';
+    const env = network === 'mainnet' ? 'production' : 'dev';
+
+    const modulePath = dirname(fileURLToPath(import.meta.url));
+
+    dotenv.config({
+      path: resolve(modulePath, `../../../../.env.${env}`),
+      override: true,
+    });
   }
+}
+
+export class NodeConfigsSingleton {
+  private static instance: NodeConfigs | null = null;
+
+  private constructor() {}
+
+  static getInstance(options?: { [key: string]: any }): NodeConfigs {
+    if (!NodeConfigsSingleton.instance) {
+      NodeConfigsSingleton.instance = new NodeConfigs(options || {});
+      NodeConfigsSingleton.instance.loadVariablesToEnv();
+    }
+    return NodeConfigsSingleton.instance;
+  }
+}

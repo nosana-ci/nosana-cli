@@ -6,7 +6,7 @@ import { stateStreaming } from './monitoring/streaming/StateStreamer.js';
 import { log } from './monitoring/log/NodeLog.js';
 import { logStreaming } from './monitoring/streaming/LogStreamer.js';
 import { consoleLogging } from './monitoring/log/console/ConsoleLogger.js';
-import { configs } from "./configs/configs.js";
+import { configs } from './configs/configs.js';
 
 export default class NodeManager {
   private node: BasicNode;

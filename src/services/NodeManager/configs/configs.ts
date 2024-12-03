@@ -1,4 +1,4 @@
-import { NodeConfigsSingleton } from "./NodeConfigs.js";
+import { NodeConfigsSingleton } from './NodeConfigs.js';
 
 export type configType = {
   backendUrl: string;

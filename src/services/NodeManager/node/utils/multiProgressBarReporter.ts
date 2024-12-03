@@ -8,10 +8,7 @@ export class MultiProgressBarReporter {
     optProgressBar: null,
   };
 
-  start(
-    name: string,
-    optProgressBar: Options,
-  ): void {
+  start(name: string, optProgressBar: Options): void {
     this.current = {
       optProgressBar,
     };
@@ -24,7 +21,7 @@ export class MultiProgressBarReporter {
     id: string;
   }): void {}
 
-   stop(name: string): string {
+  stop(name: string): string {
     this.running = false;
     return name;
   }

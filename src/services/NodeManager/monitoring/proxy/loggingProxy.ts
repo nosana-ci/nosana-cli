@@ -111,7 +111,7 @@ export function createLoggingProxy<T extends object>(target: T): T {
 
 export function createFunctionLoggingProxy<T extends (...args: any[]) => any>(
   func: T,
-  classLabel: string = 'StandaloneFunction'
+  classLabel: string = 'StandaloneFunction',
 ): T {
   const formatArguments = (args: any[]) => {
     return args.map((arg) => {
