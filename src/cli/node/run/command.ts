@@ -1,6 +1,7 @@
 import { Argument, Command, Option } from 'commander';
 
 import { runJob } from './action.js';
+import { gpuOption } from '../../sharedOptions/index.js';
 
 export const runNodeCommand = new Command('run')
   .description('Run Job Definition File')
@@ -28,4 +29,5 @@ export const runNodeCommand = new Command('run')
       'Podman/Docker connection URI',
     ).default('http://localhost:8080'),
   )
+  .addOption(gpuOption)
   .action(runJob);

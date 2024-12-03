@@ -1,12 +1,11 @@
+import { Client, Market, Run } from '@nosana/sdk';
+
 import { getSDK } from '../../sdk.js';
 import { MarketHandler } from './market/marketHandler.js';
-import { Client, Market, Run } from '@nosana/sdk';
 import { RunHandler } from './run/runHandler.js';
 import { JobHandler } from './job/jobHandler.js';
 import { DB } from '../../../providers/modules/db/index.js';
-import {
-  ContainerOrchestrationInterface,
-} from '../provider/containerOrchestration/interface.js';
+import { ContainerOrchestrationInterface } from '../provider/containerOrchestration/interface.js';
 import { Provider } from '../provider/Provider.js';
 import { applyLoggingProxyToClass } from '../monitoring/proxy/loggingProxy.js';
 import { sleep } from '../../../generic/utils.js';
@@ -18,7 +17,7 @@ import { KeyHandler } from './key/keyHandler.js';
 import { ExpiryHandler } from './expiry/expiryHandler.js';
 import { GridHandler } from './grid/gridHandler.js';
 import { ResourceManager } from './resource/resourceManager.js';
-import { selectContainerOrchestrationProvider } from "../provider/containerOrchestration/selectContainerOrchestration.js";
+import { selectContainerOrchestrationProvider } from '../provider/containerOrchestration/selectContainerOrchestration.js';
 
 export class BasicNode {
   private apiHandler: ApiHandler;
@@ -45,6 +44,7 @@ export class BasicNode {
     this.containerOrchestration = selectContainerOrchestrationProvider(
       options.provider,
       options.podman,
+      options.gpu,
     );
     this.resourceManager = new ResourceManager(
       this.containerOrchestration,

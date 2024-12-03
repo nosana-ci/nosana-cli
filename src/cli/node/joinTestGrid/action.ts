@@ -54,11 +54,19 @@ export async function runBenchmark(options: { [key: string]: any }) {
   console.log(`Provider:\t${chalk.greenBright.bold(options.provider)}`);
   switch (options.provider) {
     case 'podman':
-      provider = new PodmanProvider(options.podman, options.config);
+      provider = new PodmanProvider(
+        options.podman,
+        options.config,
+        options.gpu,
+      );
       break;
     case 'docker':
     default:
-      provider = new DockerProvider(options.podman, options.config);
+      provider = new DockerProvider(
+        options.podman,
+        options.config,
+        options.gpu,
+      );
       break;
   }
   spinner = ora(chalk.cyan('Checking provider health')).start();

@@ -1,19 +1,17 @@
 import { type RunContainerArgs } from '../DockerProvider.js';
 import { ifStringCastToArray } from '../../generic/utils.js';
 
-const GPU_DEVICE = [
-  {
-    path: 'nvidia.com/gpu=all',
-  },
-];
-
 /**
  * Takes image and args and return podman run options
  * @param image
  * @param args
  * @returns
  */
-export function createPodmanRunOptions(image: string, args: RunContainerArgs) {
+export function createPodmanRunOptions(
+  image: string,
+  args: RunContainerArgs,
+  gpuOption: string,
+) {
   const {
     name,
     networks,
@@ -26,7 +24,16 @@ export function createPodmanRunOptions(image: string, args: RunContainerArgs) {
     network_mode,
   } = args;
 
-  const devices = gpu ? GPU_DEVICE : [];
+  const devices = gpu
+    ? gpuOption === 'all'
+      ? [
+          {
+            path: 'nvidia.com/gpu=all',
+          },
+        ]
+      : gpuOption.split(',').map((id) => ({ path: `nvidia.com/gpu=${id}` }))
+    : [];
+
   return {
     image,
     name,

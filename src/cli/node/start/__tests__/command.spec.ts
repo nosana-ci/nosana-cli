@@ -25,8 +25,8 @@ describe('startNodeCommand', () => {
     expect(startNodeCommand.args[0]).toBe('market address');
   });
 
-  it('should have 7 options', () => {
-    expect(startNodeCommand.options.length).toBe(7);
+  it('should have 8 options', () => {
+    expect(startNodeCommand.options.length).toBe(8);
   });
 
   it.each([
@@ -37,6 +37,7 @@ describe('startNodeCommand', () => {
     ['--config', '-c', '~/.nosana/'],
     ['--port', '-p', 5001],
     ['--podman', '--docker', 'http://localhost:8080'],
+    ['--gpu', undefined, 'all'],
   ])('should have %s option', (long, short, defaultValue) => {
     const option = startNodeCommand.options.find((i) => i.long === long);
     expect(option?.long).toBe(long);
