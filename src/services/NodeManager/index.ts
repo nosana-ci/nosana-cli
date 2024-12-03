@@ -6,7 +6,6 @@ import { stateStreaming } from './monitoring/streaming/StateStreamer.js';
 import { log } from './monitoring/log/NodeLog.js';
 import { logStreaming } from './monitoring/streaming/LogStreamer.js';
 import { consoleLogging } from './monitoring/log/console/ConsoleLogger.js';
-import { configs } from './configs/configs.js';
 
 export default class NodeManager {
   private node: BasicNode;
@@ -15,8 +14,6 @@ export default class NodeManager {
 
   constructor(options: { [key: string]: any }) {
     this.node = createLoggingProxy(new BasicNode(options));
-
-    configs(options);
 
     /**
      * the node class makes the api but we pass the api to the NodeManager class
