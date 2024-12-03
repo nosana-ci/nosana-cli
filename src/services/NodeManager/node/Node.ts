@@ -113,16 +113,10 @@ export class BasicNode {
 
     /**
      * this means even tho we have been onbaorded there might be no market assigned to us
-     *  so we need to get a recommended one and return it
+     * or we need to check if we are still in the right market,
+     * so we need to get a recommended one and return it
      */
-    if (!nodeData.market) {
-      return await this.gridHandler.recommend();
-    }
-
-    /**
-     * this means we already have a market recommended to us from onboarding
-     */
-    return nodeData.market;
+    return await this.gridHandler.recommend();
   }
 
   public api(): ApiHandler {

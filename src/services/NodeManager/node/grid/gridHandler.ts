@@ -91,11 +91,7 @@ export class GridHandler {
 
       let data: any = await response.json();
 
-      if (
-        !data ||
-        (data.name === 'Error' && data.message) ||
-        !data.marketAddress
-      ) {
+      if (!data || (data.name === 'Error' && data.message) || !data.address) {
         if (
           data.message.includes('Assigned market doesnt support current GPU') ||
           data.message.includes('Node doesnt have an assigned market yet')
@@ -106,7 +102,7 @@ export class GridHandler {
           throw new Error(data.message);
         }
       } else {
-        market = data.marketAddress;
+        market = data.address;
       }
 
       return market;
