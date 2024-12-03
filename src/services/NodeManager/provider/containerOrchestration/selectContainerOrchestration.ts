@@ -5,12 +5,13 @@ import { PodmanContainerOrchestration } from './PodmanContainerOrchestration.js'
 export function selectContainerOrchestrationProvider(
   provider: string,
   url: string,
+  gpu: string,
 ): ContainerOrchestrationInterface {
   switch (provider) {
     case 'podman':
-      return new PodmanContainerOrchestration(url);
+      return new PodmanContainerOrchestration(url, gpu);
     case 'docker':
     default:
-      return new DockerContainerOrchestration(url);
+      return new DockerContainerOrchestration(url, gpu);
   }
 }

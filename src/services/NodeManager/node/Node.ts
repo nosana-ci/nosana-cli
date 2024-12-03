@@ -1,6 +1,7 @@
+import { Client, Market, Run } from '@nosana/sdk';
+
 import { getSDK } from '../../sdk.js';
 import { MarketHandler } from './market/marketHandler.js';
-import { Client, Market, Run } from '@nosana/sdk';
 import { RunHandler } from './run/runHandler.js';
 import { JobHandler } from './job/jobHandler.js';
 import { DB } from '../../../providers/modules/db/index.js';
@@ -43,6 +44,7 @@ export class BasicNode {
     this.containerOrchestration = selectContainerOrchestrationProvider(
       options.provider,
       options.podman,
+      options.gpu,
     );
     this.resourceManager = new ResourceManager(
       this.containerOrchestration,

@@ -2,6 +2,7 @@ import { Command, Option } from 'commander';
 
 import { runBenchmark } from './action.js';
 import {
+  gpuOption,
   networkOption,
   rpcOption,
   walletOption,
@@ -39,4 +40,5 @@ export const joinTestGridCommand = new Command('join-test-grid')
     ).default('~/.nosana/'),
   )
   .addOption(new Option('--no-airdrop', 'no airdrop on devnet'))
+  .addOption(gpuOption)
   .action(runBenchmark);

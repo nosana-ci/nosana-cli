@@ -24,13 +24,15 @@ export class DockerContainerOrchestration
   public port: string;
   public protocol: 'https' | 'http' | 'ssh';
   public name: string = 'docker';
+  public gpu: string = 'all';
 
-  constructor(server: string) {
+  constructor(server: string, gpu: string) {
     const { host, port, protocol } = createSeverObject(server);
 
     this.host = host;
     this.port = port;
     this.protocol = protocol;
+    this.gpu = gpu;
 
     this.docker = new DockerExtended({
       host: this.host,
@@ -211,7 +213,7 @@ export class DockerContainerOrchestration
   ): Promise<ReturnedStatus<Container>> {
     try {
       const container = await this.docker.createContainer(
-        mapRunContainerArgsToContainerCreateOpts(image, args),
+        mapRunContainerArgsToContainerCreateOpts(image, args, this.gpu),
       );
       await container.start();
       console.log(container);
@@ -318,11 +320,14 @@ function mapRunContainerArgsToContainerCreateOpts(
     network_mode,
     entrypoint,
   }: RunContainerArgs,
+  gpuOption: string,
 ): ContainerCreateOptions {
   const devices = gpu
     ? [
         {
-          Count: -1,
+          ...(gpuOption === 'all'
+            ? { Count: -1 }
+            : { device_ids: gpuOption.split(',') }),
           Driver: 'nvidia',
           Capabilities: [['gpu']],
         },
