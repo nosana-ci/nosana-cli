@@ -31,8 +31,8 @@ export async function startNode(
 ): Promise<void> {
   const nodeManager = new NodeManager(options);
 
-  await nodeManager.init();
   try {
+    await nodeManager.init();
     await nodeManager.start(market);
   } catch (e) {
     const error = e as any;
@@ -46,8 +46,13 @@ export async function startNode(
     `;
 
     console.error(formattedError);
-    await nodeManager.stop();
-    process.exit();
+
+    if(nodeManager.inJobLoop){
+      await nodeManager.restart(market)
+    } else {
+      await nodeManager.stop();
+      process.exit();
+    }
   }
 }
 

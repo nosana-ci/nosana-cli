@@ -11,6 +11,7 @@ export default class NodeManager {
   private node: BasicNode;
   private apiHandler: ApiHandler;
   private exiting = false;
+  public inJobLoop = false;
 
   constructor(options: { [key: string]: any }) {
     this.node = createLoggingProxy(new BasicNode(options));
@@ -137,6 +138,14 @@ export default class NodeManager {
     }
 
     /**
+     * this variable was added to know when the node has gone past the setup/checks stages
+     * and is now starting job work and queueing,
+     * this is mainly put that we want to report error and end the node only when it hasn't passed
+     * these stages else we want to restart the node process on error
+     */
+    this.inJobLoop = true;
+
+    /**
      * pending
      *
      * This checks for pending jobs that were assigned to the node.
@@ -199,7 +208,7 @@ export default class NodeManager {
     }
   }
 
-  private async restart(market?: string) {
+  async restart(market?: string) {
     /**
      * stop
      *
