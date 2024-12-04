@@ -7,4 +7,3 @@ node_modules
 yarn-error.log
 dist
 src/api/schema.d.ts
-npm-shrinkwrap.json

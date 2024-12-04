@@ -1,12 +1,12 @@
 {
   "name": "@nosana/cli",
-  "version": "0.0.0",
+  "version": "0.1.148-dev.3",
   "lockfileVersion": 3,
   "requires": true,
   "packages": {
     "": {
       "name": "@nosana/cli",
-      "version": "0.0.0",
+      "version": "0.1.148-dev.3",
       "license": "ISC",
       "dependencies": {
         "@coral-xyz/anchor": "^0.28.1-beta.1",
