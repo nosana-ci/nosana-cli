@@ -46,7 +46,7 @@ export async function migrateWalletCommand(
     - Onboard your new wallet for testgrid.
     ${
       isCompromised
-        ? '- Expose your private key to Nosana and reimburse staked amount'
+        ? '- Staked NOS will be slashed and reimbursed to your new wallet as liquid NOS.'
         : ''
     }`),
     );
