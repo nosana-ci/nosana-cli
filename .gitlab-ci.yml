@@ -38,6 +38,7 @@ npm publish beta:
   script:
     - sed -i "s/0.0.0/${CI_COMMIT_TAG:1}-rc/" package.json
     - npm ci
+    - npm shrinkwrap
     - npm config set '//registry.npmjs.org/:_authToken' "${NPM_TOKEN}"
     - npm run publish:next
   rules:
@@ -49,6 +50,7 @@ npm publish prod:
   script:
     - sed -i "s/0.0.0/${CI_COMMIT_TAG:1}/" package.json
     - npm ci
+    - npm shrinkwrap
     - npm config set '//registry.npmjs.org/:_authToken' "${NPM_TOKEN}"
     - npm run publish:public
   when: manual
