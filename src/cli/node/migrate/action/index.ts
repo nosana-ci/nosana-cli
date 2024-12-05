@@ -12,7 +12,7 @@ import { exposeSecert } from './exposeSecert.js';
 export async function migrateWalletCommand(walletPath: string) {
   console.log(
     chalk.red(
-      '\nPlease note that this command should only be used if your wallet has been compromised as part of a known attack.',
+      '\nThis command is intended for cases where your wallet is suspected to be compromised or if you wish to migrate for added security.',
     ),
   );
 
@@ -26,17 +26,14 @@ export async function migrateWalletCommand(walletPath: string) {
     suspectedKeyPair.publicKey,
   );
 
+  let heading = `\n${suspectedKeyPair.publicKey.toString()} has been flagged as compromised by Nosana, making it eligible for migration`
+
   if (!isAtRisk) {
-    console.log(
-      chalk.green(
-        `${suspectedKeyPair.publicKey.toString()} has not been flagged as compromised by Nosana. If you believe this is to not be the case, please contact the Nosana team via Discord.`,
-      ),
-    );
-    process.exit(0);
+    heading = `\n${suspectedKeyPair.publicKey.toString()} has not been flagged as compromised by Nosana. For additional assurance, you may opt to migrate to a new wallet`;
   }
 
   console.log(
-    chalk.yellow(`\n${suspectedKeyPair.publicKey.toString()} has been flagged as compromised by Nosana, making it eligible for migration. This process will involve:
+    chalk.yellow(`${heading}. This process will involve:
     - Creating a back up of your compromised secret key to ${walletPath}.compromised.
     - Generate and save a new KeyPair to ${walletPath}.
     - Transfer all tokens from the compromised account to the new account. Please note that NFTs, SFTs, and staked tokens will not be included in this transfer.
@@ -58,7 +55,7 @@ export async function migrateWalletCommand(walletPath: string) {
 
   const newKeyPair = await generateNewWallet(
     walletPath,
-    suspectedKeyPair.publicKey,
+    suspectedKeyPair,
   );
 
   console.log(

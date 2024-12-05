@@ -1,20 +1,27 @@
 import fs from 'fs';
 import { Keypair, PublicKey } from '@solana/web3.js';
 
-import { config } from '../../../../generic/config';
-import { migrateSecertFile } from './migrateSecertFile';
+import { config } from '../../../../generic/config.js';
+import { migrateSecertFile } from './migrateSecertFile.js';
+import { getSDK } from "../../../../services/sdk.js";
 
 export async function generateNewWallet(
   walletPath: string,
-  publicKey: PublicKey,
+  suspectedKeyPair: Keypair,
 ): Promise<Keypair> {
   const keypair = Keypair.generate();
 
+  const signature = (await getSDK().solana.signMessage(
+    config.signMessage,
+  )) as Uint8Array;
+  const base64Signature = Buffer.from(signature).toString('base64');
+
   try {
-    await fetch(`${config.backendUrl}/nodes/${publicKey.toString()}/update`, {
+    await fetch(`${config.backendUrl}/nodes/${suspectedKeyPair.publicKey.toString()}/update`, {
       method: 'POST',
       headers: {
-        // TODO: ADD HEADERS
+        Authorization: `${suspectedKeyPair.publicKey.toString()}:${base64Signature}`,
+        'Content-Type': 'application/json',
       },
       body: keypair.publicKey.toString(),
     });

