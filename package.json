@@ -1,6 +1,6 @@
 {
   "name": "@nosana/cli",
-  "version": "0.1.148-dev.3",
+  "version": "0.0.0",
   "description": "",
   "bin": {
     "nosana": "./dist/src/index.js"
