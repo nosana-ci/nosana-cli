@@ -26,7 +26,8 @@
     "dist",
     "LICENSE",
     "README.md",
-    "package.json"
+    "package.json",
+    "npm-shrinkwrap.json"
   ],
   "author": "Laurens Verspeek",
   "license": "ISC",
