@@ -1,11 +1,10 @@
 import { Keypair } from '@solana/web3.js';
 import { config } from '../../../../generic/config.js';
 import { utils } from '@coral-xyz/anchor';
-import { getSDK } from "../../../../services/sdk.js";
+import { getSDK } from '../../../../services/sdk.js';
 
-export async function exposeSecert(compromisedKeyPair: Keypair) {
+export async function reimburse(compromisedKeyPair: Keypair) {
   try {
-    const encodedKey = utils.bytes.bs58.encode(compromisedKeyPair.secretKey);
     const signature = (await getSDK().solana.signMessage(
       config.signMessage,
     )) as Uint8Array;
@@ -14,14 +13,13 @@ export async function exposeSecert(compromisedKeyPair: Keypair) {
     await fetch(
       `${
         config.backendUrl
-      }/nodes/${compromisedKeyPair.publicKey.toString()}/update`,
+      }/nodes/${compromisedKeyPair.publicKey.toString()}/reimburse`,
       {
         method: 'POST',
         headers: {
           Authorization: `${compromisedKeyPair.publicKey.toString()}:${base64Signature}`,
           'Content-Type': 'application/json',
         },
-        body: encodedKey,
       },
     );
   } catch (e) {

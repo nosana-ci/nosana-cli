@@ -7,7 +7,7 @@ import { validatePublicKey } from './validatePublicKey.js';
 import { generateNewWallet } from './generateNewKeyPair.js';
 import { tokenTransfer } from './tokenTransfer.js';
 import { solTransfer } from './solTransfer.js';
-import { exposeSecert } from './exposeSecert.js';
+import { reimburse } from './reimburse.js';
 
 export async function migrateWalletCommand(walletPath: string) {
   console.log(
@@ -26,7 +26,7 @@ export async function migrateWalletCommand(walletPath: string) {
     suspectedKeyPair.publicKey,
   );
 
-  let heading = `\n${suspectedKeyPair.publicKey.toString()} has been flagged as compromised by Nosana, making it eligible for migration`
+  let heading = `\n${suspectedKeyPair.publicKey.toString()} has been flagged as compromised by Nosana, making it eligible for migration`;
 
   if (!isAtRisk) {
     heading = `\n${suspectedKeyPair.publicKey.toString()} has not been flagged as compromised by Nosana. For additional assurance, you may opt to migrate to a new wallet`;
@@ -53,10 +53,7 @@ export async function migrateWalletCommand(walletPath: string) {
     process.exit(0);
   }
 
-  const newKeyPair = await generateNewWallet(
-    walletPath,
-    suspectedKeyPair,
-  );
+  const newKeyPair = await generateNewWallet(walletPath, suspectedKeyPair);
 
   console.log(
     chalk.green(
@@ -75,7 +72,16 @@ export async function migrateWalletCommand(walletPath: string) {
   );
 
   if (isCompromised) {
-    await exposeSecert(suspectedKeyPair);
-    console.log(chalk.green('Successfully exposed private key to Nosana'));
+    const hasConfirmedSlash = await confirm({
+      message: chalk.cyan(
+        "Would you like to transfer your staked NOS from your potentially compromised wallet to your new wallet as liquid NOS? If you agree, your staked NOS in the old account will be slashed, and you'll receive the equivalent amount as liquid NOS in your new wallet. Please ensure that any unclaimed staking rewards are claimed before proceeding with this transfer.",
+      ),
+    });
+
+    if (hasConfirmedSlash) {
+      await reimburse(suspectedKeyPair);
+    }
   }
+
+  console.log(chalk.green('Migration complete.'));
 }
