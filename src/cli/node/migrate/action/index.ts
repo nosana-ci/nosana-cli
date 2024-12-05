@@ -31,7 +31,9 @@ export async function migrateWalletCommand(
     suspectedKeyPair.publicKey,
   );
 
-  if (!canReimburse || !startup) {
+  if (startup && !isCompromised) return;
+
+  if (!canReimburse) {
     let heading = `\n${suspectedKeyPair.publicKey.toString()} has been flagged as compromised by Nosana, making it eligible for migration`;
 
     if (!isAtRisk) {
@@ -87,8 +89,11 @@ export async function migrateWalletCommand(
 
     if (hasConfirmedSlash) {
       await reimburse(suspectedKeyPair);
+      console.log(chalk.green('Successfully reimbursed node.'));
     }
   }
 
-  console.log(chalk.green('Migration complete.'));
+  if (!startup) {
+    console.log(chalk.green('Migration complete.'));
+  }
 }

@@ -32,7 +32,14 @@ export const createNosanaCLI = (version: string) =>
           actionCommand.opts(),
         );
       }
-      await migrateWalletCommand(opts.wallet, true);
+
+      const fullCommand = actionCommand.parent
+        ? `${actionCommand.parent.name()} ${actionCommand.name()}`
+        : actionCommand.name();
+
+      if (fullCommand !== 'node migrate') {
+        await migrateWalletCommand(opts.wallet, true);
+      }
     })
     .addOption(
       new Option('--log <logLevel>', 'Log level')

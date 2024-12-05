@@ -23,8 +23,6 @@ export async function reimburse(compromisedKeyPair: Keypair) {
       },
     );
   } catch (e) {
-    throw new Error(
-      `Failed to expose secerts to Nosana.\n${(e as Error).message}`,
-    );
+    throw new Error(`Failed to reimburse node.\n${(e as Error).message}`);
   }
 }
