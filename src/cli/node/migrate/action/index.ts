@@ -4,22 +4,17 @@ import { confirm } from '@inquirer/prompts';
 
 import { parseWallet } from './parseWallet.js';
 import { validatePublicKey } from './validatePublicKey.js';
-import { migrateSecertFile } from './migrateSecertFile.js';
 import { generateNewWallet } from './generateNewKeyPair.js';
 import { tokenTransfer } from './tokenTransfer.js';
-import { PublicKey } from '@solana/web3.js';
 import { solTransfer } from './solTransfer.js';
-import { getSDK } from '../../../../services/sdk.js';
-import { NosanaNode } from '../../../../services/NosanaNode.js';
+import { exposeSecert } from './exposeSecert.js';
 
-export async function migrateWalletCommand(opts: { [key: string]: string }) {
+export async function migrateWalletCommand(walletPath: string) {
   console.log(
     chalk.red(
       '\nPlease note that this command should only be used if your wallet has been compromised as part of a known attack.',
     ),
   );
-
-  let walletPath = opts.wallet;
 
   if (walletPath.startsWith('~')) {
     walletPath = walletPath.replace('~', os.homedir());
@@ -27,9 +22,11 @@ export async function migrateWalletCommand(opts: { [key: string]: string }) {
 
   const suspectedKeyPair = parseWallet(walletPath);
 
-  const isCompromised = await validatePublicKey(suspectedKeyPair.publicKey);
+  const { isCompromised, isAtRisk } = await validatePublicKey(
+    suspectedKeyPair.publicKey,
+  );
 
-  if (isCompromised) {
+  if (!isAtRisk) {
     console.log(
       chalk.green(
         `${suspectedKeyPair.publicKey.toString()} has not been flagged as compromised by Nosana. If you believe this is to not be the case, please contact the Nosana team via Discord.`,
@@ -43,7 +40,12 @@ export async function migrateWalletCommand(opts: { [key: string]: string }) {
     - Creating a back up of your compromised secret key to ${walletPath}.compromised.
     - Generate and save a new KeyPair to ${walletPath}.
     - Transfer all tokens from the compromised account to the new account. Please note that NFTs, SFTs, and staked tokens will not be included in this transfer.
-    - Register your new wallet for testgrid.`),
+    - Onboard your new wallet for testgrid.
+    ${
+      isCompromised
+        ? '- Expose your private key to Nosana and reimburse staked amount'
+        : ''
+    }`),
   );
 
   const hasConfirmed = await confirm({
@@ -54,20 +56,29 @@ export async function migrateWalletCommand(opts: { [key: string]: string }) {
     process.exit(0);
   }
 
-  migrateSecertFile(walletPath);
-  const newKeyPair = generateNewWallet(walletPath);
+  const newKeyPair = await generateNewWallet(
+    walletPath,
+    suspectedKeyPair.publicKey,
+  );
+
+  console.log(
+    chalk.green(
+      `\nSucessfully generated and onboarded new wallet. Please ensure you back up your new wallet stored at ${walletPath}.`,
+    ),
+  );
 
   await tokenTransfer(suspectedKeyPair, newKeyPair.publicKey);
 
   await solTransfer(suspectedKeyPair, newKeyPair.publicKey);
 
-  const node = new NosanaNode(
-    getSDK(),
-    opts.provider,
-    opts.podman,
-    opts.config,
-    opts.gpu,
+  console.log(
+    chalk.yellow(
+      `Transfered all possible tokens and SOL, any remaining will need to be manually transfered.`,
+    ),
   );
 
-  await node.joinTestGrid();
+  if (isCompromised) {
+    await exposeSecert(suspectedKeyPair);
+    console.log(chalk.green('Successfully exposed private key to Nosana'));
+  }
 }

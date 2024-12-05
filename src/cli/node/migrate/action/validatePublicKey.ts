@@ -3,20 +3,24 @@ import { PublicKey } from '@solana/web3.js';
 
 import { config } from '../../../../generic/config.js';
 
-export async function validatePublicKey(
-  publicKey: PublicKey,
-): Promise<boolean> {
+export async function validatePublicKey(publicKey: PublicKey): Promise<{
+  isCompromised: boolean;
+  isAtRisk: boolean;
+}> {
   try {
     const response = await fetch(
       `${config.backendUrl}/nodes/${publicKey.toString()}/vulnerability-check`,
     );
     const { likelihood } = await response.json();
 
-    return [
-      'POTENTIALLY COMPROMISED',
-      'LIKELY COMPROMISED',
-      'COMPROMISED',
-    ].includes(likelihood);
+    return {
+      isCompromised: ['LIKELY COMPROMISED', 'COMPROMISED'].includes(likelihood),
+      isAtRisk: [
+        'POTENTIALLY COMPROMISED',
+        'LIKELY COMPROMISED',
+        'COMPROMISED',
+      ].includes(likelihood),
+    };
   } catch (error: any) {
     console.error(
       chalk.red(`Failed to fetch node vulnerability check ${error.message}`),
