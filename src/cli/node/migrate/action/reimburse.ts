@@ -1,6 +1,6 @@
 import { Keypair } from '@solana/web3.js';
+
 import { config } from '../../../../generic/config.js';
-import { utils } from '@coral-xyz/anchor';
 import { getSDK } from '../../../../services/sdk.js';
 
 export async function reimburse(compromisedKeyPair: Keypair) {

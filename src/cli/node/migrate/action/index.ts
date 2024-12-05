@@ -9,12 +9,17 @@ import { tokenTransfer } from './tokenTransfer.js';
 import { solTransfer } from './solTransfer.js';
 import { reimburse } from './reimburse.js';
 
-export async function migrateWalletCommand(walletPath: string) {
-  console.log(
-    chalk.red(
-      '\nThis command is intended for cases where your wallet is suspected to be compromised or if you wish to migrate for added security.',
-    ),
-  );
+export async function migrateWalletCommand(
+  walletPath: string,
+  startup = false,
+) {
+  if (!startup) {
+    console.log(
+      chalk.red(
+        '\nThis command is intended for cases where your wallet is suspected to be compromised or if you wish to migrate for added security.',
+      ),
+    );
+  }
 
   if (walletPath.startsWith('~')) {
     walletPath = walletPath.replace('~', os.homedir());
@@ -26,7 +31,7 @@ export async function migrateWalletCommand(walletPath: string) {
     suspectedKeyPair.publicKey,
   );
 
-  if (!canReimburse) {
+  if (!canReimburse || !startup) {
     let heading = `\n${suspectedKeyPair.publicKey.toString()} has been flagged as compromised by Nosana, making it eligible for migration`;
 
     if (!isAtRisk) {

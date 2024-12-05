@@ -7,7 +7,7 @@ import { marketCommand } from './market/index.js';
 import { OUTPUT_EVENTS } from '../providers/utils/ouput-formatter/outputEvents.js';
 import { outputFormatArgumentParser } from '../providers/utils/ouput-formatter/outputFormatArgumentParser.js';
 import { outputFormatSelector } from '../providers/utils/ouput-formatter/outputFormatSelector.js';
-import { handleWalletVulnerability } from './utils/vulnerabilityCheck.js';
+import { migrateWalletCommand } from './node/migrate/action/index.js';
 
 export const createNosanaCLI = (version: string) =>
   new Command()
@@ -32,7 +32,7 @@ export const createNosanaCLI = (version: string) =>
           actionCommand.opts(),
         );
       }
-      await handleWalletVulnerability(actionCommand);
+      await migrateWalletCommand(opts.wallet, true);
     })
     .addOption(
       new Option('--log <logLevel>', 'Log level')

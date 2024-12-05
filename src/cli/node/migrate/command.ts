@@ -1,7 +1,7 @@
-import { Command, Option } from 'commander';
-import { networkOption, walletOption } from '../../sharedOptions/index.js';
+import { Command } from 'commander';
+
+import { walletOption } from '../../sharedOptions/index.js';
 import { migrateWalletCommand } from './action/index.js';
-import { gpuOption } from '../../sharedOptions/--gpu.js';
 
 export const migrateNodeCommand = new Command('migrate')
   .description(
