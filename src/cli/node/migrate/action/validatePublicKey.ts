@@ -6,12 +6,13 @@ import { config } from '../../../../generic/config.js';
 export async function validatePublicKey(publicKey: PublicKey): Promise<{
   isCompromised: boolean;
   isAtRisk: boolean;
+  canReimburse: boolean;
 }> {
   try {
     const response = await fetch(
       `${config.backendUrl}/nodes/${publicKey.toString()}/vulnerability-check`,
     );
-    const { likelihood } = await response.json();
+    const { likelihood, canReimburse } = await response.json();
 
     return {
       isCompromised: ['LIKELY COMPROMISED', 'COMPROMISED'].includes(likelihood),
@@ -20,6 +21,7 @@ export async function validatePublicKey(publicKey: PublicKey): Promise<{
         'LIKELY COMPROMISED',
         'COMPROMISED',
       ].includes(likelihood),
+      canReimburse,
     };
   } catch (error: any) {
     console.error(
