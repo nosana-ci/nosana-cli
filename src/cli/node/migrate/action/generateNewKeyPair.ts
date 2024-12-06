@@ -34,7 +34,7 @@ export async function generateNewWallet(
     throw new Error('Failed to update your nodes new wallet address.');
   }
 
-  migrateSecertFile(walletPath);
+  migrateSecertFile(walletPath, suspectedKeyPair.publicKey.toString());
 
   fs.writeFileSync(
     walletPath,
