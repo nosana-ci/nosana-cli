@@ -21,8 +21,8 @@ export async function solTransfer(
   const solBalance = await sdk.solana.getSolBalance(
     compromisedKeyPair.publicKey,
   );
-
-  if (solBalance - 0.01 * 1e9 <= 0) {
+  const solFee = 0.003 * 1e9;
+  if (solBalance - solFee <= 0) {
     return;
   }
 
@@ -35,7 +35,7 @@ export async function solTransfer(
       SystemProgram.transfer({
         fromPubkey: compromisedKeyPair.publicKey,
         toPubkey: newPublicKey,
-        lamports: solBalance - 50000000,
+        lamports: solBalance - solFee,
       }),
     );
 
