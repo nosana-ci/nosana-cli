@@ -82,7 +82,7 @@ export async function migrateWalletCommand(
           "Would you like to transfer your staked NOS from your potentially compromised wallet to your new wallet as liquid NOS? If you agree, your staked NOS in the old account will be slashed, and you'll receive the equivalent amount as liquid NOS in your new wallet. Please ensure that any unclaimed staking rewards are claimed before proceeding with this transfer.",
         ),
       });
-  
+
       if (hasConfirmedSlash) {
         await reimburse(suspectedKeyPair);
         console.log(chalk.green('Successfully reimbursed node.'));

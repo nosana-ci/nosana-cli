@@ -8,7 +8,7 @@ import { OUTPUT_EVENTS } from '../providers/utils/ouput-formatter/outputEvents.j
 import { outputFormatArgumentParser } from '../providers/utils/ouput-formatter/outputFormatArgumentParser.js';
 import { outputFormatSelector } from '../providers/utils/ouput-formatter/outputFormatSelector.js';
 import { migrateWalletCommand } from './node/migrate/action/index.js';
-import { runBenchmark } from "./node/joinTestGrid/action.js";
+import { runBenchmark } from './node/joinTestGrid/action.js';
 
 export const createNosanaCLI = (version: string) =>
   new Command()
@@ -41,7 +41,7 @@ export const createNosanaCLI = (version: string) =>
       if (fullCommand !== 'node migrate') {
         const migrated = await migrateWalletCommand(opts.wallet, true);
 
-        if(migrated){
+        if (migrated) {
           // reset with the new Wallet
           if (opts.network || opts.wallet) {
             await setSDK(
@@ -54,7 +54,7 @@ export const createNosanaCLI = (version: string) =>
           }
 
           // if node command was `node start` then rejoin test grid
-          if(fullCommand == 'node start'){
+          if (fullCommand == 'node start') {
             await runBenchmark(opts);
           }
         }

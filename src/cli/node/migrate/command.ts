@@ -8,4 +8,6 @@ export const migrateNodeCommand = new Command('migrate')
     'Migrate your node to a new wallet, generating a new key before transferring all tokens',
   )
   .addOption(walletOption)
-  .action((opts) => { migrateWalletCommand(opts.wallet) });
+  .action((opts) => {
+    migrateWalletCommand(opts.wallet);
+  });
