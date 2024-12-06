@@ -12,7 +12,7 @@ import { reimburse } from './reimburse.js';
 export async function migrateWalletCommand(
   walletPath: string,
   startup = false,
-) {
+): Promise<boolean> {
   if (!startup) {
     console.log(
       chalk.red(
@@ -20,7 +20,7 @@ export async function migrateWalletCommand(
       ),
     );
   }
-  if (!walletPath) return;
+  if (!walletPath) return false;
 
   if (walletPath.startsWith('~')) {
     walletPath = walletPath.replace('~', os.homedir());
@@ -31,7 +31,7 @@ export async function migrateWalletCommand(
   const { isCompromised, isAtRisk, reimbursementTransaction, newNodeAddress } =
     await validatePublicKey(suspectedKeyPair.publicKey);
 
-  if (!isAtRisk) return;
+  if (!isAtRisk) return false;
 
   // Migrate if we don't have a new node yet
   if (!newNodeAddress) {
@@ -75,22 +75,26 @@ export async function migrateWalletCommand(
         `Transfered all possible tokens and SOL, any remaining will need to be manually transfered.`,
       ),
     );
-  }
 
-  if (isCompromised && !reimbursementTransaction && false) {
-    const hasConfirmedSlash = await confirm({
-      message: chalk.cyan(
-        "Would you like to transfer your staked NOS from your potentially compromised wallet to your new wallet as liquid NOS? If you agree, your staked NOS in the old account will be slashed, and you'll receive the equivalent amount as liquid NOS in your new wallet. Please ensure that any unclaimed staking rewards are claimed before proceeding with this transfer.",
-      ),
-    });
-
-    if (hasConfirmedSlash) {
-      await reimburse(suspectedKeyPair);
-      console.log(chalk.green('Successfully reimbursed node.'));
+    if (isCompromised && !reimbursementTransaction && false) {
+      const hasConfirmedSlash = await confirm({
+        message: chalk.cyan(
+          "Would you like to transfer your staked NOS from your potentially compromised wallet to your new wallet as liquid NOS? If you agree, your staked NOS in the old account will be slashed, and you'll receive the equivalent amount as liquid NOS in your new wallet. Please ensure that any unclaimed staking rewards are claimed before proceeding with this transfer.",
+        ),
+      });
+  
+      if (hasConfirmedSlash) {
+        await reimburse(suspectedKeyPair);
+        console.log(chalk.green('Successfully reimbursed node.'));
+      }
     }
+  } else {
+    return false;
   }
 
   if (!startup) {
     console.log(chalk.green('Migration complete.'));
   }
+
+  return true;
 }
