@@ -20,6 +20,7 @@ export async function migrateWalletCommand(
       ),
     );
   }
+  if (!walletPath) return;
 
   if (walletPath.startsWith('~')) {
     walletPath = walletPath.replace('~', os.homedir());
@@ -27,18 +28,14 @@ export async function migrateWalletCommand(
 
   const suspectedKeyPair = parseWallet(walletPath);
 
-  const { isCompromised, isAtRisk, canReimburse } = await validatePublicKey(
-    suspectedKeyPair.publicKey,
-  );
+  const { isCompromised, isAtRisk, reimbursementTransaction, newNodeAddress } =
+    await validatePublicKey(suspectedKeyPair.publicKey);
 
-  if (startup && !isCompromised) return;
+  if (!isAtRisk) return;
 
-  if (!canReimburse) {
-    let heading = `\n${suspectedKeyPair.publicKey.toString()} has been flagged as compromised by Nosana, making it eligible for migration`;
-
-    if (!isAtRisk) {
-      heading = `\n${suspectedKeyPair.publicKey.toString()} has not been flagged as compromised by Nosana. For additional assurance, you may opt to migrate to a new wallet`;
-    }
+  // Migrate if we don't have a new node yet
+  if (!newNodeAddress) {
+    let heading = `\n${suspectedKeyPair.publicKey.toString()} might be compromised or is already compromised due to exposure to a malicious hack in an official solana package, making it eligible for migration`;
 
     console.log(
       chalk.yellow(`${heading}. This process will involve:
@@ -47,7 +44,7 @@ export async function migrateWalletCommand(
     - Transfer all tokens from the compromised account to the new account. Please note that NFTs, SFTs, and staked tokens will not be included in this transfer.
     - Onboard your new wallet for testgrid.
     ${
-      isCompromised
+      isCompromised && false
         ? '- Staked NOS will be slashed and reimbursed to your new wallet as liquid NOS.'
         : ''
     }`),
@@ -80,7 +77,7 @@ export async function migrateWalletCommand(
     );
   }
 
-  if (isCompromised || canReimburse) {
+  if (isCompromised && !reimbursementTransaction && false) {
     const hasConfirmedSlash = await confirm({
       message: chalk.cyan(
         "Would you like to transfer your staked NOS from your potentially compromised wallet to your new wallet as liquid NOS? If you agree, your staked NOS in the old account will be slashed, and you'll receive the equivalent amount as liquid NOS in your new wallet. Please ensure that any unclaimed staking rewards are claimed before proceeding with this transfer.",

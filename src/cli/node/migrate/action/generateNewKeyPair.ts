@@ -17,7 +17,7 @@ export async function generateNewWallet(
   const base64Signature = Buffer.from(signature).toString('base64');
 
   try {
-    await fetch(
+    const response = await fetch(
       `${
         config.backendUrl
       }/nodes/${suspectedKeyPair.publicKey.toString()}/update`,
@@ -25,11 +25,13 @@ export async function generateNewWallet(
         method: 'POST',
         headers: {
           Authorization: `${suspectedKeyPair.publicKey.toString()}:${base64Signature}`,
-          'Content-Type': 'application/json',
+          'Content-Type': 'text/plain',
         },
         body: keypair.publicKey.toString(),
       },
     );
+    if (response.status !== 200)
+      throw new Error('Failed to update your nodes new wallet address.');
   } catch {
     throw new Error('Failed to update your nodes new wallet address.');
   }
