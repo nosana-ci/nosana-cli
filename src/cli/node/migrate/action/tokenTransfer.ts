@@ -41,6 +41,12 @@ export async function tokenTransfer(
     // Skip empty token accounts
     if (tokenAmount === 0) continue;
 
+    // Only transfer NOS
+    if (
+      mintAddress.toString() !== 'nosXBVoaCTtYdLvKY6Csb4AC8JCdQKKAaWYtx2ZMoo7'
+    )
+      continue;
+
     const spinner = ora(
       chalk.cyan(
         `Transfering token account ${mintAddress} with balance of ${tokenAmount} to ${newPublicKey.toString()}.`,
