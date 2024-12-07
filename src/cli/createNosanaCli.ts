@@ -55,7 +55,7 @@ export const createNosanaCLI = (version: string) =>
 
           // if node command was `node start` then rejoin test grid
           if (fullCommand == 'node start') {
-            await runBenchmark(opts);
+            await runBenchmark(opts, false);
           }
         }
       }

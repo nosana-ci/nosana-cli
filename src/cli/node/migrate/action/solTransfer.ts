@@ -27,7 +27,9 @@ export async function solTransfer(
   }
 
   const spinner = ora(
-    chalk.cyan(`Transfering ${solBalance} SOL to ${newPublicKey.toString()}.`),
+    chalk.cyan(
+      `Transfering ${solBalance / 1e9} SOL to ${newPublicKey.toString()}.`,
+    ),
   ).start();
 
   try {
