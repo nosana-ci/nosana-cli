@@ -6,8 +6,8 @@ import {
   portOption,
   rpcOption,
   walletOption,
-  gpuOption,
 } from '../../sharedOptions/index.js';
+import { gpuOption } from '../../sharedOptions/--gpu.js';
 
 export const startNodeCommand = new Command('start')
   .description('Start Nosana Node')

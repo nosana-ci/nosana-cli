@@ -20,7 +20,10 @@ import { configs } from '../../../services/NodeManager/configs/configs.js';
 let flow: Flow | undefined;
 let provider: Provider;
 
-export async function runBenchmark(options: { [key: string]: any }) {
+export async function runBenchmark(
+  options: { [key: string]: any },
+  shouldKillProgram = true,
+) {
   const nosana: Client = getSDK();
   const node = nosana.solana.provider!.wallet.publicKey.toString();
   let spinner: Ora;
@@ -114,8 +117,9 @@ export async function runBenchmark(options: { [key: string]: any }) {
     }
 
     const accept = await confirm({
-      message:
-        'Have you read the Participation Agreement and agree to the terms and conditions contained within?',
+      message: `Have you read the Participation Agreement and agree to the terms and conditions contained within?\nParticipation agreement: ${chalk.blue(
+        'https://drive.google.com/file/d/1dFWCT5Zon08pCPrftdxB9ByvbuDafTwy/view',
+      )}`,
     });
     if (!accept) {
       console.log(
@@ -179,7 +183,10 @@ export async function runBenchmark(options: { [key: string]: any }) {
           'Thank you for registering for Nosana Node. We will selectively onboard new participants into the Test Grid based on market requirements and ability of your hardware to run advanced AI models All nodes selected for onboarding will be announced in our Discord server only. Please join our Discord server here: https://discord.gg/Nosana-AI to receive updates.',
         ),
       );
-      process.exit();
+
+      if (shouldKillProgram) {
+        process.exit();
+      }
     } catch (error) {
       console.error(error);
       throw new Error(chalk.red.bold('Failed to register'));

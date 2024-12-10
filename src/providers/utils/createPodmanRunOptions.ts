@@ -5,6 +5,7 @@ import { ifStringCastToArray } from '../../generic/utils.js';
  * Takes image and args and return podman run options
  * @param image
  * @param args
+ * @param gpu
  * @returns
  */
 export function createPodmanRunOptions(
@@ -22,6 +23,7 @@ export function createPodmanRunOptions(
     work_dir,
     entrypoint,
     network_mode,
+    restart_policy,
   } = args;
 
   const devices = gpu
@@ -50,6 +52,7 @@ export function createPodmanRunOptions(
       : undefined),
     env,
     devices,
+    restart_policy,
     netns: { nsmode: network_mode || 'bridge' },
     Networks: networks,
     create_working_dir: true,
