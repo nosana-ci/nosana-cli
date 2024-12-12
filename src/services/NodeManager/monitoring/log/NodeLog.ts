@@ -119,6 +119,10 @@ class NodeLog {
       this.handleStop(data);
     }
 
+    if (data.class === 'BasicNode' && data.method === 'exit') {
+      this.handleExit(data);
+    }
+
     if (
       data.class === 'BasicNode' &&
       (data.method === 'restartDelay' || data.method === 'delay')
@@ -160,6 +164,62 @@ class NodeLog {
 
     if (data.class === 'StakeHandler') {
       this.handleStakeHandler(data);
+    }
+
+    if (data.class === 'MultiProgressBarReporter') {
+      if (data.method === 'start' && data.type == 'call') {
+        // log that the info of the start
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          log: chalk.cyan(data.arguments[0]),
+          timestamp: Date.now(),
+          type: 'stop',
+        });
+
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          timestamp: Date.now(),
+          type: 'multi-process-bar-start',
+          log: '',
+          payload: {
+            optProgressBar: data.arguments[1],
+          },
+        });
+      }
+
+      if (data.method === 'update' && data.type == 'call') {
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          timestamp: Date.now(),
+          type: 'multi-process-bar-update',
+          log: '',
+          payload: {
+            event: data.arguments[0],
+          },
+        });
+      }
+
+      if (data.method === 'stop' && data.type == 'call') {
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          timestamp: Date.now(),
+          type: 'multi-process-bar-stop',
+          log: '',
+        });
+
+        // log that the info of the start
+        // this.addLog({
+        //   method: `${data.class}.${data.method}`,
+        //   job: this.job,
+        //   log: chalk.green(data.arguments[0]),
+        //   timestamp: Date.now(),
+        //   type: 'success',
+        // });
+      }
     }
 
     if (data.class === 'ProgressBarReporter') {
@@ -969,6 +1029,25 @@ class NodeLog {
           type: 'error',
         });
       }
+    }
+  }
+
+  private handleExit(data: LogEntry) {
+    if (data.type === 'call') {
+      this.addLog({
+        method: `${data.class}.${data.method}`,
+        job: this.job,
+        timestamp: Date.now(),
+        type: 'stop',
+        log: '',
+      });
+      this.addLog({
+        method: `${data.class}.${data.method}`,
+        job: this.job,
+        log: chalk.cyan(`node shutdown initiated`),
+        timestamp: Date.now(),
+        type: 'info',
+      });
     }
   }
 

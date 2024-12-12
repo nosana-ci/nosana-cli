@@ -8,8 +8,8 @@ export class PodmanContainerOrchestration extends DockerContainerOrchestration {
   private api: string;
   public name: string = 'podman';
 
-  constructor(server: string) {
-    super(server);
+  constructor(server: string, gpu: string) {
+    super(server, gpu);
     this.api = `${this.protocol}://${this.host}:${this.port}/v4.5.0/libpod`;
   }
 
@@ -28,7 +28,7 @@ export class PodmanContainerOrchestration extends DockerContainerOrchestration {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(createPodmanRunOptions(image, args)),
+        body: JSON.stringify(createPodmanRunOptions(image, args, this.gpu)),
       });
 
       if (create.status === 201) {

@@ -48,9 +48,9 @@ export const stateClassificationMap: { [key: string]: StateCategory } = {
 
   // JOINING MARKET states
   'queueing-in-market': StateCategory.JOINING_MARKET,
-  'queueing-in-market-success': StateCategory.JOINING_MARKET,
-  'queueing-in-market-failed': StateCategory.JOINING_MARKET,
-  'queueing-in-market-position': StateCategory.JOINING_MARKET,
+  'queueing-in-market-success': StateCategory.QUEUED,
+  'queueing-in-market-failed': StateCategory.QUEUED,
+  'queueing-in-market-position': StateCategory.QUEUED,
 
   // QUEUED states
   'awaiting-job-queue': StateCategory.QUEUED,

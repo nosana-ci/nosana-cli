@@ -1,5 +1,5 @@
 import { createSignature } from '../../../api.js';
-import { config } from '../../../../generic/config.js';
+import { configs } from '../../../NodeManager/configs/configs.js';
 
 export async function postStopJobServiceURLWithRetry(
   nodeAddress: string,
@@ -24,7 +24,9 @@ export async function postStopJobServiceURLWithRetry(
 
     try {
       const response = await fetch(
-        `https://${nodeAddress}.${config.frp.serverAddr}/service/stop/${jobAddress}`,
+        `https://${nodeAddress}.${
+          configs().frp.serverAddr
+        }/service/stop/${jobAddress}`,
         {
           method: 'POST',
           headers,

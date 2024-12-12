@@ -3,20 +3,24 @@ import { createPodmanRunOptions } from '../createPodmanRunOptions';
 describe('createPodmanRunOptions', () => {
   it('should return podman run options from given image and args', () => {
     expect(
-      createPodmanRunOptions('ubuntu', {
-        name: 'ubuntu-test',
-        cmd: ['echo test'],
-        volumes: [{ dest: 'testDest', name: 'testDestName' }],
-        entrypoint: ['sh'],
-        env: {
-          ENV: 'TEST',
+      createPodmanRunOptions(
+        'ubuntu',
+        {
+          name: 'ubuntu-test',
+          cmd: ['echo test'],
+          volumes: [{ dest: 'testDest', name: 'testDestName' }],
+          entrypoint: ['sh'],
+          env: {
+            ENV: 'TEST',
+          },
+          gpu: true,
+          networks: {
+            testNet: 'TEST_NET',
+          },
+          work_dir: 'TEST_DIR',
         },
-        gpu: true,
-        networks: {
-          testNet: 'TEST_NET',
-        },
-        work_dir: 'TEST_DIR',
-      }),
+        'all',
+      ),
     ).toEqual({
       Networks: {
         testNet: 'TEST_NET',
@@ -47,5 +51,35 @@ describe('createPodmanRunOptions', () => {
       ],
       work_dir: 'TEST_DIR',
     });
+  });
+
+  test('when setting gpu device index, should list of nvidia devices', () => {
+    expect(
+      createPodmanRunOptions(
+        'ubuntu',
+        {
+          name: 'ubuntu-test',
+          cmd: ['echo test'],
+          volumes: [{ dest: 'testDest', name: 'testDestName' }],
+          entrypoint: ['sh'],
+          env: {
+            ENV: 'TEST',
+          },
+          gpu: true,
+          networks: {
+            testNet: 'TEST_NET',
+          },
+          work_dir: 'TEST_DIR',
+        },
+        '0,2',
+      ).devices,
+    ).toEqual([
+      {
+        path: 'nvidia.com/gpu=0',
+      },
+      {
+        path: 'nvidia.com/gpu=2',
+      },
+    ]);
   });
 });

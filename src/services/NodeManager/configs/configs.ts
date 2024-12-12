@@ -1,6 +1,4 @@
-import dotenv from 'dotenv';
-import { dirname, resolve } from 'path';
-import { fileURLToPath } from 'url';
+import { NodeConfigsSingleton } from './NodeConfigs.js';
 
 export type configType = {
   backendUrl: string;
@@ -16,25 +14,8 @@ export type configType = {
   minDiskSpace: number;
 };
 
-export class NodeConfigs {
-  constructor() {}
-
-  loadVariablesToEnv(options: { [key: string]: any }) {
-    const env = options.network === 'mainnet' ? 'production' : 'dev';
-
-    const modulePath = dirname(fileURLToPath(import.meta.url));
-
-    dotenv.config({
-      path: resolve(modulePath, `../../../../.env.${env}`),
-      override: true,
-    });
-  }
-}
-
 export const configs = (options?: { [key: string]: any }): configType => {
-  if (options) {
-    new NodeConfigs().loadVariablesToEnv(options);
-  }
+  NodeConfigsSingleton.getInstance(options);
 
   return {
     backendUrl:

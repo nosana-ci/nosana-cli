@@ -1,15 +1,15 @@
 import WebSocket from 'ws';
 import { Client } from '@nosana/sdk';
 import { getSDK } from './sdk.js';
-import { config } from '../generic/config.js';
 import { ConsoleLogger } from './NodeManager/monitoring/log/console/ConsoleLogger.js';
+import { configs } from './NodeManager/configs/configs.js';
 
 const logger = new ConsoleLogger();
 
 const getSignature = async () => {
   const nosana: Client = getSDK();
   const signature = (await nosana.solana.signMessage(
-    config.signMessage,
+    configs().signMessage,
   )) as Uint8Array;
   const base64Signature = Buffer.from(signature).toString('base64');
 
@@ -35,8 +35,10 @@ export const listenToWebSocketLogs = (url: string, job: string) => {
     };
 
     ws.on('message', (message) => {
-      const data = JSON.parse(message.toString());
-      logger.update(data, false);
+      const response = JSON.parse(message.toString());
+      if (response.path === 'log') {
+        logger.update(JSON.parse(response.data), false);
+      }
     });
 
     ws.send(JSON.stringify(message));

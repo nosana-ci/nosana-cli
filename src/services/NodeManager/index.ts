@@ -6,16 +6,14 @@ import { stateStreaming } from './monitoring/streaming/StateStreamer.js';
 import { log } from './monitoring/log/NodeLog.js';
 import { logStreaming } from './monitoring/streaming/LogStreamer.js';
 import { consoleLogging } from './monitoring/log/console/ConsoleLogger.js';
-import { NodeConfigs } from './configs/nodeConfigs.js';
 
 export default class NodeManager {
   private node: BasicNode;
   private apiHandler: ApiHandler;
+  private exiting = false;
 
   constructor(options: { [key: string]: any }) {
     this.node = createLoggingProxy(new BasicNode(options));
-
-    new NodeConfigs().loadVariablesToEnv(options);
 
     /**
      * the node class makes the api but we pass the api to the NodeManager class
@@ -229,6 +227,10 @@ export default class NodeManager {
    */
   private handleProcessExit() {
     const exitHandler = async () => {
+      if (this.exiting) return;
+      this.exiting = true;
+      this.node.exit();
+
       await this.stop();
       process.exit();
     };

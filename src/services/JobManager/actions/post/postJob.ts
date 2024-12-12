@@ -7,8 +7,8 @@ import {
 import { getSDK } from '../../../sdk.js';
 import { hasSufficientBalance } from './helpers/hasSufficientBalance.js';
 import { isExposedJobOps } from '../utils/isExposedJob.js';
-import { config } from '../../../../generic/config.js';
 import { JobResult } from '../../listener/types/index.js';
+import { configs } from '../../../NodeManager/configs/configs.js';
 
 export function postJob(
   marketAddress: string,
@@ -56,7 +56,7 @@ export function postJob(
         ipfs_hash: ipfsHash,
         job_timeout: 1 * market.jobTimeout,
         service_url: isExposedJobOps(job)
-          ? `https://${response.job}.${config.frp.serverAddr}`
+          ? `https://${response.job}.${configs().frp.serverAddr}`
           : undefined,
         created_at: new Date().toString(),
         status: 'QUEUED',

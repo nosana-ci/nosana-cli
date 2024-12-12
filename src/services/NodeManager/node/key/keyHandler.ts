@@ -1,7 +1,7 @@
 import { Market, Client as SDK } from '@nosana/sdk';
 import { PublicKey } from '@solana/web3.js';
 import { EMPTY_ADDRESS } from '../../../jobs.js';
-import { configs } from '../../configs/nodeConfigs.js';
+import { configs } from '../../configs/configs.js';
 
 export class KeyHandler {
   private address: PublicKey;

@@ -32,13 +32,27 @@ npm test:
     - if: $CI_MERGE_REQUEST_ID
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
-npm publish:
+npm publish beta:
+  image: node:20.11.1
+  stage: deploy
+  script:
+    - sed -i "s/0.0.0/${CI_COMMIT_TAG:1}-rc/" package.json
+    - npm ci
+    - npm shrinkwrap
+    - npm config set '//registry.npmjs.org/:_authToken' "${NPM_TOKEN}"
+    - npm run publish:next
+  rules:
+    - if: $CI_COMMIT_TAG && $CI_COMMIT_TAG != "latest"
+
+npm publish prod:
   image: node:20.11.1
   stage: deploy
   script:
     - sed -i "s/0.0.0/${CI_COMMIT_TAG:1}/" package.json
     - npm ci
+    - npm shrinkwrap
     - npm config set '//registry.npmjs.org/:_authToken' "${NPM_TOKEN}"
     - npm run publish:public
+  when: manual
   rules:
     - if: $CI_COMMIT_TAG && $CI_COMMIT_TAG != "latest"

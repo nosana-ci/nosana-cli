@@ -5,7 +5,7 @@ import { Client as SDK } from '@nosana/sdk';
 import { PublicKey } from '@solana/web3.js';
 
 import ApiEventEmitter from './ApiEventEmitter.js';
-import { configs } from '../../configs/nodeConfigs.js';
+import { configs } from '../../configs/configs.js';
 import { FlowHandler } from '../flow/flowHandler.js';
 import { sleep } from '../../../../generic/utils.js';
 import { NodeAPIRequest } from './types/index.js';

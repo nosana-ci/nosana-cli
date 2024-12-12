@@ -1,26 +1,23 @@
+import { Client, Market, Run } from '@nosana/sdk';
+
 import { getSDK } from '../../sdk.js';
 import { MarketHandler } from './market/marketHandler.js';
-import { Client, Market, Run } from '@nosana/sdk';
 import { RunHandler } from './run/runHandler.js';
-import { PublicKey } from '@solana/web3.js';
 import { JobHandler } from './job/jobHandler.js';
 import { DB } from '../../../providers/modules/db/index.js';
-import {
-  ContainerOrchestrationInterface,
-  selectContainerOrchestrationProvider,
-} from '../provider/containerOrchestration/interface.js';
+import { ContainerOrchestrationInterface } from '../provider/containerOrchestration/interface.js';
 import { Provider } from '../provider/Provider.js';
-import Logger from '../../../providers/modules/logger/index.js';
 import { applyLoggingProxyToClass } from '../monitoring/proxy/loggingProxy.js';
 import { sleep } from '../../../generic/utils.js';
 import { ApiHandler } from './api/ApiHandler.js';
 import { NodeRepository } from '../repository/NodeRepository.js';
 import { BenchmarkHandler } from './benchmark/benchmarkHandler.js';
 import { HealthHandler } from './health/healthHandler.js';
-import { KeyHandler } from './key/KeyHandler.js';
+import { KeyHandler } from './key/keyHandler.js';
 import { ExpiryHandler } from './expiry/expiryHandler.js';
 import { GridHandler } from './grid/gridHandler.js';
 import { ResourceManager } from './resource/resourceManager.js';
+import { selectContainerOrchestrationProvider } from '../provider/containerOrchestration/selectContainerOrchestration.js';
 
 export class BasicNode {
   private apiHandler: ApiHandler;
@@ -36,6 +33,7 @@ export class BasicNode {
   private resourceManager: ResourceManager;
   private provider: Provider;
   private containerOrchestration: ContainerOrchestrationInterface;
+  private exiting = false;
 
   private sdk: Client;
   constructor(options: { [key: string]: any }) {
@@ -46,6 +44,7 @@ export class BasicNode {
     this.containerOrchestration = selectContainerOrchestrationProvider(
       options.provider,
       options.podman,
+      options.gpu,
     );
     this.resourceManager = new ResourceManager(
       this.containerOrchestration,
@@ -94,10 +93,6 @@ export class BasicNode {
   }
 
   async benchmark(): Promise<boolean> {
-    if (this.sdk.nodes.config.network === 'devnet') {
-      return true;
-    }
-
     /**
      * check the gpus using a premade job definition
      * this is what we do before every job runs
@@ -118,16 +113,10 @@ export class BasicNode {
 
     /**
      * this means even tho we have been onbaorded there might be no market assigned to us
-     *  so we need to get a recommended one and return it
+     * or we need to check if we are still in the right market,
+     * so we need to get a recommended one and return it
      */
-    if (!nodeData.market) {
-      return await this.gridHandler.recommend();
-    }
-
-    /**
-     * this means we already have a market recommended to us from onboarding
-     */
-    return nodeData.market;
+    return await this.gridHandler.recommend();
   }
 
   public api(): ApiHandler {
@@ -163,10 +152,6 @@ export class BasicNode {
   }
 
   async setup(market: string): Promise<void> {
-    if (this.sdk.nodes.config.network === 'devnet') {
-      return;
-    }
-
     await this.resourceManager.fetchMarketRequiredResources(market);
   }
 
@@ -370,6 +355,10 @@ export class BasicNode {
 
   public async maintaniance() {
     this.jobHandler.clearOldJobs();
+  }
+
+  public exit() {
+    this.exiting = true;
   }
 
   public async restartDelay(time: number) {

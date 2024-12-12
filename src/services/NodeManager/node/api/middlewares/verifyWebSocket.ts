@@ -4,7 +4,7 @@ import nacl from 'tweetnacl';
 import { Request } from 'express';
 import { PublicKey } from '@solana/web3.js';
 
-import { configs } from '../../../configs/nodeConfigs.js';
+import { configs } from '../../../configs/configs.js';
 
 export const verifyWebSocketConnection = (
   ws: WebSocket,

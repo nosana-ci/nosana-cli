@@ -10,7 +10,7 @@ import { ResourceManager } from '../node/resource/resourceManager.js';
 import Dockerode from 'dockerode';
 import { jobEmitter } from '../node/job/jobHandler.js';
 import { s3HelperImage } from '../../../providers/modules/resourceManager/volumes/definition/s3HelperOpts.js';
-import { configs } from '../configs/nodeConfigs.js';
+import { configs } from '../configs/configs.js';
 
 export class Provider {
   constructor(

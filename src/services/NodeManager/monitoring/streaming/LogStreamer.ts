@@ -30,7 +30,7 @@ export class LogStreamer implements LogObserver {
       this.logs.set(job, (this.logs.get(job) ?? []).concat([logMessage]));
       const clients = this.clients.get(job) ?? [];
       clients.forEach((ws) => {
-        ws.send(logMessage);
+        ws.send(JSON.stringify({ data: logMessage, path: 'log' }));
       });
     }
     this.logs.set('all', (this.logs.get('all') ?? []).concat([logMessage]));
@@ -42,7 +42,7 @@ export class LogStreamer implements LogObserver {
 
     logs.forEach((log) => {
       if (ws.readyState === WebSocket.OPEN) {
-        ws.send(log);
+        ws.send(JSON.stringify({ data: log, path: 'log' }));
       }
     });
   }
