@@ -1,5 +1,6 @@
 import { Response } from 'express';
-import { NodeAPIRequest } from '../../types';
+
+import { NodeAPIRequest } from '../../types/index.js';
 
 export async function postServiceStopRoute(
   req: NodeAPIRequest<{ jobId: string }>,

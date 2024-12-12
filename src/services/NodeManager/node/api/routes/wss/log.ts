@@ -1,10 +1,10 @@
-import nacl from 'tweetnacl';
-import { Job, Client as SDK } from '@nosana/sdk';
-import { PublicKey } from '@solana/web3.js';
 import WebSocket from 'ws';
+import nacl from 'tweetnacl';
+import { PublicKey } from '@solana/web3.js';
+import { Job, Client as SDK } from '@nosana/sdk';
 
-import { configs } from '../../../../configs/nodeConfigs';
-import { logStreaming } from '../../../../monitoring/streaming/LogStreamer';
+import { configs } from '../../../../configs/nodeConfigs.js';
+import { logStreaming } from '../../../../monitoring/streaming/LogStreamer.js';
 
 /**
  * this is for log streaming, this is going to be used by the basic job poster

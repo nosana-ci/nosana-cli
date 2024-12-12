@@ -2,8 +2,8 @@ import typia from 'typia';
 import { Response } from 'express';
 import { JobDefinition } from '@nosana/sdk';
 
-import { NodeAPIRequest } from '../../types';
-import { clientSelector } from '../../../../../../api/client';
+import { NodeAPIRequest } from '../../types/index.js';
+import { clientSelector } from '../../../../../../api/client.js';
 
 export async function postNodeValidation(
   req: NodeAPIRequest<{}, JobDefinition>,

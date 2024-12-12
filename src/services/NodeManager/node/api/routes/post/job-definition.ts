@@ -1,7 +1,7 @@
 import { Response } from 'express';
 
 import { JobDefinition } from '../../../../provider/types.js';
-import { NodeAPIRequest } from '../../types';
+import { NodeAPIRequest } from '../../types/index.js';
 
 export function postJobDefinitionRoute(
   req: NodeAPIRequest<{ id: string }, { jobDefinition: JobDefinition }>,

@@ -2,7 +2,7 @@ import nacl from 'tweetnacl';
 import { PublicKey } from '@solana/web3.js';
 import { NextFunction, Response } from 'express';
 
-import { NodeAPIRequest } from '../types';
+import { NodeAPIRequest } from '../types/index.js';
 
 export function verifyBackendSignatureMiddleware(
   req: NodeAPIRequest,

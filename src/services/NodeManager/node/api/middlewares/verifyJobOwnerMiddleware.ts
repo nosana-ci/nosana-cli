@@ -1,5 +1,5 @@
-import { Request, Response, NextFunction } from 'express';
 import { Job, Client as SDK } from '@nosana/sdk';
+import { Request, Response, NextFunction } from 'express';
 
 export interface CustomRequest extends Request {
   address?: string;

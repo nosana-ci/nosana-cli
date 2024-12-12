@@ -1,9 +1,10 @@
 // middleware/verifyWebSocket.ts
 import WebSocket from 'ws';
-import { PublicKey } from '@solana/web3.js';
 import nacl from 'tweetnacl';
 import { Request } from 'express';
-import { configs } from '../../../configs/nodeConfigs';
+import { PublicKey } from '@solana/web3.js';
+
+import { configs } from '../../../configs/nodeConfigs.js';
 
 export const verifyWebSocketConnection = (
   ws: WebSocket,
