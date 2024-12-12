@@ -21,6 +21,7 @@ import { verifyJobOwnerMiddleware } from './middlewares/verifyJobOwnerMiddleware
 import { verifySignatureMiddleware } from './middlewares/verifySignatureMiddleware.js';
 import { state } from '../../monitoring/state/NodeState.js';
 import { configs } from '../../configs/configs.js';
+import { pkg } from '../../../../static/staticsImports.js';
 
 export class ApiHandler {
   private api: Express;
@@ -37,7 +38,7 @@ export class ApiHandler {
   ) {
     this.address = this.sdk.solana.provider!.wallet.publicKey;
     this.api = express();
-    // this.api.use(cors());
+    this.api.use(cors());
     this.registerRoutes();
 
     applyLoggingProxyToClass(this);
@@ -261,6 +262,7 @@ export class ApiHandler {
         res.status(200).json({
           ...state(this.address.toString()).getNodeInfo(),
           info: this.repository.getNodeInfo(),
+          version: pkg.version,
         });
       },
     );

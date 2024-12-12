@@ -12,6 +12,7 @@
     "generate": "openapi-typescript http://dashboard.k8s.prd.nos.ci/api/swagger/json -o ./src/api/schema.d.ts",
     "test": "APP_ENV=development DOCKER_CERT_PATH= jest --watch",
     "test:coverage": "APP_ENV=development DOCKER_CERT_PATH= jest --coverage",
+    "publish:next": "npm run build && npm publish --tag=next --access public",
     "publish:public": "npm run build && npm publish --access public",
     "prepare": "npm run generate && ts-patch install && typia patch",
     "prettier": "prettier --check .",
@@ -26,7 +27,8 @@
     "dist",
     "LICENSE",
     "README.md",
-    "package.json"
+    "package.json",
+    "npm-shrinkwrap.json"
   ],
   "author": "Laurens Verspeek",
   "license": "ISC",

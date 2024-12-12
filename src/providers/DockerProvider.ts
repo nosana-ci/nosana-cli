@@ -49,6 +49,7 @@ export type RunContainerArgs = {
   env?: { [key: string]: string };
   work_dir?: string;
   entrypoint?: string | string[];
+  restart_policy?: '' | 'unless-stopped' | 'always' | 'on-failure';
 };
 
 export const FRPC_IMAGE = 'registry.hub.docker.com/nosana/frpc:0.1.0';
@@ -563,6 +564,7 @@ export class DockerProvider extends BasicProvider implements Provider {
       work_dir,
       network_mode,
       entrypoint,
+      restart_policy,
     }: RunContainerArgs,
   ): Promise<Container> {
     const devices = gpu
@@ -570,8 +572,7 @@ export class DockerProvider extends BasicProvider implements Provider {
           {
             ...(this.gpu === 'all'
               ? { Count: -1 }
-              : { device_ids: this.gpu.split(',') }),
-
+              : { DeviceIDs: this.gpu.split(',') }),
             Driver: 'nvidia',
             Capabilities: [['gpu']],
           },
@@ -618,6 +619,9 @@ export class DockerProvider extends BasicProvider implements Provider {
         Mounts: dockerVolumes,
         NetworkMode: network_mode || 'bridge',
         DeviceRequests: devices,
+        RestartPolicy: {
+          Name: restart_policy || '',
+        },
       },
     };
 
