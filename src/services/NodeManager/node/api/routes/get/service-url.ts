@@ -1,7 +1,7 @@
 import { Response } from 'express';
 
 import { NodeAPIRequest } from '../../types/index.js';
-import { configs } from '../../../../configs/nodeConfigs.js';
+import { configs } from '../../../../configs/configs.js';
 
 export function getServiceUrlRoute(
   req: NodeAPIRequest<{ jobId: string }>,

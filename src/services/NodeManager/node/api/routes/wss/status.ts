@@ -3,7 +3,7 @@ import { Job, Client as SDK } from '@nosana/sdk';
 import nacl from 'tweetnacl';
 import WebSocket from 'ws';
 
-import { configs } from '../../../../configs/nodeConfigs.js';
+import { configs } from '../../../../configs/configs.js';
 import { stateStreaming } from '../../../../monitoring/streaming/StateStreamer.js';
 
 /**

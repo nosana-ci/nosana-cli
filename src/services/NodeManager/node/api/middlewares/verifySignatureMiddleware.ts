@@ -1,5 +1,7 @@
 import nacl from 'tweetnacl';
 import { PublicKey } from '@solana/web3.js';
+import { Request, Response, NextFunction } from 'express';
+
 import { configs } from '../../../configs/configs.js';
 
 export const verifySignatureMiddleware = (
@@ -7,7 +9,7 @@ export const verifySignatureMiddleware = (
   res: Response,
   next: NextFunction,
 ) => {
-  const authHeader = req.headers['authorization'] as string;
+  const authHeader = req.headers['authorization'];
   if (!authHeader)
     return res.status(401).send('Authorization header is required');
 
