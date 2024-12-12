@@ -15,6 +15,7 @@ import {
   CudaCheckResponse,
   CudaCheckSuccessResponse,
 } from '../../../../types/cudaCheck.js';
+import { NetworkInfoResults, SystemInfoResults } from './type.js';
 
 export class BenchmarkHandler {
   private flowHandler: FlowHandler;
@@ -60,26 +61,23 @@ export class BenchmarkHandler {
 
     for (const { operationId, logs } of opStates) {
       switch (operationId) {
-        case 'bandwidth':
-          this.handleBandwidthBenchmark(logs);
+        case 'system-info':
+          this.processSystemInfoBenchmark(logs);
           break;
-        case 'country':
-          this.hanldeCountryBenchmark(logs);
+        case 'network-info':
+          this.processNetworkInfoBenchmark(logs);
           break;
-        case 'cpu':
-          this.handleCPUBenchmark(logs);
-          break;
-        case 'disk-space':
-          this.handleDiskSpaceCheck(logs);
-          break;
-        case 'ram':
-          this.handleRAMBenchmark(logs);
-          break;
-        case 'gpu':
-          this.handleGPUBenchmark(logs);
+        case 'gpu-info':
+          this.processGPUInfoBenchmark(logs);
           break;
       }
     }
+  }
+
+  private parseLogsIntoJSON<T extends unknown>(logs: OpState['logs']): T {
+    return JSON.parse(
+      logs.reduce((result: string, { log }) => result + log, ''),
+    ) as T;
   }
 
   private processFailure(opStates: any[]): void {
@@ -110,89 +108,51 @@ export class BenchmarkHandler {
     }
   }
 
-  private handleBandwidthBenchmark(logs: OpState['logs']): void {
-    const parsedBandwidth = logs.reduce(
-      (parsedResult: { [key: string]: number }, { log }) => {
-        if (!log) return parsedResult;
-        const [category, result] = log.split(':');
-        return {
-          ...parsedResult,
-          [`${category.toLowerCase()}_${category === 'Ping' ? 'ms' : 'mbits'}`]:
-            typeof result === 'string' ? parseFloat(result) : -1,
-        };
-      },
-      {},
-    );
+  private processSystemInfoBenchmark(logs: OpState['logs']): void {
+    if (!logs[0]) throw new Error('Could not find system info logs');
 
-    if (Object.keys(parsedBandwidth).length === 0)
-      throw new Error('Cannot find bandwidth output');
+    const {
+      cpu_model: model,
+      logical_cores,
+      physical_cores,
+      ram_mb,
+      disk_gb,
+    } = this.parseLogsIntoJSON<SystemInfoResults>(logs);
 
-    this.repository.updateNodeInfo({ bandwidth: parsedBandwidth });
-  }
-
-  private hanldeCountryBenchmark(logs: OpState['logs']): void {
-    if (!logs[0].log) throw new Error('Cannot find country output');
-    this.repository.updateNodeInfo({ country: logs[0].log.trim() });
-  }
-
-  private handleCPUBenchmark(logs: OpState['logs']): void {
-    if (!logs[0].log) throw new Error('Cannot find cpu output');
-    const parsedCPU = logs[0].log.replace('model name\t:', '').trim();
-    this.repository.updateNodeInfo({ cpu: parsedCPU });
-  }
-
-  private handleRAMBenchmark(logs: OpState['logs']): void {
-    if (!logs[0].log) throw new Error('Cannot find RAM output');
-    this.repository.updateNodeInfo({ ram_mb: parseFloat(logs[0].log) });
-  }
-
-  private handleGPUBenchmark(logs: OpState['logs']): void {
-    if (!logs[0].log) {
-      throw new Error('Cannot find GPU benchmark output');
-    }
-
-    let log = logs.reduce(
-      (jsonString: string, { log }) => jsonString + log,
-      '',
-    );
-
-    let parsedCudaCheck: CudaCheckSuccessResponse;
-
-    try {
-      parsedCudaCheck = JSON.parse(log);
-    } catch (error) {
-      throw new Error('GPU benchmark returned with no devices');
-    }
-
-    if (!parsedCudaCheck.devices) {
-      throw new Error('GPU benchmark returned with no devices');
-    }
+    // TODO ADD DISK SPACE CHECK!
 
     this.repository.updateNodeInfo({
-      gpus: parsedCudaCheck,
+      cpu: {
+        model,
+        logical_cores,
+        physical_cores,
+      },
+      ram_mb,
+      disk_gb,
     });
   }
 
-  private handleDiskSpaceCheck(logs: OpState['logs']): void {
-    if (!logs[0]) {
-      throw new Error(`Can't find disk space output`);
-    }
+  private processNetworkInfoBenchmark(logs: OpState['logs']): void {
+    if (!logs[0]) throw new Error('Could not find network info logs');
 
-    for (const logEntry of logs) {
-      if (logEntry.log) {
-        const minDiskSpace = configs().minDiskSpace / 1024;
-        const availableDiskSpace = parseFloat(logEntry.log) / 1000;
+    const { country, ip, ping_ms, download_mbps, upload_mbps } =
+      this.parseLogsIntoJSON<NetworkInfoResults>(logs);
 
-        this.repository.updateNodeInfo({ disk_gb: availableDiskSpace });
+    this.repository.updateNodeInfo({
+      country,
+      network: {
+        ip,
+        ping_ms,
+        download_mbps,
+        upload_mbps,
+      },
+    });
+  }
 
-        if (minDiskSpace > availableDiskSpace) {
-          throw new Error(
-            `Not enough disk space available. Found ${availableDiskSpace} GB available. Needs at least ${minDiskSpace} GB.`,
-          );
-        }
-      } else {
-        throw new Error(`Can't find disk space output`);
-      }
-    }
+  private processGPUInfoBenchmark(logs: OpState['logs']): void {
+    if (!logs[0]) throw new Error('Could not find GPU info logs');
+
+    const results = this.parseLogsIntoJSON<CudaCheckSuccessResponse>(logs);
+    this.repository.updateNodeInfo({ gpus: results });
   }
 }

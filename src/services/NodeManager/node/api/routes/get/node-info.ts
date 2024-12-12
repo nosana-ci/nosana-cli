@@ -6,6 +6,9 @@ import { NodeAPIRequest } from '../../types/index.js';
 export function getNodeInfoRoute(req: NodeAPIRequest<{}>, res: Response) {
   const info = req.repository!.getNodeInfo();
 
+  const networkRedacted: any = { ...info.network };
+  delete networkRedacted['ip'];
+
   res.status(200).json({
     ...state(req.address!.toString()).getNodeInfo(),
     info: {
@@ -22,6 +25,7 @@ export function getNodeInfoRoute(req: NodeAPIRequest<{}>, res: Response) {
           }),
         ),
       },
+      network: networkRedacted,
     },
   });
 }
