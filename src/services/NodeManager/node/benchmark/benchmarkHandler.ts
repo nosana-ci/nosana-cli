@@ -1,31 +1,33 @@
-import { Flow, Client as SDK } from '@nosana/sdk';
+import { Flow, OpState } from '@nosana/sdk';
+
+import { configs } from '../../configs/configs.js';
 import { FlowHandler } from '../flow/flowHandler.js';
 import { Provider } from '../../provider/Provider.js';
-import { applyLoggingProxyToClass } from '../../monitoring/proxy/loggingProxy.js';
+import {
+  benchmarkGPU,
+  jobDefinition,
+} from '../../../../static/staticsImports.js';
 import { NodeRepository } from '../../repository/NodeRepository.js';
-import { benchmarkGPU } from '../../../../static/staticsImports.js';
-import { CudaCheckResponse } from '../../../../types/cudaCheck.js';
-import { PublicKey } from '@solana/web3.js';
-import { configs } from '../../configs/configs.js';
+import { applyLoggingProxyToClass } from '../../monitoring/proxy/loggingProxy.js';
+
+import {
+  CudaCheckErrorResponse,
+  CudaCheckResponse,
+  CudaCheckSuccessResponse,
+} from '../../../../types/cudaCheck.js';
 
 export class BenchmarkHandler {
   private flowHandler: FlowHandler;
-  private address: PublicKey;
 
-  constructor(
-    private sdk: SDK,
-    private provider: Provider,
-    private repository: NodeRepository,
-  ) {
-    this.address = this.sdk.solana.provider!.wallet.publicKey;
+  constructor(private provider: Provider, private repository: NodeRepository) {
     this.flowHandler = new FlowHandler(this.provider, repository);
     applyLoggingProxyToClass(this);
   }
 
-  async check(): Promise<boolean> {
+  async check(isInMarket: boolean): Promise<boolean> {
     const id = this.flowHandler.generateRandomId(32);
 
-    this.flowHandler.start(id, benchmarkGPU);
+    this.flowHandler.start(id, isInMarket ? benchmarkGPU : jobDefinition);
 
     let result: Flow | undefined;
     try {
@@ -51,13 +53,33 @@ export class BenchmarkHandler {
     return false;
   }
 
-  private async processSuccess(opStates: any[]): Promise<void> {
+  private processSuccess(opStates: OpState[]): void {
     if (!opStates) {
       throw new Error('Missing operation states in result');
     }
 
-    await this.handleGPUBenchmark(opStates[0]);
-    await this.handleDiskSpaceCheck(opStates[1]);
+    for (const { operationId, logs } of opStates) {
+      switch (operationId) {
+        case 'bandwidth':
+          this.handleBandwidthBenchmark(logs);
+          break;
+        case 'country':
+          this.hanldeCountryBenchmark(logs);
+          break;
+        case 'cpu':
+          this.handleCPUBenchmark(logs);
+          break;
+        case 'disk-space':
+          this.handleDiskSpaceCheck(logs);
+          break;
+        case 'ram':
+          this.handleRAMBenchmark(logs);
+          break;
+        case 'gpu':
+          this.handleGPUBenchmark(logs);
+          break;
+      }
+    }
   }
 
   private processFailure(opStates: any[]): void {
@@ -65,11 +87,11 @@ export class BenchmarkHandler {
 
     if (opStates[0]) {
       try {
-        const { error } = JSON.parse(
+        const cudaCheckResults = JSON.parse(
           opStates[0].logs[0].log!,
         ) as CudaCheckResponse;
 
-        if (error) {
+        if ((cudaCheckResults as CudaCheckErrorResponse).error) {
           errors.push(
             'GPU benchmark failed. Ensure NVidia Cuda runtime drivers and NVidia Container Toolkit are correctly configured.',
           );
@@ -88,47 +110,84 @@ export class BenchmarkHandler {
     }
   }
 
-  private async handleGPUBenchmark(opState: any): Promise<void> {
-    if (!opState || !opState.logs || !opState.logs[0]) {
+  private handleBandwidthBenchmark(logs: OpState['logs']): void {
+    const parsedBandwidth = logs.reduce(
+      (parsedResult: { [key: string]: number }, { log }) => {
+        if (!log) return parsedResult;
+        const [category, result] = log.split(':');
+        return {
+          ...parsedResult,
+          [`${category.toLowerCase()}_${category === 'Ping' ? 'ms' : 'mbits'}`]:
+            typeof result === 'string' ? parseFloat(result) : -1,
+        };
+      },
+      {},
+    );
+
+    if (Object.keys(parsedBandwidth).length === 0)
+      throw new Error('Cannot find bandwidth output');
+
+    this.repository.updateNodeInfo({ bandwidth: parsedBandwidth });
+  }
+
+  private hanldeCountryBenchmark(logs: OpState['logs']): void {
+    if (!logs[0].log) throw new Error('Cannot find country output');
+    this.repository.updateNodeInfo({ country: logs[0].log.trim() });
+  }
+
+  private handleCPUBenchmark(logs: OpState['logs']): void {
+    if (!logs[0].log) throw new Error('Cannot find cpu output');
+    const parsedCPU = logs[0].log.replace('model name\t:', '').trim();
+    this.repository.updateNodeInfo({ cpu: parsedCPU });
+  }
+
+  private handleRAMBenchmark(logs: OpState['logs']): void {
+    if (!logs[0].log) throw new Error('Cannot find RAM output');
+    this.repository.updateNodeInfo({ ram_mb: parseFloat(logs[0].log) });
+  }
+
+  private handleGPUBenchmark(logs: OpState['logs']): void {
+    if (!logs[0].log) {
       throw new Error('Cannot find GPU benchmark output');
     }
 
-    let log = opState.logs[0].log!;
+    let log = logs.reduce(
+      (jsonString: string, { log }) => jsonString + log,
+      '',
+    );
+
+    let parsedCudaCheck: CudaCheckSuccessResponse;
 
     try {
-      JSON.parse(log);
+      parsedCudaCheck = JSON.parse(log);
     } catch (error) {
       throw new Error('GPU benchmark returned with no devices');
     }
 
-    const { devices } = JSON.parse(log) as CudaCheckResponse;
-
-    if (!devices) {
+    if (!parsedCudaCheck.devices) {
       throw new Error('GPU benchmark returned with no devices');
     }
 
-    const gpus = log;
-    this.repository.updateNodeInfo({ gpus: `${gpus}` });
+    this.repository.updateNodeInfo({
+      gpus: parsedCudaCheck,
+    });
   }
 
-  private async handleDiskSpaceCheck(opState: any): Promise<void> {
-    if (!opState || !opState.logs || !opState.logs[0]) {
+  private handleDiskSpaceCheck(logs: OpState['logs']): void {
+    if (!logs[0]) {
       throw new Error(`Can't find disk space output`);
     }
 
-    for (const logEntry of opState.logs) {
+    for (const logEntry of logs) {
       if (logEntry.log) {
-        const availableDiskSpace = parseInt(logEntry.log);
+        const minDiskSpace = configs().minDiskSpace / 1024;
+        const availableDiskSpace = parseFloat(logEntry.log) / 1000;
 
-        this.repository.updateNodeInfo({ disk: `${availableDiskSpace}` });
+        this.repository.updateNodeInfo({ disk_gb: availableDiskSpace });
 
-        if (configs().minDiskSpace > availableDiskSpace) {
+        if (minDiskSpace > availableDiskSpace) {
           throw new Error(
-            `Not enough disk space available. Found ${
-              availableDiskSpace / 1000
-            } GB available. Needs at least ${
-              configs().minDiskSpace / 1000
-            } GB.`,
+            `Not enough disk space available. Found ${availableDiskSpace} GB available. Needs at least ${minDiskSpace} GB.`,
           );
         }
       } else {

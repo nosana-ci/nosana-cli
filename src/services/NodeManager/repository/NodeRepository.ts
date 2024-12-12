@@ -94,14 +94,12 @@ export class NodeRepository {
     this.db.write();
   }
 
-  public updateNodeInfo(updatedFields: { [key: string]: string }): void {
+  public updateNodeInfo(updatedFields: Partial<NodeDb['info']>): void {
     Object.assign(this.db.data.info, updatedFields);
     this.db.write();
   }
 
-  public getNodeInfo(): {
-    [key: string]: string;
-  } {
+  public getNodeInfo(): NodeDb['info'] {
     return this.db.data.info;
   }
 

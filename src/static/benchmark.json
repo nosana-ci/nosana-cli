@@ -31,7 +31,7 @@
       "type": "container/run",
       "id": "disk-space",
       "args": {
-        "cmd": "df -h --output=size --total | awk 'END {print $1}';",
+        "cmd": "df -m --output=avail --total | awk 'END {print $1}';",
         "image": "registry.hub.docker.com/nosana/stats:v1.0.7",
         "env": {
           "DEBUG": "1"
@@ -65,7 +65,7 @@
       "id": "gpu",
       "args": {
         "cmd": ["./cuda_check"],
-        "image": "registry.hub.docker.com/nosana/stats:v1.0.7",
+        "image": "registry.hub.docker.com/nosana/stats:v1.1.4",
         "env": {
           "DEBUG": "1"
         },

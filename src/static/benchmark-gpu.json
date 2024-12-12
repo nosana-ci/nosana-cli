@@ -7,16 +7,16 @@
   "ops": [
     {
       "type": "container/run",
-      "id": "cuda-runtime-check",
+      "id": "gpu",
       "args": {
         "cmd": ["./cuda_check"],
-        "image": "registry.hub.docker.com/nosana/stats:v1.0.7",
+        "image": "registry.hub.docker.com/nosana/stats:v1.1.4",
         "gpu": true
       }
     },
     {
       "type": "container/run",
-      "id": "disk-space-check",
+      "id": "disk-space",
       "args": {
         "cmd": "df -m --output=avail --total | awk 'END {print $1}';",
         "image": "registry.hub.docker.com/nosana/stats:v1.0.7",
