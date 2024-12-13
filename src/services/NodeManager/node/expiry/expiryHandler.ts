@@ -1,4 +1,4 @@
-import { Client as SDK, Market, Run } from '@nosana/sdk';
+import { Client as SDK, Market, Run, Job } from '@nosana/sdk';
 import { PublicKey } from '@solana/web3.js';
 import BN from 'bn.js';
 import ApiEventEmitter from '../api/ApiEventEmitter.js';
@@ -6,7 +6,7 @@ import { jobEmitter } from '../job/jobHandler.js';
 
 export class ExpiryHandler {
   private address: PublicKey;
-  private job: string | undefined;
+  private jobAddress: string | undefined;
   public expiryEndTime: number = 0;
   public expiryTimer: NodeJS.Timeout | null = null;
   public warningTimer: NodeJS.Timeout | null = null;
@@ -16,7 +16,7 @@ export class ExpiryHandler {
     this.address = this.sdk.solana.provider!.wallet.publicKey;
 
     ApiEventEmitter.getInstance().on('stop-job', (id: string) => {
-      if (this.job === id) {
+      if (this.jobAddress === id) {
         this.shortenedExpiry();
       }
     });
@@ -24,13 +24,13 @@ export class ExpiryHandler {
 
   public init<T>(
     run: Run,
-    market: Market,
-    job: string,
+    job: Job,
+    jobstring: string,
     onExpireCallback: () => Promise<T>,
   ): number {
-    this.job = job;
+    this.jobAddress = jobstring;
     this.expiryEndTime = new BN(run.account.time)
-      .add(new BN(market.jobTimeout))
+      .add(new BN(job.timeout))
       .mul(new BN(1000))
       .toNumber();
 
@@ -48,7 +48,7 @@ export class ExpiryHandler {
     if (this.warningTimer) clearTimeout(this.warningTimer);
     this.expiryTimer = null;
     this.warningTimer = null;
-    this.job = undefined;
+    this.jobAddress = undefined;
   }
 
   private startOrResetTimer() {
@@ -75,10 +75,10 @@ export class ExpiryHandler {
     this.startOrResetTimer();
   }
 
-  public expired(run: Run, market: Market): boolean {
+  public expired(run: Run, job: Job): boolean {
     const now = Date.now() / 1000;
     const expirationTime = new BN(run.account.time)
-      .add(new BN(market.jobTimeout))
+      .add(new BN(job.timeout))
       .toNumber();
     return expirationTime < now;
   }

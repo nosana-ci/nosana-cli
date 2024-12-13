@@ -127,6 +127,7 @@ export async function runBenchmark(
       );
       process.exit();
     }
+
     console.log(chalk.cyan('Running benchmark'));
     // Create new flow
     flow = provider.run(jobDefinition);

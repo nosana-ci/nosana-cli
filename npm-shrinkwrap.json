@@ -2009,9 +2009,15 @@
       }
     },
     "node_modules/@nosana/sdk": {
+<<<<<<< HEAD:npm-shrinkwrap.json
       "version": "0.3.50-rc.2",
       "resolved": "https://registry.npmjs.org/@nosana/sdk/-/sdk-0.3.50-rc.2.tgz",
       "integrity": "sha512-NNf7DPQa+XKWIhptvAwgFMsnSeZwp9+WNklXtmUjh8hOoF1pe14LO3DtQ+KyIu3QtXcNfNoRVtWkhXUQRgccXA==",
+=======
+      "version": "0.3.4-5.rc1",
+      "resolved": "https://registry.npmjs.org/@nosana/sdk/-/sdk-0.3.4-5.rc1.tgz",
+      "integrity": "sha512-4SS1G76Aww7RSQgu2YN5gQdOz38loD7TqUF133v0az4pi+oCHDbLagSPIpl66WK6ksY0uwZDEImTbE6hh9Dmew==",
+>>>>>>> 58dd0efc1e552aa4034201a2ed949666527ab092:package-lock.json
       "license": "ISC",
       "dependencies": {
         "@coral-xyz/anchor": "^0.28.1-beta.1",
