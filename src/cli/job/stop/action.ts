@@ -60,7 +60,7 @@ export async function stopJob(
       const spinner = ora(chalk.cyan(`removing job from queue`)).start();
 
       // use new function to stop job that are still enqueue
-      // nosana.jobs.delist()
+      nosana.jobs.delist(jobAddress);
 
       spinner.succeed();
 
@@ -72,8 +72,8 @@ export async function stopJob(
         const spinner = ora(chalk.cyan(`stopping job ${jobAddress}`)).start();
 
         // use new function to stop job that are stillrunning
-        // nosana.jobs.end()
-  
+        nosana.jobs.end(jobAddress);
+
         spinner.succeed();
       }
     } else {
