@@ -66,9 +66,9 @@ const initial_state: NodeDb = {
     ram_mb: 0,
     gpus: {
       devices: [],
-      runtime_version: 0,
-      cuda_driver_version: 0,
-      nvml_driver_version: 0,
+      runtime_version: '0.0',
+      cuda_driver_version: '0.0',
+      nvml_driver_version: '0.0.0',
     },
   },
 };
