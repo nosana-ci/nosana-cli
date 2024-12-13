@@ -22,7 +22,9 @@ export class ConsoleLogger implements LogObserver {
   private progressBar: SingleBar | undefined;
   private layerIds: Map<string, SingleBar> | undefined;
   private multiProgressBar: MultiBar | undefined;
-  // private currentOp
+  private kill: boolean = false;
+  private jobrunning: boolean = false;
+  private benchmarking: boolean = false;
 
   private running: boolean = false;
 
@@ -35,18 +37,76 @@ export class ConsoleLogger implements LogObserver {
   }
 
   public update(log: NodeLogEntry, isNode: boolean = true) {
-    if (log.job && isNode) {
+    if (!this.kill && log.type == 'kill-process') {
       if (this.pending) {
         this.spinner.stop();
       }
+      if (this.progressBar) {
+        this.progressBar.stop();
+      }
+      if (this.multiProgressBar) {
+        this.multiProgressBar.stop();
+      }
+
+      this.kill = true;
+      this.pending = true;
+      this.expecting = log.pending?.expecting;
+      this.spinner = ora(log.log).start();
+    }
+
+    if (this.kill) {
+      if (log.type == 'kill-success') {
+        this.spinner.succeed(log.log);
+      } else if (log.type == 'kill-error') {
+        this.spinner.fail(log.log);
+      } else {
+        return;
+      }
+    }
+
+    if (
+      !this.benchmarking &&
+      log.method == 'BasicNode.benchmark' &&
+      log.type == 'process'
+    ) {
+      this.benchmarking = true;
+      this.pending = true;
 
       this.spinner = ora(
-        chalk.green(
-          `${chalk.bgGreen.bold(' RUNNING ')} job ${chalk.bold(log.job)}`,
-        ),
+        chalk.green(`${chalk.bgGreen.bold(' Benchmarking Node')}`),
       ).start();
       return;
     }
+
+    if (this.benchmarking) {
+      this.spinner.text =
+        chalk.cyan(`${this.spinner.text}\n`) + chalk.cyan(` \t➡️  ${log.log}`);
+    }
+
+    if (this.benchmarking && log.method == 'BasicNode.benchmark') {
+      this.benchmarking = false;
+      this.pending = false;
+      if (log.type == 'success') {
+        this.spinner.succeed(log.log);
+      } else if (log.type == 'error') {
+        this.spinner.fail(log.log);
+      }
+      return;
+    } else if (this.benchmarking) {
+      return;
+    }
+    // if (log.job && isNode) {
+    //   if (this.pending) {
+    //     this.spinner.stop();
+    //   }
+
+    //   this.spinner = ora(
+    //     chalk.green(
+    //       `${chalk.bgGreen.bold(' RUNNING ')} job ${chalk.bold(log.job)}`,
+    //     ),
+    //   ).start();
+    //   return;
+    // }
 
     if (log.type == 'log') {
       if (!isNode) {
@@ -200,7 +260,7 @@ export class ConsoleLogger implements LogObserver {
           }
           this.pending = false;
         } else {
-          if (log.type == 'success') {
+          if (log.type == 'success' || log.type == 'kill-success') {
             if (this.spinner.text.includes('\n')) {
               // Split the text by the first newline and keep the part after it
               const [, rest] = this.spinner.text.split(/\n(.+)/); // Match the first occurrence and keep the rest
@@ -209,7 +269,7 @@ export class ConsoleLogger implements LogObserver {
             } else {
               this.spinner.succeed(log.log);
             }
-          } else if (log.type == 'error') {
+          } else if (log.type == 'error' || log.type == 'kill-error') {
             if (this.spinner.text.includes('\n')) {
               const [, rest] = this.spinner.text.split(/\n(.+)/);
               this.spinner.fail(`${log.log}\n${rest}`);

@@ -554,7 +554,7 @@ export class Provider {
 
   public runOperation(
     type: string,
-    param: { id: string; index: number },
+    param: { id: string; index: number; name: string },
   ): Promise<boolean> {
     if (type == 'container/run') {
       return this.containerRunOperation(param.id, param.index);
@@ -567,7 +567,7 @@ export class Provider {
 
   public stopOperation(
     type: string,
-    param: { id: string; index: number },
+    param: { id: string; index: number; name: string },
   ): Promise<boolean> {
     if (type == 'container/run') {
       return this.containerRunStopOperation(param.id, param.index);

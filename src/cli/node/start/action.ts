@@ -47,8 +47,8 @@ export async function startNode(
 
     console.error(formattedError);
 
-    if(nodeManager.inJobLoop){
-      await nodeManager.restart(market)
+    if (nodeManager.inJobLoop) {
+      await nodeManager.restart(market);
     } else {
       await nodeManager.stop();
       process.exit();

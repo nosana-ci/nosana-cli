@@ -327,11 +327,6 @@ export class BasicNode {
     }
 
     /**
-     * check queue position of node in market
-     */
-    this.marketHandler.processMarketQueuePosition(joinedMarket, true);
-
-    /**
      * here we listen to the market queue and listen to any chnages
      * here we can use it to log or get info, but not run job because
      * it is not a blocking process
@@ -347,7 +342,7 @@ export class BasicNode {
           /**
            * update the market position on queue
            */
-          this.marketHandler.processMarketQueuePosition(market, false);
+          this.marketHandler.processMarketQueuePosition(market, true);
         }
       },
     );

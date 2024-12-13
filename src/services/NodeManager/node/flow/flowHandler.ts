@@ -45,7 +45,13 @@ export class FlowHandler {
 
       if (!opState.endTime) {
         try {
-          if (!(await this.provider.runOperation(op.type, { id, index: i }))) {
+          if (
+            !(await this.provider.runOperation(op.type, {
+              id,
+              index: i,
+              name: this.repository.getFlowOperationName(id, i),
+            }))
+          ) {
             this.repository.updateflowState(id, {
               endTime: Date.now(),
               status: 'failed',
@@ -78,7 +84,11 @@ export class FlowHandler {
         const op = flow.jobDefinition.ops[i];
 
         try {
-          await this.provider.stopOperation(op.type, { id, index: i });
+          await this.provider.stopOperation(op.type, {
+            id,
+            index: i,
+            name: this.repository.getFlowOperationName(id, i),
+          });
         } catch (_) {}
       }
     } catch (_) {}
