@@ -219,7 +219,7 @@ export async function run(
   }
   let response;
   try {
-    response = await nosana.jobs.list(ipfsHash, 120);
+    response = await nosana.jobs.list(ipfsHash, options.timeout);
   } catch (e) {
     return formatter.throw(OUTPUT_EVENTS.OUTPUT_JOB_POSTED_ERROR, {
       error: e as Error,
