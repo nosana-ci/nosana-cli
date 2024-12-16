@@ -9,7 +9,9 @@ export function verifyBackendSignatureMiddleware(
   res: Response,
   next: NextFunction,
 ) {
-  const signatureHeader = req.headers['X-Session-ID'] as string | undefined;
+  const signatureHeader =
+    (req.headers['X-Session-ID'] as string | undefined) ||
+    (req.headers['x-session-id'] as string | undefined);
 
   if (!signatureHeader) {
     return res.status(401).send('Unauthorized Request: Missing session id.');
