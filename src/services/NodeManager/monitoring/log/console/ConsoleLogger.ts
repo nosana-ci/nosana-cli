@@ -23,7 +23,7 @@ export class ConsoleLogger implements LogObserver {
   private layerIds: Map<string, SingleBar> | undefined;
   private multiProgressBar: MultiBar | undefined;
   private kill: boolean = false;
-  private jobrunning: boolean = false;
+  private lastLog: string = '';
   private benchmarking: boolean = false;
 
   private running: boolean = false;
@@ -56,58 +56,66 @@ export class ConsoleLogger implements LogObserver {
 
     if (this.kill) {
       if (log.type == 'kill-success') {
+        if(this.lastLog == log.log){
+          return;
+        }
+        this.lastLog = log.log
         this.spinner.succeed(log.log);
+        this.kill = false;
+        this.pending = false;
       } else if (log.type == 'kill-error') {
         this.spinner.fail(log.log);
+        this.kill = false;
+        this.pending = false;
       } else {
         return;
       }
     }
 
-    if (
-      !this.running &&
-      log.method == 'JobHandler.claim' &&
-      log.type == 'success' &&
-      isNode
-    ) {
-      this.spinner.stop();
-      this.pending = true;
-      this.running = true;
+    // if (
+    //   !this.running &&
+    //   log.method == 'JobHandler.claim' &&
+    //   log.type == 'success' &&
+    //   isNode
+    // ) {
+    //   this.spinner.stop();
+    //   this.pending = true;
+    //   this.running = true;
 
-      this.spinner = ora(
-        chalk.yellow(
-          `${chalk.bgYellow.bold(' RUNNING FLOW ')} ${chalk.bold(log.job)}`,
-        ),
-      ).start();
-      return;
-    }
+    //   this.spinner = ora(
+    //     chalk.yellow(
+    //       `${chalk.bgYellow.bold(' RUNNING FLOW ')} ${chalk.bold(log.job)}`,
+    //     ),
+    //   ).start();
+    //   return;
+    // }clear
 
-    if (this.running && log.method == 'ExpiryHandler.waitUntilExpired') {
-      if (log.type != 'success' && log.type != 'error') {
-        return;
-      }
-      this.pending = false;
-      this.running = false;
+    // if (this.running && log.method == 'ExpiryHandler.waitUntilExpired') {
+    //   if (log.type != 'success' && log.type != 'error') {
+    //     return;
+    //   }
+    //   this.pending = false;
+    //   this.running = false;
 
-      if (log.type == 'success') {
-        this.spinner.succeed(
-          chalk.green(
-            `${chalk.bgGreen.bold(' COMPLETED FLOW ')} ${chalk.bold(log.job)}`,
-          ),
-        );
-      } else if (log.type == 'error') {
-        this.spinner.succeed(
-          chalk.red(
-            `${chalk.bgRed.bold(' FAILED FLOW ')} ${chalk.bold(log.job)}`,
-          ),
-        );
-      }
-      return;
-    }
+    //   if (log.type == 'success') {
+    //     this.spinner.succeed(
+    //       chalk.green(
+    //         `${chalk.bgGreen.bold(' COMPLETED FLOW ')} ${chalk.bold(log.job)}`,
+    //       ),
+    //     );
+    //   } else if (log.type == 'error') {
+    //     this.spinner.succeed(
+    //       chalk.red(
+    //         `${chalk.bgRed.bold(' FAILED FLOW ')} ${chalk.bold(log.job)}`,
+    //       ),
+    //     );
+    //   }
+    //   return;
+    // }
 
-    if (this.running) {
-      return;
-    }
+    // if (this.running) {
+    //   return;
+    // }
 
     if (
       !this.benchmarking &&
@@ -337,6 +345,14 @@ export class ConsoleLogger implements LogObserver {
       } else {
         console.log(log.log);
       }
+    }
+
+    if(log.method == 'BasicNode.restartDelay' && log.type == 'success'){
+      this.expecting = undefined
+      this.kill = false;
+      this.benchmarking = false;
+      this.running = false;
+      this.spinner.stop()
     }
   }
 }

@@ -46,13 +46,14 @@ export async function startNode(
 
       console.error(formattedError);
 
+      await nodeManager.error()
+      
       if (nodeManager.inJobLoop) {
         try {
-          await nodeManager.error();
+          await nodeManager.stop();
         } catch (error) {}
 
-        await nodeManager.delay(30);
-
+        nodeManager.delay(10)
         continue;
       } else {
         await nodeManager.stop();

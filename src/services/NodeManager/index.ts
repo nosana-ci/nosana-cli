@@ -26,6 +26,9 @@ export default class NodeManager {
   }
 
   async init(): Promise<void> {
+
+    this.exiting = false
+    
     /**
      * setup state that any instance can listen to, state produced from the node via logging proxies.
      * set up node state processing, observers can connect to it and received state
@@ -239,8 +242,6 @@ export default class NodeManager {
     if (this.exiting) return;
     this.exiting = true;
     this.node.exit();
-
-    await this.stop();
   }
 
   /**

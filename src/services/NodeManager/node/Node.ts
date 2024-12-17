@@ -238,20 +238,15 @@ export class BasicNode {
        */
       const market = await this.marketHandler.setMarket(job.market.toString());
 
-      // /**
-      //  * check if the job is expired if it is quit the job,
-      //  * if not continue to start
-      //  */
+      /**
+       * check if the job is expired if it is quit the job,
+       * if not continue to start
+       */
       if (!this.expiryHandler.expired(run, job)) {
         /**
          * this starts the expiry settings to monitory expiry time
          */
         this.expiryHandler.init<boolean>(run, job, jobAddress, async () => {
-          /**
-           * upload the result and end the flow, also clean up flow.
-           */
-          await this.jobHandler.finish(run);
-
           return true;
         });
 
