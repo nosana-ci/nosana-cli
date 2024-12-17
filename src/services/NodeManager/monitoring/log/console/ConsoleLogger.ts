@@ -65,6 +65,51 @@ export class ConsoleLogger implements LogObserver {
     }
 
     if (
+      !this.running &&
+      log.method == 'JobHandler.claim' &&
+      log.type == 'success' &&
+      isNode
+    ) {
+      this.spinner.stop();
+      this.pending = true;
+      this.running = true;
+
+      this.spinner = ora(
+        chalk.yellow(
+          `${chalk.bgYellow.bold(' RUNNING FLOW ')} ${chalk.bold(log.job)}`,
+        ),
+      ).start();
+      return;
+    }
+
+    if (this.running && log.method == 'ExpiryHandler.waitUntilExpired') {
+      if (log.type != 'success' && log.type != 'error') {
+        return;
+      }
+      this.pending = false;
+      this.running = false;
+
+      if (log.type == 'success') {
+        this.spinner.succeed(
+          chalk.green(
+            `${chalk.bgGreen.bold(' COMPLETED FLOW ')} ${chalk.bold(log.job)}`,
+          ),
+        );
+      } else if (log.type == 'error') {
+        this.spinner.succeed(
+          chalk.red(
+            `${chalk.bgRed.bold(' FAILED FLOW ')} ${chalk.bold(log.job)}`,
+          ),
+        );
+      }
+      return;
+    }
+
+    if (this.running) {
+      return;
+    }
+
+    if (
       !this.benchmarking &&
       log.method == 'BasicNode.benchmark' &&
       log.type == 'process'
@@ -95,6 +140,7 @@ export class ConsoleLogger implements LogObserver {
     } else if (this.benchmarking) {
       return;
     }
+
     // if (log.job && isNode) {
     //   if (this.pending) {
     //     this.spinner.stop();
@@ -253,9 +299,12 @@ export class ConsoleLogger implements LogObserver {
           this.spinner.stop();
           this.pending = false;
         }
+
         if (log.type == 'stop') {
           this.spinner.stop();
-          if (log.log != '') {
+          if (log.log == '') {
+            return;
+          } else {
             console.log(log.log);
           }
           this.pending = false;

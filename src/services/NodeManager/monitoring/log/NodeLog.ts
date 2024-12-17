@@ -463,12 +463,22 @@ class NodeLog {
             method: `${data.class}.${data.method}`,
             job: this.job,
             log: chalk.cyanBright(
-              `Waiting for job ${chalk.bold(this.job)}  to finish`,
+              `Waiting for job ${chalk.bold(this.job)} to finish`,
             ),
             timestamp: Date.now(),
             type: 'info',
           });
         }
+      }
+
+      if (data.type === 'return' || data.type === 'error') {
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          log: chalk.green(`Job run time finished`),
+          timestamp: Date.now(),
+          type: data.type == 'return' ? 'success' : 'error',
+        });
       }
     }
   }
@@ -990,13 +1000,6 @@ class NodeLog {
       this.addLog({
         method: `${data.class}.${data.method}`,
         job: this.job,
-        timestamp: Date.now(),
-        type: 'stop',
-        log: '', // remains empty
-      });
-      this.addLog({
-        method: `${data.class}.${data.method}`,
-        job: this.job,
         log: chalk.cyan('Shutting down node'),
         timestamp: Date.now(),
         type: 'process',
@@ -1213,7 +1216,7 @@ class NodeLog {
           job: this.job,
           log: chalk.green(`Job ${chalk.bold(this.job)} finished successfully`),
           timestamp: Date.now(),
-          type: 'info',
+          type: 'success',
         });
         this.job = undefined;
       }
@@ -1224,7 +1227,7 @@ class NodeLog {
           job: this.job,
           log: chalk.red(`Error finishing job ${chalk.bold(this.job)}`),
           timestamp: Date.now(),
-          type: 'info',
+          type: 'error',
         });
         this.job = undefined;
       }
