@@ -231,6 +231,15 @@ export default class NodeManager {
     await this.start(market);
   }
 
+  async delay() {
+    /**
+     * delay
+     *
+     * put a delay of seconds to space out restarting
+     */
+    await this.node.restartDelay(10);
+  }
+
   /**
    * Set up handling for process exit signals
    */

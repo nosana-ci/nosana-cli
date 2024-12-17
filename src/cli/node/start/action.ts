@@ -31,29 +31,54 @@ export async function startNode(
 ): Promise<void> {
   const nodeManager = new NodeManager(options);
 
-  try {
-    await nodeManager.init();
-    await nodeManager.start(market);
-  } catch (e) {
-    const error = e as any;
+  while (true) {
+    try {
+      await nodeManager.init();
+      await nodeManager.start(market);
+    } catch (error: any) {
+      const formattedError = `
+      ========== ERROR ==========
+      Timestamp: ${new Date().toISOString()}
+      Error Name: ${error.name || 'Unknown Error'}
+      Message: ${error.message || 'No message available'}
+      ============================
+      `;
 
-    const formattedError = `
-    ========== ERROR ==========
-    Timestamp: ${new Date().toISOString()}
-    Error Name: ${error.name || 'Unknown Error'}
-    Message: ${error.message || 'No message available'}
-    ============================
-    `;
+      console.error(formattedError);
 
-    console.error(formattedError);
-
-    if (nodeManager.inJobLoop) {
-      await nodeManager.restart(market);
-    } else {
-      await nodeManager.stop();
-      process.exit();
+      if (nodeManager.inJobLoop) {
+        await nodeManager.delay();
+        continue;
+      } else {
+        await nodeManager.stop();
+        process.exit();
+      }
     }
   }
+
+  // try {
+  //   await nodeManager.init();
+  //   await nodeManager.start(market);
+  // } catch (e) {
+  //   const error = e as any;
+
+  //   const formattedError = `
+  //   ========== ERROR ==========
+  //   Timestamp: ${new Date().toISOString()}
+  //   Error Name: ${error.name || 'Unknown Error'}
+  //   Message: ${error.message || 'No message available'}
+  //   ============================
+  //   `;
+
+  //   console.error(formattedError);
+
+  //   if (nodeManager.inJobLoop) {
+  //     await nodeManager.restart(market);
+  //   } else {
+  //     await nodeManager.stop();
+  //     process.exit();
+  //   }
+  // }
 }
 
 export async function startNode1(
