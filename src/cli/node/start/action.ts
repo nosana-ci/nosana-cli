@@ -48,10 +48,10 @@ export async function startNode(
 
       if (nodeManager.inJobLoop) {
         try {
-          await nodeManager.stop();
+          await nodeManager.error();
         } catch (error) {}
 
-        await nodeManager.delay();
+        await nodeManager.delay(30);
 
         continue;
       } else {

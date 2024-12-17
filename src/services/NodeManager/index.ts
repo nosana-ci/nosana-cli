@@ -231,15 +231,16 @@ export default class NodeManager {
     await this.start(market);
   }
 
-  async delay() {
+  async delay(sec: number) {
+    await this.node.restartDelay(sec);
+  }
+
+  async error() {
+    if (this.exiting) return;
+    this.exiting = true;
     this.node.exit();
-    
-    /**
-     * delay
-     *
-     * put a delay of seconds to space out restarting
-     */
-    await this.node.restartDelay(10);
+
+    await this.stop();
   }
 
   /**
