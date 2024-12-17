@@ -11,7 +11,7 @@
       "dependencies": {
         "@coral-xyz/anchor": "^0.28.1-beta.1",
         "@inquirer/prompts": "^4.3.0",
-        "@nosana/sdk": "^0.3.50-rc.2",
+        "@nosana/sdk": "0.3.50-rc.3",
         "@solana/web3.js": "^1.78.0",
         "bn.js": "^5.2.1",
         "chalk": "^5.3.0",
@@ -2009,16 +2009,9 @@
       }
     },
     "node_modules/@nosana/sdk": {
-<<<<<<< HEAD:npm-shrinkwrap.json
-      "version": "0.3.50-rc.2",
-      "resolved": "https://registry.npmjs.org/@nosana/sdk/-/sdk-0.3.50-rc.2.tgz",
-      "integrity": "sha512-NNf7DPQa+XKWIhptvAwgFMsnSeZwp9+WNklXtmUjh8hOoF1pe14LO3DtQ+KyIu3QtXcNfNoRVtWkhXUQRgccXA==",
-=======
-      "version": "0.3.4-5.rc1",
-      "resolved": "https://registry.npmjs.org/@nosana/sdk/-/sdk-0.3.4-5.rc1.tgz",
-      "integrity": "sha512-4SS1G76Aww7RSQgu2YN5gQdOz38loD7TqUF133v0az4pi+oCHDbLagSPIpl66WK6ksY0uwZDEImTbE6hh9Dmew==",
->>>>>>> 58dd0efc1e552aa4034201a2ed949666527ab092:package-lock.json
-      "license": "ISC",
+      "version": "0.3.50-rc.3",
+      "resolved": "https://registry.npmjs.org/@nosana/sdk/-/sdk-0.3.50-rc.3.tgz",
+      "integrity": "sha512-PA6W98aFoB0g0WvZfyR/GPNK1GCWbDKRDq1/UNpiz0lOcA3SBn5VlOiZuYp3zyfzniS/GIQ8r2Ej3Eit/EOqVQ==",
       "dependencies": {
         "@coral-xyz/anchor": "^0.28.1-beta.1",
         "@solana/spl-token": "^0.3.8",
