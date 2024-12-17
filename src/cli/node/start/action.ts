@@ -47,7 +47,12 @@ export async function startNode(
       console.error(formattedError);
 
       if (nodeManager.inJobLoop) {
+        try {
+          await nodeManager.stop();
+        } catch (error) {}
+
         await nodeManager.delay();
+
         continue;
       } else {
         await nodeManager.stop();
