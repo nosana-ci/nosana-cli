@@ -232,6 +232,8 @@ export default class NodeManager {
   }
 
   async delay() {
+    this.node.exit();
+    
     /**
      * delay
      *
