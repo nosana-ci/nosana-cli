@@ -2,6 +2,7 @@ import typia from 'typia';
 import { Response } from 'express';
 import { JobDefinition } from '@nosana/sdk';
 
+import { getSDK } from '../../../../../sdk.js';
 import { NodeAPIRequest } from '../../types/index.js';
 import { clientSelector } from '../../../../../../api/client.js';
 
@@ -9,13 +10,15 @@ export async function postNodeValidation(
   req: NodeAPIRequest<{}, JobDefinition>,
   res: Response,
 ) {
+  const sdk = getSDK();
+  const client = clientSelector();
+  const flowHandler = req.flowHandler!;
+  const validator = typia.createValidateEquals<JobDefinition>();
+
   if (!req.body) {
     return res.status(400).send('Missing job definition.');
   }
 
-  const client = clientSelector();
-  const flowHandler = req.flowHandler!;
-  const validator = typia.createValidateEquals<JobDefinition>();
   const isValid = validator(req.body);
 
   if (!isValid.success) {
@@ -35,8 +38,15 @@ export async function postNodeValidation(
   try {
     let result = await flowHandler.run(id);
     // @ts-ignore WAITING ON ENDPOINT CREATION + DEFINING THE RESPONSE OBJECT
-    client.POST('/api/nodes/TBC', {
-      body: JSON.stringify(result),
+    await client.POST('/api/benchmarks/submit', {
+      body: result,
+      params: {
+        header: {
+          authorization: sdk.authorization.generate(res.locals['session_id']!, {
+            includeTime: true,
+          }),
+        },
+      },
     });
   } catch (error) {
     throw error;

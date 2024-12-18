@@ -1,8 +1,8 @@
-import { Server } from 'http';
-import express, { Express, NextFunction, Request, Response } from 'express';
 import WebSocket from 'ws';
+import { Server } from 'http';
 import { Client as SDK } from '@nosana/sdk';
 import { PublicKey } from '@solana/web3.js';
+import express, { Express, NextFunction, Request, Response } from 'express';
 
 import ApiEventEmitter from './ApiEventEmitter.js';
 import { configs } from '../../configs/configs.js';
@@ -16,9 +16,10 @@ import { initTunnel } from '../../../tunnel.js';
 import { NodeRepository } from '../../repository/NodeRepository.js';
 
 import {
-  verifyJobOwnerMiddleware,
-  verifySignatureMiddleware,
   verifyBackendSignatureMiddleware,
+  verifyJobOwnerSignatureMiddleware,
+  verifyWSJobOwnerSignatureMiddleware,
+  verifyWSNodeOrJobOwnerSignatureMiddleware,
 } from './middlewares/index.js';
 
 import {
@@ -84,10 +85,20 @@ export class ApiHandler {
 
         switch (path) {
           case '/log':
-            await wssLogRoute(header, body, this.address, this.sdk, ws);
+            await verifyWSJobOwnerSignatureMiddleware(
+              ws,
+              header,
+              body,
+              wssLogRoute,
+            );
             break;
           case '/status':
-            await wssStatusRoute(header, body, this.address, this.sdk, ws);
+            await verifyWSNodeOrJobOwnerSignatureMiddleware(
+              ws,
+              header,
+              body,
+              wssStatusRoute,
+            );
             break;
           default:
             ws.close(404);
@@ -116,24 +127,25 @@ export class ApiHandler {
     this.api.get('/node/info', getNodeInfoRoute);
     this.api.get(
       '/service/url/:jobId',
-      verifySignatureMiddleware,
+      verifyJobOwnerSignatureMiddleware,
       getServiceUrlRoute,
     );
 
     // POST Routes
     this.api.post(
-      '/job-definition/:id',
+      '/job-definition/:jobId',
       express.json(),
+      verifyJobOwnerSignatureMiddleware,
       postJobDefinitionRoute,
     );
     this.api.post(
       '/service/stop/:jobId',
-      verifySignatureMiddleware,
-      verifyJobOwnerMiddleware,
+      verifyJobOwnerSignatureMiddleware,
       postServiceStopRoute,
     );
     this.api.post(
       '/node/validate',
+      express.json(),
       verifyBackendSignatureMiddleware,
       postNodeValidation,
     );

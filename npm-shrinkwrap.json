@@ -11,7 +11,7 @@
       "dependencies": {
         "@coral-xyz/anchor": "^0.28.1-beta.1",
         "@inquirer/prompts": "^4.3.0",
-        "@nosana/sdk": "^0.3.45",
+        "@nosana/sdk": "^0.3.53",
         "@solana/web3.js": "^1.78.0",
         "bn.js": "^5.2.1",
         "chalk": "^5.3.0",
@@ -2009,9 +2009,10 @@
       }
     },
     "node_modules/@nosana/sdk": {
-      "version": "0.3.45",
-      "resolved": "https://registry.npmjs.org/@nosana/sdk/-/sdk-0.3.45.tgz",
-      "integrity": "sha512-R6DeodIodwyWmLTk19Vp8GlPyfgb3jB3M2+ULQT0sYONK5lJNBov6zN1pv/Z3rUWt9IzAt1Sl9Yyx+itlkOVGA==",
+      "version": "0.3.53",
+      "resolved": "https://registry.npmjs.org/@nosana/sdk/-/sdk-0.3.53.tgz",
+      "integrity": "sha512-Aqgp8lJ++RuzmPB5F2iZ6f7YA+h5Fso1nSX5L+6808YATUDi64OK0jwb+zAPZV8yMgPfHs/+qB5r+6olfWZY1w==",
+      "license": "ISC",
       "dependencies": {
         "@coral-xyz/anchor": "^0.28.1-beta.1",
         "@solana/spl-token": "^0.3.8",
@@ -4259,7 +4260,9 @@
       "version": "1.5.2",
       "resolved": "https://registry.npmjs.org/concat-stream/-/concat-stream-1.5.2.tgz",
       "integrity": "sha512-H6xsIBfQ94aESBG8jGHXQ7i5AEpy5ZeVaLDOisDICiTCKpqEfr34/KmTrspKQNoLKNu9gTkovlpQcUi630AKiQ==",
-      "engines": ["node >= 0.8"],
+      "engines": [
+        "node >= 0.8"
+      ],
       "license": "MIT",
       "dependencies": {
         "inherits": "~2.0.1",
@@ -8081,7 +8084,9 @@
       "version": "1.3.1",
       "resolved": "https://registry.npmjs.org/jsonparse/-/jsonparse-1.3.1.tgz",
       "integrity": "sha512-POQXvpdL69+CluYsillJ7SUhKvytYjW9vG/GKpnf+xP8UWgYEM/RaMzHHofbALDiKbbP1W8UEYmgGl39WkPZsg==",
-      "engines": ["node >= 0.2.0"],
+      "engines": [
+        "node >= 0.2.0"
+      ],
       "license": "MIT"
     },
     "node_modules/JSONStream": {
