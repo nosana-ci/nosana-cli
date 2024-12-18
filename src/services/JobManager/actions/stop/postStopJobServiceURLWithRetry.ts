@@ -12,7 +12,7 @@ export async function postStopJobServiceURLWithRetry(
 ): Promise<void> {
   let retryCount = 0;
 
-  const headers = (await createSignature()) as any;
+  const headers = await createSignature();
   const retryInterval = overrides?.interval || 5000;
 
   const intervalId = setInterval(async () => {

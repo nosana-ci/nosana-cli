@@ -24,17 +24,9 @@ const port = config.api.port;
 let node: NosanaNode;
 let logSubscriberManager = new LogSubscriberManager();
 
-export const createSignature = async (): Promise<SignatureHeaders> => {
+export const createSignature = async (): Promise<Headers> => {
   const nosana: Client = getSDK();
-  const signature = (await nosana.solana.signMessage(
-    config.signMessage,
-  )) as Uint8Array;
-  const base64Signature = Buffer.from(signature).toString('base64');
-
-  const headers: SignatureHeaders = {
-    Authorization: `${nosana.solana.wallet.publicKey.toString()}:${base64Signature}`,
-  };
-
+  const headers = nosana.authorization.generateHeader(config.signMessage);
   return headers;
 };
 
