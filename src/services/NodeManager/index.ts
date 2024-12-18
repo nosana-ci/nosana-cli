@@ -6,6 +6,7 @@ import { stateStreaming } from './monitoring/streaming/StateStreamer.js';
 import { log } from './monitoring/log/NodeLog.js';
 import { logStreaming } from './monitoring/streaming/LogStreamer.js';
 import { consoleLogging } from './monitoring/log/console/ConsoleLogger.js';
+import { validateCLIVersion } from '../versions.js';
 
 export default class NodeManager {
   private node: BasicNode;
@@ -74,6 +75,10 @@ export default class NodeManager {
 
   async start(market?: string): Promise<void> {
     this.exiting = false;
+
+    if (this.inJobLoop) {
+      await validateCLIVersion();
+    }
 
     /**
      * maintaniance
