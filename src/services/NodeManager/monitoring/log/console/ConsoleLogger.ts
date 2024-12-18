@@ -344,12 +344,12 @@ export class ConsoleLogger implements LogObserver {
       }
     }
 
-    if(log.method == 'BasicNode.restartDelay' && log.type == 'success'){
-      this.expecting = undefined
+    if (log.method == 'BasicNode.restartDelay' && log.type == 'success') {
+      this.expecting = undefined;
       this.kill = false;
       this.benchmarking = false;
       this.running = false;
-      this.spinner.stop()
+      this.spinner.stop();
     }
   }
 }

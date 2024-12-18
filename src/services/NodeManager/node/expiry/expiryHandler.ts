@@ -10,8 +10,10 @@ export class ExpiryHandler {
   public expiryEndTime: number = 0;
   public expiryTimer: NodeJS.Timeout | null = null;
   public warningTimer: NodeJS.Timeout | null = null;
-  public resolveExpiryPromise: (() => void) | null = null;
   private onExpireCallback: (() => Promise<unknown>) | null = null;
+
+  private resolving = false;
+
   constructor(private sdk: SDK) {
     this.address = this.sdk.solana.provider!.wallet.publicKey;
 
@@ -20,17 +22,30 @@ export class ExpiryHandler {
         this.shortenedExpiry();
       }
     });
+
+    // Listen for the job completion event
+    jobEmitter.on('run-completed', async (data) => {
+      if (!this.resolving) {
+        this.resolving = true;
+        this.stop();
+        await this.onExpireCallback?.(); // Trigger expiration callback
+      }
+    });
   }
 
   public init<T>(
     run: Run,
     job: Job,
+    market: Market,
     jobstring: string,
     onExpireCallback: () => Promise<T>,
   ): number {
+    this.resolving = false;
+
     this.jobAddress = jobstring;
     this.expiryEndTime = new BN(run.account.time)
-      .add(new BN(job.timeout))
+      // .add(new BN(job.timeout))
+      .add(new BN(market.jobTimeout))
       .mul(new BN(1000))
       .toNumber();
 
@@ -64,9 +79,11 @@ export class ExpiryHandler {
 
     // Set up the expiry timer
     this.expiryTimer = setTimeout(async () => {
-      this.stop();
-      await this.onExpireCallback?.(); // Trigger expiration callback
-      this.resolveExpiryPromise?.();
+      if (!this.resolving) {
+        this.resolving = true;
+        this.stop();
+        await this.onExpireCallback?.(); // Trigger expiration callback
+      }
     }, remainingTime);
   }
 
@@ -75,23 +92,17 @@ export class ExpiryHandler {
     this.startOrResetTimer();
   }
 
-  public expired(run: Run, job: Job): boolean {
+  public expired(run: Run, job: Job, market: Market): boolean {
     const now = Date.now() / 1000;
     const expirationTime = new BN(run.account.time)
-      .add(new BN(job.timeout))
+      // .add(new BN(job.timeout))
+      .add(new BN(market.jobTimeout))
       .toNumber();
     return expirationTime < now;
   }
 
   public async waitUntilExpired(): Promise<void> {
     return new Promise<void>((resolve) => {
-      this.resolveExpiryPromise = resolve;
-
-      // Listen for the job completion event
-      jobEmitter.once('run-completed', (data) => {
-        resolve();
-      });
-
       this.startOrResetTimer();
     });
   }

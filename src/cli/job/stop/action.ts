@@ -57,24 +57,22 @@ export async function stopJob(
     });
 
     if (job.state !== 'COMPLETED' && job.state !== 'STOPPED') {
-      const spinner = ora(chalk.cyan(`removing job from queue`)).start();
-
-      // use new function to stop job that are still enqueue
-      nosana.jobs.delist(jobAddress);
-
+      const spinner = ora(chalk.cyan(`Waiting for node to start`)).start();
+      job = await waitForJobRunOrCompletion(new PublicKey(jobAddress));
       spinner.succeed();
+      clearLine();
 
       formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_STATUS, {
         status: job.state.toString(),
       });
 
       if (job.state === 'RUNNING') {
-        const spinner = ora(chalk.cyan(`stopping job ${jobAddress}`)).start();
-
-        // use new function to stop job that are stillrunning
-        nosana.jobs.end(jobAddress);
-
-        spinner.succeed();
+        clearLine();
+        await postStopJobServiceURLWithRetry(job.node, jobAddress, () =>
+          formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_STATUS, {
+            status: 'STOPPED',
+          }),
+        );
       }
     } else {
       clearLine();

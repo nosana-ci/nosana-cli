@@ -79,6 +79,11 @@ export class FlowHandler {
 
   public async stop(id: string): Promise<void> {
     const flow = this.repository.getflow(id);
+
+    if (!flow) {
+      return;
+    }
+
     try {
       for (let i = 0; i < flow.jobDefinition.ops.length; i++) {
         const op = flow.jobDefinition.ops[i];

@@ -21,31 +21,54 @@ const getAddress = () => {
   return `${nosana.solana.wallet.publicKey.toString()}`;
 };
 
-export const listenToWebSocketLogs = (url: string, job: string) => {
-  const ws = new WebSocket(url);
+export const listenToWebSocketLogs = (url: string, job: string, maxRetries = Infinity, retryDelay = 3000) => {
+  let retryCount = 0;
 
-  ws.on('open', async () => {
-    const message = {
-      path: '/log', // or "status" depending on the request
-      body: {
-        jobAddress: job,
-        address: getAddress(),
-      },
-      header: await getSignature(),
-    };
+  const connect = () => {
+    const ws = new WebSocket(url);
 
-    ws.on('message', (message) => {
-      const response = JSON.parse(message.toString());
-      if (response.path === 'log') {
-        logger.update(JSON.parse(response.data), false);
-      }
+    ws.on('open', async () => {
+      retryCount = 0; // Reset retry count upon successful connection
+      const message = {
+        path: '/log', // or "status" depending on the request
+        body: {
+          jobAddress: job,
+          address: getAddress(),
+        },
+        header: await getSignature(),
+      };
+
+      ws.on('message', (message) => {
+        const response = JSON.parse(message.toString());
+        if (response.path === 'log') {
+          logger.update(JSON.parse(response.data), false);
+        }
+      });
+
+      ws.send(JSON.stringify(message));
     });
 
-    ws.send(JSON.stringify(message));
-  });
+    ws.on('error', (error) => {
+      console.warn('WebSocket connection error')
+      ws.close();
+    });
 
-  return ws;
+    ws.on('close', () => {
+      if (retryCount < maxRetries) {
+        setTimeout(() => {
+          retryCount++;
+          connect();
+        }, retryDelay);
+      } else {
+        console.warn('Max retry attempts reached, unable to connect to WebSocket.' )
+      }
+    });
+    return ws;
+  };
+
+  return connect();
 };
+
 
 export const closeWebSocketLogs = (ws: WebSocket) => {
   ws.close();

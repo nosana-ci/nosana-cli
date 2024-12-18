@@ -20,6 +20,10 @@ export class JobHandler {
   private flowHandler: FlowHandler;
   private jobExternalUtil: JobExternalUtil;
 
+  private eventEmitter: EventEmitter;
+
+  private finishing: boolean = false;
+
   constructor(
     private sdk: SDK,
     private provider: Provider,
@@ -30,9 +34,25 @@ export class JobHandler {
 
     applyLoggingProxyToClass(this);
 
+    this.eventEmitter = new EventEmitter();
+
     jobEmitter.on('run-exposed', (data) => {
       this.flowHandler.operationExposed(data.id);
     });
+  }
+
+  /**
+   * Expose a method to allow external consumers to listen for events
+   */
+  on(event: string, listener: (...args: any[]) => void): void {
+    this.eventEmitter.on(event, listener);
+  }
+
+  /**
+   * Expose a method to remove listeners
+   */
+  off(event: string, listener: (...args: any[]) => void): void {
+    this.eventEmitter.off(event, listener);
   }
 
   public get(): Job | undefined {
@@ -112,23 +132,47 @@ export class JobHandler {
   }
 
   async run(): Promise<boolean> {
-    let status;
+    try {
+      if (this.repository.getFlowState(this.jobId()).status == 'failed') {
+        jobEmitter.emit('run-completed', { id: this.jobId(), status: false });
+        return false;
+      }
 
-    if (this.repository.getFlowState(this.jobId()).status == 'failed') {
-      jobEmitter.emit('run-completed', { id: this.jobId(), status: false });
+      await this.flowHandler.run(this.jobId());
+
+      if (this.repository.getFlowState(this.jobId()).status == 'failed') {
+        jobEmitter.emit('run-completed', { id: this.jobId(), status: false });
+        return false;
+      }
+
+      jobEmitter.emit('run-completed', { id: this.jobId(), status: true });
+
+      return true;
+    } catch (error) {
+      this.eventEmitter.emit('error', error);
       return false;
     }
+  }
 
-    await this.flowHandler.run(this.jobId());
+  async runWithErrorHandling(): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      const errorHandler = (error: Error) => {
+        this.off('error', errorHandler);
+        reject(error);
+      };
 
-    if (this.repository.getFlowState(this.jobId()).status == 'failed') {
-      jobEmitter.emit('run-completed', { id: this.jobId(), status: false });
-      return false;
-    }
+      this.on('error', errorHandler);
 
-    jobEmitter.emit('run-completed', { id: this.jobId(), status: true });
-
-    return true;
+      this.run()
+        .then(() => {
+          this.off('error', errorHandler);
+          resolve();
+        })
+        .catch((error) => {
+          this.off('error', errorHandler);
+          reject(error);
+        });
+    });
   }
 
   async quit(run: Run): Promise<void> {
@@ -141,6 +185,10 @@ export class JobHandler {
   }
 
   async finish(run: Run): Promise<void> {
+    if (!this.repository.getflow(this.jobId())) {
+      return;
+    }
+
     try {
       let result = await this.jobExternalUtil.resolveResult(this.jobId());
       const ipfsResult = await this.sdk.ipfs.pin(result as object);

@@ -471,15 +471,15 @@ class NodeLog {
         }
       }
 
-      if (data.type === 'return' || data.type === 'error') {
-        this.addLog({
-          method: `${data.class}.${data.method}`,
-          job: this.job,
-          log: chalk.green(`Job run time finished`),
-          timestamp: Date.now(),
-          type: data.type == 'return' ? 'success' : 'error',
-        });
-      }
+      // if (data.type === 'return' || data.type === 'error') {
+      //   this.addLog({
+      //     method: `${data.class}.${data.method}`,
+      //     job: this.job,
+      //     log: chalk.green(`Job run time finished`),
+      //     timestamp: Date.now(),
+      //     type: data.type == 'return' ? 'success' : 'error',
+      //   });
+      // }
     }
   }
 
@@ -984,6 +984,8 @@ class NodeLog {
   }
 
   private handleExit(data: LogEntry) {
+    this.job = undefined;
+    this.shared = {};
     if (data.type === 'call') {
       this.addLog({
         method: `${data.class}.${data.method}`,
@@ -1226,6 +1228,19 @@ class NodeLog {
           method: `${data.class}.${data.method}`,
           job: this.job,
           log: chalk.red(`Error finishing job ${chalk.bold(this.job)}`),
+          timestamp: Date.now(),
+          type: 'error',
+        });
+        this.job = undefined;
+      }
+    }
+
+    if (data.method === 'runWithErrorHandling') {
+      if (data.type === 'error') {
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          log: chalk.red(`Error occured running job ${chalk.bold(this.job)}`),
           timestamp: Date.now(),
           type: 'error',
         });

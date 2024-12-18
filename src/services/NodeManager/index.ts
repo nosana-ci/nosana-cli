@@ -73,7 +73,7 @@ export default class NodeManager {
   }
 
   async start(market?: string): Promise<void> {
-    this.exiting = false
+    this.exiting = false;
 
     /**
      * maintaniance

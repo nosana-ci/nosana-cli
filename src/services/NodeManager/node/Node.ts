@@ -155,130 +155,170 @@ export class BasicNode {
     await this.resourceManager.fetchMarketRequiredResources(market);
   }
 
-  async run(): Promise<void> {
-    const run = await this.runHandler.startRunMonitoring();
+  run(): Promise<void> {
+    return new Promise<void>(async (resolve, reject) => {
+      try {
+        const run = await this.runHandler.startRunMonitoring();
 
-    /**
-     * once we have found a run in the queue we want to stop this run monitoring
-     */
-    this.runHandler.stopRunMonitoring();
+        /**
+         * Once we have found a run in the queue, we want to stop this run monitoring
+         */
+        this.runHandler.stopRunMonitoring();
 
-    /**
-     * once we have found a run in the run we want to stop this market queue monitoring,
-     * because this can come earlier than the market queue.
-     */
-    this.marketHandler.stopMarketQueueMonitoring();
+        /**
+         * Once we have found a run in the run, we want to stop this market queue monitoring,
+         * because this can come earlier than the market queue.
+         */
+        this.marketHandler.stopMarketQueueMonitoring();
 
-    const jobAddress = run.account.job.toString();
+        const jobAddress = run.account.job.toString();
 
-    /**
-     * get the current market the market queue was in before this
-     * run/job was assigned to the node.
-     */
-    const market = this.marketHandler.getMarket() as Market;
+        /**
+         * Get the current market the market queue was in before this
+         * run/job was assigned to the node.
+         */
+        const market = this.marketHandler.getMarket() as Market;
 
-    /**
-     * claim the job by polling the job and setting it in the job handler
-     * as the current job for this cycle
-     */
-    const job = await this.jobHandler.claim(jobAddress);
+        /**
+         * Claim the job by polling the job and setting it in the job handler
+         * as the current job for this cycle.
+         */
+        const job = await this.jobHandler.claim(jobAddress);
 
-    /**
-     * check if the job is expired if it is quit the job,
-     * if not continue to start
-     */
-    if (!this.expiryHandler.expired(run, job)) {
-      /**
-       * this starts the expiry settings to monitory expiry time
-       */
-      this.expiryHandler.init<void>(run, job, jobAddress, async () => {});
+        /**
+         * Check if the job is expired. If it is, quit the job;
+         * otherwise, continue to start.
+         */
+        if (!this.expiryHandler.expired(run, job, market)) {
+          /**
+           * This starts the expiry settings to monitor expiry time
+           */
+          this.expiryHandler.init<void>(
+            run,
+            job,
+            market,
+            jobAddress,
+            async () => {
+              /**
+               * upload the result and end the flow, also clean up flow.
+               */
+              await this.jobHandler.finish(run);
 
-      /**
-       * Start the job, this includes downloading the job defination, starting the flow
-       * checking if flow is existing, if the job fails to start we quit the job
-       */
-      await this.jobHandler.start(job);
+              resolve(); // Signal that the process should end
+            },
+          );
 
-      /**
-       * actually run the flow if the job and carry out the task, using the flow handler
-       * and the providers
-       */
-      this.jobHandler.run().catch((err) => {
-        throw err
-      })
+          /**
+           * Start the job. This includes downloading the job definition, starting the flow,
+           * checking if the flow exists, and quitting the job if it fails to start.
+           */
+          await this.jobHandler.start(job);
 
-      /**
-       * wait for the job to expire before continue if the setup was successful
-       */
-      await this.expiryHandler.waitUntilExpired();
-    }
+          /**
+           * Run the flow asynchronously and handle errors via a Promise.
+           * This lets us run the job in the background (async) and still get an error in this main process.
+           */
+          await this.jobHandler.runWithErrorHandling();
 
-    /**
-     * upload the result and end the flow, also clean up flow.
-     */
-    await this.jobHandler.finish(run);
+          /**
+           * Wait for the job to expire before continuing if the setup was successful.
+           */
+          await this.expiryHandler.waitUntilExpired();
+        }
+
+        /**
+         * Upload the result and end the flow; also clean up flow.
+         */
+        await this.jobHandler.finish(run);
+
+        // Resolve the Promise normally
+        resolve();
+      } catch (error) {
+        // Reject the Promise if any errors occur
+        reject(error);
+      }
+    });
   }
 
   async pending(): Promise<boolean> {
-    /**
-     * check if node has any run assigned to it and if not skip all
-     * these process, if there is a run, proceed to run the job
-     */
-    const run = await this.runHandler.checkRun();
-
-    if (run) {
-      const jobAddress = run.account.job.toString();
-
-      /**
-       * claim the job by polling the job and setting it in the job handler
-       * as the current job for this cycle
-       */
-      const job = await this.jobHandler.claim(jobAddress);
-
-      /**
-       * set the market of the job as the current market in this cycle
-       */
-      const market = await this.marketHandler.setMarket(job.market.toString());
-
-      /**
-       * check if the job is expired if it is quit the job,
-       * if not continue to start
-       */
-      if (!this.expiryHandler.expired(run, job)) {
+    return new Promise<boolean>(async (resolve, reject) => {
+      try {
         /**
-         * this starts the expiry settings to monitory expiry time
+         * check if node has any run assigned to it and if not skip all
+         * these process, if there is a run, proceed to run the job
          */
-        this.expiryHandler.init<boolean>(run, job, jobAddress, async () => {
-          return true;
-        });
+        const run = await this.runHandler.checkRun();
 
-        /**
-         * Start the job, this includes downloading the job defination, starting the flow
-         * checking if flow is existing, if the job fails to start we quit the job
-         * and return true, this will cause the application to restart as it just finished a job
-         */
-        await this.jobHandler.start(job);
+        if (run) {
+          const jobAddress = run.account.job.toString();
 
-        /**
-         * actually run the flow if the job and carry out the task, using the flow handler
-         * and the providers
-         */
-        this.jobHandler.run();
+          /**
+           * claim the job by polling the job and setting it in the job handler
+           * as the current job for this cycle
+           */
+          const job = await this.jobHandler.claim(jobAddress);
 
-        /**
-         * wait for the job to expire before continue if the setup was successful
-         */
-        await this.expiryHandler.waitUntilExpired();
+          /**
+           * set the market of the job as the current market in this cycle
+           */
+          const market = await this.marketHandler.setMarket(
+            job.market.toString(),
+          );
+
+          /**
+           * check if the job is expired if it is quit the job,
+           * if not continue to start
+           */
+          if (!this.expiryHandler.expired(run, job, market)) {
+            /**
+             * this starts the expiry settings to monitory expiry time
+             */
+            this.expiryHandler.init<void>(
+              run,
+              job,
+              market,
+              jobAddress,
+              async () => {
+                /**
+                 * upload the result and end the flow, also clean up flow.
+                 */
+                await this.jobHandler.finish(run);
+
+                resolve(true);
+              },
+            );
+
+            /**
+             * Start the job, this includes downloading the job defination, starting the flow
+             * checking if flow is existing, if the job fails to start we quit the job
+             * and return true, this will cause the application to restart as it just finished a job
+             */
+            await this.jobHandler.start(job);
+
+            /**
+             * Run the flow asynchronously and handle errors via a Promise
+             * this lets us run the job in the background (async) and still get an error in this main
+             */
+            await this.jobHandler.runWithErrorHandling();
+
+            /**
+             * wait for the job to expire before continue if the setup was successful
+             */
+            await this.expiryHandler.waitUntilExpired();
+          }
+
+          /**
+           * upload the result and end the flow, also clean up flow.
+           */
+          await this.jobHandler.finish(run);
+
+          resolve(true);
+        }
+        resolve(false);
+      } catch (error) {
+        reject(error);
       }
-
-      /**
-       * upload the result and end the flow, also clean up flow.
-       */
-      await this.jobHandler.finish(run);
-
-      return true;
-    }
-    return false;
+    });
   }
 
   async queue(market?: string): Promise<void> {
@@ -341,9 +381,18 @@ export class BasicNode {
     this.exiting = true;
   }
 
-  public async restartDelay(time: number) {
-    for (let timer = time; timer > 0; timer--) {
-      await sleep(1);
-    }
+  public restartDelay(time: number): Promise<void> {
+    return new Promise((resolve) => {
+      let timer = time;
+
+      const intervalId = setInterval(() => {
+        timer--;
+
+        if (timer <= 0) {
+          clearInterval(intervalId);
+          resolve();
+        }
+      }, 1000); // 1000 ms = 1 second
+    });
   }
 }
