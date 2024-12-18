@@ -21,7 +21,12 @@ const getAddress = () => {
   return `${nosana.solana.wallet.publicKey.toString()}`;
 };
 
-export const listenToWebSocketLogs = (url: string, job: string, maxRetries = Infinity, retryDelay = 3000) => {
+export const listenToWebSocketLogs = (
+  url: string,
+  job: string,
+  maxRetries = Infinity,
+  retryDelay = 3000,
+) => {
   let retryCount = 0;
 
   const connect = () => {
@@ -49,7 +54,7 @@ export const listenToWebSocketLogs = (url: string, job: string, maxRetries = Inf
     });
 
     ws.on('error', (error) => {
-      console.warn('WebSocket connection error')
+      console.warn('WebSocket connection error');
       ws.close();
     });
 
@@ -60,7 +65,9 @@ export const listenToWebSocketLogs = (url: string, job: string, maxRetries = Inf
           connect();
         }, retryDelay);
       } else {
-        console.warn('Max retry attempts reached, unable to connect to WebSocket.' )
+        console.warn(
+          'Max retry attempts reached, unable to connect to WebSocket.',
+        );
       }
     });
     return ws;
@@ -68,7 +75,6 @@ export const listenToWebSocketLogs = (url: string, job: string, maxRetries = Inf
 
   return connect();
 };
-
 
 export const closeWebSocketLogs = (ws: WebSocket) => {
   ws.close();
