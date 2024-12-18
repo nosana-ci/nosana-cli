@@ -105,7 +105,6 @@ export class MarketHandler {
   public async leave(): Promise<void> {
     if (this.market) {
       try {
-        await this.checkQueuedInMarket();
         await this.sdk.jobs.stop(this.market.address);
       } catch (error) {}
       this.inMarket = false;

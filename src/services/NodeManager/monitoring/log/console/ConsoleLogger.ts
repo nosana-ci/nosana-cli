@@ -56,10 +56,6 @@ export class ConsoleLogger implements LogObserver {
 
     if (this.kill) {
       if (log.type == 'kill-success') {
-        if(this.lastLog == log.log){
-          return;
-        }
-        this.lastLog = log.log
         this.spinner.succeed(log.log);
         this.kill = false;
         this.pending = false;
@@ -70,6 +66,7 @@ export class ConsoleLogger implements LogObserver {
       } else {
         return;
       }
+      return;
     }
 
     // if (
@@ -317,7 +314,7 @@ export class ConsoleLogger implements LogObserver {
           }
           this.pending = false;
         } else {
-          if (log.type == 'success' || log.type == 'kill-success') {
+          if (log.type == 'success') {
             if (this.spinner.text.includes('\n')) {
               // Split the text by the first newline and keep the part after it
               const [, rest] = this.spinner.text.split(/\n(.+)/); // Match the first occurrence and keep the rest

@@ -203,7 +203,9 @@ export class BasicNode {
        * actually run the flow if the job and carry out the task, using the flow handler
        * and the providers
        */
-      this.jobHandler.run();
+      this.jobHandler.run().catch((err) => {
+        throw err
+      })
 
       /**
        * wait for the job to expire before continue if the setup was successful

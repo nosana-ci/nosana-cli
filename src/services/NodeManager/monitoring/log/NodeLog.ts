@@ -996,16 +996,16 @@ class NodeLog {
   }
 
   private handleStop(data: LogEntry) {
-    if (data.type === 'call') {
-      this.addLog({
-        method: `${data.class}.${data.method}`,
-        job: this.job,
-        log: chalk.cyan('Shutting down node'),
-        timestamp: Date.now(),
-        type: 'process',
-        pending: { isPending: true, expecting: `${data.class}.${data.method}` },
-      });
-    }
+    // if (data.type === 'call') {
+    //   this.addLog({
+    //     method: `${data.class}.${data.method}`,
+    //     job: this.job,
+    //     log: chalk.cyan('Shutting down node'),
+    //     timestamp: Date.now(),
+    //     type: 'process',
+    //     pending: { isPending: true, expecting: `${data.class}.${data.method}` },
+    //   });
+    // }
 
     if (data.type === 'return') {
       this.addLog({
