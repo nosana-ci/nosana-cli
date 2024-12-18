@@ -32,10 +32,7 @@ import { createSignature } from '../../../services/api.js';
 import EventSource from 'eventsource';
 import { OutputFormatter } from '../../../providers/utils/ouput-formatter/OutputFormatter.js';
 import { isPrivate } from '../../../generic/ops-util.js';
-import {
-  closeWebSocketLogs,
-  listenToWebSocketLogs,
-} from '../../../services/websocket.js';
+import { listenToWebSocketLogs } from '../../../services/websocket.js';
 import { configs } from '../../../services/NodeManager/configs/configs.js';
 
 export async function getJob(
@@ -277,7 +274,7 @@ export async function getJob(
   }
 
   if (ws) {
-    closeWebSocketLogs(ws);
+    ws.close();
   }
 
   if (listener) {

@@ -28,9 +28,11 @@ export const listenToWebSocketLogs = (
   retryDelay = 3000,
 ) => {
   let retryCount = 0;
+  let ws: WebSocket | null = null;
+  let shouldReconnect = true;
 
   const connect = () => {
-    const ws = new WebSocket(url);
+    ws = new WebSocket(url);
 
     ws.on('open', async () => {
       retryCount = 0; // Reset retry count upon successful connection
@@ -43,39 +45,44 @@ export const listenToWebSocketLogs = (
         header: await getSignature(),
       };
 
-      ws.on('message', (message) => {
+      ws?.on('message', (message) => {
         const response = JSON.parse(message.toString());
         if (response.path === 'log') {
           logger.update(JSON.parse(response.data), false);
         }
       });
 
-      ws.send(JSON.stringify(message));
+      ws?.send(JSON.stringify(message));
     });
 
-    ws.on('error', (error) => {
+    ws.on('error', () => {
       console.warn('WebSocket connection error');
-      ws.close();
+      ws?.close();
     });
 
     ws.on('close', () => {
-      if (retryCount < maxRetries) {
+      if (shouldReconnect && retryCount < maxRetries) {
         setTimeout(() => {
           retryCount++;
           connect();
         }, retryDelay);
+      } else if (!shouldReconnect) {
+        console.info('WebSocket connection closed by user.');
       } else {
         console.warn(
           'Max retry attempts reached, unable to connect to WebSocket.',
         );
       }
     });
-    return ws;
   };
 
-  return connect();
-};
+  connect();
 
-export const closeWebSocketLogs = (ws: WebSocket) => {
-  ws.close();
+  // Return a controller object to manage the WebSocket instance
+  return {
+    close: () => {
+      shouldReconnect = false; // Prevent reconnecting
+      ws?.close();
+    },
+  };
 };
