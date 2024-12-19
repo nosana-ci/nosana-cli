@@ -205,7 +205,7 @@ export class BasicNode {
                  */
                 await this.jobHandler.finish(run);
               } catch (error) {
-                reject(error)
+                reject(error);
               }
 
               resolve(); // Signal that the process should end
@@ -289,7 +289,7 @@ export class BasicNode {
                    */
                   await this.jobHandler.finish(run);
                 } catch (error) {
-                  reject(error)
+                  reject(error);
                 }
 
                 resolve(true);
@@ -381,7 +381,7 @@ export class BasicNode {
               market,
               firstMarketCheck,
             );
-  
+
             firstMarketCheck = false;
           }
         } catch (error) {}

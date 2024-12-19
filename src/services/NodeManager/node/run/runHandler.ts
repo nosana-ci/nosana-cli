@@ -106,7 +106,7 @@ export class RunHandler {
               resolve(run);
             }
           } catch (error) {
-            reject(error)
+            reject(error);
           }
         }, 60000 * 5);
 
@@ -117,7 +117,7 @@ export class RunHandler {
             resolve(run);
           }
         } catch (error) {
-          reject(error)
+          reject(error);
         }
       } catch (error) {
         reject(error);

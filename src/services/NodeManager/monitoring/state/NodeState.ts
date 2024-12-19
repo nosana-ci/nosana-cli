@@ -44,9 +44,9 @@ export class NodeState {
     logEmitter.on('log', (data: LogEntry) => this.process(data));
   }
 
-  public clear(){
-    this.history = []
-    this.state = {}
+  public clear() {
+    this.history = [];
+    this.state = {};
   }
 
   public getNodeInfo() {
