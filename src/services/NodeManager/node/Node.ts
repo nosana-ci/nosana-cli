@@ -368,7 +368,10 @@ export class BasicNode {
           /**
            * update the market position on queue
            */
-          this.marketHandler.processMarketQueuePosition(market, firstMarketCheck);
+          this.marketHandler.processMarketQueuePosition(
+            market,
+            firstMarketCheck,
+          );
 
           firstMarketCheck = false;
         }

@@ -112,9 +112,10 @@ export class MarketHandler {
   }
 
   public processMarketQueuePosition(market: Market, isFirst: boolean) {
-    const position = market.queue.findIndex(
-      (e: any) => e.toString() === this.address.toString(),
-    ) + 1
+    const position =
+      market.queue.findIndex(
+        (e: any) => e.toString() === this.address.toString(),
+      ) + 1;
     return {
       position,
       count: market.queue.length,
