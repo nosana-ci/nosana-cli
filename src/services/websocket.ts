@@ -35,9 +35,9 @@ export const listenToWebSocketLogs = (
     ws = new WebSocket(url);
 
     ws.on('open', async () => {
-      retryCount = 0; // Reset retry count upon successful connection
+      retryCount = 0;
       const message = {
-        path: '/log', // or "status" depending on the request
+        path: '/log',
         body: {
           jobAddress: job,
           address: getAddress(),
@@ -56,7 +56,6 @@ export const listenToWebSocketLogs = (
     });
 
     ws.on('error', () => {
-      console.warn('WebSocket connection error');
       ws?.close();
     });
 
@@ -67,21 +66,16 @@ export const listenToWebSocketLogs = (
           connect();
         }, retryDelay);
       } else if (!shouldReconnect) {
-        console.info('WebSocket connection closed by user.');
       } else {
-        console.warn(
-          'Max retry attempts reached, unable to connect to WebSocket.',
-        );
       }
     });
   };
 
   connect();
 
-  // Return a controller object to manage the WebSocket instance
   return {
     close: () => {
-      shouldReconnect = false; // Prevent reconnecting
+      shouldReconnect = false;
       ws?.close();
     },
   };

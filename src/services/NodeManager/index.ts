@@ -198,6 +198,8 @@ export default class NodeManager {
   }
 
   async stop() {
+    this.exiting = true;
+
     /**
      * stop api
      *
@@ -213,6 +215,8 @@ export default class NodeManager {
     if (this.node) {
       await this.node.stop();
     }
+
+    this.exiting = false;
   }
 
   async restart(market?: string) {

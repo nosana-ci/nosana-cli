@@ -23,7 +23,6 @@ export class ConsoleLogger implements LogObserver {
   private layerIds: Map<string, SingleBar> | undefined;
   private multiProgressBar: MultiBar | undefined;
   private kill: boolean = false;
-  private lastLog: string = '';
   private benchmarking: boolean = false;
 
   private running: boolean = false;
@@ -123,14 +122,14 @@ export class ConsoleLogger implements LogObserver {
       this.pending = true;
 
       this.spinner = ora(
-        chalk.green(`${chalk.bgGreen.bold(' Benchmarking Node')}`),
+        chalk.green(`${chalk.bgGreen.bold(' Benchmarking Node ')}`),
       ).start();
       return;
     }
 
     if (this.benchmarking) {
-      this.spinner.text =
-        chalk.cyan(`${this.spinner.text}\n`) + chalk.cyan(` \t➡️  ${log.log}`);
+      // this.spinner.text =
+      //   chalk.cyan(`${this.spinner.text}\n`) + chalk.cyan(` \t➡️  ${log.log}`);
     }
 
     if (this.benchmarking && log.method == 'BasicNode.benchmark') {

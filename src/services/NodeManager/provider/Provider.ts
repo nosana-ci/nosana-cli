@@ -155,6 +155,7 @@ export class Provider {
             name: 'frpc-api-' + address,
             cmd: ['-c', '/etc/frp/frpc.toml'],
             networks,
+            restart_policy: 'on-failure',
             env: {
               FRP_SERVER_ADDR: configs().frp.serverAddr,
               FRP_SERVER_PORT: configs().frp.serverPort.toString(),
@@ -188,6 +189,7 @@ export class Provider {
               name: 'frpc-api-' + address,
               cmd: ['-c', '/etc/frp/frpc.toml'],
               networks,
+              restart_policy: 'on-failure',
               env: {
                 FRP_SERVER_ADDR: configs().frp.serverAddr,
                 FRP_SERVER_PORT: configs().frp.serverPort.toString(),

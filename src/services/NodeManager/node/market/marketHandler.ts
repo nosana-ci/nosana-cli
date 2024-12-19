@@ -112,11 +112,11 @@ export class MarketHandler {
   }
 
   public processMarketQueuePosition(market: Market, isFirst: boolean) {
+    const position = market.queue.findIndex(
+      (e: any) => e.toString() === this.address.toString(),
+    ) + 1
     return {
-      position:
-        market.queue.findIndex(
-          (e: any) => e.toString() === this.address.toString(),
-        ) + 1,
+      position,
       count: market.queue.length,
     };
   }
@@ -143,7 +143,7 @@ export class MarketHandler {
       } catch (e) {
         console.warn('\nCould not update queue status', e);
       }
-    }, 6000 * 2);
+    }, 60000 * 1);
   }
 
   // Stop monitoring market queue status

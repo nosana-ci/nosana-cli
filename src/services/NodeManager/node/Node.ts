@@ -351,6 +351,7 @@ export class BasicNode {
       this.marketHandler.setInMarket();
     }
 
+    let firstMarketCheck = true;
     /**
      * here we listen to the market queue and listen to any chnages
      * here we can use it to log or get info, but not run job because
@@ -367,7 +368,9 @@ export class BasicNode {
           /**
            * update the market position on queue
            */
-          this.marketHandler.processMarketQueuePosition(market, true);
+          this.marketHandler.processMarketQueuePosition(market, firstMarketCheck);
+
+          firstMarketCheck = false;
         }
       },
     );

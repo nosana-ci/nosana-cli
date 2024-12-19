@@ -66,4 +66,5 @@ export type RunContainerArgs = {
   env?: { [key: string]: string };
   work_dir?: string;
   entrypoint?: string | string[];
+  restart_policy?: '' | 'unless-stopped' | 'always' | 'on-failure';
 };
