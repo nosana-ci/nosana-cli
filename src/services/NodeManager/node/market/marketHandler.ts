@@ -144,7 +144,7 @@ export class MarketHandler {
       } catch (e) {
         console.warn('\nCould not update queue status', e);
       }
-    }, 60000 * 1);
+    }, 60000 * 2);
   }
 
   // Stop monitoring market queue status

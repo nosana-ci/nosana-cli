@@ -21,6 +21,10 @@ export class StateStreamer implements StateObserver {
     state(node).addObserver(this);
   }
 
+  public clear(){
+    this.states.clear()
+  }
+
   public update(
     status: string,
     state: { [key: string]: string },

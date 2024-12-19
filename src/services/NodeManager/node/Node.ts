@@ -199,10 +199,14 @@ export class BasicNode {
             market,
             jobAddress,
             async () => {
-              /**
-               * upload the result and end the flow, also clean up flow.
-               */
-              await this.jobHandler.finish(run);
+              try {
+                /**
+                 * upload the result and end the flow, also clean up flow.
+                 */
+                await this.jobHandler.finish(run);
+              } catch (error) {
+                reject(error)
+              }
 
               resolve(); // Signal that the process should end
             },
@@ -279,10 +283,14 @@ export class BasicNode {
               market,
               jobAddress,
               async () => {
-                /**
-                 * upload the result and end the flow, also clean up flow.
-                 */
-                await this.jobHandler.finish(run);
+                try {
+                  /**
+                   * upload the result and end the flow, also clean up flow.
+                   */
+                  await this.jobHandler.finish(run);
+                } catch (error) {
+                  reject(error)
+                }
 
                 resolve(true);
               },
@@ -359,22 +367,24 @@ export class BasicNode {
      */
     this.marketHandler.startMarketQueueMonitoring(
       (market: Market | undefined) => {
-        if (!market) {
-          /**
-           * once we have found a job in the market we want to stop this queue monitoring
-           */
-          this.marketHandler.stopMarketQueueMonitoring();
-        } else {
-          /**
-           * update the market position on queue
-           */
-          this.marketHandler.processMarketQueuePosition(
-            market,
-            firstMarketCheck,
-          );
-
-          firstMarketCheck = false;
-        }
+        try {
+          if (!market) {
+            /**
+             * once we have found a job in the market we want to stop this queue monitoring
+             */
+            this.marketHandler.stopMarketQueueMonitoring();
+          } else {
+            /**
+             * update the market position on queue
+             */
+            this.marketHandler.processMarketQueuePosition(
+              market,
+              firstMarketCheck,
+            );
+  
+            firstMarketCheck = false;
+          }
+        } catch (error) {}
       },
     );
   }

@@ -99,15 +99,25 @@ export class RunHandler {
 
         // Set interval to check run status every 5 minutes
         this.getRunsInterval = setInterval(async () => {
-          const run: Run | undefined = await this.checkRun();
+          let run: Run | undefined;
+          try {
+            run = await this.checkRun();
+            if (run) {
+              resolve(run);
+            }
+          } catch (error) {
+            reject(error)
+          }
+        }, 60000 * 5);
+
+        let run: Run | undefined;
+        try {
+          run = await this.checkRun();
           if (run) {
             resolve(run);
           }
-        }, 6000 * 5);
-
-        const run: Run | undefined = await this.checkRun();
-        if (run) {
-          resolve(run);
+        } catch (error) {
+          reject(error)
         }
       } catch (error) {
         reject(error);

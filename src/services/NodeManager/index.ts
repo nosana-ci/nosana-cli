@@ -216,6 +216,10 @@ export default class NodeManager {
       await this.node.stop();
     }
 
+    state(this.node.node()).clear();
+    stateStreaming(this.node.node()).clear();
+    logStreaming(this.node.node()).clear();
+
     this.exiting = false;
   }
 

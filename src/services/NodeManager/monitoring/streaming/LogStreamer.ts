@@ -21,6 +21,10 @@ export class LogStreamer implements LogObserver {
     log().addObserver(this);
   }
 
+  public clear(){
+    this.logs.clear()
+  }
+
   public update(log: NodeLogEntry) {
     const logMessage = JSON.stringify(log);
     this.index = this.index + 1;

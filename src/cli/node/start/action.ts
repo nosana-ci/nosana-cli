@@ -43,6 +43,7 @@ export async function startNode(
       Timestamp: ${new Date().toISOString()}
       Error Name: ${error.name || 'Unknown Error'}
       Message: ${error.message || 'No message available'}
+      Trace: ${error.stack ?? error.trace}
       ============================
       `;
 
