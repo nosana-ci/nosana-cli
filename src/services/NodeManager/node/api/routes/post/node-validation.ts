@@ -40,15 +40,16 @@ export async function postNodeValidation(
   flowHandler.start(id, req.body);
 
   try {
-    let result = await flowHandler.run(id);
+    const result = await flowHandler.run(id);
 
     if (sessionId === 'ADMIN') {
       res.status(200).send(result.state.opStates[0].results!['prediction'][0]);
       return;
     }
+
     // @ts-ignore WAITING ON ENDPOINT CREATION + DEFINING THE RESPONSE OBJECT
     await client.POST('/api/benchmarks/submit', {
-      body: result,
+      body: result.state,
       params: {
         header: {
           authorization: sdk.authorization.generate(sessionId, {
