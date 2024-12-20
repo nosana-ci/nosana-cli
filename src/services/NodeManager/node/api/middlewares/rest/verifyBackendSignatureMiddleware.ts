@@ -3,6 +3,7 @@ import { NextFunction, Response } from 'express';
 
 import { getSDK } from '../../../../../sdk.js';
 import { NodeAPIRequest } from '../../types/index.js';
+import { configs } from '../../../../configs/configs.js';
 
 export async function verifyBackendSignatureMiddleware(
   req: NodeAPIRequest,
@@ -16,7 +17,7 @@ export async function verifyBackendSignatureMiddleware(
       !sdk.authorization.validateHeader(req.headers, {
         expiry: 300,
         key: 'x-session-id',
-        publicKey: new PublicKey('INSERT BACKEND KEY'),
+        publicKey: new PublicKey(configs().backendAuthorizationAddress),
       })
     ) {
       return res.status(401).send('Unathorized Request');

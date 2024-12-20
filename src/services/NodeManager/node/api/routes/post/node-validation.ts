@@ -43,9 +43,7 @@ export async function postNodeValidation(
     let result = await flowHandler.run(id);
 
     if (sessionId === 'ADMIN') {
-      res
-        .status(200)
-        .send(parseFloat(result.state.opStates[0].results!['prediction'][0]));
+      res.status(200).send(result.state.opStates[0].results!['prediction'][0]);
       return;
     }
     // @ts-ignore WAITING ON ENDPOINT CREATION + DEFINING THE RESPONSE OBJECT
