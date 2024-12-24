@@ -49,7 +49,7 @@ export class ApiHandler {
   ) {
     this.address = this.sdk.solana.provider!.wallet.publicKey;
     this.api = express();
-    // this.api.use(cors());
+    this.api.use(cors());
     this.registerRoutes();
     this.flowHandler = new FlowHandler(this.provider, repository);
 
@@ -57,17 +57,23 @@ export class ApiHandler {
   }
 
   public async start(): Promise<string> {
-    await this.provider.stopReverseProxyApi(this.address.toString());
-    await this.provider.setUpReverseProxyApi(this.address.toString());
+    try {
+      await this.provider.stopReverseProxyApi(this.address.toString());
+      await this.provider.setUpReverseProxyApi(this.address.toString());
 
-    const tunnelServer = `https://${this.address}.${configs().frp.serverAddr}`;
+      const tunnelServer = `https://${this.address}.${
+        configs().frp.serverAddr
+      }`;
 
-    await sleep(3);
-    initTunnel({ server: tunnelServer, port: this.port });
-    await this.listen();
-    this.startWebSocketServer();
+      await sleep(3);
+      initTunnel({ server: tunnelServer, port: this.port });
+      await this.listen();
+      this.startWebSocketServer();
 
-    return tunnelServer;
+      return tunnelServer;
+    } catch (error) {
+      throw error;
+    }
   }
 
   private async startWebSocketServer() {
@@ -152,8 +158,15 @@ export class ApiHandler {
   }
 
   private async listen(): Promise<number> {
-    this.server = this.api.listen(this.port, () => {});
-    return this.port;
+    return new Promise<number>((resolve, reject) => {
+      this.server = this.api.listen(this.port, () => {
+        resolve(this.port);
+      });
+
+      this.server.on('error', (err: Error) => {
+        reject(err);
+      });
+    });
   }
 
   public async stop() {

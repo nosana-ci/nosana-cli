@@ -164,4 +164,12 @@ export class NodeRepository {
   public displayLog(log: string) {
     return log;
   }
+
+  public getFlowOperationName(id: string, index: number): string {
+    if (this.db.data.flows[id]) {
+      return this.db.data.flows[id].jobDefinition.ops[index].id;
+    }
+
+    return 'null';
+  }
 }

@@ -54,74 +54,75 @@ export class RunHandler {
   }
 
   // Start monitoring run status
-  public async startRunMonitoring(
-    updateCallback: (run: Run) => Promise<void>,
-  ): Promise<void> {
-    await this.sdk.jobs.loadNosanaJobs();
-    const jobProgram = this.sdk.jobs.jobs!;
-    const runAccountFilter = jobProgram.coder.accounts.memcmp(
-      jobProgram.account.runAccount.idlAccount.name,
-      undefined,
-    );
-    const coderFilters = [
-      {
-        memcmp: {
-          offset: runAccountFilter.offset,
-          bytes: runAccountFilter.bytes,
-        },
-      },
-      {
-        memcmp: {
-          offset: 40,
-          bytes: this.address.toBase58(), // Convert PublicKey to a string
-        },
-      },
-    ];
+  public async startRunMonitoring(): Promise<Run> {
+    return new Promise<Run>(async (resolve, reject) => {
+      try {
+        await this.sdk.jobs.loadNosanaJobs();
+        const jobProgram = this.sdk.jobs.jobs!;
+        const runAccountFilter = jobProgram.coder.accounts.memcmp(
+          jobProgram.account.runAccount.idlAccount.name,
+          undefined,
+        );
+        const coderFilters = [
+          {
+            memcmp: {
+              offset: runAccountFilter.offset,
+              bytes: runAccountFilter.bytes,
+            },
+          },
+          {
+            memcmp: {
+              offset: 40,
+              bytes: this.address.toBase58(), // Convert PublicKey to a string
+            },
+          },
+        ];
 
-    // Set up real-time listener for run status changes
-    this.runSubscriptionId = this.sdk.jobs.connection!.onProgramAccountChange(
-      jobProgram.programId,
-      async (event) => {
-        try {
-          const runAccount = jobProgram.coder.accounts.decode(
-            jobProgram.account.runAccount.idlAccount.name,
-            event.accountInfo.data,
+        // Set up real-time listener for run status changes
+        this.runSubscriptionId =
+          this.sdk.jobs.connection!.onProgramAccountChange(
+            jobProgram.programId,
+            async (event) => {
+              const runAccount = jobProgram.coder.accounts.decode(
+                jobProgram.account.runAccount.idlAccount.name,
+                event.accountInfo.data,
+              );
+              const run: Run = {
+                account: runAccount,
+                publicKey: event.accountId,
+              };
+              resolve(run);
+            },
+            'confirmed',
+            coderFilters,
           );
-          const run: Run = {
-            account: runAccount,
-            publicKey: event.accountId,
-          };
-          await updateCallback(run); // Notify with the new run
-        } catch (e) {
-          console.warn('\nError decoding run account data:', e);
-        }
-      },
-      'confirmed',
-      coderFilters,
-    );
 
-    // Set interval to check run status every 5 minutes
-    this.getRunsInterval = setInterval(async () => {
-      try {
-        const run: Run | undefined = await this.checkRun();
-        if (run) {
-          await updateCallback(run);
-        }
-      } catch (e) {
-        console.warn('\nCould not check for new runs:', e);
-      }
-    }, 6000 * 5);
+        // Set interval to check run status every 5 minutes
+        this.getRunsInterval = setInterval(async () => {
+          let run: Run | undefined;
+          try {
+            run = await this.checkRun();
+            if (run) {
+              resolve(run);
+            }
+          } catch (error) {
+            reject(error);
+          }
+        }, 60000 * 5);
 
-    await (async () => {
-      try {
-        const run: Run | undefined = await this.checkRun();
-        if (run) {
-          await updateCallback(run);
+        let run: Run | undefined;
+        try {
+          run = await this.checkRun();
+          if (run) {
+            resolve(run);
+          }
+        } catch (error) {
+          reject(error);
         }
-      } catch (e) {
-        console.warn('\nCould not check for new runs:', e);
+      } catch (error) {
+        reject(error);
       }
-    })();
+    });
   }
 
   // Stop monitoring run status

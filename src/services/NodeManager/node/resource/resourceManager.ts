@@ -39,7 +39,7 @@ export class ResourceManager {
       );
 
       if (error) {
-        throw new Error(error.toString());
+        return;
       }
 
       await this.images.pullMarketRequiredImages(data.required_images);

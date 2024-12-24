@@ -31,24 +31,63 @@ export async function startNode(
 ): Promise<void> {
   const nodeManager = new NodeManager(options);
 
-  await nodeManager.init();
-  try {
-    await nodeManager.start(market);
-  } catch (e) {
-    const error = e as any;
+  while (true) {
+    try {
+      await validateCLIVersion();
 
-    const formattedError = `
-    ========== ERROR ==========
-    Timestamp: ${new Date().toISOString()}
-    Error Name: ${error.name || 'Unknown Error'}
-    Message: ${error.message || 'No message available'}
-    ============================
-    `;
+      await nodeManager.init();
+      await nodeManager.start(market);
+    } catch (error: any) {
+      const formattedError = `
+      ========== ERROR ==========
+      Timestamp: ${new Date().toISOString()}
+      Error Name: ${error.name || 'Unknown Error'}
+      Message: ${error.message || 'No message available'}
+      Trace: ${error.stack ?? error.trace}
+      ============================
+      `;
 
-    console.error(formattedError);
-    await nodeManager.stop();
-    process.exit();
+      console.error(formattedError);
+
+      await nodeManager.error();
+
+      if (nodeManager.inJobLoop) {
+        try {
+          await nodeManager.stop();
+        } catch (error) {}
+
+        await nodeManager.delay(60);
+        continue;
+      } else {
+        await nodeManager.stop();
+        process.exit();
+      }
+    }
   }
+
+  // try {
+  //   await nodeManager.init();
+  //   await nodeManager.start(market);
+  // } catch (e) {
+  //   const error = e as any;
+
+  //   const formattedError = `
+  //   ========== ERROR ==========
+  //   Timestamp: ${new Date().toISOString()}
+  //   Error Name: ${error.name || 'Unknown Error'}
+  //   Message: ${error.message || 'No message available'}
+  //   ============================
+  //   `;
+
+  //   console.error(formattedError);
+
+  //   if (nodeManager.inJobLoop) {
+  //     await nodeManager.restart(market);
+  //   } else {
+  //     await nodeManager.stop();
+  //     process.exit();
+  //   }
+  // }
 }
 
 export async function startNode1(

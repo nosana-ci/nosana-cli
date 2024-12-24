@@ -6,11 +6,13 @@ import { stateStreaming } from './monitoring/streaming/StateStreamer.js';
 import { log } from './monitoring/log/NodeLog.js';
 import { logStreaming } from './monitoring/streaming/LogStreamer.js';
 import { consoleLogging } from './monitoring/log/console/ConsoleLogger.js';
+import { validateCLIVersion } from '../versions.js';
 
 export default class NodeManager {
   private node: BasicNode;
   private apiHandler: ApiHandler;
   private exiting = false;
+  public inJobLoop = false;
 
   constructor(options: { [key: string]: any }) {
     this.node = createLoggingProxy(new BasicNode(options));
@@ -72,6 +74,12 @@ export default class NodeManager {
   }
 
   async start(market?: string): Promise<void> {
+    this.exiting = false;
+
+    if (this.inJobLoop) {
+      await validateCLIVersion();
+    }
+
     /**
      * maintaniance
      */
@@ -137,6 +145,14 @@ export default class NodeManager {
     }
 
     /**
+     * this variable was added to know when the node has gone past the setup/checks stages
+     * and is now starting job work and queueing,
+     * this is mainly put that we want to report error and end the node only when it hasn't passed
+     * these stages else we want to restart the node process on error
+     */
+    this.inJobLoop = true;
+
+    /**
      * pending
      *
      * This checks for pending jobs that were assigned to the node.
@@ -182,6 +198,8 @@ export default class NodeManager {
   }
 
   async stop() {
+    this.exiting = true;
+
     /**
      * stop api
      *
@@ -197,9 +215,19 @@ export default class NodeManager {
     if (this.node) {
       await this.node.stop();
     }
+
+    state(this.node.node()).clear();
+    stateStreaming(this.node.node()).clear();
+    logStreaming(this.node.node()).clear();
+
+    this.exiting = false;
   }
 
-  private async restart(market?: string) {
+  async restart(market?: string) {
+    if (this.exiting) return;
+    this.exiting = true;
+    this.node.exit();
+
     /**
      * stop
      *
@@ -220,6 +248,16 @@ export default class NodeManager {
      * start the process of this manager
      */
     await this.start(market);
+  }
+
+  async delay(sec: number) {
+    await this.node.restartDelay(sec);
+  }
+
+  async error() {
+    if (this.exiting) return;
+    this.exiting = true;
+    this.node.exit();
   }
 
   /**

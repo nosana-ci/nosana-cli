@@ -88,7 +88,6 @@ export class MarketHandler {
     if (!this.market) {
       throw new Error('market not defined');
     }
-
     try {
       await this.sdk.jobs.work(this.market.address, accessKey);
       this.inMarket = true;
@@ -104,7 +103,7 @@ export class MarketHandler {
   }
 
   public async leave(): Promise<void> {
-    if (this.market && this.inMarket) {
+    if (this.market) {
       try {
         await this.sdk.jobs.stop(this.market.address);
       } catch (error) {}
@@ -113,11 +112,12 @@ export class MarketHandler {
   }
 
   public processMarketQueuePosition(market: Market, isFirst: boolean) {
+    const position =
+      market.queue.findIndex(
+        (e: any) => e.toString() === this.address.toString(),
+      ) + 1;
     return {
-      position:
-        market.queue.findIndex(
-          (e: any) => e.toString() === this.address.toString(),
-        ) + 1,
+      position,
       count: market.queue.length,
     };
   }
@@ -128,6 +128,14 @@ export class MarketHandler {
     // Ensure no multiple intervals
     this.stopMarketQueueMonitoring();
 
+    try {
+      // Perform an immediate check
+      const queuedMarketInfo = await this.checkQueuedInMarket();
+      updateCallback(queuedMarketInfo);
+    } catch (e) {
+      console.warn('\nCould not update queue status', e);
+    }
+
     // Check market queue status every 2 minutes
     this.checkQueuedInterval = setInterval(async () => {
       try {
@@ -136,7 +144,7 @@ export class MarketHandler {
       } catch (e) {
         console.warn('\nCould not update queue status', e);
       }
-    }, 6000 * 2);
+    }, 60000 * 2);
   }
 
   // Stop monitoring market queue status
