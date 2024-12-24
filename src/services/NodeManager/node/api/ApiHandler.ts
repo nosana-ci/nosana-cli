@@ -1,3 +1,4 @@
+import cors from 'cors';
 import WebSocket from 'ws';
 import { Server } from 'http';
 import { Client as SDK } from '@nosana/sdk';
