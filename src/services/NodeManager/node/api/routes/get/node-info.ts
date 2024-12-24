@@ -3,6 +3,8 @@ import { Response } from 'express';
 import { state } from '../../../../monitoring/state/NodeState.js';
 import { NodeAPIRequest } from '../../types/index.js';
 
+import { pkg } from '../../../../../../static/staticsImports.js';
+
 export function getNodeInfoRoute(req: NodeAPIRequest<{}>, res: Response) {
   const info = req.repository!.getNodeInfo();
 
@@ -27,5 +29,6 @@ export function getNodeInfoRoute(req: NodeAPIRequest<{}>, res: Response) {
       },
       network: networkRedacted,
     },
+    version: pkg.version,
   });
 }
