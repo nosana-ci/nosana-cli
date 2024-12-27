@@ -158,7 +158,15 @@ export class BasicNode {
   run(): Promise<void> {
     return new Promise<void>(async (resolve, reject) => {
       try {
-        const run = await this.runHandler.startRunMonitoring();
+        const periodicHealthcheck = async (): Promise<boolean> => {
+          const { status, error } = await this.containerOrchestration.healthy();
+          if (!status) {
+            return false
+          }
+          return true
+        }
+
+        const run = await this.runHandler.startRunMonitoring(periodicHealthcheck);
 
         /**
          * Once we have found a run in the queue, we want to stop this run monitoring

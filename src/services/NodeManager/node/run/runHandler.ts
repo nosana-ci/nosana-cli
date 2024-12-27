@@ -54,7 +54,7 @@ export class RunHandler {
   }
 
   // Start monitoring run status
-  public async startRunMonitoring(): Promise<Run> {
+  public async startRunMonitoring(callback: Function): Promise<Run> {
     return new Promise<Run>(async (resolve, reject) => {
       try {
         await this.sdk.jobs.loadNosanaJobs();
@@ -101,6 +101,10 @@ export class RunHandler {
         this.getRunsInterval = setInterval(async () => {
           let run: Run | undefined;
           try {
+            const health = await callback()
+            if(!health){
+              reject(new Error('HealthCheck failed'));
+            }
             run = await this.checkRun();
             if (run) {
               resolve(run);

@@ -17,10 +17,10 @@ export class JobExternalUtil {
       job.ipfsJob,
     );
 
-    if (jobDefinition.logicstics?.receive?.type) {
+    if (jobDefinition.logistics?.receive?.type) {
       const strategySelector = new JobDefinitionStrategySelector();
       const strategy = strategySelector.selectStrategy(
-        jobDefinition.logicstics?.receive?.type,
+        jobDefinition.logistics?.receive?.type,
       );
 
       this.repository.updateflowState(id, {
@@ -38,10 +38,10 @@ export class JobExternalUtil {
 
     const jobDefinition = this.repository.getflow(id).jobDefinition;
 
-    if (jobDefinition.logicstics?.send?.type) {
+    if (jobDefinition.logistics?.send?.type) {
       const strategySelector = new ResultReturnStrategySelector();
       const strategy = strategySelector.selectStrategy(
-        jobDefinition.logicstics?.send?.type,
+        jobDefinition.logistics?.send?.type,
       );
 
       this.repository.updateflowState(id, {

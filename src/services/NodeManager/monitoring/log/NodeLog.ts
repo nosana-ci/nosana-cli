@@ -138,6 +138,10 @@ class NodeLog {
       this.handleRecommend(data);
     }
 
+    if (data.class === 'BasicNode' && data.method === 'queue') {
+      this.handleQueue(data);
+    }
+
     if (data.class === 'JobHandler') {
       this.handleJobHandler(data);
     }
@@ -390,6 +394,23 @@ class NodeLog {
       }
     }
   }
+  
+  private handleQueue(data: LogEntry) {
+    if (data.type === 'call') {
+      this.addLog({
+        method: `${data.class}.${data.method}`,
+        job: this.job,
+        log: chalk.cyan(`Joining market ${data.arguments[0]}`),
+        timestamp: Date.now(),
+        // type: 'info',
+        type: 'process',
+        pending: {
+          isPending: true,
+          expecting: `${data.class}.${data.method}`,
+        },
+      });
+    }
+  }
 
   private handleBenchmark(data: LogEntry) {
     if (data.type === 'call') {
@@ -519,7 +540,7 @@ class NodeLog {
 
   private handleHealthHandler(data: LogEntry) {
     if (data.method === 'run') {
-      if (data.type === 'return') {
+      if(data.type === 'call'){
         this.addLog({
           method: `${data.class}.${data.method}`,
           job: this.job,
@@ -532,6 +553,9 @@ class NodeLog {
           },
         });
 
+      }
+
+      if (data.type === 'return') {
         this.addLog({
           method: `${data.class}.${data.method}`,
           job: this.job,
@@ -916,6 +940,13 @@ class NodeLog {
       data.type === 'return'
     ) {
       if (data.arguments[1]) {
+        this.addLog({
+          method: `${data.class}.${data.method}`,
+          job: this.job,
+          log: '',
+          timestamp: Date.now(),
+          type: 'stop',
+        });
         this.addLog({
           method: `${data.class}.${data.method}`,
           job: this.job,
