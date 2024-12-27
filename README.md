@@ -64,7 +64,7 @@ Global options:
 --log <logLevel>                     Log level (choices: "info", "none", "debug", "trace", default: "debug")
 ```
 
-## Register for Test Grid
+## Register for Nosana Grid
 
 To get started with your Nosana Node on the Test Grid, you will first have to register. The registration consists of a benchmark which will measure your hardware and bandwidth.
 
