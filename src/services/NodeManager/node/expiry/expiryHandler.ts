@@ -36,7 +36,6 @@ export class ExpiryHandler {
   public init<T>(
     run: Run,
     job: Job,
-    market: Market,
     jobstring: string,
     onExpireCallback: () => Promise<T>,
   ): number {
@@ -44,8 +43,7 @@ export class ExpiryHandler {
 
     this.jobAddress = jobstring;
     this.expiryEndTime = new BN(run.account.time)
-      // .add(new BN(job.timeout))
-      .add(new BN(market.jobTimeout))
+      .add(new BN(job.timeout))
       .mul(new BN(1000))
       .toNumber();
 
@@ -92,11 +90,10 @@ export class ExpiryHandler {
     this.startOrResetTimer();
   }
 
-  public expired(run: Run, job: Job, market: Market): boolean {
+  public expired(run: Run, job: Job): boolean {
     const now = Date.now() / 1000;
     const expirationTime = new BN(run.account.time)
-      // .add(new BN(job.timeout))
-      .add(new BN(market.jobTimeout))
+      .add(new BN(job.timeout))
       .toNumber();
     return expirationTime < now;
   }
