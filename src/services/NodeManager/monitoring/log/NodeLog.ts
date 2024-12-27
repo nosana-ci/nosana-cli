@@ -138,9 +138,9 @@ class NodeLog {
       this.handleRecommend(data);
     }
 
-    if (data.class === 'BasicNode' && data.method === 'queue') {
-      this.handleQueue(data);
-    }
+    // if (data.class === 'BasicNode' && data.method === 'queue') {
+    //   this.handleQueue(data);
+    // }
 
     if (data.class === 'JobHandler') {
       this.handleJobHandler(data);
@@ -394,23 +394,23 @@ class NodeLog {
       }
     }
   }
-  
-  private handleQueue(data: LogEntry) {
-    if (data.type === 'call') {
-      this.addLog({
-        method: `${data.class}.${data.method}`,
-        job: this.job,
-        log: chalk.cyan(`Joining market ${data.arguments[0]}`),
-        timestamp: Date.now(),
-        // type: 'info',
-        type: 'process',
-        pending: {
-          isPending: true,
-          expecting: `${data.class}.${data.method}`,
-        },
-      });
-    }
-  }
+
+  // private handleQueue(data: LogEntry) {
+  //   if (data.type === 'call') {
+  //     this.addLog({
+  //       method: `${data.class}.${data.method}`,
+  //       job: this.job,
+  //       log: chalk.cyan(`Joining market ${data.arguments[0]}`),
+  //       timestamp: Date.now(),
+  //       // type: 'info',
+  //       type: 'process',
+  //       pending: {
+  //         isPending: true,
+  //         expecting: `${data.class}.${data.method}`,
+  //       },
+  //     });
+  //   }
+  // }
 
   private handleBenchmark(data: LogEntry) {
     if (data.type === 'call') {
@@ -540,7 +540,7 @@ class NodeLog {
 
   private handleHealthHandler(data: LogEntry) {
     if (data.method === 'run') {
-      if(data.type === 'call'){
+      if (data.type === 'call') {
         this.addLog({
           method: `${data.class}.${data.method}`,
           job: this.job,
@@ -552,7 +552,6 @@ class NodeLog {
             expecting: `${data.class}.${data.method}`,
           },
         });
-
       }
 
       if (data.type === 'return') {
@@ -940,13 +939,6 @@ class NodeLog {
       data.type === 'return'
     ) {
       if (data.arguments[1]) {
-        this.addLog({
-          method: `${data.class}.${data.method}`,
-          job: this.job,
-          log: '',
-          timestamp: Date.now(),
-          type: 'stop',
-        });
         this.addLog({
           method: `${data.class}.${data.method}`,
           job: this.job,

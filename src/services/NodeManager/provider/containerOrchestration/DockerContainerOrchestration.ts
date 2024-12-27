@@ -254,7 +254,7 @@ export class DockerContainerOrchestration
       const container = this.docker.getContainer(containerId);
       if (container.id) {
         const containerInfo = await container.inspect();
-      
+
         for (const mount of containerInfo.Mounts) {
           if (mount.Name) {
             const dockerVolume = this.docker.getVolume(mount.Name);

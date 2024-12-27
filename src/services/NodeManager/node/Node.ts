@@ -161,12 +161,14 @@ export class BasicNode {
         const periodicHealthcheck = async (): Promise<boolean> => {
           const { status, error } = await this.containerOrchestration.healthy();
           if (!status) {
-            return false
+            return false;
           }
-          return true
-        }
+          return true;
+        };
 
-        const run = await this.runHandler.startRunMonitoring(periodicHealthcheck);
+        const run = await this.runHandler.startRunMonitoring(
+          periodicHealthcheck,
+        );
 
         /**
          * Once we have found a run in the queue, we want to stop this run monitoring
@@ -201,23 +203,18 @@ export class BasicNode {
           /**
            * This starts the expiry settings to monitor expiry time
            */
-          this.expiryHandler.init<void>(
-            run,
-            job,
-            jobAddress,
-            async () => {
-              try {
-                /**
-                 * upload the result and end the flow, also clean up flow.
-                 */
-                await this.jobHandler.finish(run);
-              } catch (error) {
-                reject(error);
-              }
+          this.expiryHandler.init<void>(run, job, jobAddress, async () => {
+            try {
+              /**
+               * upload the result and end the flow, also clean up flow.
+               */
+              await this.jobHandler.finish(run);
+            } catch (error) {
+              reject(error);
+            }
 
-              resolve(); // Signal that the process should end
-            },
-          );
+            resolve(); // Signal that the process should end
+          });
 
           /**
            * Start the job. This includes downloading the job definition, starting the flow,
@@ -284,23 +281,18 @@ export class BasicNode {
             /**
              * this starts the expiry settings to monitory expiry time
              */
-            this.expiryHandler.init<void>(
-              run,
-              job,
-              jobAddress,
-              async () => {
-                try {
-                  /**
-                   * upload the result and end the flow, also clean up flow.
-                   */
-                  await this.jobHandler.finish(run);
-                } catch (error) {
-                  reject(error);
-                }
+            this.expiryHandler.init<void>(run, job, jobAddress, async () => {
+              try {
+                /**
+                 * upload the result and end the flow, also clean up flow.
+                 */
+                await this.jobHandler.finish(run);
+              } catch (error) {
+                reject(error);
+              }
 
-                resolve(true);
-              },
-            );
+              resolve(true);
+            });
 
             /**
              * Start the job, this includes downloading the job defination, starting the flow

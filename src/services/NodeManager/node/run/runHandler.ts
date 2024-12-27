@@ -101,8 +101,8 @@ export class RunHandler {
         this.getRunsInterval = setInterval(async () => {
           let run: Run | undefined;
           try {
-            const health = await callback()
-            if(!health){
+            const health = await callback();
+            if (!health) {
               reject(new Error('HealthCheck failed'));
             }
             run = await this.checkRun();

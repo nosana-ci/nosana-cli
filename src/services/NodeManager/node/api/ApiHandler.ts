@@ -61,7 +61,7 @@ export class ApiHandler {
       initTunnel({ server: tunnelServer, port: this.port });
       await this.listen();
       this.startWebSocketServer();
-      this.startTunnelCheck(tunnelServer)
+      this.startTunnelCheck(tunnelServer);
       return tunnelServer;
     } catch (error) {
       throw error;
@@ -164,22 +164,22 @@ export class ApiHandler {
       try {
         const response = await fetch(`${tunnelServer}/`);
         if (!response.ok) {
-          failed = true
+          failed = true;
         }
 
         const responseText = await response.text();
         if (responseText !== this.address.toString()) {
-          failed = true
+          failed = true;
         }
       } catch (error) {
-        failed = true
+        failed = true;
       }
 
-      if(failed == true){
+      if (failed == true) {
         await this.provider.stopReverseProxyApi(this.address.toString());
         await this.provider.setUpReverseProxyApi(this.address.toString());
       }
-    }, 60000 * 20) // check every 20 mins
+    }, 60000 * 20); // check every 20 mins
   }
 
   private async registerRoutes() {
@@ -324,7 +324,7 @@ export class ApiHandler {
   public async stop() {
     this.stopTunnelCheck();
     await this.provider.stopReverseProxyApi(this.address.toString());
-    
+
     if (this.server) {
       this.server.close();
     }
