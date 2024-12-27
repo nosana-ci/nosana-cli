@@ -130,6 +130,16 @@ export class GridHandler {
 
       const txnSignature = await this.signAndSendTransaction(data.tx);
       await this.confirmTransaction(txnSignature);
+      // TODO: verify tx result with code below
+      // const result = await this.sdk.solana.connection?.getTransaction(
+      //   txnSignature as string,
+      //   { maxSupportedTransactionVersion: 0 },
+      // );
+      // // @ts-ignore
+      // if (result?.meta?.status.Err) {
+      //   // @ts-ignore
+      //   throw new Error(JSON.stringify(result?.meta?.status.Err));
+      // }
 
       await sleep(30);
 
