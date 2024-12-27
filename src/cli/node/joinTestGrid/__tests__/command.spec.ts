@@ -20,8 +20,8 @@ describe('joinTestGridCommand', () => {
     expect(mock_runBenchmark_action).toHaveBeenCalledTimes(1);
   });
 
-  it('should have 8 options', () => {
-    expect(joinTestGridCommand.options.length).toBe(8);
+  it('should have 9 options', () => {
+    expect(joinTestGridCommand.options.length).toBe(9);
   });
 
   it.each([
@@ -33,6 +33,7 @@ describe('joinTestGridCommand', () => {
     ['--airdrop', undefined, true],
     ['--config', '-c', '~/.nosana/'],
     ['--no-airdrop', undefined, undefined],
+    ['--gpu', undefined, 'all'],
   ])('should have %s option', (long, short, defaultValue) => {
     const option = joinTestGridCommand.options.find((i) => i.long === long);
     expect(option?.long).toBe(long);

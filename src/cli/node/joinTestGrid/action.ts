@@ -13,9 +13,9 @@ import {
   FlowState,
 } from '../../../providers/Provider.js';
 import { PodmanProvider } from '../../../providers/PodmanProvider.js';
-import { config } from '../../../generic/config.js';
 import { getSDK } from '../../../services/sdk.js';
 import { jobDefinition } from '../../../static/staticsImports.js';
+import { configs } from '../../../services/NodeManager/configs/configs.js';
 
 let flow: Flow | undefined;
 let provider: Provider;
@@ -57,11 +57,19 @@ export async function runBenchmark(
   console.log(`Provider:\t${chalk.greenBright.bold(options.provider)}`);
   switch (options.provider) {
     case 'podman':
-      provider = new PodmanProvider(options.podman, options.config);
+      provider = new PodmanProvider(
+        options.podman,
+        options.config,
+        options.gpu,
+      );
       break;
     case 'docker':
     default:
-      provider = new DockerProvider(options.podman, options.config);
+      provider = new DockerProvider(
+        options.podman,
+        options.config,
+        options.gpu,
+      );
       break;
   }
   spinner = ora(chalk.cyan('Checking provider health')).start();
@@ -119,6 +127,7 @@ export async function runBenchmark(
       );
       process.exit();
     }
+
     console.log(chalk.cyan('Running benchmark'));
     // Create new flow
     flow = provider.run(jobDefinition);
@@ -138,28 +147,27 @@ export async function runBenchmark(
 
   if (result && result.status === 'success' && result.opStates && answers) {
     try {
+      const conf = configs(options);
+
       const signature = (await nosana.solana.signMessage(
-        config.signMessage,
+        conf.signMessage,
       )) as Uint8Array;
       const base64Signature = Buffer.from(signature).toString('base64');
 
-      const response = await fetch(
-        `${config.backendUrl}/nodes/join-test-grid`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `${node}:${base64Signature}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            nodeAddress: node,
-            results: result.opStates,
-            email: answers.email,
-            discord: answers.discord,
-            twitter: answers.twitter,
-          }),
+      const response = await fetch(`${conf.backendUrl}/nodes/join-test-grid`, {
+        method: 'POST',
+        headers: {
+          Authorization: `${node}:${base64Signature}`,
+          'Content-Type': 'application/json',
         },
-      );
+        body: JSON.stringify({
+          nodeAddress: node,
+          results: result.opStates,
+          email: answers.email,
+          discord: answers.discord,
+          twitter: answers.twitter,
+        }),
+      });
       const data = await response.json();
       if ((data && data.name === 'Error') || data.errors) {
         if (data.errors) {

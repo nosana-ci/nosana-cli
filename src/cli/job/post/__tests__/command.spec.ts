@@ -8,7 +8,7 @@ jest.mock('../action', () => ({
 
 describe('postJobCommand', () => {
   const mock_run_action = jest.fn();
-  const parseArgs = ['node', 'post', '-m id', 'run command'];
+  const parseArgs = ['node', 'post', '-m id', '-t 1', 'run command'];
 
   beforeEach(() => {
     mock_run_action.mockReset();
@@ -25,8 +25,8 @@ describe('postJobCommand', () => {
     expect(postJobCommand.args[0]).toBe('run command');
   });
 
-  it('should have 16 options', () => {
-    expect(postJobCommand.options.length).toBe(16);
+  it('should have 17 options', () => {
+    expect(postJobCommand.options.length).toBe(17);
   });
 
   it.each([
@@ -47,6 +47,7 @@ describe('postJobCommand', () => {
     ['--format', undefined, 'text'],
     ['--download', undefined, undefined],
     ['--url', undefined, undefined],
+    ['--timeout', '-t', undefined],
   ])('should have %s option', (long, short, defaultValue) => {
     const option = postJobCommand.options.find((i) => i.long === long);
     expect(option?.long).toBe(long);

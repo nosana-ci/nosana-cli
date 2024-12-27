@@ -1,6 +1,7 @@
 import createClient from 'openapi-fetch';
 
 import { paths } from './schema.js';
+import { configs } from '../services/NodeManager/configs/configs.js';
 
 type CreateClient = ReturnType<typeof createClient<paths>>;
 
@@ -9,7 +10,7 @@ export const clientSelector = (): CreateClient => {
 
   if (!instance) {
     instance = createClient<paths>({
-      baseUrl: process.env.BACKEND_URL?.replace('/api', '') || '',
+      baseUrl: configs().backendUrl?.replace('/api', '') || '',
       headers: {
         'Content-Type': 'application/json',
       },

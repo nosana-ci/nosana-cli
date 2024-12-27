@@ -32,6 +32,7 @@ describe('DB', () => {
         volumes: {},
       },
       flows: {},
+      info: {},
     });
   });
 

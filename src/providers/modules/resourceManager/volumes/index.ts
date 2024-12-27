@@ -134,7 +134,7 @@ export function createVolumeManager(
       logger.succeed();
       return volume;
     } catch (err) {
-      throw new Error(`Failed to fetch remote resource\n${err}`);
+      throw new Error((err as Error).message);
     }
   };
 

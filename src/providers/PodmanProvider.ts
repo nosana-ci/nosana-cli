@@ -11,10 +11,10 @@ export class PodmanProvider extends DockerProvider {
   constructor(
     podman: string,
     configLocation: string,
+    gpu: string,
     logger?: Logger,
-    gpu = 'all',
   ) {
-    super(podman, configLocation, logger, gpu);
+    super(podman, configLocation, gpu, logger);
     this.apiUrl = `${this.protocol}://${this.host}:${this.port}/v4.5.0/libpod`;
   }
 

@@ -3,6 +3,7 @@ import { Command, Option } from 'commander';
 import { startNode } from './action.js';
 import {
   networkOption,
+  portOption,
   rpcOption,
   walletOption,
 } from '../../sharedOptions/index.js';
@@ -32,4 +33,5 @@ export const startNodeCommand = new Command('start')
     ).default('~/.nosana/'),
   )
   .addOption(gpuOption)
+  .addOption(portOption)
   .action(startNode);

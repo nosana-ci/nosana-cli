@@ -8,20 +8,23 @@ import { Flow } from '../../Provider.js';
 export type NodeDb = {
   flows: { [key: string]: Flow };
   resources: Resources;
+  info: {
+    [key: string]: string;
+  };
 };
 
-type Resources = {
+export type Resources = {
   images: { [key: string]: ResourceHistory };
   volumes: { [key: string]: VolumeResource };
 };
 
-type ResourceHistory = {
+export type ResourceHistory = {
   lastUsed: Date;
   usage: number;
   required: boolean;
 };
 
-type VolumeResource = ResourceHistory & {
+export type VolumeResource = ResourceHistory & {
   volume: string;
 };
 
@@ -31,6 +34,7 @@ const initial_state = {
     volumes: {},
   },
   flows: {},
+  info: {},
 };
 
 export class DB {
@@ -54,6 +58,10 @@ export class DB {
 
     if (!this.db.data.flows) {
       this.db.data.flows = initial_state.flows;
+    }
+
+    if (!this.db.data.info) {
+      this.db.data.info = initial_state.info;
     }
 
     this.db.write();

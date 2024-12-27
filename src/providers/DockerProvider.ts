@@ -61,13 +61,13 @@ export class DockerProvider extends BasicProvider implements Provider {
   public port: string;
   public protocol: 'https' | 'http' | 'ssh';
   public name: string = 'docker';
-  public gpu: string;
+  public gpu: string = 'all';
 
   constructor(
     server: string,
     configLocation: string,
+    gpu: string,
     logger?: Logger,
-    gpu = 'all',
   ) {
     super(configLocation, logger);
 
