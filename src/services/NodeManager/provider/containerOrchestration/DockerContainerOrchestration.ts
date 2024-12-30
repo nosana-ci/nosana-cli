@@ -255,19 +255,16 @@ export class DockerContainerOrchestration
       if (container.id) {
         const containerInfo = await container.inspect();
 
-        for (const mount of containerInfo.Mounts) {
-          if (mount.Name) {
-            const dockerVolume = this.docker.getVolume(mount.Name);
-            await dockerVolume.remove({ force: true });
-          }
-        }
+        // for (const mount of containerInfo.Mounts) {
+        //   if (mount.Name) {
+        //     const dockerVolume = this.docker.getVolume(mount.Name);
+        //     await dockerVolume.remove({ force: true });
+        //   }
+        // }
 
-        if (
-          containerInfo.State.Status !== 'exited' &&
-          containerInfo.State.Status !== 'stopped'
-        ) {
+        try {
           await container.stop();
-        }
+        } catch (error) {}
         await container.remove({ force: true });
       }
       return { status: true };
