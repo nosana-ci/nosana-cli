@@ -69,12 +69,30 @@ export class FlowHandler {
       }
     }
 
+    try {
+      for (let i = 0; i < flow.jobDefinition.ops.length; i++) {
+        const op = flow.jobDefinition.ops[i];
+
+        try {
+          await this.provider.stopOperation(op.type, {
+            id,
+            index: i,
+            name: this.repository.getFlowOperationName(id, i),
+          });
+        } catch (_) {}
+      }
+    } catch (_) {}
+
     this.repository.updateflowState(id, {
       status: 'success',
       endTime: Date.now(),
     });
 
     return this.repository.getflow(id);
+  }
+
+  public async stopCurrentFlow() {
+    await this.provider.finishCurrentRunningContainer();
   }
 
   public async stop(id: string): Promise<void> {

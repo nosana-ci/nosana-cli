@@ -208,12 +208,18 @@ export class BasicNode {
               /**
                * upload the result and end the flow, also clean up flow.
                */
-              await this.jobHandler.finish(run);
+              // await this.jobHandler.finish(run);
+
+              /**
+               * so we force close the current job and it causes the container.wait()
+               * to unblock and move to the next stage
+               */
+              await this.jobHandler.stopCurrentJob();
             } catch (error) {
               reject(error);
             }
 
-            resolve(); // Signal that the process should end
+            // resolve(); // Signal that the process should end
           });
 
           /**
@@ -286,12 +292,18 @@ export class BasicNode {
                 /**
                  * upload the result and end the flow, also clean up flow.
                  */
-                await this.jobHandler.finish(run);
+                // await this.jobHandler.finish(run);
+
+                /**
+                 * so we force close the current job and it causes the container.wait()
+                 * to unblock and move to the next stage
+                 */
+                await this.jobHandler.stopCurrentJob();
               } catch (error) {
                 reject(error);
               }
 
-              resolve(true);
+              // resolve(true);
             });
 
             /**
