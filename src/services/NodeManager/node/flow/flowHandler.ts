@@ -91,8 +91,8 @@ export class FlowHandler {
     return this.repository.getflow(id);
   }
 
-  public async stopCurrentFlow(){
-    await this.provider.finishCurrentRunningContainer()
+  public async stopCurrentFlow() {
+    await this.provider.finishCurrentRunningContainer();
   }
 
   public async stop(id: string): Promise<void> {

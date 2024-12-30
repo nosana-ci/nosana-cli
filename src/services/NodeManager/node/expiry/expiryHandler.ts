@@ -91,7 +91,7 @@ export class ExpiryHandler {
   public async waitUntilExpired(): Promise<void> {
     return new Promise<void>((resolve) => {
       this.stop();
-      resolve()
+      resolve();
     });
   }
 

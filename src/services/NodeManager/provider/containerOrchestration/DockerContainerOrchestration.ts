@@ -238,17 +238,6 @@ export class DockerContainerOrchestration
     }
   }
 
-  async deleteContainer(id: string): Promise<ReturnedStatus> {
-    try {
-      if (this.docker.getContainer(id)) {
-        this.docker.getContainer(id).remove({ force: true });
-      }
-      return { status: true };
-    } catch (error) {
-      return { status: false, error };
-    }
-  }
-
   async stopAndDeleteContainer(containerId: string): Promise<ReturnedStatus> {
     try {
       const container = this.docker.getContainer(containerId);

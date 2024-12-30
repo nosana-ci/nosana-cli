@@ -480,10 +480,10 @@ export class Provider {
     return true;
   }
 
-  async finishCurrentRunningContainer(){
+  async finishCurrentRunningContainer() {
     const container = this.currentContainer;
-    if(container){
-      await this.containerOrchestration.stopContainer(container.id)
+    if (container) {
+      await this.containerOrchestration.stopContainer(container.id);
     }
   }
 

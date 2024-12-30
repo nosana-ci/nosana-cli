@@ -214,7 +214,7 @@ export class BasicNode {
                * so we force close the current job and it causes the container.wait()
                * to unblock and move to the next stage
                */
-              await this.jobHandler.stopCurrentJob()
+              await this.jobHandler.stopCurrentJob();
             } catch (error) {
               reject(error);
             }
@@ -298,7 +298,7 @@ export class BasicNode {
                  * so we force close the current job and it causes the container.wait()
                  * to unblock and move to the next stage
                  */
-                await this.jobHandler.stopCurrentJob()
+                await this.jobHandler.stopCurrentJob();
               } catch (error) {
                 reject(error);
               }

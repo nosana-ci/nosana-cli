@@ -172,7 +172,7 @@ export class JobHandler {
   }
 
   async stopCurrentJob(): Promise<void> {
-    await this.flowHandler.stopCurrentFlow()
+    await this.flowHandler.stopCurrentFlow();
   }
 
   async quit(run: Run): Promise<void> {
