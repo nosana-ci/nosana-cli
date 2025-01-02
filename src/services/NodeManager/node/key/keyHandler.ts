@@ -2,6 +2,7 @@ import { Market, Client as SDK } from '@nosana/sdk';
 import { PublicKey } from '@solana/web3.js';
 import { EMPTY_ADDRESS } from '../../../jobs.js';
 import { configs } from '../../configs/configs.js';
+import { isNodeOnboarded } from '../../../../generic/utils.js';
 
 export class KeyHandler {
   private address: PublicKey;
@@ -78,7 +79,7 @@ export class KeyHandler {
       if (!result || (result && result.name === 'Error')) {
         throw new Error(result.message);
       }
-      if (result.status !== 'onboarded') {
+      if (!isNodeOnboarded(result.status)) {
         throw new Error('Node not onboarded yet');
       }
 

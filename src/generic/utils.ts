@@ -99,6 +99,10 @@ function logTable(data: any) {
   }
 }
 
+function isNodeOnboarded(status: string): boolean {
+  return ['ONBOARDED', 'PREMIUM'].includes(status);
+}
+
 const SECONDS_PER_DAY = 24 * 60 * 60;
 
 export {
@@ -110,4 +114,5 @@ export {
   colors,
   ifStringCastToArray,
   SECONDS_PER_DAY,
+  isNodeOnboarded,
 };
