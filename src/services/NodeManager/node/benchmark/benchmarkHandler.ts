@@ -1,6 +1,5 @@
 import { Flow, OpState } from '@nosana/sdk';
 
-import { configs } from '../../configs/configs.js';
 import { FlowHandler } from '../flow/flowHandler.js';
 import { Provider } from '../../provider/Provider.js';
 import {
