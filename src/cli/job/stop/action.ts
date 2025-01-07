@@ -80,23 +80,6 @@ export async function stopJob(
         spinner.fail();
         throw new Error(`failed to stop job: ${error}`);
       }
-      // const spinner = ora(chalk.cyan(`Waiting for node to start`)).start();
-      // job = await waitForJobRunOrCompletion(new PublicKey(jobAddress));
-      // spinner.succeed();
-      // clearLine();
-
-      // formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_STATUS, {
-      //   status: job.state.toString(),
-      // });
-
-      // if (job.state === 'RUNNING') {
-      //   clearLine();
-      //   await postStopJobServiceURLWithRetry(job.node, jobAddress, () =>
-      //     formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_STATUS, {
-      //       status: 'STOPPED',
-      //     }),
-      //   );
-      // }
     } else {
       clearLine();
       formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_STATUS, {
