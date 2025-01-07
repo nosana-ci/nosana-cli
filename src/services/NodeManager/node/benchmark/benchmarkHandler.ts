@@ -76,7 +76,11 @@ export class BenchmarkHandler {
 
   private parseLogsIntoJSON<T extends unknown>(logs: OpState['logs']): T {
     return JSON.parse(
-      logs.reduce((result: string, { log }) => result + log, ''),
+      logs.reduce(
+        (result: string, { log, type }) =>
+          type === 'stdout' ? result + log : result,
+        '',
+      ),
     ) as T;
   }
 
