@@ -210,11 +210,11 @@ export class BasicNode {
           /**
            * start monitoring for the stop signal from the smart contract
            */
-          this.stopHandler.startStopHandlerMonitoring(jobAddress, async () => {
-            this.jobHandler.stop();
-            resolved = true;
-            resolve();
-          });
+          // this.stopHandler.startStopHandlerMonitoring(jobAddress, async () => {
+          //   this.jobHandler.stop();
+          //   resolved = true;
+          //   resolve();
+          // });
 
           /**
            * This starts the expiry settings to monitor expiry time
@@ -307,15 +307,15 @@ export class BasicNode {
             /**
              * start monitoring for the stop signal from the smart contract
              */
-            this.stopHandler.startStopHandlerMonitoring(
-              jobAddress,
-              async () => {
-                this.jobHandler.stop();
-                resolved = true;
-                resolve(true);
-                return;
-              },
-            );
+            // this.stopHandler.startStopHandlerMonitoring(
+            //   jobAddress,
+            //   async () => {
+            //     this.jobHandler.stop();
+            //     resolved = true;
+            //     resolve(true);
+            //     return;
+            //   },
+            // );
 
             /**
              * this starts the expiry settings to monitory expiry time
