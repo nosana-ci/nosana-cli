@@ -40,7 +40,6 @@ export interface ContainerOrchestrationInterface {
     args: RunContainerArgs,
   ): Promise<ReturnedStatus<Container>>;
   stopContainer(id: string): Promise<ReturnedStatus>;
-  deleteContainer(id: string): Promise<ReturnedStatus>;
   stopAndDeleteContainer(id: string): Promise<ReturnedStatus>;
   isContainerExited(id: string): Promise<ReturnedStatus<boolean>>;
   doesContainerExist(id: string): Promise<ReturnedStatus<boolean>>;

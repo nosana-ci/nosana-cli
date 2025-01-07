@@ -133,18 +133,14 @@ export class JobHandler {
   async run(): Promise<boolean> {
     try {
       if (this.repository.getFlowState(this.jobId()).status == 'failed') {
-        jobEmitter.emit('run-completed', { id: this.jobId(), status: false });
         return false;
       }
 
       await this.flowHandler.run(this.jobId());
 
       if (this.repository.getFlowState(this.jobId()).status == 'failed') {
-        jobEmitter.emit('run-completed', { id: this.jobId(), status: false });
         return false;
       }
-
-      jobEmitter.emit('run-completed', { id: this.jobId(), status: true });
 
       return true;
     } catch (error) {
@@ -172,6 +168,10 @@ export class JobHandler {
           reject(error);
         });
     });
+  }
+
+  async stopCurrentJob(): Promise<void> {
+    await this.flowHandler.stopCurrentFlow();
   }
 
   async quit(run: Run): Promise<void> {

@@ -8,7 +8,7 @@ import { DB } from '../../../providers/modules/db/index.js';
 import { ContainerOrchestrationInterface } from '../provider/containerOrchestration/interface.js';
 import { Provider } from '../provider/Provider.js';
 import { applyLoggingProxyToClass } from '../monitoring/proxy/loggingProxy.js';
-import { sleep } from '../../../generic/utils.js';
+import { isNodeOnboarded, sleep } from '../../../generic/utils.js';
 import { ApiHandler } from './api/ApiHandler.js';
 import { NodeRepository } from '../repository/NodeRepository.js';
 import { BenchmarkHandler } from './benchmark/benchmarkHandler.js';
@@ -106,7 +106,7 @@ export class BasicNode {
      * if it has not been onboarded quit the process
      */
     const nodeData = await this.gridHandler.getNodeStatus();
-    if (nodeData.status !== 'onboarded') {
+    if (!isNodeOnboarded(nodeData.status)) {
       throw new Error('Node not onboarded yet');
     }
 
@@ -157,7 +157,17 @@ export class BasicNode {
   run(): Promise<void> {
     return new Promise<void>(async (resolve, reject) => {
       try {
-        const run = await this.runHandler.startRunMonitoring();
+        const periodicHealthcheck = async (): Promise<boolean> => {
+          const { status, error } = await this.containerOrchestration.healthy();
+          if (!status) {
+            return false;
+          }
+          return true;
+        };
+
+        const run = await this.runHandler.startRunMonitoring(
+          periodicHealthcheck,
+        );
 
         /**
          * Once we have found a run in the queue, we want to stop this run monitoring
@@ -188,28 +198,28 @@ export class BasicNode {
          * Check if the job is expired. If it is, quit the job;
          * otherwise, continue to start.
          */
-        if (!this.expiryHandler.expired(run, job, market)) {
+        if (!this.expiryHandler.expired(run, job)) {
           /**
            * This starts the expiry settings to monitor expiry time
            */
-          this.expiryHandler.init<void>(
-            run,
-            job,
-            market,
-            jobAddress,
-            async () => {
-              try {
-                /**
-                 * upload the result and end the flow, also clean up flow.
-                 */
-                await this.jobHandler.finish(run);
-              } catch (error) {
-                reject(error);
-              }
+          this.expiryHandler.init<void>(run, job, jobAddress, async () => {
+            try {
+              /**
+               * upload the result and end the flow, also clean up flow.
+               */
+              // await this.jobHandler.finish(run);
 
-              resolve(); // Signal that the process should end
-            },
-          );
+              /**
+               * so we force close the current job and it causes the container.wait()
+               * to unblock and move to the next stage
+               */
+              await this.jobHandler.stopCurrentJob();
+            } catch (error) {
+              reject(error);
+            }
+
+            // resolve(); // Signal that the process should end
+          });
 
           /**
            * Start the job. This includes downloading the job definition, starting the flow,
@@ -272,28 +282,28 @@ export class BasicNode {
            * check if the job is expired if it is quit the job,
            * if not continue to start
            */
-          if (!this.expiryHandler.expired(run, job, market)) {
+          if (!this.expiryHandler.expired(run, job)) {
             /**
              * this starts the expiry settings to monitory expiry time
              */
-            this.expiryHandler.init<void>(
-              run,
-              job,
-              market,
-              jobAddress,
-              async () => {
-                try {
-                  /**
-                   * upload the result and end the flow, also clean up flow.
-                   */
-                  await this.jobHandler.finish(run);
-                } catch (error) {
-                  reject(error);
-                }
+            this.expiryHandler.init<void>(run, job, jobAddress, async () => {
+              try {
+                /**
+                 * upload the result and end the flow, also clean up flow.
+                 */
+                // await this.jobHandler.finish(run);
 
-                resolve(true);
-              },
-            );
+                /**
+                 * so we force close the current job and it causes the container.wait()
+                 * to unblock and move to the next stage
+                 */
+                await this.jobHandler.stopCurrentJob();
+              } catch (error) {
+                reject(error);
+              }
+
+              // resolve(true);
+            });
 
             /**
              * Start the job, this includes downloading the job defination, starting the flow

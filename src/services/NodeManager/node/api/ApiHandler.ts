@@ -41,6 +41,7 @@ export class ApiHandler {
   private server: Server | null = null;
   private wss: WebSocket.Server | null = null; // WebSocket server
   private eventEmitter = ApiEventEmitter.getInstance();
+  private tunnelCheckInterval: NodeJS.Timeout | null = null;
 
   constructor(
     private sdk: SDK,
@@ -55,6 +56,9 @@ export class ApiHandler {
     this.flowHandler = new FlowHandler(this.provider, repository);
 
     applyLoggingProxyToClass(this);
+
+    // periodically check if the tunnel server returns a response on / (the response is the address)
+    // if not stop the reverse proxy and set it up again
   }
 
   public async start(): Promise<string> {
@@ -70,7 +74,7 @@ export class ApiHandler {
       initTunnel({ server: tunnelServer, port: this.port });
       await this.listen();
       this.startWebSocketServer();
-
+      this.startTunnelCheck(tunnelServer);
       return tunnelServer;
     } catch (error) {
       throw error;
@@ -116,6 +120,30 @@ export class ApiHandler {
         stateStreaming(this.address.toString()).unsubscribe(ws);
       });
     });
+  }
+
+  private startTunnelCheck(tunnelServer: string) {
+    this.tunnelCheckInterval = setInterval(async () => {
+      let failed = false;
+      try {
+        const response = await fetch(`${tunnelServer}/`);
+        if (!response.ok) {
+          failed = true;
+        }
+
+        const responseText = await response.text();
+        if (responseText !== this.address.toString()) {
+          failed = true;
+        }
+      } catch (error) {
+        failed = true;
+      }
+
+      if (failed == true) {
+        await this.provider.stopReverseProxyApi(this.address.toString());
+        await this.provider.setUpReverseProxyApi(this.address.toString());
+      }
+    }, 60000 * 20); // check every 20 mins
   }
 
   private async registerRoutes() {
@@ -170,8 +198,17 @@ export class ApiHandler {
     });
   }
 
+  private stopTunnelCheck() {
+    if (this.tunnelCheckInterval) {
+      clearInterval(this.tunnelCheckInterval);
+      this.tunnelCheckInterval = null;
+    }
+  }
+
   public async stop() {
+    this.stopTunnelCheck();
     await this.provider.stopReverseProxyApi(this.address.toString());
+
     if (this.server) {
       this.server.close();
     }

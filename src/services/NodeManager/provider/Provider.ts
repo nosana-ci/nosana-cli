@@ -21,6 +21,8 @@ export class Provider {
     applyLoggingProxyToClass(this);
   }
 
+  private currentContainer: Dockerode.Container | undefined;
+
   public async stopReverseProxyApi(address: string): Promise<boolean> {
     const tunnel_name = `tunnel-api-${address}`;
     const frpc_name = `frpc-api-${address}`;
@@ -404,6 +406,8 @@ export class Provider {
           throw new Error('provider failed to start container');
         }
 
+        this.currentContainer = container;
+
         const logStream = await container.logs({
           stdout: true,
           stderr: true,
@@ -474,6 +478,13 @@ export class Provider {
     }
 
     return true;
+  }
+
+  async finishCurrentRunningContainer() {
+    const container = this.currentContainer;
+    if (container) {
+      await this.containerOrchestration.stopContainer(container.id);
+    }
   }
 
   async containerRunStopOperation(id: string, index: number): Promise<boolean> {

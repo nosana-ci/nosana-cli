@@ -200,13 +200,15 @@ export default class NodeManager {
   async stop() {
     this.exiting = true;
 
-    /**
-     * stop api
-     *
-     * we want to stop the api server, we only do this on complete shutdown and not
-     * restarts after jobs
-     */
-    await this.apiHandler.stop();
+    try {
+      /**
+       * stop api
+       *
+       * we want to stop the api server, we only do this on complete shutdown and not
+       * restarts after jobs
+       */
+      await this.apiHandler.stop();
+    } catch (error) {}
 
     /**
      * check if the node exists then stop the node, this will involve killing and cleaning

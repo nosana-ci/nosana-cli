@@ -2,7 +2,6 @@ import { Client as SDK, Market, Run, Job } from '@nosana/sdk';
 import { PublicKey } from '@solana/web3.js';
 import BN from 'bn.js';
 import ApiEventEmitter from '../api/ApiEventEmitter.js';
-import { jobEmitter } from '../job/jobHandler.js';
 
 export class ExpiryHandler {
   private address: PublicKey;
@@ -22,21 +21,11 @@ export class ExpiryHandler {
         this.shortenedExpiry();
       }
     });
-
-    // Listen for the job completion event
-    jobEmitter.on('run-completed', async (data) => {
-      if (!this.resolving) {
-        this.resolving = true;
-        this.stop();
-        await this.onExpireCallback?.(); // Trigger expiration callback
-      }
-    });
   }
 
   public init<T>(
     run: Run,
     job: Job,
-    market: Market,
     jobstring: string,
     onExpireCallback: () => Promise<T>,
   ): number {
@@ -44,8 +33,7 @@ export class ExpiryHandler {
 
     this.jobAddress = jobstring;
     this.expiryEndTime = new BN(run.account.time)
-      // .add(new BN(job.timeout))
-      .add(new BN(market.jobTimeout))
+      .add(new BN(job.timeout))
       .mul(new BN(1000))
       .toNumber();
 
@@ -92,18 +80,18 @@ export class ExpiryHandler {
     this.startOrResetTimer();
   }
 
-  public expired(run: Run, job: Job, market: Market): boolean {
+  public expired(run: Run, job: Job): boolean {
     const now = Date.now() / 1000;
     const expirationTime = new BN(run.account.time)
-      // .add(new BN(job.timeout))
-      .add(new BN(market.jobTimeout))
+      .add(new BN(job.timeout))
       .toNumber();
     return expirationTime < now;
   }
 
   public async waitUntilExpired(): Promise<void> {
     return new Promise<void>((resolve) => {
-      this.startOrResetTimer();
+      this.stop();
+      resolve();
     });
   }
 

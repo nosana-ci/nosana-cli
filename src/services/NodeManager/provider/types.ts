@@ -23,7 +23,7 @@ export type RequiredResource = Omit<Resource, 'target'>;
 
 export type Ops = Array<Operation<OperationType>>;
 
-export interface JobLogicstics {
+export interface JobLogistics {
   send?: SendJobDefinationLogicstics;
   receive?: ReceiveJobResultLogicstics;
 }
@@ -57,7 +57,7 @@ export interface ReceiveJobResultLogicstics {
 export type JobDefinition = {
   version: string;
   type: JobType;
-  logicstics?: JobLogicstics;
+  logistics?: JobLogistics;
   meta?: {
     trigger?: string;
   };

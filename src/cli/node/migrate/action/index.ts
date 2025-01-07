@@ -8,6 +8,8 @@ import { generateNewWallet } from './generateNewKeyPair.js';
 import { tokenTransfer } from './tokenTransfer.js';
 import { solTransfer } from './solTransfer.js';
 import { reimburse } from './reimburse.js';
+import { getSDK } from '../../../../services/sdk.js';
+import { Keypair } from '@solana/web3.js';
 
 export async function migrateWalletCommand(
   walletPath: string,
@@ -26,7 +28,10 @@ export async function migrateWalletCommand(
     walletPath = walletPath.replace('~', os.homedir());
   }
 
-  const suspectedKeyPair = parseWallet(walletPath);
+  // const suspectedKeyPair = parseWallet(walletPath);
+  const nosana = getSDK();
+  // @ts-ignore we need to ignore because wallet can also be without a private key
+  const suspectedKeyPair: Keypair = nosana.solana.wallet.payer;
 
   const { isCompromised, isAtRisk, reimbursementTransaction, newNodeAddress } =
     await validatePublicKey(suspectedKeyPair.publicKey);

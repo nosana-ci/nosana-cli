@@ -17,7 +17,12 @@ import {
 } from '../types/cudaCheck.js';
 import { FlowState, OperationArgsMap } from '../providers/Provider.js';
 import { getNosBalance, getRawTransaction } from './sdk.js';
-import { askYesNoQuestion, SECONDS_PER_DAY, sleep } from '../generic/utils.js';
+import {
+  askYesNoQuestion,
+  isNodeOnboarded,
+  SECONDS_PER_DAY,
+  sleep,
+} from '../generic/utils.js';
 import { EMPTY_ADDRESS } from './jobs.js';
 import { config } from '../generic/config.js';
 import { PodmanProvider } from '../providers/PodmanProvider.js';
@@ -893,7 +898,7 @@ export class NosanaNode {
       if (!nodeResponse || (nodeResponse && nodeResponse.name === 'Error')) {
         throw new Error(nodeResponse.message);
       }
-      if (nodeResponse.status !== 'onboarded') {
+      if (!isNodeOnboarded(nodeResponse.status)) {
         throw new Error('Node not onboarded yet');
       }
     } catch (e: unknown) {

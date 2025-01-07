@@ -76,7 +76,6 @@ export class GridHandler {
     const signature = await this.getAuthSignature();
 
     try {
-      let market: string;
       const response = await fetch(
         `${configs().backendUrl}/nodes/${this.address}/check-market`,
         {
@@ -91,21 +90,24 @@ export class GridHandler {
 
       let data: any = await response.json();
 
-      if (!data || (data.name === 'Error' && data.message) || !data.address) {
-        if (
-          data.message.includes('Assigned market doesnt support current GPU') ||
-          data.message.includes('Node doesnt have an assigned market yet')
-        ) {
-          data = await this.changeMarket();
-          market = data.newMarket;
-        } else {
-          throw new Error(data.message);
-        }
-      } else {
-        market = data.address;
+      if (!data) {
+        throw new Error(
+          'Something went wrong with recommending the market, please try again.',
+        );
       }
 
-      return market;
+      if (data.needsChangeMarket) {
+        data = await this.changeMarket();
+        return data.newMarket;
+      }
+
+      if (data.address) {
+        return data.address;
+      }
+
+      if (data.message) {
+        throw new Error(data.message);
+      }
     } catch (error) {
       throw error;
     }
@@ -130,6 +132,16 @@ export class GridHandler {
 
       const txnSignature = await this.signAndSendTransaction(data.tx);
       await this.confirmTransaction(txnSignature);
+      // TODO: verify tx result with code below
+      // const result = await this.sdk.solana.connection?.getTransaction(
+      //   txnSignature as string,
+      //   { maxSupportedTransactionVersion: 0 },
+      // );
+      // // @ts-ignore
+      // if (result?.meta?.status.Err) {
+      //   // @ts-ignore
+      //   throw new Error(JSON.stringify(result?.meta?.status.Err));
+      // }
 
       await sleep(30);
 

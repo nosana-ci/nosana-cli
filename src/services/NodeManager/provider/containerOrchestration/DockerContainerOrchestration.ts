@@ -238,28 +238,22 @@ export class DockerContainerOrchestration
     }
   }
 
-  async deleteContainer(id: string): Promise<ReturnedStatus> {
-    try {
-      if (this.docker.getContainer(id)) {
-        this.docker.getContainer(id).remove({ force: true });
-      }
-      return { status: true };
-    } catch (error) {
-      return { status: false, error };
-    }
-  }
-
   async stopAndDeleteContainer(containerId: string): Promise<ReturnedStatus> {
     try {
       const container = this.docker.getContainer(containerId);
       if (container.id) {
         const containerInfo = await container.inspect();
-        if (
-          containerInfo.State.Status !== 'exited' &&
-          containerInfo.State.Status !== 'stopped'
-        ) {
+
+        // for (const mount of containerInfo.Mounts) {
+        //   if (mount.Name) {
+        //     const dockerVolume = this.docker.getVolume(mount.Name);
+        //     await dockerVolume.remove({ force: true });
+        //   }
+        // }
+
+        try {
           await container.stop();
-        }
+        } catch (error) {}
         await container.remove({ force: true });
       }
       return { status: true };
