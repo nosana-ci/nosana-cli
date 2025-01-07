@@ -18,7 +18,7 @@ import { ExpiryHandler } from './expiry/expiryHandler.js';
 import { GridHandler } from './grid/gridHandler.js';
 import { ResourceManager } from './resource/resourceManager.js';
 import { selectContainerOrchestrationProvider } from '../provider/containerOrchestration/selectContainerOrchestration.js';
-import { StopHandler } from "./stop/stopHandler.js";
+import { StopHandler } from './stop/stopHandler.js';
 
 export class BasicNode {
   private apiHandler: ApiHandler;
@@ -134,7 +134,7 @@ export class BasicNode {
     await this.marketHandler.stop();
     await this.runHandler.stop();
     await this.jobHandler.stop();
-    await this.stopHandler.stop()
+    await this.stopHandler.stop();
     this.expiryHandler.stop();
   }
 
@@ -156,7 +156,7 @@ export class BasicNode {
   }
 
   async setup(market: string): Promise<void> {
-    await this.resourceManager.resyncResourcesDB()
+    await this.resourceManager.resyncResourcesDB();
     await this.resourceManager.fetchMarketRequiredResources(market);
   }
 
@@ -207,15 +207,17 @@ export class BasicNode {
          * otherwise, continue to start.
          */
         if (!this.expiryHandler.expired(run, job)) {
-
           /**
            * start monitoring for the stop signal from the smart contract
            */
-          this.stopHandler.startStopHandlerMonitoring(jobAddress, async (run: any) => {
-            this.jobHandler.stop()
-            resolved = true
-            resolve();
-          })
+          this.stopHandler.startStopHandlerMonitoring(
+            jobAddress,
+            async (run: any) => {
+              this.jobHandler.stop();
+              resolved = true;
+              resolve();
+            },
+          );
 
           /**
            * This starts the expiry settings to monitor expiry time
@@ -257,7 +259,7 @@ export class BasicNode {
           await this.expiryHandler.waitUntilExpired();
         }
 
-        if(!resolved) {
+        if (!resolved) {
           /**
            * Upload the result and end the flow; also clean up flow.
            */
@@ -308,12 +310,15 @@ export class BasicNode {
             /**
              * start monitoring for the stop signal from the smart contract
              */
-            this.stopHandler.startStopHandlerMonitoring(jobAddress, async (run: any) => {
-              this.jobHandler.stop()
-              resolved = true;
-              resolve(true)
-              return;
-            })
+            this.stopHandler.startStopHandlerMonitoring(
+              jobAddress,
+              async (run: any) => {
+                this.jobHandler.stop();
+                resolved = true;
+                resolve(true);
+                return;
+              },
+            );
 
             /**
              * this starts the expiry settings to monitory expiry time
@@ -356,7 +361,7 @@ export class BasicNode {
             await this.expiryHandler.waitUntilExpired();
           }
 
-          if(!resolved){
+          if (!resolved) {
             /**
              * upload the result and end the flow, also clean up flow.
              */

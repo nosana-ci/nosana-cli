@@ -9,26 +9,28 @@ export class StopHandler {
     this.address = this.sdk.solana.provider!.wallet.publicKey;
   }
 
-  public startStopHandlerMonitoring(jobAddress: string, callback: Function): Promise<void> {
+  public startStopHandlerMonitoring(
+    jobAddress: string,
+    callback: Function,
+  ): Promise<void> {
     return new Promise<void>(async (resolve, reject) => {
       try {
         await this.sdk.jobs.loadNosanaJobs();
-            this.runSubscriptionId =
-            this.sdk.jobs.connection!.onAccountChange(
-                new PublicKey(jobAddress),
-                async (accountInfo) => {
-                  const jobAccount = this.sdk.jobs.jobs!.coder.accounts.decode(
-                    this.sdk.jobs.jobs!.account.jobAccount.idlAccount.name,
-                    accountInfo.data,
-                  );
-                  if (jobAccount.state >= 2) {
-                    this.stopStopHandlerMonitoring()
-                    await callback()
-                    resolve();
-                  }
-                },
-                'confirmed',
-              );
+        this.runSubscriptionId = this.sdk.jobs.connection!.onAccountChange(
+          new PublicKey(jobAddress),
+          async (accountInfo) => {
+            const jobAccount = this.sdk.jobs.jobs!.coder.accounts.decode(
+              this.sdk.jobs.jobs!.account.jobAccount.idlAccount.name,
+              accountInfo.data,
+            );
+            if (jobAccount.state >= 2) {
+              this.stopStopHandlerMonitoring();
+              await callback();
+              resolve();
+            }
+          },
+          'confirmed',
+        );
       } catch (error) {
         reject(error);
       }
