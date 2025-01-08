@@ -220,7 +220,7 @@ export class Provider {
     container: Dockerode.Container,
     port: number,
   ) {
-      this.exposedUrlHealthCheck = setInterval(async () => {
+    this.exposedUrlHealthCheck = setInterval(async () => {
       try {
         const exec = await container.exec({
           Cmd: ['curl', '-s', `localhost:${port}`],
@@ -241,7 +241,7 @@ export class Provider {
         if (output) {
           // raise an event
           jobEmitter.emit('run-exposed', { id });
-          this.stopServiceExposedUrlHealthCheck()
+          this.stopServiceExposedUrlHealthCheck();
         }
       } catch (error) {}
     }, 2000);
@@ -483,12 +483,12 @@ export class Provider {
         ],
       });
 
-      this.stopServiceExposedUrlHealthCheck()
+      this.stopServiceExposedUrlHealthCheck();
 
       return false;
     }
 
-    this.stopServiceExposedUrlHealthCheck()
+    this.stopServiceExposedUrlHealthCheck();
 
     return true;
   }
