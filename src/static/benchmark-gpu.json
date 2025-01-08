@@ -10,7 +10,7 @@
       "id": "system-info",
       "args": {
         "cmd": ["./system.sh"],
-        "image": "registry.hub.docker.com/nosana/stats:v1.1.6",
+        "image": "registry.hub.docker.com/nosana/stats:v1.1.7",
         "env": {
           "DEBUG": "1"
         }
@@ -21,7 +21,7 @@
       "id": "gpu-info",
       "args": {
         "cmd": ["./cuda_check"],
-        "image": "registry.hub.docker.com/nosana/stats:v1.1.6",
+        "image": "registry.hub.docker.com/nosana/stats:v1.1.7",
         "env": {
           "DEBUG": "1"
         },
