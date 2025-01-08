@@ -2,13 +2,16 @@ import ora from 'ora';
 import chalk from 'chalk';
 import { Command } from 'commander';
 import { Client } from '@nosana/sdk';
+import { PublicKey } from '@solana/web3.js';
 import 'rpc-websockets/dist/lib/client.js';
+
 import { clearLine } from '../../../generic/utils.js';
 import { getSDK } from '../../../services/sdk.js';
+import { waitForJobRunOrCompletion } from '../../../services/jobs.js';
 import { OUTPUT_EVENTS } from '../../../providers/utils/ouput-formatter/outputEvents.js';
 import { outputFormatSelector } from '../../../providers/utils/ouput-formatter/outputFormatSelector.js';
 
-export async function stopJob(
+export async function extendJob(
   jobAddress: string,
   options: {
     [key: string]: any;
@@ -52,28 +55,22 @@ export async function stopJob(
     });
 
     if (job.state !== 'COMPLETED' && job.state !== 'STOPPED') {
-      const spinner = ora(chalk.cyan(`Stopping job ${jobAddress}`)).start();
+      const spinner = ora(chalk.cyan(`Extending job ${jobAddress}`)).start();
       try {
-        if (job.state === 'QUEUED') {
-          await nosana.jobs.delist(jobAddress);
-        }
-
-        if (job.state === 'RUNNING') {
-          await nosana.jobs.end(jobAddress);
-        }
+        await nosana.jobs.extend(jobAddress, options.timeout);
 
         spinner.succeed();
 
         clearLine();
         clearLine();
         formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_STATUS, {
-          status: 'STOPPED',
+          status: `${job.state}`,
         });
 
         return;
       } catch (error) {
         spinner.fail();
-        throw new Error(`failed to stop job: ${error}`);
+        throw new Error(`failed to extend job: ${error}`);
       }
     } else {
       clearLine();

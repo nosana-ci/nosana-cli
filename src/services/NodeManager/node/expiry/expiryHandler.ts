@@ -1,5 +1,5 @@
 import { Client as SDK, Market, Run, Job } from '@nosana/sdk';
-import { PublicKey } from '@solana/web3.js';
+import { ClientSubscriptionId, PublicKey } from '@solana/web3.js';
 import BN from 'bn.js';
 import ApiEventEmitter from '../api/ApiEventEmitter.js';
 
@@ -10,6 +10,7 @@ export class ExpiryHandler {
   public expiryTimer: NodeJS.Timeout | null = null;
   public warningTimer: NodeJS.Timeout | null = null;
   private onExpireCallback: (() => Promise<unknown>) | null = null;
+  private extendSubscriptionId?: ClientSubscriptionId;
 
   private resolving = false;
 
@@ -23,6 +24,46 @@ export class ExpiryHandler {
     });
   }
 
+  public startExtendMonitoring(jobAddress: string, run: Run): Promise<void> {
+    return new Promise<void>(async (resolve, reject) => {
+      try {
+        await this.sdk.jobs.loadNosanaJobs();
+        this.extendSubscriptionId = this.sdk.jobs.connection!.onAccountChange(
+          new PublicKey(jobAddress),
+          async (accountInfo) => {
+            const jobAccount = this.sdk.jobs.jobs!.coder.accounts.decode(
+              this.sdk.jobs.jobs!.account.jobAccount.idlAccount.name,
+              accountInfo.data,
+            );
+
+            const newExpiryTime = new BN(run.account.time)
+              .add(new BN(jobAccount.timeout))
+              .mul(new BN(1000))
+              .toNumber();
+
+            if (newExpiryTime != this.expiryEndTime) {
+              this.extendExpiryTime(newExpiryTime - this.expiryEndTime);
+            }
+
+            resolve();
+          },
+          'confirmed',
+        );
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  public stopExtendMonitoring() {
+    if (this.extendSubscriptionId !== undefined) {
+      this.sdk.jobs.connection!.removeProgramAccountChangeListener(
+        this.extendSubscriptionId,
+      );
+      this.extendSubscriptionId = undefined;
+    }
+  }
+
   public init<T>(
     run: Run,
     job: Job,
@@ -31,6 +72,7 @@ export class ExpiryHandler {
   ): number {
     this.resolving = false;
 
+    this.startExtendMonitoring(jobstring, run);
     this.jobAddress = jobstring;
     this.expiryEndTime = new BN(run.account.time)
       .add(new BN(job.timeout))
@@ -52,10 +94,14 @@ export class ExpiryHandler {
     this.expiryTimer = null;
     this.warningTimer = null;
     this.jobAddress = undefined;
+    this.stopExtendMonitoring();
   }
 
   private startOrResetTimer() {
-    this.stop();
+    if (this.expiryTimer) clearTimeout(this.expiryTimer);
+    if (this.warningTimer) clearTimeout(this.warningTimer);
+    this.expiryTimer = null;
+    this.warningTimer = null;
 
     const remainingTime = this.expiryEndTime - Date.now();
     const warningTime = remainingTime - 2 * 60 * 1000; // 2 minutes before expiry

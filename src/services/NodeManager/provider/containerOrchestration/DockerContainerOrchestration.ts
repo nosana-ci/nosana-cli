@@ -1,4 +1,4 @@
-import {
+import Dockerode, {
   Container,
   ContainerCreateOptions,
   ImageInfo,
@@ -227,9 +227,16 @@ export class DockerContainerOrchestration
     try {
       const container = this.docker.getContainer(id);
       if (container.id) {
-        const containerInfo = await container.inspect();
-        if (containerInfo.State.Status !== 'exited') {
-          this.docker.getContainer(id).stop();
+        let containerInfo: Dockerode.ContainerInspectInfo | undefined;
+
+        try {
+          containerInfo = await container.inspect();
+        } catch (error) {}
+
+        if (containerInfo) {
+          if (containerInfo.State.Status !== 'exited') {
+            this.docker.getContainer(id).stop();
+          }
         }
       }
       return { status: true };
@@ -241,20 +248,23 @@ export class DockerContainerOrchestration
   async stopAndDeleteContainer(containerId: string): Promise<ReturnedStatus> {
     try {
       const container = this.docker.getContainer(containerId);
-      if (container.id) {
-        const containerInfo = await container.inspect();
 
-        // for (const mount of containerInfo.Mounts) {
-        //   if (mount.Name) {
-        //     const dockerVolume = this.docker.getVolume(mount.Name);
-        //     await dockerVolume.remove({ force: true });
-        //   }
-        // }
+      if (container.id) {
+        let info: Dockerode.ContainerInspectInfo | undefined;
 
         try {
-          await container.stop();
+          info = await container.inspect();
         } catch (error) {}
-        await container.remove({ force: true });
+
+        if (info) {
+          try {
+            await container.stop();
+          } catch (error) {}
+
+          try {
+            await container.remove({ force: true });
+          } catch (error) {}
+        }
       }
       return { status: true };
     } catch (error) {
@@ -267,8 +277,18 @@ export class DockerContainerOrchestration
   ): Promise<ReturnedStatus<boolean>> {
     try {
       const container = this.docker.getContainer(containerId);
-      const info = await container.inspect();
-      return { status: true, result: info.State.Status == 'exited' };
+
+      let containerInfo: Dockerode.ContainerInspectInfo | undefined;
+
+      try {
+        containerInfo = await container.inspect();
+      } catch (error) {}
+
+      if (containerInfo) {
+        return { status: true, result: containerInfo.State.Status == 'exited' };
+      } else {
+        return { status: true, result: true };
+      }
     } catch (error) {
       return { status: false, error };
     }

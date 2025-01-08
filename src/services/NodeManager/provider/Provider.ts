@@ -22,6 +22,7 @@ export class Provider {
   }
 
   private currentContainer: Dockerode.Container | undefined;
+  private exposedUrlHealthCheck?: NodeJS.Timeout;
 
   public async stopReverseProxyApi(address: string): Promise<boolean> {
     const tunnel_name = `tunnel-api-${address}`;
@@ -219,7 +220,7 @@ export class Provider {
     container: Dockerode.Container,
     port: number,
   ) {
-    const interval = setInterval(async () => {
+      this.exposedUrlHealthCheck = setInterval(async () => {
       try {
         const exec = await container.exec({
           Cmd: ['curl', '-s', `localhost:${port}`],
@@ -240,12 +241,17 @@ export class Provider {
         if (output) {
           // raise an event
           jobEmitter.emit('run-exposed', { id });
-          clearInterval(interval); // Stop further checks
+          this.stopServiceExposedUrlHealthCheck()
         }
-      } catch (error) {
-        console.log(`Service on port ${port} not ready yet, retrying...`);
-      }
+      } catch (error) {}
     }, 2000);
+  }
+
+  public stopServiceExposedUrlHealthCheck(): void {
+    if (this.exposedUrlHealthCheck) {
+      clearInterval(this.exposedUrlHealthCheck);
+      this.exposedUrlHealthCheck = undefined;
+    }
   }
 
   async containerRunOperation(id: string, index: number): Promise<boolean> {
@@ -476,8 +482,13 @@ export class Provider {
           },
         ],
       });
+
+      this.stopServiceExposedUrlHealthCheck()
+
       return false;
     }
+
+    this.stopServiceExposedUrlHealthCheck()
 
     return true;
   }
