@@ -109,6 +109,7 @@ export class Provider {
           await this.containerOrchestration.runFlowContainer(tunnelImage, {
             name: tunnel_name,
             networks,
+            restart_policy: 'on-failure',
             env: {
               PORT: tunnel_port.toString(),
             },
@@ -136,6 +137,7 @@ export class Provider {
             await this.containerOrchestration.runFlowContainer(tunnelImage, {
               name: tunnel_name,
               networks,
+              restart_policy: 'on-failure',
               env: {
                 PORT: tunnel_port.toString(),
               },
