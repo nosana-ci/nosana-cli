@@ -47,8 +47,8 @@ export async function postNodeValidation(
       return;
     }
 
-    // @ts-ignore WAITING ON ENDPOINT CREATION + DEFINING THE RESPONSE OBJECT
     await client.POST('/api/benchmarks/submit', {
+      // @ts-ignore WAITING ON ENDPOINT CREATION + DEFINING THE RESPONSE OBJECT
       body: result.state,
       params: {
         header: {
