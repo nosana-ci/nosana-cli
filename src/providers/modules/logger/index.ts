@@ -1,9 +1,9 @@
-import { ChalkInstance } from 'chalk';
+import ora, { Ora } from 'ora';
 import EventEmitter from 'events';
+import { ChalkInstance } from 'chalk';
+import { EnumValues } from '@nosana/sdk/dist/types/utils.js';
 
 import { ProviderEvents } from '../../Provider.js';
-import ora, { Ora } from 'ora';
-type EnumValues<T> = T[keyof T];
 
 type ProviderEventsValues = EnumValues<typeof ProviderEvents>;
 

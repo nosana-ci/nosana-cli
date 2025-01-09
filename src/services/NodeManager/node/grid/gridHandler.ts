@@ -84,7 +84,7 @@ export class GridHandler {
             Authorization: `${this.address}:${signature}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ gpus }),
+          body: JSON.stringify({ gpus: JSON.stringify(gpus) }),
         },
       );
 

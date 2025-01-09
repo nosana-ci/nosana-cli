@@ -3,6 +3,7 @@ import { NodeConfigsSingleton } from './NodeConfigs.js';
 export type configType = {
   backendUrl: string;
   backendSolanaAddress: string;
+  backendAuthorizationAddress: string;
   signMessage: string;
   frp: {
     serverAddr: string;
@@ -23,6 +24,8 @@ export const configs = (options?: { [key: string]: any }): configType => {
     backendSolanaAddress:
       process.env.BACKEND_SOLANA_ADDRESS ||
       '7rFPFnxjXHC2sfDy3qrDa9pEb4j49oivMuV7e8sYDPmB',
+    backendAuthorizationAddress:
+      process.env.BACKEND_AUTHORIZATION_ADDRESS || '',
     signMessage: process.env.SIGN_MESSAGE || 'Hello Nosana Node!',
     frp: {
       serverAddr: process.env.FRP_SERVER_ADDRESS || 'node.k8s.prd.nos.ci',

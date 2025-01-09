@@ -32,7 +32,28 @@ describe('DB', () => {
         volumes: {},
       },
       flows: {},
-      info: {},
+      info: {
+        country: '',
+        network: {
+          ip: '',
+          ping_ms: 0,
+          download_mbps: 0,
+          upload_mbps: 0,
+        },
+        cpu: {
+          model: '',
+          physical_cores: 0,
+          logical_cores: 0,
+        },
+        disk_gb: 0,
+        ram_mb: 0,
+        gpus: {
+          devices: [],
+          runtime_version: '0.0',
+          cuda_driver_version: '0.0',
+          nvml_driver_version: '0.0.0',
+        },
+      },
     });
   });
 
