@@ -18,6 +18,7 @@ import { ExpiryHandler } from './expiry/expiryHandler.js';
 import { GridHandler } from './grid/gridHandler.js';
 import { ResourceManager } from './resource/resourceManager.js';
 import { selectContainerOrchestrationProvider } from '../provider/containerOrchestration/selectContainerOrchestration.js';
+import { StopHandler } from './stop/stopHandler.js';
 
 export class BasicNode {
   private apiHandler: ApiHandler;
@@ -29,6 +30,7 @@ export class BasicNode {
   private healthHandler: HealthHandler;
   private expiryHandler: ExpiryHandler;
   private gridHandler: GridHandler;
+  private stopHandler: StopHandler;
   private repository: NodeRepository;
   private resourceManager: ResourceManager;
   private provider: Provider;
@@ -71,6 +73,7 @@ export class BasicNode {
     this.jobHandler = new JobHandler(this.sdk, this.provider, this.repository);
     this.marketHandler = new MarketHandler(this.sdk);
     this.runHandler = new RunHandler(this.sdk);
+    this.stopHandler = new StopHandler(this.sdk);
     this.keyHandler = new KeyHandler(this.sdk);
 
     this.healthHandler = new HealthHandler(
@@ -130,6 +133,7 @@ export class BasicNode {
     await this.marketHandler.stop();
     await this.runHandler.stop();
     await this.jobHandler.stop();
+    await this.stopHandler.stop();
     this.expiryHandler.stop();
   }
 
@@ -151,12 +155,15 @@ export class BasicNode {
   }
 
   async setup(market: string): Promise<void> {
+    await this.resourceManager.resyncResourcesDB();
     await this.resourceManager.fetchMarketRequiredResources(market);
   }
 
   run(): Promise<void> {
     return new Promise<void>(async (resolve, reject) => {
       try {
+        let resolved = false;
+
         const periodicHealthcheck = async (): Promise<boolean> => {
           const { status, error } = await this.containerOrchestration.healthy();
           if (!status) {
@@ -200,6 +207,15 @@ export class BasicNode {
          */
         if (!this.expiryHandler.expired(run, job)) {
           /**
+           * start monitoring for the stop signal from the smart contract
+           */
+          this.stopHandler.startStopHandlerMonitoring(jobAddress, async () => {
+            this.jobHandler.stop();
+            resolved = true;
+            resolve();
+          });
+
+          /**
            * This starts the expiry settings to monitor expiry time
            */
           this.expiryHandler.init<void>(run, job, jobAddress, async () => {
@@ -239,10 +255,12 @@ export class BasicNode {
           await this.expiryHandler.waitUntilExpired();
         }
 
-        /**
-         * Upload the result and end the flow; also clean up flow.
-         */
-        await this.jobHandler.finish(run);
+        if (!resolved) {
+          /**
+           * Upload the result and end the flow; also clean up flow.
+           */
+          await this.jobHandler.finish(run);
+        }
 
         // Resolve the Promise normally
         resolve();
@@ -256,6 +274,8 @@ export class BasicNode {
   async pending(): Promise<boolean> {
     return new Promise<boolean>(async (resolve, reject) => {
       try {
+        let resolved = false;
+
         /**
          * check if node has any run assigned to it and if not skip all
          * these process, if there is a run, proceed to run the job
@@ -283,6 +303,19 @@ export class BasicNode {
            * if not continue to start
            */
           if (!this.expiryHandler.expired(run, job)) {
+            /**
+             * start monitoring for the stop signal from the smart contract
+             */
+            this.stopHandler.startStopHandlerMonitoring(
+              jobAddress,
+              async () => {
+                this.jobHandler.stop();
+                resolved = true;
+                resolve(true);
+                return;
+              },
+            );
+
             /**
              * this starts the expiry settings to monitory expiry time
              */
@@ -324,10 +357,12 @@ export class BasicNode {
             await this.expiryHandler.waitUntilExpired();
           }
 
-          /**
-           * upload the result and end the flow, also clean up flow.
-           */
-          await this.jobHandler.finish(run);
+          if (!resolved) {
+            /**
+             * upload the result and end the flow, also clean up flow.
+             */
+            await this.jobHandler.finish(run);
+          }
 
           resolve(true);
         }

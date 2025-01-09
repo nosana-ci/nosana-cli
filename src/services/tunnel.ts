@@ -51,9 +51,14 @@ export function initTunnel(options: {
     // console.log('connect error', e && e.message);
   });
 
-  socket.on('disconnect', () => {
-    // TODO: replace with node logger?
-    // console.log('client disconnected');
+  socket.on('disconnect', (reason, details) => {
+    if (
+      reason === 'transport close' &&
+      // @ts-ignore
+      details!.description === 'websocket connection closed'
+    ) {
+      socket!.close();
+    }
   });
 
   socket.on('request', (requestId, request) => {
