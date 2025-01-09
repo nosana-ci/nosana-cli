@@ -13,7 +13,7 @@ import { NodeAPIRequest } from './types/index.js';
 import { stateStreaming } from '../../monitoring/streaming/StateStreamer.js';
 import { applyLoggingProxyToClass } from '../../monitoring/proxy/loggingProxy.js';
 import { Provider } from '../../provider/Provider.js';
-import { initTunnel } from '../../../tunnel.js';
+import { initTunnel, stopTunnel } from '../../../tunnel.js';
 import { NodeRepository } from '../../repository/NodeRepository.js';
 
 import {
@@ -63,22 +63,31 @@ export class ApiHandler {
 
   public async start(): Promise<string> {
     try {
-      await this.provider.stopReverseProxyApi(this.address.toString());
-      await this.provider.setUpReverseProxyApi(this.address.toString());
-
-      const tunnelServer = `https://${this.address}.${
-        configs().frp.serverAddr
-      }`;
-
-      await sleep(3);
-      initTunnel({ server: tunnelServer, port: this.port });
+      const tunnelServer = await this.restartTunnelAndProxy();
       await this.listen();
       this.startWebSocketServer();
-      this.startTunnelCheck(tunnelServer);
+
       return tunnelServer;
     } catch (error) {
       throw error;
     }
+  }
+
+  private async restartTunnelAndProxy() {
+    await this.stopTunnelAndProxy();
+    await this.provider.setUpReverseProxyApi(this.address.toString());
+
+    const tunnelServer = `https://${this.address}.${configs().frp.serverAddr}`;
+    await sleep(3);
+    initTunnel({ server: tunnelServer, port: this.port });
+    this.startTunnelCheck(tunnelServer);
+    return tunnelServer;
+  }
+
+  private async stopTunnelAndProxy() {
+    await this.provider.stopReverseProxyApi(this.address.toString());
+    this.stopTunnelCheck();
+    stopTunnel();
   }
 
   private async startWebSocketServer() {
@@ -123,27 +132,29 @@ export class ApiHandler {
   }
 
   private startTunnelCheck(tunnelServer: string) {
-    this.tunnelCheckInterval = setInterval(async () => {
-      let failed = false;
-      try {
-        const response = await fetch(`${tunnelServer}/`);
-        if (!response.ok) {
+    if (!this.tunnelCheckInterval) {
+      this.tunnelCheckInterval = setInterval(async () => {
+        let failed = false;
+        try {
+          const response = await fetch(`${tunnelServer}/`);
+          if (!response.ok) {
+            failed = true;
+          }
+
+          const responseText = await response.json();
+          if (responseText !== this.address.toString()) {
+            failed = true;
+          }
+        } catch (error) {
           failed = true;
         }
 
-        const responseText = await response.text();
-        if (responseText !== this.address.toString()) {
-          failed = true;
+        if (failed == true) {
+          console.log('API proxy is offline, restarting..');
+          await this.restartTunnelAndProxy();
         }
-      } catch (error) {
-        failed = true;
-      }
-
-      if (failed == true) {
-        await this.provider.stopReverseProxyApi(this.address.toString());
-        await this.provider.setUpReverseProxyApi(this.address.toString());
-      }
-    }, 60000 * 20); // check every 20 mins
+      }, 60000 * 5); // check every 5 mins
+    }
   }
 
   private async registerRoutes() {
@@ -206,8 +217,7 @@ export class ApiHandler {
   }
 
   public async stop() {
-    this.stopTunnelCheck();
-    await this.provider.stopReverseProxyApi(this.address.toString());
+    await this.stopTunnelAndProxy();
 
     if (this.server) {
       this.server.close();
