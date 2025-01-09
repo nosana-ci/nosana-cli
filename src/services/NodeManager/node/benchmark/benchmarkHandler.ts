@@ -123,7 +123,13 @@ export class BenchmarkHandler {
       disk_gb,
     } = this.parseLogsIntoJSON<SystemInfoResults>(logs);
 
-    // TODO ADD DISK SPACE CHECK!
+    if (configs().minDiskSpace > disk_gb) {
+      throw new Error(
+        `Node does not have enough disk space. Required: ${
+          configs().minDiskSpace
+        }GB, Available: ${disk_gb}GB`,
+      );
+    }
 
     this.repository.updateNodeInfo({
       cpu: {
