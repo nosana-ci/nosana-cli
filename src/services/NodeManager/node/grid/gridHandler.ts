@@ -130,8 +130,23 @@ export class GridHandler {
       const data = await response.json();
       if (!data || data.name === 'Error') throw new Error(data.message);
 
-      const txnSignature = await this.signAndSendTransaction(data.tx);
-      await this.confirmTransaction(txnSignature);
+      // Incase of blockheight exceeded error, retry 3 times
+      for (let i = 0; i < 3; i++) {
+        try {
+          const txnSignature = await this.signAndSendTransaction(data.tx);
+          await this.confirmTransaction(txnSignature);
+          break;
+        } catch (error: any) {
+          if (
+            i === 2 ||
+            !error?.message.includes(
+              'TransactionExpiredBlockheightExceededError',
+            )
+          ) {
+            throw error;
+          }
+        }
+      }
       // TODO: verify tx result with code below
       // const result = await this.sdk.solana.connection?.getTransaction(
       //   txnSignature as string,
