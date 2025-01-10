@@ -9,7 +9,7 @@ import { outputFormatArgumentParser } from '../providers/utils/ouput-formatter/o
 import { outputFormatSelector } from '../providers/utils/ouput-formatter/outputFormatSelector.js';
 import { configs } from '../services/NodeManager/configs/configs.js';
 import { migrateWalletCommand } from './node/migrate/action/index.js';
-import { runBenchmark } from './node/joinTestGrid/action.js';
+import { runBenchmark } from './node/join/action.js';
 
 export const createNosanaCLI = (version: string) =>
   new Command()
@@ -55,7 +55,7 @@ export const createNosanaCLI = (version: string) =>
             );
           }
 
-          // if node command was `node start` then rejoin test grid
+          // if node command was `node start` then rejoin grid
           if (fullCommand == 'node start') {
             await runBenchmark(opts, false);
           }

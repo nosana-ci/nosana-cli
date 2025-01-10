@@ -868,7 +868,7 @@ export class NosanaNode {
     return gpus;
   }
 
-  public async joinTestGrid(): Promise<{
+  public async join(): Promise<{
     market: string;
     accessKey: PublicKey;
   }> {
@@ -911,7 +911,7 @@ export class NosanaNode {
       } else if (e instanceof Error && e.message.includes('Node not found')) {
         throw new Error(
           chalk.yellow(
-            'Node is not registred yet. To register run the join-test-grid command.',
+            'Node is not registred yet. To register run the `node join` command.',
           ),
         );
       }

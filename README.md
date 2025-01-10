@@ -40,7 +40,7 @@ Available `node` commands:
 
 ```
 node view <node>                          View (any) Nosana Node
-node join-test-grid [command]             Register for Nosana testgrid
+node join [command]                       Register for Nosana Grid
 node start [options] <market>             Start Nosana Node
 node run [options] <job-definition-file>  Run Job Definition File
 node help [command]                       display help for command
@@ -66,9 +66,9 @@ Global options:
 
 ## Register for Nosana Grid
 
-To get started with your Nosana Node on the Test Grid, you will first have to register. The registration consists of a benchmark which will measure your hardware and bandwidth.
+To get started with your Nosana Node on the Nosana Grid, you will first have to register. The registration consists of a benchmark which will measure your hardware and bandwidth.
 
-`nosana node join-test-grid [options]`
+`nosana node join [options]`
 
 Options:
 
@@ -81,7 +81,7 @@ Options:
 
 ## Starting node
 
-With the `nosana node start [options] <market>` command you can start a Nosana Node and join the Nosana Network.
+With the `nosana node start [options]` command you can start a Nosana Node and join the Nosana Network.
 
 Options:
 

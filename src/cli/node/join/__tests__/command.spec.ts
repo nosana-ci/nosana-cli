@@ -1,4 +1,4 @@
-import { joinTestGridCommand } from '../command';
+import { joinCommand } from '../command';
 
 import { runBenchmark } from '../action';
 
@@ -6,7 +6,7 @@ jest.mock('../action', () => ({
   runBenchmark: jest.fn(),
 }));
 
-describe('joinTestGridCommand', () => {
+describe('joinCommand', () => {
   const mock_runBenchmark_action = jest.fn();
   const parseArgs = ['node', 'get', 'run command'];
 
@@ -16,12 +16,12 @@ describe('joinTestGridCommand', () => {
   });
 
   it('should call runBenchmark action', () => {
-    joinTestGridCommand.parse(parseArgs);
+    joinCommand.parse(parseArgs);
     expect(mock_runBenchmark_action).toHaveBeenCalledTimes(1);
   });
 
   it('should have 9 options', () => {
-    expect(joinTestGridCommand.options.length).toBe(9);
+    expect(joinCommand.options.length).toBe(9);
   });
 
   it.each([
@@ -35,7 +35,7 @@ describe('joinTestGridCommand', () => {
     ['--no-airdrop', undefined, undefined],
     ['--gpu', undefined, 'all'],
   ])('should have %s option', (long, short, defaultValue) => {
-    const option = joinTestGridCommand.options.find((i) => i.long === long);
+    const option = joinCommand.options.find((i) => i.long === long);
     expect(option?.long).toBe(long);
     expect(option?.short).toBe(short);
     expect(option?.defaultValue).toBe(defaultValue);

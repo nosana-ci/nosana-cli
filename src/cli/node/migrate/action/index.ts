@@ -47,7 +47,7 @@ export async function migrateWalletCommand(
     - Creating a back up of your compromised secret key to ${walletPath}.compromised.${suspectedKeyPair.publicKey.toString()}.
     - Generate and save a new KeyPair to ${walletPath}.
     - Transfer all tokens from the compromised account to the new account. Please note that NFTs, SFTs, and staked tokens will not be included in this transfer.
-    - Onboard your new wallet for testgrid.`),
+    - Onboard your new wallet for nosana grid.`),
     );
 
     const hasConfirmed = await confirm({
