@@ -1,16 +1,15 @@
 import WebSocket from 'ws';
-import { IncomingHttpHeaders } from 'http';
 import { PublicKey } from '@solana/web3.js';
 
 import { getSDK } from '../../../../../sdk.js';
 
 export async function verifyWSJobOwnerSignatureMiddleware(
   ws: WebSocket,
-  headers: { [key: string]: string },
+  headers: string,
   body: { jobAddress: string },
   nextFunction: (
     ws: WebSocket,
-    headers: IncomingHttpHeaders,
+    headers: string,
     body: { jobAddress: string },
   ) => void,
 ) {
@@ -30,15 +29,17 @@ export async function verifyWSJobOwnerSignatureMiddleware(
       return;
     }
 
-    if (
-      !sdk.authorization.validateHeader(headers, {
-        publicKey: new PublicKey(job.project),
-      })
-    ) {
-      return ws.close(401, 'Unathorized Request');
+    try {
+      if (
+        sdk.authorization.validate(headers, {
+          publicKey: new PublicKey(job.project),
+        })
+      ) {
+        await nextFunction(ws, headers, body);
+      }
+    } catch (_) {
+      ws.close(401, 'Unathorized Request');
     }
-
-    await nextFunction(ws, headers, body);
   } catch (error) {
     ws.close(401, `Unathorized Request: ${(error as Error).message}`);
   }

@@ -1,5 +1,4 @@
 import WebSocket from 'ws';
-import { IncomingHttpHeaders } from 'http';
 
 import { getSDK } from '../../../../../sdk.js';
 import { stateStreaming } from '../../../../monitoring/streaming/StateStreamer.js';
@@ -10,7 +9,7 @@ import { stateStreaming } from '../../../../monitoring/streaming/StateStreamer.j
  */
 export async function wssStatusRoute(
   ws: WebSocket,
-  _: IncomingHttpHeaders,
+  _: string,
   { jobAddress }: { jobAddress: string },
 ) {
   const sdk = getSDK();
