@@ -8,12 +8,8 @@ const logger = new ConsoleLogger();
 
 const getSignature = async () => {
   const nosana: Client = getSDK();
-  const signature = (await nosana.solana.signMessage(
-    configs().signMessage,
-  )) as Uint8Array;
-  const base64Signature = Buffer.from(signature).toString('base64');
 
-  return `${nosana.solana.wallet.publicKey.toString()}:${base64Signature}`;
+  return nosana.authorization.generate(configs().signMessage);
 };
 
 const getAddress = () => {

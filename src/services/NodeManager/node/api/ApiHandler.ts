@@ -103,25 +103,29 @@ export class ApiHandler {
       ws.on('message', async (message) => {
         const { path, header, body } = JSON.parse(message.toString());
 
-        switch (path) {
-          case '/log':
-            await verifyWSJobOwnerSignatureMiddleware(
-              ws,
-              header,
-              body,
-              wssLogRoute,
-            );
-            break;
-          case '/status':
-            await verifyWSNodeOrJobOwnerSignatureMiddleware(
-              ws,
-              header,
-              body,
-              wssStatusRoute,
-            );
-            break;
-          default:
-            ws.close(404);
+        try {
+          switch (path) {
+            case '/log':
+              await verifyWSJobOwnerSignatureMiddleware(
+                ws,
+                header,
+                body,
+                wssLogRoute,
+              );
+              break;
+            case '/status':
+              await verifyWSNodeOrJobOwnerSignatureMiddleware(
+                ws,
+                header,
+                body,
+                wssStatusRoute,
+              );
+              break;
+            default:
+              ws.close(404);
+          }
+        } catch (_) {
+          ws.close(500, 'Ops something went wrong');
         }
       });
 
