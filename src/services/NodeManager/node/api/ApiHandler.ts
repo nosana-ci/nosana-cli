@@ -100,8 +100,14 @@ export class ApiHandler {
     });
 
     this.wss.on('connection', (ws, _) => {
+      let keepAliveInterval: NodeJS.Timeout;
+
       ws.on('message', async (message) => {
         const { path, header, body } = JSON.parse(message.toString());
+
+        keepAliveInterval = setInterval(() => {
+          ws.ping();
+        }, 30000);
 
         try {
           switch (path) {
@@ -130,6 +136,9 @@ export class ApiHandler {
       });
 
       ws.on('close', () => {
+        if (keepAliveInterval) {
+          clearInterval(keepAliveInterval);
+        }
         stateStreaming(this.address.toString()).unsubscribe(ws);
       });
     });

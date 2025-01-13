@@ -8,7 +8,7 @@ import { DB } from '../../../providers/modules/db/index.js';
 import { ContainerOrchestrationInterface } from '../provider/containerOrchestration/interface.js';
 import { Provider } from '../provider/Provider.js';
 import { applyLoggingProxyToClass } from '../monitoring/proxy/loggingProxy.js';
-import { isNodeOnboarded, sleep } from '../../../generic/utils.js';
+import { isNodeOnboarded } from '../../../generic/utils.js';
 import { ApiHandler } from './api/ApiHandler.js';
 import { NodeRepository } from '../repository/NodeRepository.js';
 import { BenchmarkHandler } from './benchmark/benchmarkHandler.js';
