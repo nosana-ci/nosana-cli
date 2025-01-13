@@ -8,7 +8,7 @@ import {
 } from '../../sharedOptions/index.js';
 import { formatOption } from '../../sharedOptions/format.js';
 import { verboseOption } from '../../sharedOptions/verbose.js';
-import { timeoutOption } from "../../sharedOptions/timeout.js";
+import { timeoutOption } from '../../sharedOptions/timeout.js';
 
 export const postJobCommand = new Command('post')
   .description('Create a job to run by Nosana Runners')

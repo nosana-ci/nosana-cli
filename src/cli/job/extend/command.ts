@@ -8,7 +8,7 @@ import {
 import { formatOption } from '../../sharedOptions/format.js';
 import { verboseOption } from '../../sharedOptions/verbose.js';
 import { extendJob } from './action.js';
-import { timeoutOption } from "../../sharedOptions/timeout.js";
+import { timeoutOption } from '../../sharedOptions/timeout.js';
 
 export const extendJobCommand = new Command('extend')
   .description('extend a job timeout')
