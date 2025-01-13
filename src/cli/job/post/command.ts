@@ -8,6 +8,7 @@ import {
 } from '../../sharedOptions/index.js';
 import { formatOption } from '../../sharedOptions/format.js';
 import { verboseOption } from '../../sharedOptions/verbose.js';
+import { timeoutOption } from "../../sharedOptions/timeout.js";
 
 export const postJobCommand = new Command('post')
   .description('Create a job to run by Nosana Runners')
@@ -56,26 +57,7 @@ export const postJobCommand = new Command('post')
       'download external artifacts to specified path  (implies --wait)',
     ).conflicts('file'),
   )
-  .addOption(
-    new Option(
-      '-t, --timeout <timeout>',
-      'the duration the job should run for (in minutes)',
-    )
-      .makeOptionMandatory(true)
-      .argParser((value) => {
-        const timeout = parseInt(value, 10);
-        if (isNaN(timeout) || timeout <= 0) {
-          throw new Error(
-            'Invalid timeout value. Please provide a positive integer.',
-          );
-        }
-
-        // Convert minutes to seconds
-        const timeoutInSeconds = timeout * 60;
-
-        return timeoutInSeconds;
-      }),
-  )
+  .addOption(timeoutOption)
   .addOption(formatOption)
   .addOption(verboseOption)
   .action(run);
