@@ -1,10 +1,11 @@
-import { Client as SDK, Market, Run, Job } from '@nosana/sdk';
-import { ClientSubscriptionId, PublicKey } from '@solana/web3.js';
 import BN from 'bn.js';
+import EventEmitter from 'events';
+import { Client as SDK, Run, Job } from '@nosana/sdk';
+import { ClientSubscriptionId } from '@solana/web3.js';
+
 import ApiEventEmitter from '../api/ApiEventEmitter.js';
 
 export class ExpiryHandler {
-  private address: PublicKey;
   private jobAddress: string | undefined;
   public expiryEndTime: number = 0;
   public expiryTimer: NodeJS.Timeout | null = null;
@@ -15,42 +16,9 @@ export class ExpiryHandler {
   private resolving = false;
 
   constructor(private sdk: SDK) {
-    this.address = this.sdk.solana.provider!.wallet.publicKey;
-
     ApiEventEmitter.getInstance().on('stop-job', (id: string) => {
       if (this.jobAddress === id) {
         this.shortenedExpiry();
-      }
-    });
-  }
-
-  public startExtendMonitoring(jobAddress: string, run: Run): Promise<void> {
-    return new Promise<void>(async (resolve, reject) => {
-      try {
-        await this.sdk.jobs.loadNosanaJobs();
-        this.extendSubscriptionId = this.sdk.jobs.connection!.onAccountChange(
-          new PublicKey(jobAddress),
-          async (accountInfo) => {
-            const jobAccount = this.sdk.jobs.jobs!.coder.accounts.decode(
-              this.sdk.jobs.jobs!.account.jobAccount.idlAccount.name,
-              accountInfo.data,
-            );
-
-            const newExpiryTime = new BN(run.account.time)
-              .add(new BN(jobAccount.timeout))
-              .mul(new BN(1000))
-              .toNumber();
-
-            if (newExpiryTime != this.expiryEndTime) {
-              this.extendExpiryTime(newExpiryTime - this.expiryEndTime);
-            }
-
-            resolve();
-          },
-          'confirmed',
-        );
-      } catch (error) {
-        reject(error);
       }
     });
   }
@@ -68,16 +36,27 @@ export class ExpiryHandler {
     run: Run,
     job: Job,
     jobstring: string,
+    accountEmitter: EventEmitter,
     onExpireCallback: () => Promise<T>,
   ): number {
     this.resolving = false;
 
-    this.startExtendMonitoring(jobstring, run);
     this.jobAddress = jobstring;
     this.expiryEndTime = new BN(run.account.time)
       .add(new BN(job.timeout))
       .mul(new BN(1000))
       .toNumber();
+
+    accountEmitter.on('changed', ({ timeout }) => {
+      const newExpiryTime = new BN(run.account.time)
+        .add(new BN(timeout))
+        .mul(new BN(1000))
+        .toNumber();
+
+      if (newExpiryTime != this.expiryEndTime) {
+        this.extendExpiryTime(newExpiryTime - this.expiryEndTime);
+      }
+    });
 
     this.onExpireCallback = onExpireCallback;
     this.start();

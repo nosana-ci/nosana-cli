@@ -10,12 +10,14 @@ import { IValidation } from 'typia';
 import { validateJobDefinition } from '../../../../providers/Provider.js';
 import { JobExternalUtil } from './jobExternalUtil.js';
 import EventEmitter from 'events';
+import { PublicKey } from '@solana/web3.js';
 
 export const jobEmitter = new EventEmitter();
 
 export class JobHandler {
   private id: string | undefined;
   private job: Job | undefined;
+  private runSubscriptionId: number | undefined;
 
   private flowHandler: FlowHandler;
   private jobExternalUtil: JobExternalUtil;
@@ -23,6 +25,8 @@ export class JobHandler {
   private eventEmitter: EventEmitter;
 
   private finishing: boolean = false;
+
+  public accountEmitter: EventEmitter;
 
   constructor(
     private sdk: SDK,
@@ -35,6 +39,7 @@ export class JobHandler {
     applyLoggingProxyToClass(this);
 
     this.eventEmitter = new EventEmitter();
+    this.accountEmitter = new EventEmitter();
 
     jobEmitter.on('run-exposed', (data) => {
       this.flowHandler.operationExposed(data.id);
@@ -92,6 +97,8 @@ export class JobHandler {
     if (this.id) {
       await this.flowHandler.stop(this.jobId());
     }
+
+    this.stopListeningForAccountChanges();
     this.clearJob();
   }
 
@@ -108,6 +115,42 @@ export class JobHandler {
     }
 
     return true;
+  }
+
+  private listenForAccountChanges() {
+    return new Promise<void>(async (resolve, reject) => {
+      try {
+        await this.sdk.jobs.loadNosanaJobs();
+        this.runSubscriptionId = this.sdk.jobs.connection!.onAccountChange(
+          new PublicKey(this.jobId()),
+          (accountInfo) => {
+            const jobAccount = this.sdk.jobs.jobs!.coder.accounts.decode(
+              this.sdk.jobs.jobs!.account.jobAccount.idlAccount.name,
+              accountInfo.data,
+            ) as Job;
+
+            if ((jobAccount.state as number) >= 2) {
+              this.accountEmitter.emit('stopped', jobAccount);
+              resolve();
+              return;
+            }
+
+            this.accountEmitter.emit('changed', jobAccount);
+          },
+        );
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  private stopListeningForAccountChanges() {
+    if (this.runSubscriptionId !== undefined) {
+      this.sdk.jobs.connection!.removeProgramAccountChangeListener(
+        this.runSubscriptionId,
+      );
+      this.runSubscriptionId = undefined;
+    }
   }
 
   async start(job: Job): Promise<boolean> {
@@ -127,6 +170,8 @@ export class JobHandler {
     } else {
       this.flowHandler.resume(this.jobId());
     }
+
+    this.listenForAccountChanges();
 
     return true;
   }
