@@ -244,8 +244,8 @@ export class ConsoleLogger implements LogObserver {
       if (status === 'Downloading') {
         const { current, total } = progressDetail;
 
-        const { value } = convertFromBytes(current);
         const { format, value: totalValue } = convertFromBytes(total);
+        const { value } = convertFromBytes(current, format);
         if (!progressBar) {
           progressBar = this.multiProgressBar?.create(totalValue, value, {
             status,
