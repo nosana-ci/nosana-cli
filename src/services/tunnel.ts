@@ -7,14 +7,33 @@ import { HttpsProxyAgent } from 'https-proxy-agent';
 import { SocketOptions } from 'dgram';
 
 let socket: Socket | null = null;
+let keepAliveInterval: NodeJS.Timeout | null = null;
+
+function stopKeepAlive() {
+  if (keepAliveInterval) {
+    clearInterval(keepAliveInterval);
+    keepAliveInterval = null;
+  }
+}
 
 function keepAlive() {
-  setTimeout(() => {
-    if (socket && socket.connected) {
-      socket.send('ping');
-    }
-    keepAlive();
-  }, 5000);
+  if (!keepAliveInterval) {
+    keepAliveInterval = setInterval(async () => {
+      if (socket && socket.connected) {
+        // console.log('ping');
+        socket.send('ping');
+      } else {
+        // console.log('socket not connected');
+      }
+    }, 5000); // check every 5 sec
+  }
+}
+
+export function stopTunnel() {
+  if (socket) {
+    socket.close();
+  }
+  stopKeepAlive();
 }
 
 export function initTunnel(options: {
@@ -41,6 +60,7 @@ export function initTunnel(options: {
 
   socket.on('connect', () => {
     if (socket!.connected) {
+      keepAlive();
       // TODO: replace with node logger?
       // console.log('client connect to server successfully');
     }
@@ -52,12 +72,14 @@ export function initTunnel(options: {
   });
 
   socket.on('disconnect', (reason, details) => {
+    stopKeepAlive();
+    // console.log('socket disconnect', reason, details);
     if (
       reason === 'transport close' &&
       // @ts-ignore
       details!.description === 'websocket connection closed'
     ) {
-      socket!.close();
+      // socket!.close();
     }
   });
 
@@ -130,7 +152,6 @@ export function initTunnel(options: {
       localReq.on('upgrade', onUpgrade);
     }
   });
-  keepAlive();
 }
 
 export class TunnelRequest extends Readable {

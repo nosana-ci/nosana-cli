@@ -92,7 +92,7 @@ export class KeyHandler {
         );
       } else if (e instanceof Error && e.message.includes('Node not found')) {
         throw new Error(
-          'Node is not registred yet. To register run the join-test-grid command.',
+          'Node is not registred yet. To register run the `node join` command.',
         );
       }
       throw e;

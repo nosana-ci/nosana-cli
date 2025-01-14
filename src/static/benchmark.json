@@ -7,10 +7,10 @@
   "ops": [
     {
       "type": "container/run",
-      "id": "cpu",
+      "id": "system-info",
       "args": {
-        "cmd": "cat /proc/cpuinfo  | grep name | uniq;",
-        "image": "registry.hub.docker.com/nosana/stats:v1.0.7",
+        "cmd": ["./system.sh"],
+        "image": "registry.hub.docker.com/nosana/stats:v1.1.8",
         "env": {
           "DEBUG": "1"
         }
@@ -18,10 +18,10 @@
     },
     {
       "type": "container/run",
-      "id": "ram",
+      "id": "network-info",
       "args": {
-        "cmd": "grep MemTotal /proc/meminfo | awk '{print $2 / 1024 \"MB\"}';",
-        "image": "registry.hub.docker.com/nosana/stats:v1.0.7",
+        "cmd": ["./network.sh"],
+        "image": "registry.hub.docker.com/nosana/stats:v1.1.8",
         "env": {
           "DEBUG": "1"
         }
@@ -29,43 +29,10 @@
     },
     {
       "type": "container/run",
-      "id": "disk-space",
-      "args": {
-        "cmd": "df -h --output=size --total | awk 'END {print $1}';",
-        "image": "registry.hub.docker.com/nosana/stats:v1.0.7",
-        "env": {
-          "DEBUG": "1"
-        }
-      }
-    },
-    {
-      "type": "container/run",
-      "id": "country",
-      "args": {
-        "cmd": "(curl -ks https://ipinfo.io/$(curl -ks https://ipinfo.io/ip) | jq -r \".country\") || true;",
-        "image": "registry.hub.docker.com/nosana/stats:v1.0.7",
-        "env": {
-          "DEBUG": "1"
-        }
-      }
-    },
-    {
-      "type": "container/run",
-      "id": "bandwidth",
-      "args": {
-        "cmd": "speedtest-cli --simple || true;",
-        "image": "registry.hub.docker.com/nosana/stats:v1.0.7",
-        "env": {
-          "DEBUG": "1"
-        }
-      }
-    },
-    {
-      "type": "container/run",
-      "id": "gpu",
+      "id": "gpu-info",
       "args": {
         "cmd": ["./cuda_check"],
-        "image": "registry.hub.docker.com/nosana/stats:v1.0.7",
+        "image": "registry.hub.docker.com/nosana/stats:v1.1.8",
         "env": {
           "DEBUG": "1"
         },

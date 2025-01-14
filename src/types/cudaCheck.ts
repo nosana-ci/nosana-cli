@@ -1,18 +1,31 @@
-export type CudaCheckResponse = {
-  devices: CudaCheckSuccessResponse | undefined;
-  error: CudaCheckSuccessResponse | undefined;
-};
+export type CudaCheckResponse =
+  | CudaCheckSuccessResponse
+  | CudaCheckErrorResponse;
 
 export type CudaCheckSuccessResponse = {
-  index: number;
-  name: string;
-  uuid: string;
-  results: number[];
-}[];
+  devices: {
+    index: number;
+    name: string;
+    uuid: string;
+    memory: {
+      total_mb: number;
+    };
+    network_architecture: {
+      major: number;
+      minor: number;
+    };
+    results: number[];
+  }[];
+  runtime_version: string;
+  cuda_driver_version: string;
+  nvml_driver_version: string;
+};
 
 export type CudaCheckErrorResponse = {
-  runtime_version: number;
-  is_cuda_available: boolean;
-  reason: string;
-  expection: string;
+  error: {
+    runtime_version: number;
+    is_cuda_available: boolean;
+    reason: string;
+    expection: string;
+  };
 };

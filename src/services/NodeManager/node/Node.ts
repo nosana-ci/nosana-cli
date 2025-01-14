@@ -8,7 +8,7 @@ import { DB } from '../../../providers/modules/db/index.js';
 import { ContainerOrchestrationInterface } from '../provider/containerOrchestration/interface.js';
 import { Provider } from '../provider/Provider.js';
 import { applyLoggingProxyToClass } from '../monitoring/proxy/loggingProxy.js';
-import { isNodeOnboarded, sleep } from '../../../generic/utils.js';
+import { isNodeOnboarded } from '../../../generic/utils.js';
 import { ApiHandler } from './api/ApiHandler.js';
 import { NodeRepository } from '../repository/NodeRepository.js';
 import { BenchmarkHandler } from './benchmark/benchmarkHandler.js';
@@ -65,7 +65,6 @@ export class BasicNode {
     );
     this.gridHandler = new GridHandler(this.sdk, this.repository);
     this.benchmarkHandler = new BenchmarkHandler(
-      this.sdk,
       this.provider,
       this.repository,
     );
@@ -96,10 +95,10 @@ export class BasicNode {
 
   async benchmark(): Promise<boolean> {
     /**
-     * check the gpus using a premade job definition
-     * this is what we do before every job runs
+     * check the system using a premade job definitions
+     * run dependent on market status
      */
-    return await this.benchmarkHandler.check();
+    return await this.benchmarkHandler.check(this.marketHandler.isInMarket());
   }
 
   async recommend(): Promise<string> {

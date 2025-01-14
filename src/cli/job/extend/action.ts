@@ -2,12 +2,9 @@ import ora from 'ora';
 import chalk from 'chalk';
 import { Command } from 'commander';
 import { Client } from '@nosana/sdk';
-import { PublicKey } from '@solana/web3.js';
 import 'rpc-websockets/dist/lib/client.js';
-
 import { clearLine } from '../../../generic/utils.js';
 import { getSDK } from '../../../services/sdk.js';
-import { waitForJobRunOrCompletion } from '../../../services/jobs.js';
 import { OUTPUT_EVENTS } from '../../../providers/utils/ouput-formatter/outputEvents.js';
 import { outputFormatSelector } from '../../../providers/utils/ouput-formatter/outputFormatSelector.js';
 
@@ -16,7 +13,6 @@ export async function extendJob(
   options: {
     [key: string]: any;
   },
-  cmd: Command | undefined,
 ): Promise<void> {
   const nosana: Client = getSDK();
   const formatter = outputFormatSelector(options.format);
@@ -33,7 +29,7 @@ export async function extendJob(
 
   if (job) {
     formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_URL, {
-      job_url: `https://explorer.nosana.io/jobs/${jobAddress}${
+      job_url: `https://dashboard.nosana.com/jobs/${jobAddress}${
         nosana.solana.config.network.includes('devnet') ? '?network=devnet' : ''
       }`,
     });

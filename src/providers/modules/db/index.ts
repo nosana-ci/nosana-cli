@@ -4,12 +4,27 @@ import { LowSync } from 'lowdb/lib';
 import { JSONFileSyncPreset } from 'lowdb/node';
 
 import { Flow } from '../../Provider.js';
+import { CudaCheckSuccessResponse } from '../../../types/cudaCheck.js';
 
 export type NodeDb = {
   flows: { [key: string]: Flow };
   resources: Resources;
   info: {
-    [key: string]: string;
+    country: string;
+    network: {
+      ip: string;
+      ping_ms: number;
+      download_mbps: number;
+      upload_mbps: number;
+    };
+    cpu: {
+      model: string;
+      physical_cores: number;
+      logical_cores: number;
+    };
+    disk_gb: number;
+    ram_mb: number;
+    gpus: CudaCheckSuccessResponse;
   };
 };
 
@@ -28,13 +43,34 @@ export type VolumeResource = ResourceHistory & {
   volume: string;
 };
 
-const initial_state = {
+const initial_state: NodeDb = {
   resources: {
     images: {},
     volumes: {},
   },
   flows: {},
-  info: {},
+  info: {
+    country: '',
+    network: {
+      ip: '',
+      ping_ms: 0,
+      download_mbps: 0,
+      upload_mbps: 0,
+    },
+    cpu: {
+      model: '',
+      physical_cores: 0,
+      logical_cores: 0,
+    },
+    disk_gb: 0,
+    ram_mb: 0,
+    gpus: {
+      devices: [],
+      runtime_version: '0.0',
+      cuda_driver_version: '0.0',
+      nvml_driver_version: '0.0.0',
+    },
+  },
 };
 
 export class DB {

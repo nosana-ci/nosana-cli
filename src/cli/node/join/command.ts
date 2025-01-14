@@ -8,8 +8,8 @@ import {
   walletOption,
 } from '../../sharedOptions/index.js';
 
-export const joinTestGridCommand = new Command('join-test-grid')
-  .description('Join Test Grid Devnet Job')
+export const joinCommand = new Command('join')
+  .description('Join Nosana Grid')
   .addOption(
     new Option(
       '--provider <provider>',
