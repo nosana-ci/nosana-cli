@@ -18,7 +18,6 @@ import { ExpiryHandler } from './expiry/expiryHandler.js';
 import { GridHandler } from './grid/gridHandler.js';
 import { ResourceManager } from './resource/resourceManager.js';
 import { selectContainerOrchestrationProvider } from '../provider/containerOrchestration/selectContainerOrchestration.js';
-import { StopHandler } from './stop/stopHandler.js';
 
 export class BasicNode {
   private apiHandler: ApiHandler;
@@ -30,7 +29,6 @@ export class BasicNode {
   private healthHandler: HealthHandler;
   private expiryHandler: ExpiryHandler;
   private gridHandler: GridHandler;
-  private stopHandler: StopHandler;
   private repository: NodeRepository;
   private resourceManager: ResourceManager;
   private provider: Provider;
@@ -73,7 +71,7 @@ export class BasicNode {
     this.jobHandler = new JobHandler(this.sdk, this.provider, this.repository);
     this.marketHandler = new MarketHandler(this.sdk);
     this.runHandler = new RunHandler(this.sdk);
-    this.stopHandler = new StopHandler(this.sdk);
+
     this.keyHandler = new KeyHandler(this.sdk);
 
     this.healthHandler = new HealthHandler(
@@ -82,6 +80,7 @@ export class BasicNode {
       this.marketHandler,
       this.keyHandler,
     );
+
     this.expiryHandler = new ExpiryHandler(this.sdk);
 
     applyLoggingProxyToClass(this);
@@ -133,7 +132,6 @@ export class BasicNode {
     await this.marketHandler.stop();
     await this.runHandler.stop();
     await this.jobHandler.stop();
-    await this.stopHandler.stop();
     this.expiryHandler.stop();
   }
 
@@ -209,7 +207,7 @@ export class BasicNode {
           /**
            * start monitoring for the stop signal from the smart contract
            */
-          this.stopHandler.startStopHandlerMonitoring(jobAddress, async () => {
+          this.jobHandler.accountEmitter.on('stopped', (_) => {
             this.jobHandler.stop();
             resolved = true;
             resolve();
@@ -218,24 +216,30 @@ export class BasicNode {
           /**
            * This starts the expiry settings to monitor expiry time
            */
-          this.expiryHandler.init<void>(run, job, jobAddress, async () => {
-            try {
-              /**
-               * upload the result and end the flow, also clean up flow.
-               */
-              // await this.jobHandler.finish(run);
+          this.expiryHandler.init<void>(
+            run,
+            job,
+            jobAddress,
+            this.jobHandler.accountEmitter,
+            async () => {
+              try {
+                /**
+                 * upload the result and end the flow, also clean up flow.
+                 */
+                // await this.jobHandler.finish(run);
 
-              /**
-               * so we force close the current job and it causes the container.wait()
-               * to unblock and move to the next stage
-               */
-              await this.jobHandler.stopCurrentJob();
-            } catch (error) {
-              reject(error);
-            }
+                /**
+                 * so we force close the current job and it causes the container.wait()
+                 * to unblock and move to the next stage
+                 */
+                await this.jobHandler.stopCurrentJob();
+              } catch (error) {
+                reject(error);
+              }
 
-            // resolve(); // Signal that the process should end
-          });
+              // resolve(); // Signal that the process should end
+            },
+          );
 
           /**
            * Start the job. This includes downloading the job definition, starting the flow,
@@ -294,9 +298,7 @@ export class BasicNode {
           /**
            * set the market of the job as the current market in this cycle
            */
-          const market = await this.marketHandler.setMarket(
-            job.market.toString(),
-          );
+          await this.marketHandler.setMarket(job.market.toString());
 
           /**
            * check if the job is expired if it is quit the job,
@@ -306,37 +308,40 @@ export class BasicNode {
             /**
              * start monitoring for the stop signal from the smart contract
              */
-            this.stopHandler.startStopHandlerMonitoring(
-              jobAddress,
-              async () => {
-                this.jobHandler.stop();
-                resolved = true;
-                resolve(true);
-                return;
-              },
-            );
+            this.jobHandler.accountEmitter.on('stopped', (_) => {
+              this.jobHandler.stop();
+              resolved = true;
+              resolve(true);
+              return;
+            });
 
             /**
              * this starts the expiry settings to monitory expiry time
              */
-            this.expiryHandler.init<void>(run, job, jobAddress, async () => {
-              try {
-                /**
-                 * upload the result and end the flow, also clean up flow.
-                 */
-                // await this.jobHandler.finish(run);
+            this.expiryHandler.init<void>(
+              run,
+              job,
+              jobAddress,
+              this.jobHandler.accountEmitter,
+              async () => {
+                try {
+                  /**
+                   * upload the result and end the flow, also clean up flow.
+                   */
+                  // await this.jobHandler.finish(run);
 
-                /**
-                 * so we force close the current job and it causes the container.wait()
-                 * to unblock and move to the next stage
-                 */
-                await this.jobHandler.stopCurrentJob();
-              } catch (error) {
-                reject(error);
-              }
+                  /**
+                   * so we force close the current job and it causes the container.wait()
+                   * to unblock and move to the next stage
+                   */
+                  await this.jobHandler.stopCurrentJob();
+                } catch (error) {
+                  reject(error);
+                }
 
-              // resolve(true);
-            });
+                // resolve(true);
+              },
+            );
 
             /**
              * Start the job, this includes downloading the job defination, starting the flow
