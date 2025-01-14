@@ -10,7 +10,11 @@ import {
 } from '@solana/web3.js';
 import 'rpc-websockets/dist/lib/client.js';
 import { NotQueuedError } from '../generic/errors.js';
-import { CudaCheckResponse } from '../types/cudaCheck.js';
+import {
+  CudaCheckErrorResponse,
+  CudaCheckResponse,
+  CudaCheckSuccessResponse,
+} from '../types/cudaCheck.js';
 import { FlowState, OperationArgsMap } from '../providers/Provider.js';
 import { getNosBalance, getRawTransaction } from './sdk.js';
 import {
@@ -749,11 +753,11 @@ export class NosanaNode {
           throw error;
         }
 
-        const { devices } = JSON.parse(
+        const cudaCheckResults = JSON.parse(
           result.opStates[0].logs[0].log!,
         ) as CudaCheckResponse;
 
-        if (!devices) {
+        if ((cudaCheckResults as CudaCheckErrorResponse).error) {
           const error = new Error('GPU benchmark returned with no devices');
           nodeDispatch(NODE_STATE_NAME.BENCHMARK_FAILED, {
             error: error,
@@ -761,7 +765,10 @@ export class NosanaNode {
           throw error;
         }
 
-        getNodeStateManager().setSharedData('devices', devices);
+        getNodeStateManager().setSharedData(
+          'devices',
+          (cudaCheckResults as CudaCheckSuccessResponse).devices,
+        );
 
         gpus = result.opStates[0].logs[0]!.log!;
 
@@ -813,11 +820,11 @@ export class NosanaNode {
         const output = [];
 
         if (result.opStates[0]) {
-          const { error } = JSON.parse(
+          const cudaCheckResults = JSON.parse(
             result.opStates[0].logs[0].log!,
           ) as CudaCheckResponse;
 
-          if (error) {
+          if ((cudaCheckResults as CudaCheckErrorResponse).error) {
             output.push(
               `GPU benchmark failed, please ensure your NVidia Cuda runtime drivers are up to date and your NVidia Container Toolkit is correctly configured.`,
             );
@@ -861,7 +868,7 @@ export class NosanaNode {
     return gpus;
   }
 
-  public async joinTestGrid(): Promise<{
+  public async join(): Promise<{
     market: string;
     accessKey: PublicKey;
   }> {
@@ -904,7 +911,7 @@ export class NosanaNode {
       } else if (e instanceof Error && e.message.includes('Node not found')) {
         throw new Error(
           chalk.yellow(
-            'Node is not registred yet. To register run the join-test-grid command.',
+            'Node is not registred yet. To register run the `node join` command.',
           ),
         );
       }

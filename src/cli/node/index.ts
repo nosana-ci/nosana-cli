@@ -1,6 +1,6 @@
 import { Command, program } from 'commander';
 
-import { joinTestGridCommand } from './joinTestGrid/command.js';
+import { joinCommand } from './join/command.js';
 import { runNodeCommand } from './run/command.js';
 import { startNodeCommand } from './start/command.js';
 import { viewNodeCommand } from './view/command.js';
@@ -9,7 +9,7 @@ import { migrateNodeCommand } from './migrate/command.js';
 
 export const nodeCommand: Command = program
   .command('node')
-  .addCommand(joinTestGridCommand)
+  .addCommand(joinCommand)
   .addCommand(migrateNodeCommand)
   .addCommand(nodePruneCommand)
   .addCommand(runNodeCommand)

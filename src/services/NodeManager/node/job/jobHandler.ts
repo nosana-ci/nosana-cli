@@ -1,15 +1,14 @@
-import { Job, Market, Run, Client as SDK } from '@nosana/sdk';
-import { FlowState, JobDefinition } from '../../provider/types.js';
+import EventEmitter from 'events';
+import { IValidation } from 'typia';
+import { Job, Run, Client as SDK } from '@nosana/sdk';
+
+import { JobDefinition } from '../../provider/types.js';
 import { FlowHandler } from '../flow/flowHandler.js';
 import { Provider } from '../../provider/Provider.js';
 import { applyLoggingProxyToClass } from '../../monitoring/proxy/loggingProxy.js';
 import { NodeRepository } from '../../repository/NodeRepository.js';
-import { JobDefinitionStrategySelector } from './defination/JobDefinitionStrategy.js';
-import { ResultReturnStrategySelector } from './result/ResultReturnStrategy.js';
-import { IValidation } from 'typia';
 import { validateJobDefinition } from '../../../../providers/Provider.js';
 import { JobExternalUtil } from './jobExternalUtil.js';
-import EventEmitter from 'events';
 
 export const jobEmitter = new EventEmitter();
 

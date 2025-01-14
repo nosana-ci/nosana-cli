@@ -3,11 +3,11 @@ import { SignatureHeaders } from './api';
 
 export const listenToEventSource = <T>(
   url: string,
-  headers: SignatureHeaders,
+  headers: Headers,
   onMessageCallback: (data: T) => void,
   onErrorCallback?: (err: MessageEvent) => void,
 ): EventSource => {
-  const eventSource = new EventSource(url, { headers: { ...headers } });
+  const eventSource = new EventSource(url, { headers });
 
   eventSource.onmessage = (event: MessageEvent) => {
     const data: T = JSON.parse(event.data);

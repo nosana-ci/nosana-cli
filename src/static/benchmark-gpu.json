@@ -7,22 +7,25 @@
   "ops": [
     {
       "type": "container/run",
-      "id": "cuda-runtime-check",
+      "id": "system-info",
       "args": {
-        "cmd": ["./cuda_check"],
-        "image": "registry.hub.docker.com/nosana/stats:v1.0.7",
-        "gpu": true
+        "cmd": ["./system.sh"],
+        "image": "registry.hub.docker.com/nosana/stats:v1.1.8",
+        "env": {
+          "DEBUG": "1"
+        }
       }
     },
     {
       "type": "container/run",
-      "id": "disk-space-check",
+      "id": "gpu-info",
       "args": {
-        "cmd": "df -m --output=avail --total | awk 'END {print $1}';",
-        "image": "registry.hub.docker.com/nosana/stats:v1.0.7",
+        "cmd": ["./cuda_check"],
+        "image": "registry.hub.docker.com/nosana/stats:v1.1.8",
         "env": {
           "DEBUG": "1"
-        }
+        },
+        "gpu": true
       }
     }
   ]

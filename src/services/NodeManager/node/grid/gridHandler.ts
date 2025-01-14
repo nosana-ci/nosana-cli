@@ -64,7 +64,7 @@ export class GridHandler {
         error.message.includes('Node not found')
       ) {
         throw new Error(
-          'Node is not registred yet. To register run the join-test-grid command.',
+          'Node is not registred yet. To register run the `node join` command.',
         );
       }
       throw error;
@@ -84,7 +84,7 @@ export class GridHandler {
             Authorization: `${this.address}:${signature}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ gpus }),
+          body: JSON.stringify({ gpus: JSON.stringify(gpus) }),
         },
       );
 
@@ -130,8 +130,23 @@ export class GridHandler {
       const data = await response.json();
       if (!data || data.name === 'Error') throw new Error(data.message);
 
-      const txnSignature = await this.signAndSendTransaction(data.tx);
-      await this.confirmTransaction(txnSignature);
+      // Incase of blockheight exceeded error, retry 3 times
+      for (let i = 0; i < 3; i++) {
+        try {
+          const txnSignature = await this.signAndSendTransaction(data.tx);
+          await this.confirmTransaction(txnSignature);
+          break;
+        } catch (error: any) {
+          if (
+            i === 2 ||
+            !error?.message.includes(
+              'TransactionExpiredBlockheightExceededError',
+            )
+          ) {
+            throw error;
+          }
+        }
+      }
       // TODO: verify tx result with code below
       // const result = await this.sdk.solana.connection?.getTransaction(
       //   txnSignature as string,
