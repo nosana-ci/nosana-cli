@@ -19,7 +19,6 @@ import { GridHandler } from './grid/gridHandler.js';
 import { ResourceManager } from './resource/resourceManager.js';
 import { selectContainerOrchestrationProvider } from '../provider/containerOrchestration/selectContainerOrchestration.js';
 import { RegisterHandler } from './register/index.js';
-import { FlowHandler } from './flow/flowHandler.js';
 import { BalanceHandler } from './balance/balanceHandler.js';
 
 export class BasicNode {
@@ -34,6 +33,7 @@ export class BasicNode {
   private healthHandler: HealthHandler;
   private expiryHandler: ExpiryHandler;
   private gridHandler: GridHandler;
+  private registerHandler: RegisterHandler;
   private repository: NodeRepository;
   private resourceManager: ResourceManager;
   private provider: Provider;
@@ -87,18 +87,19 @@ export class BasicNode {
       this.keyHandler,
     );
 
+    this.registerHandler = new RegisterHandler(
+      this.sdk,
+      this.provider, 
+      this.repository
+    );
+
     this.expiryHandler = new ExpiryHandler(this.sdk);
 
     applyLoggingProxyToClass(this);
   }
 
   async register() {
-    const registerHandler = new RegisterHandler(
-      this.sdk,
-      new FlowHandler(this.provider, this.repository),
-    );
-
-    await registerHandler.register();
+    await this.registerHandler.register();
   }
 
   async healthcheck(market: string): Promise<boolean> {

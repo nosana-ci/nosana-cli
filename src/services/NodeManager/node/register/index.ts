@@ -7,9 +7,11 @@ import { clientSelector, QueryClient } from '../../../../api/client.js';
 import { configs } from '../../configs/configs.js';
 
 import { jobDefinition } from '../../../../static/staticsImports.js';
+import { Provider } from "../../provider/Provider.js";
+import { NodeRepository } from "../../repository/NodeRepository.js";
+import { applyLoggingProxyToClass } from "../../monitoring/proxy/loggingProxy.js";
 
 export class RegisterHandler {
-  private sdk: Client;
   private nodeId: string;
   private flowHandler: FlowHandler;
   private client: QueryClient;
@@ -21,11 +23,12 @@ export class RegisterHandler {
       }
     | undefined;
 
-  constructor(sdk: Client, flowHandler: FlowHandler) {
-    this.sdk = sdk;
+  constructor(private sdk: Client, private provider: Provider, private repository: NodeRepository) {
     this.nodeId = this.sdk.solana.provider!.wallet.publicKey.toString();
-    this.flowHandler = flowHandler;
+    this.flowHandler = new FlowHandler(this.provider, this.repository);
     this.client = clientSelector();
+    
+    applyLoggingProxyToClass(this);
   }
 
   private async gainConstent() {
