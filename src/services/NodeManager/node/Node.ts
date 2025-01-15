@@ -18,9 +18,11 @@ import { ExpiryHandler } from './expiry/expiryHandler.js';
 import { GridHandler } from './grid/gridHandler.js';
 import { ResourceManager } from './resource/resourceManager.js';
 import { selectContainerOrchestrationProvider } from '../provider/containerOrchestration/selectContainerOrchestration.js';
+import { BalanceHandler } from './balance/balanceHandler.js';
 
 export class BasicNode {
   private apiHandler: ApiHandler;
+  private balanceHandler: BalanceHandler;
   private runHandler: RunHandler;
   private marketHandler: MarketHandler;
   private jobHandler: JobHandler;
@@ -63,6 +65,7 @@ export class BasicNode {
       this.provider,
       options.port,
     );
+    this.balanceHandler = new BalanceHandler(this.sdk);
     this.gridHandler = new GridHandler(this.sdk, this.repository);
     this.benchmarkHandler = new BenchmarkHandler(
       this.provider,
@@ -136,6 +139,10 @@ export class BasicNode {
   }
 
   async start(): Promise<void> {
+    if (await this.balanceHandler.balance()) {
+      this.balanceHandler.check();
+    }
+
     /**
      * get an instance to the container
      */
