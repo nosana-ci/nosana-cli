@@ -1,25 +1,6 @@
 import { joinCommand } from '../command';
 
-import { runBenchmark } from '../action';
-
-jest.mock('../action', () => ({
-  runBenchmark: jest.fn(),
-}));
-
 describe('joinCommand', () => {
-  const mock_runBenchmark_action = jest.fn();
-  const parseArgs = ['node', 'get', 'run command'];
-
-  beforeEach(() => {
-    mock_runBenchmark_action.mockReset();
-    (runBenchmark as jest.Mock).mockImplementation(mock_runBenchmark_action);
-  });
-
-  it('should call runBenchmark action', () => {
-    joinCommand.parse(parseArgs);
-    expect(mock_runBenchmark_action).toHaveBeenCalledTimes(1);
-  });
-
   it('should have 9 options', () => {
     expect(joinCommand.options.length).toBe(9);
   });

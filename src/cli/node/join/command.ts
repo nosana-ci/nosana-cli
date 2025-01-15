@@ -1,6 +1,6 @@
+import chalk from 'chalk';
 import { Command, Option } from 'commander';
 
-import { runBenchmark } from './action.js';
 import {
   gpuOption,
   networkOption,
@@ -41,4 +41,8 @@ export const joinCommand = new Command('join')
   )
   .addOption(new Option('--no-airdrop', 'no airdrop on devnet'))
   .addOption(gpuOption)
-  .action(runBenchmark);
+  .action(() => {
+    throw new Error(
+      chalk.red('node join is now depericated, please use node start instead'),
+    );
+  });
