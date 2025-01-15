@@ -89,8 +89,8 @@ export class BasicNode {
 
     this.registerHandler = new RegisterHandler(
       this.sdk,
-      this.provider, 
-      this.repository
+      this.provider,
+      this.repository,
     );
 
     this.expiryHandler = new ExpiryHandler(this.sdk);

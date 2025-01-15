@@ -481,7 +481,6 @@ class NodeLog {
     }
   }
 
-
   private handleExpiryHandler(data: LogEntry) {
     if (data.method === 'init') {
       if (data.type === 'return') {
