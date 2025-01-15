@@ -1,4 +1,4 @@
-import { Client, Market, Run } from '@nosana/sdk';
+import { Client, Market } from '@nosana/sdk';
 
 import { getSDK } from '../../sdk.js';
 import { MarketHandler } from './market/marketHandler.js';
@@ -18,8 +18,11 @@ import { ExpiryHandler } from './expiry/expiryHandler.js';
 import { GridHandler } from './grid/gridHandler.js';
 import { ResourceManager } from './resource/resourceManager.js';
 import { selectContainerOrchestrationProvider } from '../provider/containerOrchestration/selectContainerOrchestration.js';
+import { RegisterHandler } from './register/index.js';
+import { FlowHandler } from './flow/flowHandler.js';
 
 export class BasicNode {
+  public isOnboarded: boolean = false;
   private apiHandler: ApiHandler;
   private runHandler: RunHandler;
   private marketHandler: MarketHandler;
@@ -86,6 +89,15 @@ export class BasicNode {
     applyLoggingProxyToClass(this);
   }
 
+  async register() {
+    const registerHandler = new RegisterHandler(
+      this.sdk,
+      new FlowHandler(this.provider, this.repository),
+    );
+
+    await registerHandler.register();
+  }
+
   async healthcheck(market: string): Promise<boolean> {
     /**
      * run health check,
@@ -102,16 +114,6 @@ export class BasicNode {
   }
 
   async recommend(): Promise<string> {
-    /**
-     * we query the grid to find out if the node has already been onboarded
-     * if it has been onboarded it might have been assigned/recommended a market
-     * if it has not been onboarded quit the process
-     */
-    const nodeData = await this.gridHandler.getNodeStatus();
-    if (!isNodeOnboarded(nodeData.status)) {
-      throw new Error('Node not onboarded yet');
-    }
-
     /**
      * this means even tho we have been onbaorded there might be no market assigned to us
      * or we need to check if we are still in the right market,
@@ -136,6 +138,13 @@ export class BasicNode {
   }
 
   async start(): Promise<void> {
+    /**
+     * we query the grid to find out if the node has already been onboarded
+     * if it has been onboarded it might have been assigned/recommended a market
+     * if it has not been onboarded quit the process
+     */
+    const nodeData = await this.gridHandler.getNodeStatus();
+    this.isOnboarded = isNodeOnboarded(nodeData.status);
     /**
      * get an instance to the container
      */

@@ -61,13 +61,15 @@ export class GridHandler {
         );
       } else if (
         error instanceof Error &&
-        error.message.includes('Node not found')
+        !error.message.includes('Node not found')
       ) {
-        throw new Error(
-          'Node is not registred yet. To register run the `node join` command.',
-        );
+        throw error;
       }
-      throw error;
+
+      return {
+        status: 'not-found',
+        market: undefined,
+      };
     }
   }
 

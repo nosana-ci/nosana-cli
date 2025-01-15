@@ -85,6 +85,10 @@ export default class NodeManager {
      */
     await this.node.maintaniance();
 
+    if (!this.node.isOnboarded) {
+      await this.node.register();
+    }
+
     /**
      * grid
      *
