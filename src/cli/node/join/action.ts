@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 
-export async function runBenchmarkOLD(
+export async function runBenchmark(
   options: { [key: string]: any },
   shouldKillProgram = true,
 ) {

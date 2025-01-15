@@ -66,6 +66,10 @@ export default class NodeManager {
      */
     await this.node.start();
 
+    if (!this.node.isOnboarded) {
+      await this.node.register();
+    }
+
     /**
      * start the api of the node and register all the routes of the nodes,
      * we call this here in the init so the api survives restarts between jobs
@@ -84,10 +88,6 @@ export default class NodeManager {
      * maintaniance
      */
     await this.node.maintaniance();
-
-    if (!this.node.isOnboarded) {
-      await this.node.register();
-    }
 
     /**
      * grid
