@@ -86,6 +86,10 @@ export class RegisterHandler {
     this.flowHandler.start(flowId, jobDefinition);
     const result = await this.flowHandler.run(flowId);
 
+    if (!result || result.state.status !== 'success') {
+      throw new Error('Registration Benchmark Failed')
+    }
+
     return result;
   }
 
