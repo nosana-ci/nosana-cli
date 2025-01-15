@@ -20,10 +20,12 @@ import { ResourceManager } from './resource/resourceManager.js';
 import { selectContainerOrchestrationProvider } from '../provider/containerOrchestration/selectContainerOrchestration.js';
 import { RegisterHandler } from './register/index.js';
 import { FlowHandler } from './flow/flowHandler.js';
+import { BalanceHandler } from './balance/balanceHandler.js';
 
 export class BasicNode {
   public isOnboarded: boolean = false;
   private apiHandler: ApiHandler;
+  private balanceHandler: BalanceHandler;
   private runHandler: RunHandler;
   private marketHandler: MarketHandler;
   private jobHandler: JobHandler;
@@ -66,6 +68,7 @@ export class BasicNode {
       this.provider,
       options.port,
     );
+    this.balanceHandler = new BalanceHandler(this.sdk);
     this.gridHandler = new GridHandler(this.sdk, this.repository);
     this.benchmarkHandler = new BenchmarkHandler(
       this.provider,
@@ -145,6 +148,11 @@ export class BasicNode {
      */
     const nodeData = await this.gridHandler.getNodeStatus();
     this.isOnboarded = isNodeOnboarded(nodeData.status);
+
+    if (await this.balanceHandler.balance()) {
+      this.balanceHandler.check();
+    }
+
     /**
      * get an instance to the container
      */
