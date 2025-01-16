@@ -151,7 +151,7 @@ export class BasicNode {
     this.isOnboarded = isNodeOnboarded(nodeData.status);
 
     if (await this.balanceHandler.balance()) {
-      this.balanceHandler.check();
+      await this.balanceHandler.check(true);
     }
 
     /**

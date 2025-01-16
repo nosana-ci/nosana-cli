@@ -1,3 +1,5 @@
+import ora from 'ora';
+import chalk from 'chalk';
 import { Client as SDK } from '@nosana/sdk';
 import { TokenAmount, PublicKey } from '@solana/web3.js';
 
@@ -32,15 +34,34 @@ export class BalanceHandler {
     }
   }
 
-  public check(): boolean {
+  private async waitForSufficentSol() {
+    let balancePollingInterval: NodeJS.Timeout;
+
+    return new Promise((resolve) => {
+      balancePollingInterval = setInterval(async () => {
+        if (await this.balance()) {
+          const solBalance = this.balances.sol / SOLANA_DECIMAL;
+          if (solBalance > MINIMUM_SOL_BALANCE) {
+            resolve(true);
+          }
+        }
+      }, 30000);
+    }).finally(() => clearInterval(balancePollingInterval));
+  }
+
+  public async check(wait = false): Promise<void> {
     const solBalance = this.balances.sol / SOLANA_DECIMAL;
     if (solBalance < MINIMUM_SOL_BALANCE) {
-      throw new Error(
-        `SOL balance ${solBalance} should be 0.005 or higher. Send some SOL to your node address 
-                  ${this.address} `,
-      );
+      const insufficentSolMessage = `SOL balance ${solBalance} should be 0.005 or higher. Send some SOL to your node address ${this.address} `;
+
+      if (!wait) {
+        throw new Error(insufficentSolMessage);
+      }
+
+      const spinner = ora(chalk.yellow(insufficentSolMessage)).start();
+      await this.waitForSufficentSol();
+      spinner.succeed();
     }
-    return true;
   }
 
   public getNosBalance(): TokenAmount | undefined {

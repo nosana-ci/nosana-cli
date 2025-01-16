@@ -42,7 +42,7 @@ export class HealthHandler {
      * sufficient, if the balance can't be gotten skip the check
      */
     if (await this.balanceHandler.balance()) {
-      this.balanceHandler.check();
+      await this.balanceHandler.check();
     }
 
     /**
