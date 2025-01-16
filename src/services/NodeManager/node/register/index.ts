@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { Client, Flow } from '@nosana/sdk';
+import { Client, Flow, OpState } from '@nosana/sdk';
 import { confirm, input } from '@inquirer/prompts';
 
 import { FlowHandler } from '../flow/flowHandler.js';
@@ -93,12 +93,13 @@ export class RegisterHandler {
     return result;
   }
 
-  private async submitOnboarding(results: unknown[]) {
+  private async submitOnboarding(results: OpState[]) {
     const { error } = await this.client.POST('/api/nodes/join-test-grid', {
       body: {
         ...this.answers!,
         nodeAddress: this.nodeId,
-        results, // TODO: Fix this type within the backend
+        // @ts-ignore
+        results, // TODO: Investigate type mismatch
       },
       params: {
         header: {
