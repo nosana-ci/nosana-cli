@@ -16,19 +16,8 @@ export class DockerExtended extends Dockerode {
       this.pull(image, (err: any, stream: any) => {
         if (err) {
           reject(err);
+          return;
         }
-
-        // const layerIds = new Map<string, SingleBar>();
-
-        // const multibar = new MultiBar(
-        //   {
-        //     clearOnComplete: false,
-        //     hideCursor: true,
-        //     format:
-        //       '{status} | {bar} | {layerId} | {value}{format}/{total}{format}',
-        //   },
-        //   Presets.shades_grey,
-        // );
 
         multiProgressBarReporter.start(`pulling image ${image}`, {
           format:
@@ -41,33 +30,6 @@ export class DockerExtended extends Dockerode {
           id: string;
         }) => {
           multiProgressBarReporter.update(event);
-
-          // const { id, status, progressDetail } = event;
-
-          // if (status === 'Pulling fs layer') return;
-
-          // let progressBar = layerIds.get(id);
-
-          // if (status === 'Downloading') {
-          //   const { current, total } = progressDetail;
-
-          //   const { value } = convertFromBytes(current);
-          //   const { format, value: totalValue } = convertFromBytes(total);
-          //   if (!progressBar) {
-          //     progressBar = multibar.create(totalValue, value, {
-          //       status,
-          //       layerId: id,
-          //       format,
-          //     });
-          //     layerIds.set(id, progressBar);
-          //   }
-          //   progressBar.update(value, { status });
-          //   return;
-          // }
-
-          // if (progressBar) {
-          //   progressBar.update(progressBar.getTotal(), { status });
-          // }
         };
 
         const onFinished = (err: any, _: any) => {
@@ -77,6 +39,7 @@ export class DockerExtended extends Dockerode {
             return;
           }
           reject(err);
+          return;
         };
 
         this.modem.followProgress(

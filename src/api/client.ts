@@ -3,10 +3,10 @@ import createClient from 'openapi-fetch';
 import { paths } from './schema.js';
 import { configs } from '../services/NodeManager/configs/configs.js';
 
-type CreateClient = ReturnType<typeof createClient<paths>>;
+export type QueryClient = ReturnType<typeof createClient<paths>>;
 
-export const clientSelector = (): CreateClient => {
-  let instance: CreateClient | undefined = undefined;
+export const clientSelector = (): QueryClient => {
+  let instance: QueryClient | undefined = undefined;
 
   if (!instance) {
     instance = createClient<paths>({

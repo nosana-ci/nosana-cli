@@ -138,6 +138,10 @@ class NodeLog {
       this.handleRecommend(data);
     }
 
+    if (data.class === 'BasicNode' && data.method === 'register') {
+      this.handleRegister(data);
+    }
+
     // if (data.class === 'BasicNode' && data.method === 'queue') {
     //   this.handleQueue(data);
     // }
@@ -441,6 +445,36 @@ class NodeLog {
         method: `${data.class}.${data.method}`,
         job: this.job,
         log: chalk.red('Benchmark failed'),
+        timestamp: Date.now(),
+        type: 'error',
+      });
+    }
+  }
+
+  private handleRegister(data: LogEntry) {
+    if (data.type === 'call') {
+      this.addLog({
+        method: `${data.class}.${data.method}`,
+        job: this.job,
+        log: chalk.cyan('Node is unregistered, Registering Node..'),
+        timestamp: Date.now(),
+        type: 'info',
+      });
+    }
+    if (data.type === 'return') {
+      this.addLog({
+        method: `${data.class}.${data.method}`,
+        job: this.job,
+        log: chalk.green('Node registered successfully'),
+        timestamp: Date.now(),
+        type: 'success',
+      });
+    }
+    if (data.type === 'error') {
+      this.addLog({
+        method: `${data.class}.${data.method}`,
+        job: this.job,
+        log: chalk.red('Node registeration failed'),
         timestamp: Date.now(),
         type: 'error',
       });
