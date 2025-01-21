@@ -220,7 +220,6 @@ export class JobHandler {
   }
 
   async quit(run: Run): Promise<void> {
-    throw new Error('quit error');
     await this.sdk.jobs.quit(run);
     await this.flowHandler.stop(this.jobId());
   }
