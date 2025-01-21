@@ -145,7 +145,12 @@ export class RunHandler {
 
   public async stop(): Promise<void> {
     this.stopRunMonitoring();
-    await this.stopRun();
+
+    /**
+     * we don't want to stop the job/run under any circumstances
+     */
+    // await this.stopRun();
+    
     this.clearRun();
   }
 }

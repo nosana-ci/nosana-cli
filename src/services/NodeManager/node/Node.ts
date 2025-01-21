@@ -464,6 +464,14 @@ export class BasicNode {
     this.exiting = true;
   }
 
+  public async conclude() {
+    const run = this.runHandler.getRun()
+
+    if(run){
+      await this.jobHandler.finish(run)
+    }
+  }
+
   public restartDelay(time: number): Promise<void> {
     return new Promise((resolve) => {
       let timer = time;
