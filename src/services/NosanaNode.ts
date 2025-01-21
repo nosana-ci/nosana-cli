@@ -33,7 +33,7 @@ import Logger from '../providers/modules/logger/index.js';
 import { api } from './api.js';
 import { initTunnel } from './tunnel.js';
 export const TUNNEL_IMAGE = 'registry.hub.docker.com/nosana/tunnel:0.1.0';
-import { benchmarkGPU } from '../static/staticsImports.js';
+import { specsJob } from '../static/staticsImports.js';
 import { dispatch as nodeDispatch } from './state/node/dispatch.js';
 import { NODE_STATE_NAME } from './state/node/types.js';
 import { getNodeStateManager } from './state/node/instance.js';
@@ -426,7 +426,7 @@ export class NosanaNode {
     } else {
       this.logger.log(chalk.cyan('Health checks'), true);
       // only run benchmark when it isnt first run of healthCheck as it already ran on start
-      await this.runBenchmark(false);
+      await this.runSpecs(false);
     }
     let stats: NodeStats | null = null;
     try {
@@ -706,7 +706,7 @@ export class NosanaNode {
     return { accessKey };
   }
 
-  public async runBenchmark(printDetailed: boolean = true): Promise<string> {
+  public async runSpecs(printDetailed: boolean = true): Promise<string> {
     let gpus: string;
     try {
       /****************
@@ -721,7 +721,7 @@ export class NosanaNode {
       }
 
       // Create new flow
-      const flow = this.provider.run(benchmarkGPU);
+      const flow = this.provider.run(specsJob);
       result = await this.provider.waitForFlowFinish(
         flow.id,
         (event: { log: string; type: string }) => {
@@ -918,7 +918,7 @@ export class NosanaNode {
       throw e;
     }
     // benchmark
-    let gpus = await this.runBenchmark(false);
+    let gpus = await this.runSpecs(false);
 
     try {
       this.logger.log(chalk.cyan('Matching GPU to correct market'), true);

@@ -11,7 +11,7 @@ import { applyLoggingProxyToClass } from '../monitoring/proxy/loggingProxy.js';
 import { isNodeOnboarded } from '../../../generic/utils.js';
 import { ApiHandler } from './api/ApiHandler.js';
 import { NodeRepository } from '../repository/NodeRepository.js';
-import { BenchmarkHandler } from './benchmark/benchmarkHandler.js';
+import { SpecsHandler } from './specs/specsHandler.js';
 import { HealthHandler } from './health/healthHandler.js';
 import { KeyHandler } from './key/keyHandler.js';
 import { ExpiryHandler } from './expiry/expiryHandler.js';
@@ -28,7 +28,7 @@ export class BasicNode {
   private runHandler: RunHandler;
   private marketHandler: MarketHandler;
   private jobHandler: JobHandler;
-  private benchmarkHandler: BenchmarkHandler;
+  private specsHandler: SpecsHandler;
   private keyHandler: KeyHandler;
   private healthHandler: HealthHandler;
   private expiryHandler: ExpiryHandler;
@@ -70,10 +70,7 @@ export class BasicNode {
     );
     this.balanceHandler = new BalanceHandler(this.sdk);
     this.gridHandler = new GridHandler(this.sdk, this.repository);
-    this.benchmarkHandler = new BenchmarkHandler(
-      this.provider,
-      this.repository,
-    );
+    this.specsHandler = new SpecsHandler(this.provider, this.repository);
     this.jobHandler = new JobHandler(this.sdk, this.provider, this.repository);
     this.marketHandler = new MarketHandler(this.sdk);
     this.runHandler = new RunHandler(this.sdk);
@@ -109,17 +106,17 @@ export class BasicNode {
     return await this.healthHandler.run(market);
   }
 
-  async benchmark(): Promise<boolean> {
+  async specs(): Promise<boolean> {
     /**
      * check the system using a premade job definitions
      * run dependent on market status
      */
-    return await this.benchmarkHandler.check(this.marketHandler.isInMarket());
+    return await this.specsHandler.check(this.marketHandler.isInMarket());
   }
 
   async recommend(): Promise<string> {
     /**
-     * this means even tho we have been onbaorded there might be no market assigned to us
+     * this means even tho we have been onboarded there might be no market assigned to us
      * or we need to check if we are still in the right market,
      * so we need to get a recommended one and return it
      */
@@ -148,8 +145,8 @@ export class BasicNode {
      * if it has not been onboarded quit the process
      */
     const nodeData = await this.gridHandler.getNodeStatus();
-    this.isOnboarded = isNodeOnboarded(nodeData.status);
 
+    this.isOnboarded = isNodeOnboarded(nodeData.status);
     if (await this.balanceHandler.balance()) {
       await this.balanceHandler.check(true);
     }
@@ -456,7 +453,7 @@ export class BasicNode {
     );
   }
 
-  public async maintaniance() {
+  public async maintenance() {
     this.jobHandler.clearOldJobs();
   }
 

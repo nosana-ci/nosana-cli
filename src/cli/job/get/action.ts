@@ -44,6 +44,10 @@ export async function getJob(
 ): Promise<void> {
   const nosana: Client = getSDK();
   const formatter = outputFormatSelector(options.format);
+  const explorerUrl =
+    options.network === 'devnet'
+      ? 'https://devnet.nosana.io'
+      : 'https://dashboard.nosana.com';
 
   const logSubscriberManager = new LogSubscriberManager();
   let listener: EventSource | null = null;
@@ -63,18 +67,14 @@ export async function getJob(
 
   if (job) {
     formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_URL, {
-      job_url: `https://explorer.nosana.io/jobs/${jobAddress}${
-        nosana.solana.config.network.includes('devnet') ? '?network=devnet' : ''
-      }`,
+      job_url: `${explorerUrl}/jobs/${jobAddress}`,
     });
 
     formatter.output(OUTPUT_EVENTS.OUTPUT_JSON_FLOW_URL, {
       json_flow_url: `${nosana.ipfs.config.gateway}${job.ipfsJob}`,
     });
     formatter.output(OUTPUT_EVENTS.OUTPUT_MARKET_URL, {
-      market_url: `https://explorer.nosana.io/markets/${job.market}${
-        nosana.solana.config.network.includes('devnet') ? '?network=devnet' : ''
-      }`,
+      market_url: `${explorerUrl}/markets/${job.market}`,
     });
 
     formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_PRICE, {
@@ -102,11 +102,7 @@ export async function getJob(
         });
 
         formatter.output(OUTPUT_EVENTS.OUTPUT_NODE_URL, {
-          url: `https://explorer.nosana.io/nodes/${job.node}${
-            nosana.solana.config.network.includes('devnet')
-              ? '?network=devnet'
-              : ''
-          }`,
+          url: `${explorerUrl}/nodes/${job.node}`,
         });
 
         const ipfsJob = await nosana.ipfs.retrieve(job.ipfsJob);
@@ -137,11 +133,7 @@ export async function getJob(
 
     if (job.state === 'COMPLETED' || job.state === 'STOPPED') {
       formatter.output(OUTPUT_EVENTS.OUTPUT_NODE_URL, {
-        url: `https://explorer.nosana.io/nodes/${job.node}${
-          nosana.solana.config.network.includes('devnet')
-            ? '?network=devnet'
-            : ''
-        }`,
+        url: `${explorerUrl}/nodes/${job.node}`,
       });
 
       if (job.timeStart) {

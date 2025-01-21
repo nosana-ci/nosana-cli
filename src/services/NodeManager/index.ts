@@ -85,44 +85,35 @@ export default class NodeManager {
     }
 
     /**
-     * maintaniance
+     * maintenance
      */
-    await this.node.maintaniance();
+    await this.node.maintenance();
+
+    /**
+     * specs
+     *
+     * this retrieves specs from the node to ensure it can run the jobs.
+     * It gets the GPUs, CPUs, and internet speed.
+     *
+     * if the specs fails restart the system
+     */
+    if (!(await this.node.specs())) {
+      /**
+       * start
+       *
+       * recursively start the the process again by calling the restart function
+       */
+      return await this.restart(market);
+    }
 
     /**
      * grid
      *
      * if no market was supplied, we will register on the grid and get
-     * market and access key recommened for our PC based on benchmark result
+     * market and access key recommened for our PC based on specs result
      */
     if (!market) {
-      if (!(await this.node.benchmark())) {
-        /**
-         * start
-         *
-         * recursively start the the process again by calling the restart function
-         */
-        return await this.restart(market);
-      }
-
       market = await this.node.recommend();
-    } else {
-      /**
-       * benchmark
-       *
-       * this benchmarks the node to ensure it can run the jobs.
-       * It gets the GPUs, CPUs, and internet speed.
-       *
-       * if the benchmark fails restart the system
-       */
-      if (!(await this.node.benchmark())) {
-        /**
-         * start
-         *
-         * recursively start the the process again by calling the restart function
-         */
-        return await this.restart(market);
-      }
     }
 
     /**
@@ -132,7 +123,6 @@ export default class NodeManager {
      */
     await this.node.setup(market);
 
-    // TODO: health check
     /**
      * healthcheck
      *

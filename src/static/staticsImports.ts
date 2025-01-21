@@ -12,7 +12,9 @@ function readJsonFileSync<T extends unknown>(filePath: string): T {
 }
 
 const pkg = readJsonFileSync<{ version: string }>('../../package.json');
-const benchmarkGPU = readJsonFileSync<JobDefinition>('./benchmark-gpu.json');
-const jobDefinition = readJsonFileSync<JobDefinition>('./benchmark.json');
+const specsAndNetworkJob = readJsonFileSync<JobDefinition>(
+  './specs-and-network-job.json',
+);
+const specsJob = readJsonFileSync<JobDefinition>('./specs-job.json');
 
-export { pkg, benchmarkGPU, jobDefinition };
+export { pkg, specsAndNetworkJob, specsJob };
