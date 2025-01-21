@@ -150,7 +150,7 @@ export class RunHandler {
      * we don't want to stop the job/run under any circumstances
      */
     // await this.stopRun();
-    
+
     this.clearRun();
   }
 }

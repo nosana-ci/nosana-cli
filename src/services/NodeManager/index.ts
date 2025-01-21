@@ -283,7 +283,7 @@ export default class NodeManager {
       try {
         await this.node.conclude();
       } catch (error) {
-        console.log(`Job Finishing Failed${error}`)
+        console.log(`Job Finishing Failed${error}`);
       }
 
       await this.stop();

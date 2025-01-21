@@ -465,10 +465,10 @@ export class BasicNode {
   }
 
   public async conclude() {
-    const run = this.runHandler.getRun()
+    const run = this.runHandler.getRun();
 
-    if(run){
-      await this.jobHandler.finish(run)
+    if (run) {
+      await this.jobHandler.finish(run);
     }
   }
 
