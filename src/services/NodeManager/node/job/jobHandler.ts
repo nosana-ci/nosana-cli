@@ -237,7 +237,6 @@ export class JobHandler {
       let result = await this.jobExternalUtil.resolveResult(this.jobId());
       const ipfsResult = await this.sdk.ipfs.pin(result as object);
       const bytesArray = this.sdk.ipfs.IpfsHashToByteArray(ipfsResult);
-      throw new Error('finish error');
       await this.sdk.jobs.submitResult(
         bytesArray,
         run,
