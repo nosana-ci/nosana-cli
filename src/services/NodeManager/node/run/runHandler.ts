@@ -26,7 +26,7 @@ export class RunHandler {
   public async stopRun(): Promise<boolean> {
     if (this.run) {
       try {
-        await this.sdk.jobs.quit(this.run);
+        await this.sdk.jobs.quit(this.run!);
       } catch (e: any) {
         return false;
       }

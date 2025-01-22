@@ -4,8 +4,8 @@ import { configs } from '../../configs/configs.js';
 import { FlowHandler } from '../flow/flowHandler.js';
 import { Provider } from '../../provider/Provider.js';
 import {
-  benchmarkGPU,
-  jobDefinition,
+  specsAndNetworkJob,
+  specsJob,
 } from '../../../../static/staticsImports.js';
 import { NodeRepository } from '../../repository/NodeRepository.js';
 import { applyLoggingProxyToClass } from '../../monitoring/proxy/loggingProxy.js';
@@ -17,7 +17,7 @@ import {
 } from '../../../../types/cudaCheck.js';
 import { NetworkInfoResults, SystemInfoResults } from './type.js';
 
-export class BenchmarkHandler {
+export class SpecsHandler {
   private flowHandler: FlowHandler;
 
   constructor(private provider: Provider, private repository: NodeRepository) {
@@ -28,7 +28,7 @@ export class BenchmarkHandler {
   async check(isInMarket: boolean): Promise<boolean> {
     const id = this.flowHandler.generateRandomId(32);
 
-    this.flowHandler.start(id, isInMarket ? benchmarkGPU : jobDefinition);
+    this.flowHandler.start(id, isInMarket ? specsJob : specsAndNetworkJob);
 
     let result: Flow | undefined;
     try {

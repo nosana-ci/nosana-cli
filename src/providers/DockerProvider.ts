@@ -31,7 +31,7 @@ import { randomUUID } from 'crypto';
 import { createResourceName } from './modules/resourceManager/volumes/index.js';
 import { dispatch as jobDispatch } from '../services/state/job/dispatch.js';
 import { JOB_STATE_NAME } from '../services/state/job/types.js';
-import { getCotnainerInfo } from './utils/getContainerInfo.js';
+import { getContainerInfo } from './utils/getContainerInfo.js';
 import { getCotnainerLogs } from './utils/getContainerLogs.js';
 import { extractLogsAndResultsFromLogBuffer } from './utils/extractLogsAndResultsFromLogBuffer.js';
 
@@ -720,7 +720,7 @@ export class DockerProvider extends BasicProvider implements Provider {
     const controller = new AbortController();
 
     if (!containerInfo) {
-      containerInfo = await getCotnainerInfo(container, 180, controller);
+      containerInfo = await getContainerInfo(container, 180, controller);
     }
 
     // op is done, get logs from container and save them in the flow
