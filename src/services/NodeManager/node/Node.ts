@@ -302,11 +302,7 @@ export class BasicNode {
   }
 
   async pending(): Promise<boolean> {
-    const run = await this.runHandler.checkRun();
-    if (run) {
-      return true;
-    }
-    return false;
+    return !!(await this.runHandler.checkRun());
   }
 
   async queue(market?: string): Promise<void> {

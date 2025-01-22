@@ -60,8 +60,9 @@ export class RunHandler {
      * (this would be set when checking pending using `@checkRun`)
      * if their is a run, we would return that instead instead of listening
      */
-    if (this.getRun()) {
-      return this.getRun() as Run;
+    let run;
+    if ((run = this.getRun())) {
+      return run as Run;
     }
 
     return new Promise<Run>(async (resolve, reject) => {
