@@ -139,7 +139,7 @@ export class BasicNode {
   }
 
   async clean(): Promise<void> {
-    await this.marketHandler.clear();
+    await this.marketHandler.clean();
     await this.runHandler.clean();
 
     /**
