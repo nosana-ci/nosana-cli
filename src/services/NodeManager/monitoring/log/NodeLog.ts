@@ -134,8 +134,8 @@ class NodeLog {
       this.handleRestart(data);
     }
 
-    if (data.class === 'BasicNode' && data.method === 'benchmark') {
-      this.handleBenchmark(data);
+    if (data.class === 'BasicNode' && data.method === 'specs') {
+      this.handleSpecs(data);
     }
 
     if (data.class === 'BasicNode' && data.method === 'recommend') {
@@ -420,12 +420,12 @@ class NodeLog {
   //   }
   // }
 
-  private handleBenchmark(data: LogEntry) {
+  private handleSpecs(data: LogEntry) {
     if (data.type === 'call') {
       this.addLog({
         method: `${data.class}.${data.method}`,
         job: this.job,
-        log: chalk.cyan('Benchmark is running'),
+        log: chalk.cyan('Node is checking specs'),
         timestamp: Date.now(),
         // type: 'info',
         type: 'process',
@@ -439,7 +439,7 @@ class NodeLog {
       this.addLog({
         method: `${data.class}.${data.method}`,
         job: this.job,
-        log: chalk.green('Benchmark completed successfully'),
+        log: chalk.green('Node specs check completed successfully'),
         timestamp: Date.now(),
         type: 'success',
       });
@@ -448,7 +448,7 @@ class NodeLog {
       this.addLog({
         method: `${data.class}.${data.method}`,
         job: this.job,
-        log: chalk.red('Benchmark failed'),
+        log: chalk.red('Node specs check failed'),
         timestamp: Date.now(),
         type: 'error',
       });

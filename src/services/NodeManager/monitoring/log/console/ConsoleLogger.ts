@@ -115,14 +115,14 @@ export class ConsoleLogger implements LogObserver {
 
     if (
       !this.benchmarking &&
-      log.method == 'BasicNode.benchmark' &&
+      log.method == 'BasicNode.specs' &&
       log.type == 'process'
     ) {
       this.benchmarking = true;
       this.pending = true;
 
       this.spinner = ora(
-        chalk.green(`${chalk.bgGreen.bold(' Benchmarking Node ')}`),
+        chalk.green(`${chalk.bgGreen.bold(' Checking Specs ')}`),
       ).start();
       return;
     }
@@ -132,7 +132,7 @@ export class ConsoleLogger implements LogObserver {
       //   chalk.cyan(`${this.spinner.text}\n`) + chalk.cyan(` \t➡️  ${log.log}`);
     }
 
-    if (this.benchmarking && log.method == 'BasicNode.benchmark') {
+    if (this.benchmarking && log.method == 'BasicNode.specs') {
       this.benchmarking = false;
       this.pending = false;
       if (log.type == 'success') {
