@@ -119,6 +119,10 @@ class NodeLog {
       this.handleStop(data);
     }
 
+    if (data.class === 'BasicNode' && data.method === 'clean') {
+      this.handleClean(data);
+    }
+
     if (data.class === 'BasicNode' && data.method === 'exit') {
       this.handleExit(data);
     }
@@ -1052,6 +1056,40 @@ class NodeLog {
         type: 'kill-process',
       });
     }
+  }
+
+  private handleClean(data: LogEntry) {
+    if (data.type === 'call') {
+      this.addLog({
+        method: `${data.class}.${data.method}`,
+        job: this.job,
+        log: chalk.cyan('Cleaning node'),
+        timestamp: Date.now(),
+        type: 'process',
+        pending: { isPending: true, expecting: `${data.class}.${data.method}` },
+      });
+    }
+
+    if (data.type === 'return') {
+      this.addLog({
+        method: `${data.class}.${data.method}`,
+        job: this.job,
+        log: chalk.greenBright('Node cleaning successfully'),
+        timestamp: Date.now(),
+        type: 'success',
+      });
+    }
+
+    if (data.type === 'error') {
+      this.addLog({
+        method: `${data.class}.${data.method}`,
+        job: this.job,
+        log: chalk.redBright('Node cleaning failed'),
+        timestamp: Date.now(),
+        type: 'error',
+      });
+    }
+    this.job = undefined;
   }
 
   private handleStop(data: LogEntry) {

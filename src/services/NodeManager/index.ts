@@ -64,6 +64,7 @@ export default class NodeManager {
      * this includes setting up everything in the node including
      * the node api, initializing everything that needs to be initialized
      */
+
     await this.node.start();
 
     if (!this.node.isOnboarded) {
@@ -74,7 +75,9 @@ export default class NodeManager {
      * start the api of the node and register all the routes of the nodes,
      * we call this here in the init so the api survives restarts between jobs
      */
-    await this.apiHandler.start();
+    if (!this.inJobLoop) {
+      await this.apiHandler.start();
+    }
   }
 
   async start(market?: string): Promise<void> {
@@ -154,7 +157,7 @@ export default class NodeManager {
      *
      * NT: If there is no pending job it is sent to the queue
      */
-    if (await this.node.pending()) {
+    if (!(await this.node.pending())) {
       /**
        * queue
        *
@@ -232,7 +235,7 @@ export default class NodeManager {
   async restart(market?: string) {
     if (this.exiting) return;
     this.exiting = true;
-    this.node.exit();
+    // this.node.exit();
 
     /**
      * clean
@@ -283,7 +286,7 @@ export default class NodeManager {
       try {
         await this.node.conclude();
       } catch (error) {
-        console.log(`Job Finishing Failed${error}`);
+        console.log(`Job Finishing Failed: ${error}`);
       }
 
       await this.stop();

@@ -12,8 +12,6 @@ export async function startNode(
 
   while (true) {
     try {
-      await validateCLIVersion();
-
       await nodeManager.init();
       await nodeManager.start(market);
     } catch (error: any) {
@@ -32,7 +30,7 @@ export async function startNode(
 
       console.error(formattedError);
 
-      await nodeManager.error();
+      // await nodeManager.error();
 
       if (nodeManager.inJobLoop) {
         try {
@@ -42,6 +40,7 @@ export async function startNode(
         await nodeManager.delay(60);
         continue;
       } else {
+        await nodeManager.error();
         await nodeManager.stop();
         process.exit();
       }
