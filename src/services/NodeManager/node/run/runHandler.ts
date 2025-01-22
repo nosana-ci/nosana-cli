@@ -55,6 +55,15 @@ export class RunHandler {
 
   // Start monitoring run status
   public async startRunMonitoring(callback: Function): Promise<Run> {
+    /**
+     * we want to check if we have a pending run set 
+     * (this would be set when checking pending using `@checkRun`)
+     * if their is a run, we would return that instead instead of listening
+     */
+    if(this.getRun()){
+      return this.getRun() as Run
+    }
+
     return new Promise<Run>(async (resolve, reject) => {
       try {
         await this.sdk.jobs.loadNosanaJobs();
@@ -151,6 +160,11 @@ export class RunHandler {
      */
     // await this.stopRun();
 
+    this.clearRun();
+  }
+
+  public async clean(): Promise<void> {
+    this.stopRunMonitoring();
     this.clearRun();
   }
 }

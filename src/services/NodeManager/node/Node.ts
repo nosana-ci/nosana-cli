@@ -141,6 +141,17 @@ export class BasicNode {
     this.expiryHandler.stop();
   }
 
+  async clean(): Promise<void> {
+    await this.marketHandler.clean();
+    await this.runHandler.clean();
+
+    /**
+     * we want to use stop because it functions like we want
+     */
+    await this.jobHandler.stop();
+    this.expiryHandler.stop();
+  }
+
   async start(): Promise<void> {
     /**
      * we query the grid to find out if the node has already been onboarded
@@ -294,106 +305,11 @@ export class BasicNode {
   }
 
   async pending(): Promise<boolean> {
-    return new Promise<boolean>(async (resolve, reject) => {
-      try {
-        let resolved = false;
-
-        /**
-         * check if node has any run assigned to it and if not skip all
-         * these process, if there is a run, proceed to run the job
-         */
-        const run = await this.runHandler.checkRun();
-
-        if (run) {
-          const jobAddress = run.account.job.toString();
-
-          /**
-           * claim the job by polling the job and setting it in the job handler
-           * as the current job for this cycle
-           */
-          const job = await this.jobHandler.claim(jobAddress);
-
-          /**
-           * set the market of the job as the current market in this cycle
-           */
-          await this.marketHandler.setMarket(job.market.toString());
-
-          /**
-           * check if the job is expired if it is quit the job,
-           * if not continue to start
-           */
-          if (!this.expiryHandler.expired(run, job)) {
-            /**
-             * start monitoring for the stop signal from the smart contract
-             */
-            this.jobHandler.accountEmitter.on('stopped', (_) => {
-              this.jobHandler.stop();
-              resolved = true;
-              resolve(true);
-              return;
-            });
-
-            /**
-             * this starts the expiry settings to monitory expiry time
-             */
-            this.expiryHandler.init<void>(
-              run,
-              job,
-              jobAddress,
-              this.jobHandler.accountEmitter,
-              async () => {
-                try {
-                  /**
-                   * upload the result and end the flow, also clean up flow.
-                   */
-                  // await this.jobHandler.finish(run);
-
-                  /**
-                   * so we force close the current job and it causes the container.wait()
-                   * to unblock and move to the next stage
-                   */
-                  await this.jobHandler.stopCurrentJob();
-                } catch (error) {
-                  reject(error);
-                }
-
-                // resolve(true);
-              },
-            );
-
-            /**
-             * Start the job, this includes downloading the job defination, starting the flow
-             * checking if flow is existing, if the job fails to start we quit the job
-             * and return true, this will cause the application to restart as it just finished a job
-             */
-            await this.jobHandler.start(job);
-
-            /**
-             * Run the flow asynchronously and handle errors via a Promise
-             * this lets us run the job in the background (async) and still get an error in this main
-             */
-            await this.jobHandler.runWithErrorHandling();
-
-            /**
-             * wait for the job to expire before continue if the setup was successful
-             */
-            await this.expiryHandler.waitUntilExpired();
-          }
-
-          if (!resolved) {
-            /**
-             * upload the result and end the flow, also clean up flow.
-             */
-            await this.jobHandler.finish(run);
-          }
-
-          resolve(true);
-        }
-        resolve(false);
-      } catch (error) {
-        reject(error);
-      }
-    });
+    const run = await this.runHandler.checkRun();
+     if(run){
+      return true;
+     }
+     return false;
   }
 
   async queue(market?: string): Promise<void> {

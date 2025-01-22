@@ -161,27 +161,17 @@ export default class NodeManager {
      *
      * This checks for pending jobs that were assigned to the node.
      * If the node was shut down and did not pick up a job,
-     * this runs the job and returns a boolean indicating whether
-     * there was a job or not.
-     *
-     * NT: If there was a pending job and it has done it, the process
-     * needs to be restarted.
+     * 
+     * NT: If there is no pending job it is sent to the queue
      */
     if (await this.node.pending()) {
       /**
-       * start
+       * queue
        *
-       * recursively start the the process again by calling the restart function
+       * Enter the queue to wait for a job since we have no pending jobs.
        */
-      return await this.restart(market);
+      await this.node.queue(market);
     }
-
-    /**
-     * queue
-     *
-     * Enter the queue to wait for a job since we have no pending jobs.
-     */
-    await this.node.queue(market);
 
     /**
      * run
@@ -229,17 +219,37 @@ export default class NodeManager {
     this.exiting = false;
   }
 
+  /**
+   * clean is different from stop as it does not stop the API
+   * it doesn't quit a job or leave a market, it just clears instances from the handlers
+   */
+  async clean() {
+    this.exiting = true;
+
+    /**
+     * check if the node exists then clean the processes.
+     */
+    if (this.node) {
+      await this.node.clean();
+    }
+
+    stateStreaming(this.node.node()).clear();
+    logStreaming(this.node.node()).clear();
+
+    this.exiting = false;
+  }
+
   async restart(market?: string) {
     if (this.exiting) return;
     this.exiting = true;
     this.node.exit();
 
     /**
-     * stop
+     * clean
      *
-     * stop the node, clear up data, close processes and operations
+     * clean the node, clear up data, clean processes and operations
      */
-    await this.node.stop();
+    await this.clean();
 
     /**
      * delay

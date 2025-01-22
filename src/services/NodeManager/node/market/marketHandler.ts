@@ -160,4 +160,9 @@ export class MarketHandler {
     await this.leave();
     this.clear();
   }
+
+  public async clean(): Promise<void> {
+    this.stopMarketQueueMonitoring();
+    this.clear();
+  }
 }

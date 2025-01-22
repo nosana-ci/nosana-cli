@@ -32,7 +32,7 @@ export async function startNode(
 
       if (nodeManager.inJobLoop) {
         try {
-          await nodeManager.stop();
+          await nodeManager.clean();
         } catch (error) {}
 
         await nodeManager.delay(60);
