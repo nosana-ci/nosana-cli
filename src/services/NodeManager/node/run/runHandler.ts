@@ -56,12 +56,12 @@ export class RunHandler {
   // Start monitoring run status
   public async startRunMonitoring(callback: Function): Promise<Run> {
     /**
-     * we want to check if we have a pending run set 
+     * we want to check if we have a pending run set
      * (this would be set when checking pending using `@checkRun`)
      * if their is a run, we would return that instead instead of listening
      */
-    if(this.getRun()){
-      return this.getRun() as Run
+    if (this.getRun()) {
+      return this.getRun() as Run;
     }
 
     return new Promise<Run>(async (resolve, reject) => {

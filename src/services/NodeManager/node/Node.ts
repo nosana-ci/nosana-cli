@@ -303,10 +303,10 @@ export class BasicNode {
 
   async pending(): Promise<boolean> {
     const run = await this.runHandler.checkRun();
-     if(run){
+    if (run) {
       return true;
-     }
-     return false;
+    }
+    return false;
   }
 
   async queue(market?: string): Promise<void> {

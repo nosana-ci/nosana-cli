@@ -151,7 +151,7 @@ export default class NodeManager {
      *
      * This checks for pending jobs that were assigned to the node.
      * If the node was shut down and did not pick up a job,
-     * 
+     *
      * NT: If there is no pending job it is sent to the queue
      */
     if (await this.node.pending()) {
