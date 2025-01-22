@@ -8,6 +8,7 @@ import {
   walletOption,
 } from '../../sharedOptions/index.js';
 import { gpuOption } from '../../sharedOptions/--gpu.js';
+import { verboseOption } from '../../sharedOptions/verbose.js';
 
 export const startNodeCommand = new Command('start')
   .description('Start Nosana Node')
@@ -34,4 +35,5 @@ export const startNodeCommand = new Command('start')
   )
   .addOption(gpuOption)
   .addOption(portOption)
+  .addOption(verboseOption)
   .action(startNode);
