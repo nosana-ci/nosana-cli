@@ -25,8 +25,8 @@ describe('startNodeCommand', () => {
     expect(startNodeCommand.args[0]).toBe('market address');
   });
 
-  it('should have 8 options', () => {
-    expect(startNodeCommand.options.length).toBe(8);
+  it('should have 9 options', () => {
+    expect(startNodeCommand.options.length).toBe(9);
   });
 
   it.each([
