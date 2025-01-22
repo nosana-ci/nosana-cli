@@ -8,15 +8,10 @@ export async function startCLI(version: string) {
   try {
     await validateCLIVersion();
     await cli.parseAsync(process.argv);
-  } catch (e: any) {
-    const logLevel: string = cli.getOptionValue('log');
-    if (logLevel === 'debug') {
-      console.error(e.message ? e.message : e);
-    } else if (logLevel === 'trace') {
-      console.error(e);
-    }
-    process.exit(1);
-  } finally {
     outputFormatSelector('').finalize();
+  } catch (e: any) {
+    outputFormatSelector('').finalize();
+    console.error(e);
+    process.exit();
   }
 }

@@ -1,7 +1,7 @@
 import { Container, ContainerInspectInfo } from 'dockerode';
 import { promiseTimeoutWrapper } from '../../generic/timeoutPromiseWrapper.js';
 
-export function getCotnainerInfo(
+export function getContainerInfo(
   container: Container,
   timeout = 360,
   controller = new AbortController(),

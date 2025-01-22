@@ -26,7 +26,7 @@ export class RunHandler {
   public async stopRun(): Promise<boolean> {
     if (this.run) {
       try {
-        await this.sdk.jobs.quit(this.run);
+        await this.sdk.jobs.quit(this.run!);
       } catch (e: any) {
         return false;
       }
@@ -55,6 +55,16 @@ export class RunHandler {
 
   // Start monitoring run status
   public async startRunMonitoring(callback: Function): Promise<Run> {
+    /**
+     * we want to check if we have a pending run set
+     * (this would be set when checking pending using `@checkRun`)
+     * if their is a run, we would return that instead instead of listening
+     */
+    let run;
+    if ((run = this.getRun())) {
+      return run as Run;
+    }
+
     return new Promise<Run>(async (resolve, reject) => {
       try {
         await this.sdk.jobs.loadNosanaJobs();
@@ -145,7 +155,17 @@ export class RunHandler {
 
   public async stop(): Promise<void> {
     this.stopRunMonitoring();
-    await this.stopRun();
+
+    /**
+     * we don't want to stop the job/run under any circumstances
+     */
+    // await this.stopRun();
+
+    this.clearRun();
+  }
+
+  public async clean(): Promise<void> {
+    this.stopRunMonitoring();
     this.clearRun();
   }
 }

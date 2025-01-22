@@ -4,6 +4,7 @@ export type configType = {
   backendUrl: string;
   backendSolanaAddress: string;
   backendAuthorizationAddress: string;
+  explorerUrl: string;
   signMessage: string;
   frp: {
     serverAddr: string;
@@ -26,6 +27,7 @@ export const configs = (options?: { [key: string]: any }): configType => {
       '7rFPFnxjXHC2sfDy3qrDa9pEb4j49oivMuV7e8sYDPmB',
     backendAuthorizationAddress:
       process.env.BACKEND_AUTHORIZATION_ADDRESS || '',
+    explorerUrl: process.env.EXPLORER_URL || 'https://dashboard.nosana.com',
     signMessage: process.env.SIGN_MESSAGE || 'Hello Nosana Node!',
     frp: {
       serverAddr: process.env.FRP_SERVER_ADDRESS || 'node.k8s.prd.nos.ci',

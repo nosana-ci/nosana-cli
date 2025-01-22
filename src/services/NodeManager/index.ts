@@ -64,6 +64,7 @@ export default class NodeManager {
      * this includes setting up everything in the node including
      * the node api, initializing everything that needs to be initialized
      */
+
     await this.node.start();
 
     if (!this.node.isOnboarded) {
@@ -74,7 +75,9 @@ export default class NodeManager {
      * start the api of the node and register all the routes of the nodes,
      * we call this here in the init so the api survives restarts between jobs
      */
-    await this.apiHandler.start();
+    if (!this.inJobLoop) {
+      await this.apiHandler.start();
+    }
   }
 
   async start(market?: string): Promise<void> {
@@ -85,44 +88,35 @@ export default class NodeManager {
     }
 
     /**
-     * maintaniance
+     * maintenance
      */
-    await this.node.maintaniance();
+    await this.node.maintenance();
+
+    /**
+     * specs
+     *
+     * this retrieves specs from the node to ensure it can run the jobs.
+     * It gets the GPUs, CPUs, and internet speed.
+     *
+     * if the specs fails restart the system
+     */
+    if (!(await this.node.specs())) {
+      /**
+       * start
+       *
+       * recursively start the the process again by calling the restart function
+       */
+      return await this.restart(market);
+    }
 
     /**
      * grid
      *
      * if no market was supplied, we will register on the grid and get
-     * market and access key recommened for our PC based on benchmark result
+     * market and access key recommened for our PC based on specs result
      */
     if (!market) {
-      if (!(await this.node.benchmark())) {
-        /**
-         * start
-         *
-         * recursively start the the process again by calling the restart function
-         */
-        return await this.restart(market);
-      }
-
       market = await this.node.recommend();
-    } else {
-      /**
-       * benchmark
-       *
-       * this benchmarks the node to ensure it can run the jobs.
-       * It gets the GPUs, CPUs, and internet speed.
-       *
-       * if the benchmark fails restart the system
-       */
-      if (!(await this.node.benchmark())) {
-        /**
-         * start
-         *
-         * recursively start the the process again by calling the restart function
-         */
-        return await this.restart(market);
-      }
     }
 
     /**
@@ -132,7 +126,6 @@ export default class NodeManager {
      */
     await this.node.setup(market);
 
-    // TODO: health check
     /**
      * healthcheck
      *
@@ -161,27 +154,17 @@ export default class NodeManager {
      *
      * This checks for pending jobs that were assigned to the node.
      * If the node was shut down and did not pick up a job,
-     * this runs the job and returns a boolean indicating whether
-     * there was a job or not.
      *
-     * NT: If there was a pending job and it has done it, the process
-     * needs to be restarted.
+     * NT: If there is no pending job it is sent to the queue
      */
-    if (await this.node.pending()) {
+    if (!(await this.node.pending())) {
       /**
-       * start
+       * queue
        *
-       * recursively start the the process again by calling the restart function
+       * Enter the queue to wait for a job since we have no pending jobs.
        */
-      return await this.restart(market);
+      await this.node.queue(market);
     }
-
-    /**
-     * queue
-     *
-     * Enter the queue to wait for a job since we have no pending jobs.
-     */
-    await this.node.queue(market);
 
     /**
      * run
@@ -229,17 +212,37 @@ export default class NodeManager {
     this.exiting = false;
   }
 
+  /**
+   * clean is different from stop as it does not stop the API
+   * it doesn't quit a job or leave a market, it just clears instances from the handlers
+   */
+  async clean() {
+    this.exiting = true;
+
+    /**
+     * check if the node exists then clean the processes.
+     */
+    if (this.node) {
+      await this.node.clean();
+    }
+
+    stateStreaming(this.node.node()).clear();
+    logStreaming(this.node.node()).clear();
+
+    this.exiting = false;
+  }
+
   async restart(market?: string) {
     if (this.exiting) return;
     this.exiting = true;
-    this.node.exit();
+    // this.node.exit();
 
     /**
-     * stop
+     * clean
      *
-     * stop the node, clear up data, close processes and operations
+     * clean the node, clear up data, clean processes and operations
      */
-    await this.node.stop();
+    await this.clean();
 
     /**
      * delay
@@ -274,6 +277,17 @@ export default class NodeManager {
       if (this.exiting) return;
       this.exiting = true;
       this.node.exit();
+
+      /**
+       * this just concludes the job (finishes the job) so the node gets paid
+       * this is to only be used in voluntry exit of the node
+       * ? error loop? when the user can't conculde this and it throws error and keeps restarting?
+       */
+      try {
+        await this.node.conclude();
+      } catch (error) {
+        console.log(`Job Finishing Failed: ${error}`);
+      }
 
       await this.stop();
       process.exit();

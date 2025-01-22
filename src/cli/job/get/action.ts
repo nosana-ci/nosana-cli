@@ -7,12 +7,7 @@ import 'rpc-websockets/dist/lib/client.js';
 
 import { download } from '../download/action.js';
 import { clearLine, colors } from '../../../generic/utils.js';
-import {
-  Operation,
-  OperationArgsMap,
-  OperationType,
-  OpState,
-} from '../../../providers/Provider.js';
+import { OpState } from '../../../providers/Provider.js';
 import { getSDK } from '../../../services/sdk.js';
 import {
   waitForJobCompletion,
@@ -20,14 +15,8 @@ import {
 } from '../../../services/jobs.js';
 import { OUTPUT_EVENTS } from '../../../providers/utils/ouput-formatter/outputEvents.js';
 import { outputFormatSelector } from '../../../providers/utils/ouput-formatter/outputFormatSelector.js';
-import {
-  closeEventSource,
-  listenToEventSource,
-} from '../../../services/eventsource.js';
-import Logger from '../../../providers/modules/logger/index.js';
-import LogSubscriberManager, {
-  LogEvent,
-} from '../../../services/LogSubscriberManager.js';
+import { closeEventSource } from '../../../services/eventsource.js';
+import LogSubscriberManager from '../../../services/LogSubscriberManager.js';
 import { createSignature } from '../../../services/api.js';
 import EventSource from 'eventsource';
 import { OutputFormatter } from '../../../providers/utils/ouput-formatter/OutputFormatter.js';
@@ -42,6 +31,7 @@ export async function getJob(
   },
   cmd: Command | undefined,
 ): Promise<void> {
+  const config = configs();
   const nosana: Client = getSDK();
   const formatter = outputFormatSelector(options.format);
 
@@ -63,18 +53,14 @@ export async function getJob(
 
   if (job) {
     formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_URL, {
-      job_url: `https://explorer.nosana.io/jobs/${jobAddress}${
-        nosana.solana.config.network.includes('devnet') ? '?network=devnet' : ''
-      }`,
+      job_url: `${config.explorerUrl}/jobs/${jobAddress}`,
     });
 
     formatter.output(OUTPUT_EVENTS.OUTPUT_JSON_FLOW_URL, {
       json_flow_url: `${nosana.ipfs.config.gateway}${job.ipfsJob}`,
     });
     formatter.output(OUTPUT_EVENTS.OUTPUT_MARKET_URL, {
-      market_url: `https://explorer.nosana.io/markets/${job.market}${
-        nosana.solana.config.network.includes('devnet') ? '?network=devnet' : ''
-      }`,
+      market_url: `${config.explorerUrl}/markets/${job.market}`,
     });
 
     formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_PRICE, {
@@ -102,11 +88,7 @@ export async function getJob(
         });
 
         formatter.output(OUTPUT_EVENTS.OUTPUT_NODE_URL, {
-          url: `https://explorer.nosana.io/nodes/${job.node}${
-            nosana.solana.config.network.includes('devnet')
-              ? '?network=devnet'
-              : ''
-          }`,
+          url: `${config.explorerUrl}/nodes/${job.node}`,
         });
 
         const ipfsJob = await nosana.ipfs.retrieve(job.ipfsJob);
@@ -137,11 +119,7 @@ export async function getJob(
 
     if (job.state === 'COMPLETED' || job.state === 'STOPPED') {
       formatter.output(OUTPUT_EVENTS.OUTPUT_NODE_URL, {
-        url: `https://explorer.nosana.io/nodes/${job.node}${
-          nosana.solana.config.network.includes('devnet')
-            ? '?network=devnet'
-            : ''
-        }`,
+        url: `${config.explorerUrl}/nodes/${job.node}`,
       });
 
       if (job.timeStart) {

@@ -6,7 +6,7 @@ import { FlowHandler } from '../flow/flowHandler.js';
 import { clientSelector, QueryClient } from '../../../../api/client.js';
 import { configs } from '../../configs/configs.js';
 
-import { jobDefinition } from '../../../../static/staticsImports.js';
+import { specsAndNetworkJob } from '../../../../static/staticsImports.js';
 import { Provider } from '../../provider/Provider.js';
 import { NodeRepository } from '../../repository/NodeRepository.js';
 import { applyLoggingProxyToClass } from '../../monitoring/proxy/loggingProxy.js';
@@ -81,9 +81,9 @@ export class RegisterHandler {
     return `${this.nodeId}:${base64Signature}`;
   }
 
-  private async runBenchmark(): Promise<Flow> {
+  private async runSpecs(): Promise<Flow> {
     const flowId = this.flowHandler.generateRandomId(32);
-    this.flowHandler.start(flowId, jobDefinition);
+    this.flowHandler.start(flowId, specsAndNetworkJob);
     const result = await this.flowHandler.run(flowId);
 
     if (!result || result.state.status !== 'success') {
@@ -116,7 +116,7 @@ export class RegisterHandler {
 
   async register() {
     await this.gainConstent();
-    const results = await this.runBenchmark();
+    const results = await this.runSpecs();
     await this.submitOnboarding(results.state.opStates);
   }
 }

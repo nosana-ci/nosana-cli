@@ -1,4 +1,4 @@
-import { Client as SDK, Market, Run } from '@nosana/sdk';
+import { Client as SDK, Market } from '@nosana/sdk';
 import { PublicKey } from '@solana/web3.js';
 
 export class MarketHandler {
@@ -91,8 +91,8 @@ export class MarketHandler {
     try {
       await this.sdk.jobs.work(this.market.address, accessKey);
       this.inMarket = true;
-    } catch (_) {
-      throw new Error('could not join queue');
+    } catch (e) {
+      throw new Error(`could not join queue: ${e}`);
     }
 
     return this.market;
@@ -158,6 +158,11 @@ export class MarketHandler {
   public async stop(): Promise<void> {
     this.stopMarketQueueMonitoring();
     await this.leave();
+    this.clear();
+  }
+
+  public async clean(): Promise<void> {
+    this.stopMarketQueueMonitoring();
     this.clear();
   }
 }
