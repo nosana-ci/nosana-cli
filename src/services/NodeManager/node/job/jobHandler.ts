@@ -230,7 +230,7 @@ export class JobHandler {
 
   async finish(run: Run): Promise<void> {
     if (!this.repository.getflow(this.jobId())) {
-      return;
+      return await this.quit(run);
     }
 
     try {
