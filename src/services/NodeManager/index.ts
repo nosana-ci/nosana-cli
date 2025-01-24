@@ -80,7 +80,7 @@ export default class NodeManager {
     }
   }
 
-  async start(market?: string): Promise<void> {
+  async start(marketArg?: string): Promise<void> {
     this.exiting = false;
 
     if (this.inJobLoop) {
@@ -106,7 +106,7 @@ export default class NodeManager {
        *
        * recursively start the the process again by calling the restart function
        */
-      return await this.restart(market);
+      return await this.restart(marketArg);
     }
 
     /**
@@ -115,7 +115,8 @@ export default class NodeManager {
      * if no market was supplied, we will register on the grid and get
      * market and access key recommened for our PC based on specs result
      */
-    if (!market) {
+    let market = marketArg;
+    if (!market || !market.length) {
       market = await this.node.recommend();
     }
 
@@ -138,7 +139,7 @@ export default class NodeManager {
        *
        * recursively start the the process again by calling the restart function
        */
-      return await this.restart(market);
+      return await this.restart(marketArg);
     }
 
     /**
@@ -181,7 +182,7 @@ export default class NodeManager {
      *
      * recursively start the the process again by calling the restart function
      */
-    return await this.restart(market);
+    return await this.restart(marketArg);
   }
 
   async stop() {
@@ -232,7 +233,7 @@ export default class NodeManager {
     this.exiting = false;
   }
 
-  async restart(market?: string) {
+  async restart(marketArg?: string) {
     if (this.exiting) return;
     this.exiting = true;
     // this.node.exit();
@@ -256,7 +257,7 @@ export default class NodeManager {
      *
      * start the process of this manager
      */
-    await this.start(market);
+    await this.start(marketArg);
   }
 
   async delay(sec: number) {
