@@ -1,5 +1,4 @@
 import 'rpc-websockets/dist/lib/client.js';
-import { validateCLIVersion } from '../../../services/versions.js';
 import NodeManager from '../../../services/NodeManager/index.js';
 
 export async function startNode(
