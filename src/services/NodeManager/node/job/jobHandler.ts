@@ -1,14 +1,12 @@
 import EventEmitter from 'events';
 import { IValidation } from 'typia';
 import { PublicKey } from '@solana/web3.js';
-import { Job, Run, Client as SDK } from '@nosana/sdk';
-
-import { JobDefinition } from '../../provider/types.js';
+import { FlowState, Job, Run, Client as SDK } from '@nosana/sdk';
+import { JobDefinition, validateJobDefinition } from '../../provider/types.js';
 import { FlowHandler } from '../flow/flowHandler.js';
 import { Provider } from '../../provider/Provider.js';
 import { applyLoggingProxyToClass } from '../../monitoring/proxy/loggingProxy.js';
 import { NodeRepository } from '../../repository/NodeRepository.js';
-import { validateJobDefinition } from '../../../../providers/Provider.js';
 import { JobExternalUtil } from './jobExternalUtil.js';
 
 export const jobEmitter = new EventEmitter();

@@ -1,7 +1,6 @@
 import { randomUUID } from 'crypto';
-import { Operation } from '../../../providers/Provider.js';
 import { ContainerOrchestrationInterface } from './containerOrchestration/interface.js';
-import { Flow, Log, OperationArgsMap, Resource } from './types.js';
+import { Flow, Log, Operation, OperationArgsMap, Resource } from './types.js';
 import { applyLoggingProxyToClass } from '../monitoring/proxy/loggingProxy.js';
 import { NodeRepository } from '../repository/NodeRepository.js';
 import { promiseTimeoutWrapper } from '../../../generic/timeoutPromiseWrapper.js';
@@ -9,8 +8,8 @@ import { extractLogsAndResultsFromLogBuffer } from '../../../providers/utils/ext
 import { ResourceManager } from '../node/resource/resourceManager.js';
 import Dockerode from 'dockerode';
 import { jobEmitter } from '../node/job/jobHandler.js';
-import { s3HelperImage } from '../../../providers/modules/resourceManager/volumes/definition/s3HelperOpts.js';
 import { configs } from '../configs/configs.js';
+import { s3HelperImage } from '../node/resource/types.js';
 
 export class Provider {
   constructor(

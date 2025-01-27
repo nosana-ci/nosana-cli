@@ -1,8 +1,5 @@
-import { Presets, MultiBar, SingleBar } from 'cli-progress';
 import Dockerode from 'dockerode';
-
 import { repoTagsContainsImage } from './utils/repoTagsContainsImage.js';
-import { convertFromBytes } from '../providers/modules/resourceManager/volumes/helpers/convertFromBytes.js';
 import { MultiProgressBarReporter } from '../services/NodeManager/node/utils/multiProgressBarReporter.js';
 import { createLoggingProxy } from '../services/NodeManager/monitoring/proxy/loggingProxy.js';
 

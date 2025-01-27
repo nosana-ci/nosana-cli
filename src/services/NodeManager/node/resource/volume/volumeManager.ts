@@ -5,12 +5,6 @@ import {
   Resource,
   S3Secure,
 } from '../../../provider/types.js';
-import {
-  createS3HelperOpts,
-  nosanaBucket,
-  s3HelperImage,
-} from '../../../../../providers/modules/resourceManager/volumes/definition/s3HelperOpts.js';
-import { convertFromBytes } from '../../../../../providers/modules/resourceManager/volumes/helpers/convertFromBytes.js';
 import { extractLogsAndResultsFromLogBuffer } from '../../../../../providers/utils/extractLogsAndResultsFromLogBuffer.js';
 import { applyLoggingProxyToClass } from '../../../monitoring/proxy/loggingProxy.js';
 import { ContainerOrchestrationInterface } from '../../../provider/containerOrchestration/interface';
@@ -19,6 +13,8 @@ import { ProgressBarReporter } from '../../utils/progressBarReporter.js';
 import { createResourceName } from '../helpers/createResourceName.js';
 import { hasDockerVolume } from '../helpers/hasDockerVolume.js';
 import { hoursSinceDate } from '../helpers/hoursSunceDate.js';
+import { createS3HelperOpts, nosanaBucket, s3HelperImage } from '../types.js';
+import { convertFromBytes } from '../../../../../providers/utils/convertFromBytes.js';
 
 export class VolumeManager {
   private fetched: boolean = false;

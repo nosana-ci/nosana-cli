@@ -4,10 +4,8 @@ import { Command } from 'commander';
 import { Client, Job } from '@nosana/sdk';
 import { PublicKey } from '@solana/web3.js';
 import 'rpc-websockets/dist/lib/client.js';
-
 import { download } from '../download/action.js';
 import { clearLine, colors } from '../../../generic/utils.js';
-import { OpState } from '../../../providers/Provider.js';
 import { getSDK } from '../../../services/sdk.js';
 import {
   waitForJobCompletion,
@@ -15,14 +13,12 @@ import {
 } from '../../../services/jobs.js';
 import { OUTPUT_EVENTS } from '../../../providers/utils/ouput-formatter/outputEvents.js';
 import { outputFormatSelector } from '../../../providers/utils/ouput-formatter/outputFormatSelector.js';
-import { closeEventSource } from '../../../services/eventsource.js';
-import LogSubscriberManager from '../../../services/LogSubscriberManager.js';
 import { createSignature } from '../../../services/api.js';
-import EventSource from 'eventsource';
 import { OutputFormatter } from '../../../providers/utils/ouput-formatter/OutputFormatter.js';
 import { isPrivate } from '../../../generic/ops-util.js';
 import { listenToWebSocketLogs } from '../../../services/websocket.js';
 import { configs } from '../../../services/NodeManager/configs/configs.js';
+import { OpState } from '../../../services/NodeManager/provider/types.js';
 
 export async function getJob(
   jobAddress: string,
@@ -35,8 +31,6 @@ export async function getJob(
   const nosana: Client = getSDK();
   const formatter = outputFormatSelector(options.format);
 
-  const logSubscriberManager = new LogSubscriberManager();
-  let listener: EventSource | null = null;
   const headers = await createSignature();
 
   let ws;
@@ -103,15 +97,6 @@ export async function getJob(
           `https://${job.node}.${configs(options).frp.serverAddr}`,
           jobAddress,
         );
-
-        // const logger = new Logger();
-        // listener = listenToEventSource<LogEvent[]>(
-        //   `https://${job.node}.${config.frp.serverAddr}/status/${jobAddress}`,
-        //   headers,
-        //   (events) => {
-        //     logSubscriberManager.handleRemoteLogEvents(events, logger);
-        //   },
-        // );
 
         job = await waitForJobCompletion(new PublicKey(jobAddress));
       }
@@ -253,10 +238,6 @@ export async function getJob(
 
   if (ws) {
     ws.close();
-  }
-
-  if (listener) {
-    closeEventSource(listener);
   }
 }
 

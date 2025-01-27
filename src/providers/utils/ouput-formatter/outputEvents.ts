@@ -1,5 +1,5 @@
 import { IValidation } from 'typia';
-import { OpState } from '../../Provider.js';
+import { OpState } from '../../../services/NodeManager/provider/types.js';
 
 /**
  * Adding a new Output/Throw Event

@@ -1,7 +1,7 @@
 import {
   JobDefinition,
   OperationArgsMap,
-} from '../../../../providers/Provider.js';
+} from '../../../NodeManager/provider/types.js';
 
 export function isExposedJobOps(job: JobDefinition): boolean {
   return job.ops.some(

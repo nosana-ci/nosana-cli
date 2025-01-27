@@ -1,9 +1,8 @@
-import { log } from 'console';
-import { Log, OperationResults, StdOptions } from '../Provider';
 import {
   createResultsObject,
   extractResultFromLog,
 } from './extractResultsFromLogs.js';
+import { OperationResults, Log, StdOptions } from '@nosana/sdk';
 
 export function extractLogsAndResultsFromLogBuffer(
   logBuffer: Buffer,
