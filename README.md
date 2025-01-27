@@ -1,10 +1,12 @@
-# Nosana Typescript CLI
+# Nosana CLI
 
-A CLI package for running [Nosana](https://nosana.io/) jobs or running a Nosana Node.
+The Nosana CLI is a command-line tool for interacting with the [Nosana Network](https://nosana.com), enabling users to post jobs to the network or run a Nosana Node seamlessly.
 
-## What is the Nosana Typescript CLI?
+---
+## Features
 
-The Nosana Typescript CLI contains everything you need to run CI/CD jobs on the Nosana Network.
+- **Post Jobs**: Easily post jobs to the Nosana Network.
+- **Run a Node**: Set up and manage a Nosana Node.
 
 ## Install
 
@@ -64,11 +66,11 @@ Global options:
 --log <logLevel>                     Log level (choices: "info", "none", "debug", "trace", default: "debug")
 ```
 
-## Register for Nosana Grid
+## Start a Nosana Node
 
-To get started with your Nosana Node on the Nosana Grid, you will first have to register. The registration consists of a benchmark which will measure your hardware and bandwidth.
+To get started with your Nosana Node on the Nosana Grid, you can run a node after you've installed the prerequisites with the following command:
 
-`nosana node join [options]`
+`nosana node start [options]`
 
 Options:
 
@@ -119,4 +121,8 @@ All available options for `post`:
 
 ## Documentation
 
-Please [visit our documentation](https://docs.nosana.io/) for a full list of commands and examples.
+Please [visit our documentation](https://docs.nosana.com/) for a full list of commands and examples.
+
+For technical details on how the Nosana CLI works, refer to the technical documentation:
+
+[Technical Documentation](https://github.com/nosana-ci/nosana-cli/tree/main/docs)
