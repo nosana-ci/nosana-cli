@@ -3,13 +3,13 @@ import { Client } from '@nosana/sdk';
 import { postJobWithOptions } from './actions/post/index.js';
 import { jobListener } from './listener/index.js';
 import { JobObject, JobPostingOptions } from './listener/types/index.js';
-import { JobDefinition } from '../../providers/Provider.js';
 import { JobManagerState } from './state/index.js';
 import { getSDK } from '../sdk.js';
 import { StatusEmitter } from './actions/status/statusEmitter.js';
 import { recurisveTimeout } from './actions/post/helpers/getRecursiveTimeout.js';
 import { listenToJobUntilComplete } from './actions/status/index.js';
 import { stopJob } from './actions/stop/index.js';
+import { JobDefinition } from '../NodeManager/provider/types.js';
 
 export default class JobManager {
   protected state: JobManagerState;

@@ -1,5 +1,5 @@
-import { type RunContainerArgs } from '../DockerProvider.js';
 import { ifStringCastToArray } from '../../generic/utils.js';
+import { RunContainerArgs } from '../../services/NodeManager/provider/containerOrchestration/interface.js';
 
 /**
  * Takes image and args and return podman run options

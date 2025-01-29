@@ -1,6 +1,5 @@
 import { ContainerCreateOptions } from 'dockerode';
-
-import { S3Auth } from '../../../../../types/resources.js';
+import { S3Auth } from '../../../../types/resources.js';
 
 export const s3HelperImage =
   'registry.hub.docker.com/nosana/resource-manager:1.0.17';

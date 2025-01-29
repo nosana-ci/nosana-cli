@@ -1,3 +1,8 @@
+import typia from 'typia';
+
+export const validateJobDefinition =
+  typia.createValidateEquals<JobDefinition>();
+
 export type S3Unsecure = {
   type: 'S3';
   url?: string;

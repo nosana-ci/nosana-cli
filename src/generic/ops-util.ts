@@ -1,9 +1,9 @@
 import {
-  Operation,
-  OperationType,
-  OperationArgsMap,
   JobDefinition,
-} from '../providers/Provider';
+  Operation,
+  OperationArgsMap,
+  OperationType,
+} from '../services/NodeManager/provider/types';
 
 export const isPrivate = (job: JobDefinition): boolean => {
   return job.ops.some(

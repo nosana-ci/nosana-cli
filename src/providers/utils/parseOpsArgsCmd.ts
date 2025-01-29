@@ -1,4 +1,4 @@
-import { OperationArgsMap } from '../Provider';
+import { OperationArgsMap } from '../../services/NodeManager/provider/types';
 
 export function parseOpArgsCmd(
   cmd: OperationArgsMap['container/run']['cmd'],

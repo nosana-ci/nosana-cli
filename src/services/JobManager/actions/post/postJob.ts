@@ -1,14 +1,13 @@
 import { PublicKey } from '@solana/web3.js';
-
-import {
-  JobDefinition,
-  validateJobDefinition,
-} from '../../../../providers/Provider.js';
 import { getSDK } from '../../../sdk.js';
 import { hasSufficientBalance } from './helpers/hasSufficientBalance.js';
 import { isExposedJobOps } from '../utils/isExposedJob.js';
 import { JobResult } from '../../listener/types/index.js';
 import { configs } from '../../../NodeManager/configs/configs.js';
+import {
+  JobDefinition,
+  validateJobDefinition,
+} from '../../../NodeManager/provider/types.js';
 
 export function postJob(
   marketAddress: string,

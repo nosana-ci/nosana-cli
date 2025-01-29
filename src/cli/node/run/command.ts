@@ -2,6 +2,7 @@ import { Argument, Command, Option } from 'commander';
 
 import { runJob } from './action.js';
 import { gpuOption } from '../../sharedOptions/--gpu.js';
+import { timeoutOption } from '../../sharedOptions/timeout.js';
 
 export const runNodeCommand = new Command('run')
   .description('Run Job Definition File')
