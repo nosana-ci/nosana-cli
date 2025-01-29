@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 
-import { JobDefinition } from '../../../../providers/Provider.js';
 import JobManager from '../../index.js';
+import { JobDefinition } from '../../../NodeManager/provider/types.js';
 
 export type JobRequest<Params = {}, Body = {}> = Request<Params, {}, Body> & {
   jobManager?: JobManager;

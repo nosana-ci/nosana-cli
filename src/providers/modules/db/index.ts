@@ -2,9 +2,8 @@ import fs from 'fs';
 import os from 'os';
 import { LowSync } from 'lowdb/lib';
 import { JSONFileSyncPreset } from 'lowdb/node';
-
-import { Flow } from '../../Provider.js';
 import { CudaCheckSuccessResponse } from '../../../types/cudaCheck.js';
+import { Flow } from '../../../services/NodeManager/provider/types.js';
 
 export type NodeDb = {
   flows: { [key: string]: Flow };

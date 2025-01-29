@@ -1,4 +1,4 @@
-import { Log, OperationResult, OperationResults } from '../Provider.js';
+import { OperationResults, Log, OperationResult } from '@nosana/sdk';
 
 /**
  * Initiates results object to retain order from job definition

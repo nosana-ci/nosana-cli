@@ -2,7 +2,7 @@ import ora, { Ora } from 'ora';
 import { log, LogObserver, NodeLogEntry } from '../NodeLog.js';
 import { MultiBar, Presets, SingleBar } from 'cli-progress';
 import chalk from 'chalk';
-import { convertFromBytes } from '../../../../../providers/modules/resourceManager/volumes/helpers/convertFromBytes.js';
+import { convertFromBytes } from '../../../../../providers/utils/convertFromBytes.js';
 
 export const consoleLogging = (() => {
   let instance: ConsoleLogger | null = null;
