@@ -33,6 +33,7 @@ import {
   wssLogRoute,
   wssStatusRoute,
 } from './routes/index.js';
+import { getServiceUrlStatus } from './routes/get/service-url-check.js';
 
 export class ApiHandler {
   private api: Express;
@@ -207,6 +208,12 @@ export class ApiHandler {
       express.json(),
       verifyBackendSignatureMiddleware,
       postNodeValidation,
+    );
+    this.api.get(
+      '/node/service/url/check/:jobId',
+      express.json(),
+      // verifyBackendSignatureMiddleware,
+      getServiceUrlStatus,
     );
   }
 

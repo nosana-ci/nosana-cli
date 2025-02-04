@@ -21,7 +21,7 @@ export const state = (() => {
 })();
 
 export class NodeState {
-  private shared: { [key: string]: string } = {};
+  public shared: { [key: string]: string } = {};
   private info: { [key: string]: any } = {};
 
   private status: string = 'none';
@@ -47,6 +47,7 @@ export class NodeState {
   public clear() {
     this.history = [];
     this.state = {};
+    this.shared = {};
   }
 
   public getNodeInfo() {
@@ -415,6 +416,17 @@ export class NodeState {
     }
 
     if (data.class === 'FlowHandler') {
+      if (data.method === 'operationExposed') {
+        if (data.type === 'return') {
+          this.shared.serviceUrlReady = 'true';
+          this.addState('service-url-ready', {
+            node: this.shared.node,
+            market: this.shared.market,
+            job: this.shared.job,
+            url: data.result,
+          });
+        }
+      }
     }
 
     if (data.class === 'JobExternalUtil') {
@@ -610,6 +622,14 @@ export class NodeState {
             });
           }
         }
+
+        this.shared.serviceUrlReady = 'false';
+
+        this.addState('service-url-closed', {
+          node: this.shared.node,
+          market: this.shared.market,
+          job: this.shared.job,
+        });
       }
 
       if (data.method == 'validate') {
@@ -663,6 +683,14 @@ export class NodeState {
             job: this.shared.job,
           });
         }
+
+        this.shared.serviceUrlReady = 'false';
+
+        this.addState('service-url-closed', {
+          node: this.shared.node,
+          market: this.shared.market,
+          job: this.shared.job,
+        });
       }
     }
 
