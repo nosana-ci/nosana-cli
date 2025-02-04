@@ -1,4 +1,4 @@
-import { JobDefinition } from '../../../../providers/Provider.js';
+import { JobDefinition } from '../../../NodeManager/provider/types.js';
 import { JobResult } from '../../listener/types/index.js';
 import { postJob } from './postJob.js';
 

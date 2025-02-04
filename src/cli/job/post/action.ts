@@ -6,19 +6,15 @@ import { config } from '../../../generic/config.js';
 import { getJob } from '../get/action.js';
 import { colors } from '../../../generic/utils.js';
 import { getNosBalance, getSDK, getSolBalance } from '../../../services/sdk.js';
-import {
-  JobDefinition,
-  Operation,
-  OperationArgsMap,
-  OperationType,
-  validateJobDefinition,
-} from '../../../providers/Provider.js';
 import { OUTPUT_EVENTS } from '../../../providers/utils/ouput-formatter/outputEvents.js';
 import { outputFormatSelector } from '../../../providers/utils/ouput-formatter/outputFormatSelector.js';
 import { clientSelector } from '../../../api/client.js';
 import { PublicKey } from '@solana/web3.js';
-import chalk from 'chalk';
 import { isExposed, isPrivate } from '../../../generic/ops-util.js';
+import {
+  JobDefinition,
+  validateJobDefinition,
+} from '../../../services/NodeManager/provider/types.js';
 
 export async function run(
   command: Array<string>,

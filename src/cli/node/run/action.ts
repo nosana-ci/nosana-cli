@@ -1,91 +1,125 @@
 import fs from 'node:fs';
-import chalk from 'chalk';
-import ora, { Ora } from 'ora';
 import util from 'util';
-
 import {
-  Flow,
-  JobDefinition,
   FlowState,
-  OperationArgsMap,
-  ProviderEvents,
-} from '../../../providers/Provider.js';
-import { NosanaNode } from '../../../services/NosanaNode.js';
-import { Operation, OperationType } from '../../../providers/Provider.js';
-import { Client } from '@nosana/sdk';
+  JobDefinition,
+  validateJobDefinition,
+} from '../../../services/NodeManager/provider/types.js';
+import { Provider } from '../../../services/NodeManager/provider/Provider.js';
+import { ResourceManager } from '../../../services/NodeManager/node/resource/resourceManager.js';
+import { NodeRepository } from '../../../services/NodeManager/repository/NodeRepository.js';
+import { DB } from '../../../providers/modules/db/index.js';
+import { selectContainerOrchestrationProvider } from '../../../services/NodeManager/provider/containerOrchestration/selectContainerOrchestration.js';
+import { FlowHandler } from '../../../services/NodeManager/node/flow/flowHandler.js';
+import { IValidation } from 'typia';
 
-let flow: Flow | undefined;
-let node: NosanaNode;
-
+// This is still a WIP: i will still have to expose the logs and progress logs
 export async function runJob(
   jobDefinitionFile: string,
   options: {
-    [key: string]: string | undefined;
+    [key: string]: any;
   },
 ) {
-  let handlingSigInt: Boolean = false;
-  const onShutdown = async () => {
-    if (!handlingSigInt) {
-      handlingSigInt = true;
-      console.log(chalk.yellow.bold('Shutting down..'));
-      if (node) {
-        await node.shutdown();
-      }
-      if (flow) {
-        const spinner = ora(chalk.cyan(`Stopping flow ${flow.id}`)).start();
-        try {
-          await node.provider.stopFlow(flow.id);
-          await node.provider.waitForFlowFinish(flow.id);
-          spinner.succeed(chalk.green(`Flow succesfully stopped`));
-        } catch (e) {
-          spinner.fail(chalk.red.bold('Could not stop flow'));
-          throw e;
-        }
-      }
-      handlingSigInt = false;
-      process.exit();
-    }
-  };
-  process.on('SIGINT', onShutdown);
-  process.on('SIGTERM', onShutdown);
-  let spinner: Ora = ora();
-  let streamingLogs: boolean = false;
-  node = new NosanaNode(
-    new Client(), // sdk client not used during `node run`
-    options.provider,
-    options.podman,
-    options.config,
-    options.gpu!,
-  );
-  node.logger.override(
-    ProviderEvents.INFO_LOG,
-    (event: { log: string; type: string; pending: boolean }) => {
-      if (!handlingSigInt) {
-        if (event.type === 'info' && event.pending && streamingLogs) {
-          // If we want to start a spinner during streamingLogs, disable it
-          event.pending = false;
-        }
-        node.logger.standard_info_log(event, spinner);
-      }
-    },
-  );
-  spinner = ora(chalk.cyan('Checking provider health')).start();
   try {
-    await node.provider.healthy();
-  } catch (error) {
-    spinner.fail(
-      chalk.red(`${chalk.bold(options.provider)} provider not healthy`),
+    const jobDefinition: JobDefinition = await resolveJobDefination(
+      options,
+      jobDefinitionFile,
     );
-    throw error;
-  }
-  spinner.succeed(
-    chalk.green(
-      `${chalk.bold(node.provider.name)} is running on ${chalk.bold(
-        `${node.provider.protocol}://${node.provider.host}:${node.provider.port}`,
-      )}`,
-    ),
-  );
 
+    const db = new DB(options.config).db;
+    const repository = new NodeRepository(db);
+
+    const containerOrchestration = selectContainerOrchestrationProvider(
+      options.provider,
+      options.podman,
+      options.gpu,
+    );
+
+    const resourceManager = new ResourceManager(
+      containerOrchestration,
+      repository,
+    );
+
+    const provider = new Provider(
+      containerOrchestration,
+      repository,
+      resourceManager,
+    );
+
+    const flowHandler = new FlowHandler(provider, repository);
+
+    const id = flowHandler.generateRandomId(32);
+
+    const exitHandler = async () => {
+      await flowHandler.stop(id);
+      process.exit();
+    };
+
+    process.on('SIGINT', exitHandler); // Handle Ctrl+C
+    process.on('SIGTERM', exitHandler); // Handle termination signals
+
+    await runFlow(id, flowHandler, jobDefinition, repository, options);
+
+    const result = repository.getFlowState(id);
+
+    console.log(
+      'result: ',
+      util.inspect(result, { showHidden: false, depth: null, colors: true }),
+    );
+  } catch (error: any) {
+    console.log(error);
+  }
+}
+
+async function runFlow(
+  id: string,
+  flowHandler: FlowHandler,
+  jobDefinition: JobDefinition,
+  repository: NodeRepository,
+  options: any,
+): Promise<FlowState> {
+  try {
+    flowHandler.init(id);
+
+    const validation: IValidation<JobDefinition> =
+      validateJobDefinition(jobDefinition);
+
+    if (!validation.success) {
+      repository.updateflowState(id, {
+        endTime: Date.now(),
+        status: 'failed',
+      });
+      repository.updateflowStateError(id, {
+        status: 'validation-error',
+        errors: validation.errors,
+      });
+      return repository.getFlowState(id);
+    }
+
+    flowHandler.start(id, jobDefinition);
+    await flowHandler.run(id);
+
+    return repository.getFlowState(id);
+  } catch (error) {
+    repository.updateflowState(id, {
+      endTime: Date.now(),
+      status: 'failed',
+    });
+    repository.updateflowStateError(id, {
+      status: 'error',
+      errors: error,
+    });
+    await flowHandler.stop(id);
+    return repository.getFlowState(id);
+  }
+}
+
+async function resolveJobDefination(
+  options: {
+    [key: string]: any;
+  },
+  jobDefinitionFile: string,
+): Promise<JobDefinition> {
   let jobDefinition: JobDefinition;
 
   if (options.url) {
@@ -102,37 +136,6 @@ export async function runJob(
     }
     jobDefinition = JSON.parse(fs.readFileSync(jobDefinitionFile, 'utf8'));
   }
-  let result: Partial<FlowState> | null = null;
-  try {
-    flow = node.provider.run(jobDefinition);
-    const isFlowExposed =
-      jobDefinition.ops.filter(
-        (op: Operation<OperationType>) =>
-          op.type === 'container/run' &&
-          (op.args as OperationArgsMap['container/run']).expose,
-      ).length > 0;
-    streamingLogs = true;
-    result = await node.provider.waitForFlowFinish(
-      flow.id,
-      (event: { log: string; type: string }) => {
-        if (!handlingSigInt && !isFlowExposed) {
-          if (event.type === 'stdout') {
-            process.stdout.write(event.log);
-          } else {
-            process.stderr.write(event.log);
-          }
-        }
-      },
-    );
-    streamingLogs = false;
-    console.log(
-      'result: ',
-      util.inspect(result, { showHidden: false, depth: null, colors: true }),
-    );
-  } catch (error) {
-    spinner.fail(chalk.red.bold(error));
-  }
-  if (node.provider.clearFlowsCronJob) {
-    node.provider.clearFlowsCronJob.stop();
-  }
+
+  return jobDefinition;
 }

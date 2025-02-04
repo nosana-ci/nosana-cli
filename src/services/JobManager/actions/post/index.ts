@@ -1,12 +1,11 @@
 import { randomUUID } from 'crypto';
-
-import { JobDefinition } from '../../../../providers/Provider.js';
 import {
   JobObject,
   JobPostingOptions,
   JobResult,
 } from '../../listener/types/index.js';
 import { asyncPostJob } from './asyncPostJob.js';
+import { JobDefinition } from '../../../NodeManager/provider/types.js';
 
 export async function postJobWithOptions(
   market: string,
