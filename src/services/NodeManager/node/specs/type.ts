@@ -1,4 +1,5 @@
 export type SystemInfoResults = {
+  system_environment: string;
   cpu_model: string;
   ram_mb: number;
   disk_gb: number;

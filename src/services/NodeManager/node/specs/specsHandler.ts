@@ -116,6 +116,7 @@ export class SpecsHandler {
     if (!logs[0]) throw new Error('Could not find system info logs');
 
     const {
+      system_environment,
       cpu_model: model,
       logical_cores,
       physical_cores,
@@ -132,6 +133,7 @@ export class SpecsHandler {
     }
 
     this.repository.updateNodeInfo({
+      system_environment,
       cpu: {
         model,
         logical_cores,
