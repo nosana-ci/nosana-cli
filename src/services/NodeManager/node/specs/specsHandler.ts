@@ -67,7 +67,7 @@ export class SpecsHandler {
 
     await this.client
       // @ts-ignore
-      .POST('/api/nodes/{id}/update-specs', {
+      .POST('/api/nodes/{id}/submit-system-specs', {
         params: {
           path: { id: this.sdk.solana.provider!.wallet.publicKey.toString() },
           header: {
