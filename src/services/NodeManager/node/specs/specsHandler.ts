@@ -18,6 +18,8 @@ import {
 import { NetworkInfoResults, SystemInfoResults } from './type.js';
 import { clientSelector, QueryClient } from '../../../../api/client.js';
 
+import { pkg } from '../../../../static/staticsImports.js';
+
 export class SpecsHandler {
   private client: QueryClient;
   private flowHandler: FlowHandler;
@@ -49,7 +51,7 @@ export class SpecsHandler {
 
       if (result && result.state.status === 'success') {
         await this.processSuccess(result.state.opStates);
-        await this.submitNodeInfo();
+        await this.submitSystemSpecs();
       } else if (result && result.state.status === 'failed') {
         this.processFailure(result.state.opStates);
       } else {
@@ -62,7 +64,7 @@ export class SpecsHandler {
     return false;
   }
 
-  private async submitNodeInfo(): Promise<void> {
+  private async submitSystemSpecs(): Promise<void> {
     const nodeInfo = this.repository.getNodeInfo();
 
     await this.client
@@ -76,7 +78,7 @@ export class SpecsHandler {
             ),
           },
         },
-        body: nodeInfo,
+        body: { ...nodeInfo, version: pkg.version },
       })
       .catch((error) => {
         console.error(error);
