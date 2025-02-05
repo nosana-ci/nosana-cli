@@ -101,6 +101,12 @@ export class DB {
       this.db.data.info = initial_state.info;
     }
 
+    // @ts-ignore
+    if (this.db.data.info.disk) {
+      // @ts-ignore
+      delete this.db.data.info.disk; // remove old key
+    }
+
     this.db.write();
   }
 }
