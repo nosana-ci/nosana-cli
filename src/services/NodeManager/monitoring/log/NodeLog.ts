@@ -1059,6 +1059,8 @@ class NodeLog {
   }
 
   private handleClean(data: LogEntry) {
+    this.job = undefined;
+
     if (data.type === 'call') {
       this.addLog({
         method: `${data.class}.${data.method}`,
@@ -1089,7 +1091,6 @@ class NodeLog {
         type: 'error',
       });
     }
-    this.job = undefined;
   }
 
   private handleStop(data: LogEntry) {

@@ -325,10 +325,11 @@ export class Provider {
           }
 
           const exposedUrlSecret = randomUUID();
-          this.repository.updateflowStateSecret(id, {
-            exposedUrl: exposedUrlSecret,
-          });
           const prefix = op.args.private ? exposedUrlSecret : flow.id;
+
+          this.repository.updateflowStateSecret(id, {
+            [id]: prefix,
+          });
 
           ({ status, error } = await this.containerOrchestration.pullImage(
             frpcImage,
@@ -360,7 +361,7 @@ export class Provider {
           // link will be logged out if public
           const link = `https://${prefix}.${configs().frp.serverAddr}`;
 
-          this.repository.updateflowStateSecret(flow.id, { url: link });
+          this.repository.updateflowStateSecret(id, { url: link });
         }
 
         if (op.args.resources) {
