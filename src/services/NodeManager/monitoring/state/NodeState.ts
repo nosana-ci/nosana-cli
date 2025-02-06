@@ -418,7 +418,7 @@ export class NodeState {
     if (data.class === 'FlowHandler') {
       if (data.method === 'operationExposed') {
         if (data.type === 'return') {
-          this.shared.serviceUrlReady = 'true';
+          this.shared.serviceUrlReady = data.result;
           this.addState('service-url-ready', {
             node: this.shared.node,
             market: this.shared.market,
@@ -623,7 +623,8 @@ export class NodeState {
           }
         }
 
-        this.shared.serviceUrlReady = 'false';
+        delete this.shared.serviceUrlReady;
+        delete this.shared.job;
 
         this.addState('service-url-closed', {
           node: this.shared.node,
@@ -665,6 +666,8 @@ export class NodeState {
             market: this.shared.market,
             job: this.shared.job,
           });
+
+          delete this.shared.job;
         }
 
         if (data.type == 'error') {
@@ -684,7 +687,7 @@ export class NodeState {
           });
         }
 
-        this.shared.serviceUrlReady = 'false';
+        delete this.shared.serviceUrlReady;
 
         this.addState('service-url-closed', {
           node: this.shared.node,
