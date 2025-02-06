@@ -22,10 +22,11 @@ export function getServiceUrlRoute(
     const nodeState = state(sdk.solana.provider!.wallet.publicKey.toString());
 
     if (secrets && secrets[jobId]) {
-      if (nodeState?.shared?.job === req.params.jobId) {
-        status = nodeState.shared.serviceUrlReady ? 'ONLINE' : 'OFFLINE';
-      } else {
-        status = 'OFFLINE';
+      if (
+        nodeState?.shared?.job === req.params.jobId &&
+        nodeState?.shared?.serviceUrlReady
+      ) {
+        status = 'ONLINE';
       }
 
       res.status(200).json({
