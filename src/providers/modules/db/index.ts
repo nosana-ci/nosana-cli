@@ -16,6 +16,7 @@ export type NodeDb = {
       download_mbps: number;
       upload_mbps: number;
     };
+    system_environment: string;
     cpu: {
       model: string;
       physical_cores: number;
@@ -56,6 +57,7 @@ const initial_state: NodeDb = {
       download_mbps: 0,
       upload_mbps: 0,
     },
+    system_environment: '',
     cpu: {
       model: '',
       physical_cores: 0,

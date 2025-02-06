@@ -40,6 +40,7 @@ describe('DB', () => {
           download_mbps: 0,
           upload_mbps: 0,
         },
+        system_environment: '',
         cpu: {
           model: '',
           physical_cores: 0,
