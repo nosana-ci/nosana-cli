@@ -6,6 +6,11 @@ jest.mock('fs');
 jest.mock('os', () => ({
   homedir: () => 'homedir',
 }));
+jest.mock('../../../../static/staticsImports.js', () => ({
+  pkg: {
+    version: '0.0.0_TEST',
+  },
+}));
 
 describe('DB', () => {
   const mock_mkdirSync = jest.fn();
@@ -33,6 +38,7 @@ describe('DB', () => {
       },
       flows: {},
       info: {
+        version: '0.0.0_TEST',
         country: '',
         network: {
           ip: '',
@@ -50,8 +56,8 @@ describe('DB', () => {
         ram_mb: 0,
         gpus: {
           devices: [],
-          runtime_version: '0.0',
-          cuda_driver_version: '0.0',
+          runtime_version: 0,
+          cuda_driver_version: 0,
           nvml_driver_version: '0.0.0',
         },
       },

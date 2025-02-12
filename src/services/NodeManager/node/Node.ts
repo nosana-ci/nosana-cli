@@ -70,7 +70,11 @@ export class BasicNode {
     );
     this.balanceHandler = new BalanceHandler(this.sdk);
     this.gridHandler = new GridHandler(this.sdk, this.repository);
-    this.specsHandler = new SpecsHandler(this.provider, this.repository);
+    this.specsHandler = new SpecsHandler(
+      this.provider,
+      this.repository,
+      this.sdk,
+    );
     this.jobHandler = new JobHandler(this.sdk, this.provider, this.repository);
     this.marketHandler = new MarketHandler(this.sdk);
     this.runHandler = new RunHandler(this.sdk);
