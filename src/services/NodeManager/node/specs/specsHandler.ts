@@ -18,8 +18,6 @@ import {
 import { NetworkInfoResults, SystemInfoResults } from './type.js';
 import { clientSelector, QueryClient } from '../../../../api/client.js';
 
-import { pkg } from '../../../../static/staticsImports.js';
-
 export class SpecsHandler {
   private client: QueryClient;
   private flowHandler: FlowHandler;
@@ -77,7 +75,7 @@ export class SpecsHandler {
             ),
           },
         },
-        body: { ...nodeInfo, version: pkg.version },
+        body: nodeInfo,
       })
       .catch((error) => {
         console.error(error);
