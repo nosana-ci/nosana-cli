@@ -16,8 +16,8 @@ export type CudaCheckSuccessResponse = {
     };
     results: number[];
   }[];
-  runtime_version: string;
-  cuda_driver_version: string;
+  runtime_version: number;
+  cuda_driver_version: number;
   nvml_driver_version: string;
 };
 

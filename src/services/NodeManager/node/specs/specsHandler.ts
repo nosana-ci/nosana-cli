@@ -68,7 +68,6 @@ export class SpecsHandler {
     const nodeInfo = this.repository.getNodeInfo();
 
     await this.client
-      // @ts-ignore
       .POST('/api/nodes/{id}/submit-system-specs', {
         params: {
           path: { id: this.sdk.solana.provider!.wallet.publicKey.toString() },
