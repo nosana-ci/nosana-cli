@@ -107,7 +107,7 @@ export class DB {
     }
 
     if (this.db.data.info) {
-      this.db.data.info = { ...initial_state, ...this.db.data.info };
+      this.db.data.info = { ...initial_state.info, ...this.db.data.info };
     }
 
     // @ts-ignore
