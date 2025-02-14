@@ -11,7 +11,7 @@
       "dependencies": {
         "@coral-xyz/anchor": "^0.28.1-beta.1",
         "@inquirer/prompts": "^4.3.0",
-        "@nosana/sdk": "0.3.60",
+        "@nosana/sdk": "^0.3.73",
         "@solana/web3.js": "^1.78.0",
         "bn.js": "^5.2.1",
         "chalk": "^5.3.0",
@@ -2237,9 +2237,9 @@
       }
     },
     "node_modules/@nosana/sdk": {
-      "version": "0.3.60",
-      "resolved": "https://registry.npmjs.org/@nosana/sdk/-/sdk-0.3.60.tgz",
-      "integrity": "sha512-oe0R0/wWz+bY5bUUPmkKYL/KhYi8VQAiDyfiaiyNqpqPYtrcIeee18kyyLNlI1pqrorYGbH35OhXQGBA1kIc6w==",
+      "version": "0.3.73",
+      "resolved": "https://registry.npmjs.org/@nosana/sdk/-/sdk-0.3.73.tgz",
+      "integrity": "sha512-5ADODd1g33lA1xiC0b7fLF0vcHjfL1l1mF8PrlZ7XFYcACTg1ZT3qdlIYg9fgK3dleDaueUL+GuTimvyMXVEhw==",
       "license": "ISC",
       "dependencies": {
         "@coral-xyz/anchor": "^0.28.1-beta.1",
@@ -2255,10 +2255,9 @@
         "bs58": "^5.0.0",
         "buffer": "^6.0.3",
         "form-data": "^4.0.0",
-        "ts-patch": "^3.2.1",
         "tweetnacl": "^1.0.3",
         "tweetnacl-util": "^0.15.1",
-        "typia": "^6.11.0",
+        "typia": "^7.6.4",
         "util": "^0.12.5"
       }
     },
@@ -2281,6 +2280,7 @@
       "version": "4.1.2",
       "resolved": "https://registry.npmjs.org/chalk/-/chalk-4.1.2.tgz",
       "integrity": "sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA==",
+      "license": "MIT",
       "dependencies": {
         "ansi-styles": "^4.1.0",
         "supports-color": "^7.1.0"
@@ -2296,6 +2296,7 @@
       "version": "3.1.0",
       "resolved": "https://registry.npmjs.org/cli-cursor/-/cli-cursor-3.1.0.tgz",
       "integrity": "sha512-I/zHAwsKf9FqGoXM4WWRACob9+SNukZTd94DWF57E4toouRulbCxcUh6RKUEOQlYTHJnzkPMySvPNaaSLNfLZw==",
+      "license": "MIT",
       "dependencies": {
         "restore-cursor": "^3.1.0"
       },
@@ -2307,6 +2308,7 @@
       "version": "3.0.0",
       "resolved": "https://registry.npmjs.org/cli-width/-/cli-width-3.0.0.tgz",
       "integrity": "sha512-FxqpkPPwu1HjuN93Omfm4h8uIanXofW0RxVEW3k5RKx+mJJYSthzNhp32Kzxxy3YAEZ/Dc/EWN1vZRY0+kOhbw==",
+      "license": "ISC",
       "engines": {
         "node": ">= 10"
       }
@@ -2315,6 +2317,7 @@
       "version": "10.0.1",
       "resolved": "https://registry.npmjs.org/commander/-/commander-10.0.1.tgz",
       "integrity": "sha512-y4Mg2tXshplEbSGzx7amzPwKKOCGuoSRP/CjEdwwk0FOGlUbq6lKuoyDZTNZkmxHdJtp54hdfY/JUrdL7Xfdug==",
+      "license": "MIT",
       "engines": {
         "node": ">=14"
       }
@@ -2322,12 +2325,14 @@
     "node_modules/@nosana/sdk/node_modules/emoji-regex": {
       "version": "8.0.0",
       "resolved": "https://registry.npmjs.org/emoji-regex/-/emoji-regex-8.0.0.tgz",
-      "integrity": "sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A=="
+      "integrity": "sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==",
+      "license": "MIT"
     },
     "node_modules/@nosana/sdk/node_modules/inquirer": {
       "version": "8.2.6",
       "resolved": "https://registry.npmjs.org/inquirer/-/inquirer-8.2.6.tgz",
       "integrity": "sha512-M1WuAmb7pn9zdFRtQYk26ZBoY043Sse0wVDdk4Bppr+JOXyQYybdtvK+l9wUibhtjdjvtoiNy8tk+EgsYIUqKg==",
+      "license": "MIT",
       "dependencies": {
         "ansi-escapes": "^4.2.1",
         "chalk": "^4.1.1",
@@ -2353,6 +2358,7 @@
       "version": "1.0.0",
       "resolved": "https://registry.npmjs.org/is-interactive/-/is-interactive-1.0.0.tgz",
       "integrity": "sha512-2HvIEKRoqS62guEC+qBjpvRubdX910WCMuJTZ+I9yvqKU2/12eSL549HMwtabb4oupdj2sMP50k+XJfB/8JE6w==",
+      "license": "MIT",
       "engines": {
         "node": ">=8"
       }
@@ -2361,6 +2367,7 @@
       "version": "0.1.0",
       "resolved": "https://registry.npmjs.org/is-unicode-supported/-/is-unicode-supported-0.1.0.tgz",
       "integrity": "sha512-knxG2q4UC3u8stRGyAVJCOdxFmv5DZiRcdlIaAQXAbSfJya+OhopNotLQrstBhququ4ZpuKbDc/8S6mgXgPFPw==",
+      "license": "MIT",
       "engines": {
         "node": ">=10"
       },
@@ -2372,6 +2379,7 @@
       "version": "4.1.0",
       "resolved": "https://registry.npmjs.org/log-symbols/-/log-symbols-4.1.0.tgz",
       "integrity": "sha512-8XPvpAA8uyhfteu8pIvQxpJZ7SYYdpUivZpGy6sFsBuKRY/7rQGavedeB8aK+Zkyq6upMFVL/9AW6vOYzfRyLg==",
+      "license": "MIT",
       "dependencies": {
         "chalk": "^4.1.0",
         "is-unicode-supported": "^0.1.0"
@@ -2386,12 +2394,14 @@
     "node_modules/@nosana/sdk/node_modules/mute-stream": {
       "version": "0.0.8",
       "resolved": "https://registry.npmjs.org/mute-stream/-/mute-stream-0.0.8.tgz",
-      "integrity": "sha512-nnbWWOkoWyUsTjKrhgD0dcz22mdkSnpYqbEjIm2nhwhuxlSkpywJmBo8h0ZqJdkp73mb90SssHkN4rsRaBAfAA=="
+      "integrity": "sha512-nnbWWOkoWyUsTjKrhgD0dcz22mdkSnpYqbEjIm2nhwhuxlSkpywJmBo8h0ZqJdkp73mb90SssHkN4rsRaBAfAA==",
+      "license": "ISC"
     },
     "node_modules/@nosana/sdk/node_modules/ora": {
       "version": "5.4.1",
       "resolved": "https://registry.npmjs.org/ora/-/ora-5.4.1.tgz",
       "integrity": "sha512-5b6Y85tPxZZ7QytO+BQzysW31HJku27cRIlkbAXaNx+BdcVi+LlRFmVXzeF6a7JCwJpyw5c4b+YSVImQIrBpuQ==",
+      "license": "MIT",
       "dependencies": {
         "bl": "^4.1.0",
         "chalk": "^4.1.0",
@@ -2414,6 +2424,7 @@
       "version": "3.1.0",
       "resolved": "https://registry.npmjs.org/restore-cursor/-/restore-cursor-3.1.0.tgz",
       "integrity": "sha512-l+sSefzHpj5qimhFSE5a8nufZYAM3sBSVMAPtYkmC+4EH2anSGaEMXSD0izRQbu9nfyQ9y5JrVmp7E8oZrUjvA==",
+      "license": "MIT",
       "dependencies": {
         "onetime": "^5.1.0",
         "signal-exit": "^3.0.2"
@@ -2426,6 +2437,7 @@
       "version": "2.4.1",
       "resolved": "https://registry.npmjs.org/run-async/-/run-async-2.4.1.tgz",
       "integrity": "sha512-tvVnVv01b8c1RrA6Ep7JkStj85Guv/YrMcwqYQnwjsAS2cTmmPGBBjAjpCW7RrSodNSoE2/qg9O4bceNvUuDgQ==",
+      "license": "MIT",
       "engines": {
         "node": ">=0.12.0"
       }
@@ -2434,6 +2446,7 @@
       "version": "4.2.3",
       "resolved": "https://registry.npmjs.org/string-width/-/string-width-4.2.3.tgz",
       "integrity": "sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g==",
+      "license": "MIT",
       "dependencies": {
         "emoji-regex": "^8.0.0",
         "is-fullwidth-code-point": "^3.0.0",
@@ -2444,11 +2457,12 @@
       }
     },
     "node_modules/@nosana/sdk/node_modules/typia": {
-      "version": "6.11.1",
-      "resolved": "https://registry.npmjs.org/typia/-/typia-6.11.1.tgz",
-      "integrity": "sha512-Z0yXHzjQSNP1ULs2RzU7h20Q4ibs4er0JuZMW8ZETxUT9GrR/3jBycfpbMoKjheZ//ZDkoVgJY0Uk2ohiDuqWQ==",
+      "version": "7.6.4",
+      "resolved": "https://registry.npmjs.org/typia/-/typia-7.6.4.tgz",
+      "integrity": "sha512-Z3AcvGBjS7Dc7+iAG2VhsT0NIv3HMoXVTJ3F7Pgth8z7rhQu1JnyS8GGqqWdKk5ROvOgALEVEWmWv3Lym2eBIg==",
+      "license": "MIT",
       "dependencies": {
-        "@samchon/openapi": "^1.1.0",
+        "@samchon/openapi": "^2.4.2",
         "commander": "^10.0.0",
         "comment-json": "^4.2.3",
         "inquirer": "^8.2.5",
@@ -2459,7 +2473,8 @@
         "typia": "lib/executable/typia.js"
       },
       "peerDependencies": {
-        "typescript": ">=4.8.0 <5.7.0"
+        "@samchon/openapi": ">=2.4.2 <3.0.0",
+        "typescript": ">=4.8.0 <5.8.0"
       }
     },
     "node_modules/@redocly/ajv": {
@@ -2529,9 +2544,10 @@
       }
     },
     "node_modules/@samchon/openapi": {
-      "version": "1.1.0",
-      "resolved": "https://registry.npmjs.org/@samchon/openapi/-/openapi-1.1.0.tgz",
-      "integrity": "sha512-BX7Hhi7ZvqXerAml613p3ZP4YPUHRNHZ5tWlbk999SHB1liPB+KHfkEIyGOAooPHUFMpeIS/PRaw88bsUZB3Uw=="
+      "version": "2.4.3",
+      "resolved": "https://registry.npmjs.org/@samchon/openapi/-/openapi-2.4.3.tgz",
+      "integrity": "sha512-OltIIvgaOSJ7SkHVawtDjGaztkaffQ+E3rh2/XxXQ/KG/JM18h1aVo83UtPJnixyZ3lnBvnoYJF3bI2vGRHNUQ==",
+      "license": "MIT"
     },
     "node_modules/@sinclair/typebox": {
       "version": "0.27.8",
@@ -9126,9 +9142,10 @@
       }
     },
     "node_modules/package-manager-detector": {
-      "version": "0.2.0",
-      "resolved": "https://registry.npmjs.org/package-manager-detector/-/package-manager-detector-0.2.0.tgz",
-      "integrity": "sha512-E385OSk9qDcXhcM9LNSe4sdhx8a9mAPrZ4sMLW+tmxl5ZuGtPUcdFu+MPP2jbgiWAZ6Pfe5soGFMd+0Db5Vrog=="
+      "version": "0.2.9",
+      "resolved": "https://registry.npmjs.org/package-manager-detector/-/package-manager-detector-0.2.9.tgz",
+      "integrity": "sha512-+vYvA/Y31l8Zk8dwxHhL3JfTuHPm6tlxM2A3GeQyl7ovYnSp1+mzAxClxaOr0qO1TtPxbQxetI7v5XqKLJZk7Q==",
+      "license": "MIT"
     },
     "node_modules/pako": {
       "version": "2.1.0",
