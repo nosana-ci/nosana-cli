@@ -188,7 +188,17 @@ export class FlowHandler {
   }
 
   public operationExposed(id: string): string {
-    return this.repository.getFlowSecret(id, 'url') ?? 'private';
+    const mode = this.repository.getFlowSecret(id, 'urlmode');
+    const generatedIds = this.repository.getFlowSecret(id, id);
+
+    if (
+      this.repository.getFlowSecret(id, 'urlmode') != 'private' &&
+      generatedIds
+    ) {
+      return generatedIds;
+    }
+
+    return mode ?? '';
   }
 
   public async clearOldFlows(): Promise<void> {

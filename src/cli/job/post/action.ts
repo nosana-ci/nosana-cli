@@ -15,6 +15,7 @@ import {
   JobDefinition,
   validateJobDefinition,
 } from '../../../services/NodeManager/provider/types.js';
+import { getJobUrls } from "../../../generic/expose-util.js";
 
 export async function run(
   command: Array<string>,
@@ -229,7 +230,7 @@ export async function run(
   if (isExposed(json_flow as JobDefinition)) {
     if (!isPrivate(json_flow as JobDefinition)) {
       formatter.output(OUTPUT_EVENTS.OUTPUT_SERVICE_URL, {
-        url: `https://${response.job}.${config.frp.serverAddr}`,
+        url: getJobUrls(json_flow as JobDefinition, response.job, config).join(","),
       });
     } else {
       formatter.output(OUTPUT_EVENTS.OUTPUT_PRIVATE_URL_MESSAGE, {

@@ -95,7 +95,7 @@ export interface OperationArgsMap {
         dest: string;
       },
     ];
-    expose?: number;
+    expose?: number | number[];
     private?: boolean;
     gpu?: boolean;
     work_dir?: string;
