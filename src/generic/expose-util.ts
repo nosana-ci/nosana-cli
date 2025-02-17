@@ -1,8 +1,8 @@
 import { Operation, OperationType, OperationArgsMap } from '@nosana/sdk';
 import { createHash, randomBytes } from 'crypto';
-import { JobDefinition } from "../services/NodeManager/provider/types.js";
-import { configType } from "./config.js";
-import { isPrivate } from "./ops-util.js";
+import { JobDefinition } from '../services/NodeManager/provider/types.js';
+import { configType } from './config.js';
+import { isPrivate } from './ops-util.js';
 
 export const getExposePorts = (op: Operation<'container/run'>): number[] => {
   const expose = (op.args as OperationArgsMap['container/run']).expose;
@@ -48,7 +48,11 @@ export const generateExposeId = (
   }
 };
 
-export const getJobUrls = (job: JobDefinition, flowId: string, config: configType): string[] => {
+export const getJobUrls = (
+  job: JobDefinition,
+  flowId: string,
+  config: configType,
+): string[] => {
   const urls: string[] = [];
   const privateMode = isPrivate(job);
 
@@ -56,8 +60,13 @@ export const getJobUrls = (job: JobDefinition, flowId: string, config: configTyp
     if (isOpExposed(op as Operation<'container/run'>)) {
       const exposePorts = getExposePorts(op as Operation<'container/run'>);
 
-      exposePorts.forEach(port => {
-        const exposeId = generateExposeId(flowId, op.id, port.toString(), privateMode);
+      exposePorts.forEach((port) => {
+        const exposeId = generateExposeId(
+          flowId,
+          op.id,
+          port.toString(),
+          privateMode,
+        );
         const url = `${exposeId}.${config.frp.serverAddr}`;
         urls.push(url);
       });
