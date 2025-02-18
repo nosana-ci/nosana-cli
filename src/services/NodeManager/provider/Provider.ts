@@ -393,20 +393,17 @@ export class Provider {
           }
 
           ({ status, error, result } =
-            await this.containerOrchestration.runFlowContainer(
-              'localhost/frpc:test',
-              {
-                name: 'frpc-' + name,
-                cmd: ['/entrypoint.sh'],
-                networks,
-                env: {
-                  FRP_SERVER_ADDR: configs().frp.serverAddr,
-                  FRP_SERVER_PORT: configs().frp.serverPort.toString(),
-                  NOSANA_ID: flow.id,
-                  FRP_PROXIES: JSON.stringify(proxies),
-                },
+            await this.containerOrchestration.runFlowContainer(frpcImage, {
+              name: 'frpc-' + name,
+              cmd: ['/entrypoint.sh'],
+              networks,
+              env: {
+                FRP_SERVER_ADDR: configs().frp.serverAddr,
+                FRP_SERVER_PORT: configs().frp.serverPort.toString(),
+                NOSANA_ID: flow.id,
+                FRP_PROXIES: JSON.stringify(proxies),
               },
-            ));
+            }));
 
           if (!status) {
             throw error;
