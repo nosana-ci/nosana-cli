@@ -34,7 +34,6 @@ export async function setSDK(
   const config: ClientConfig = {
     solana: {
       priority_fee: 100000,
-      ...(network === 'devnet' ? { dynamicPriorityFee: false } : {}),
     },
   };
   if (market) config.solana!.market_address = market;
