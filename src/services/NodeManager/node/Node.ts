@@ -224,12 +224,6 @@ export class BasicNode {
         const jobAddress = run.account.job.toString();
 
         /**
-         * Get the current market the market queue was in before this
-         * run/job was assigned to the node.
-         */
-        const market = this.marketHandler.getMarket() as Market;
-
-        /**
          * Claim the job by polling the job and setting it in the job handler
          * as the current job for this cycle.
          */
