@@ -212,7 +212,7 @@ export class ApiHandler {
 
   private async listen(): Promise<number> {
     if (this.server) {
-      this.server.closeAllConnections();
+      this.server.close();
       this.server = null;
     }
     return new Promise<number>((resolve, reject) => {
