@@ -296,5 +296,13 @@ export default class NodeManager {
 
     process.on('SIGINT', exitHandler); // Handle Ctrl+C
     process.on('SIGTERM', exitHandler); // Handle termination signals
+
+    // log crashes
+    process.on('unhandledRejection', (reason, p) => {
+      console.info(reason + ' => Unhandled Rejection at Promise: ' + p);
+    });
+    process.on('uncaughtException', (err) => {
+      console.info(err + ' => Uncaught Exception thrown');
+    });
   }
 }

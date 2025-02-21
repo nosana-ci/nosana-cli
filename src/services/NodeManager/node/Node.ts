@@ -20,6 +20,10 @@ import { ResourceManager } from './resource/resourceManager.js';
 import { selectContainerOrchestrationProvider } from '../provider/containerOrchestration/selectContainerOrchestration.js';
 import { RegisterHandler } from './register/index.js';
 import { BalanceHandler } from './balance/balanceHandler.js';
+import {
+  abortControllerSelector,
+  nodeAbortControllerSelector,
+} from './abort/abortControllerSelector.js';
 
 export class BasicNode {
   public isOnboarded: boolean = false;
@@ -140,6 +144,7 @@ export class BasicNode {
     await this.runHandler.stop();
     await this.jobHandler.stop();
     this.expiryHandler.stop();
+    nodeAbortControllerSelector().refresh();
   }
 
   async clean(): Promise<void> {
@@ -151,6 +156,7 @@ export class BasicNode {
      */
     await this.jobHandler.stop();
     this.expiryHandler.stop();
+    nodeAbortControllerSelector().refresh();
   }
 
   async start(): Promise<void> {
@@ -218,12 +224,6 @@ export class BasicNode {
         const jobAddress = run.account.job.toString();
 
         /**
-         * Get the current market the market queue was in before this
-         * run/job was assigned to the node.
-         */
-        const market = this.marketHandler.getMarket() as Market;
-
-        /**
          * Claim the job by polling the job and setting it in the job handler
          * as the current job for this cycle.
          */
@@ -252,22 +252,10 @@ export class BasicNode {
             jobAddress,
             this.jobHandler.accountEmitter,
             async () => {
-              try {
-                /**
-                 * upload the result and end the flow, also clean up flow.
-                 */
-                // await this.jobHandler.finish(run);
-
-                /**
-                 * so we force close the current job and it causes the container.wait()
-                 * to unblock and move to the next stage
-                 */
-                await this.jobHandler.stopCurrentJob();
-              } catch (error) {
-                reject(error);
-              }
-
-              // resolve(); // Signal that the process should end
+              /**
+               * we now use the abort controller to close the container operations
+               */
+              abortControllerSelector().abort('expired');
             },
           );
 
