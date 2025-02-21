@@ -204,7 +204,7 @@ export class DockerContainerOrchestration
     return container;
   }
 
-  setupContainerAbortion(containerId: string) {
+  setupContainerAbortListener(containerId: string) {
     const controller = abortControllerSelector() as AbortController;
 
     if (controller.signal.aborted) {
@@ -223,6 +223,7 @@ export class DockerContainerOrchestration
 
   async runContainer(
     args: ContainerCreateOptions,
+    addAbortListener = true,
   ): Promise<ReturnedStatus<Container>> {
     const controller = abortControllerSelector() as AbortController;
     if (controller.signal.aborted) {
@@ -232,7 +233,9 @@ export class DockerContainerOrchestration
     try {
       const container = await this.docker.createContainer(args);
       await container.start();
-      this.setupContainerAbortion(container.id);
+      if (addAbortListener) {
+        this.setupContainerAbortListener(container.id);
+      }
       return { status: true, result: container };
     } catch (error) {
       return { status: false, error };
@@ -242,6 +245,7 @@ export class DockerContainerOrchestration
   async runFlowContainer(
     image: string,
     args: RunContainerArgs,
+    addAbortListener = true,
   ): Promise<ReturnedStatus<Container>> {
     const controller = abortControllerSelector() as AbortController;
     if (controller.signal.aborted) {
@@ -255,9 +259,10 @@ export class DockerContainerOrchestration
 
       await container.start();
 
-      this.setupContainerAbortion(container.id);
+      if (addAbortListener) {
+        this.setupContainerAbortListener(container.id);
+      }
 
-      console.log(container);
       return { status: true, result: container };
     } catch (error) {
       return { status: false, error };

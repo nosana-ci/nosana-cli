@@ -106,14 +106,18 @@ export class Provider {
 
       if (!result) {
         ({ status, error, result } =
-          await this.containerOrchestration.runFlowContainer(tunnelImage, {
-            name: tunnel_name,
-            networks,
-            restart_policy: 'on-failure',
-            env: {
-              PORT: tunnel_port.toString(),
+          await this.containerOrchestration.runFlowContainer(
+            tunnelImage,
+            {
+              name: tunnel_name,
+              networks,
+              restart_policy: 'on-failure',
+              env: {
+                PORT: tunnel_port.toString(),
+              },
             },
-          }));
+            false,
+          ));
         if (!status) {
           throw error;
         }
@@ -134,14 +138,18 @@ export class Provider {
           }
 
           ({ status, error, result } =
-            await this.containerOrchestration.runFlowContainer(tunnelImage, {
-              name: tunnel_name,
-              networks,
-              restart_policy: 'on-failure',
-              env: {
-                PORT: tunnel_port.toString(),
+            await this.containerOrchestration.runFlowContainer(
+              tunnelImage,
+              {
+                name: tunnel_name,
+                networks,
+                restart_policy: 'on-failure',
+                env: {
+                  PORT: tunnel_port.toString(),
+                },
               },
-            }));
+              false,
+            ));
           if (!status) {
             throw error;
           }
@@ -155,20 +163,24 @@ export class Provider {
 
       if (!result) {
         ({ status, error, result } =
-          await this.containerOrchestration.runFlowContainer(frpcImage, {
-            name: 'frpc-api-' + address,
-            cmd: ['-c', '/etc/frp/frpc.toml'],
-            networks,
-            restart_policy: 'on-failure',
-            env: {
-              FRP_SERVER_ADDR: configs().frp.serverAddr,
-              FRP_SERVER_PORT: configs().frp.serverPort.toString(),
-              FRP_NAME: 'API-' + address,
-              FRP_LOCAL_IP: tunnel_name,
-              FRP_LOCAL_PORT: tunnel_port.toString(),
-              FRP_CUSTOM_DOMAIN: address + '.' + configs().frp.serverAddr,
+          await this.containerOrchestration.runFlowContainer(
+            frpcImage,
+            {
+              name: 'frpc-api-' + address,
+              cmd: ['-c', '/etc/frp/frpc.toml'],
+              networks,
+              restart_policy: 'on-failure',
+              env: {
+                FRP_SERVER_ADDR: configs().frp.serverAddr,
+                FRP_SERVER_PORT: configs().frp.serverPort.toString(),
+                FRP_NAME: 'API-' + address,
+                FRP_LOCAL_IP: tunnel_name,
+                FRP_LOCAL_PORT: tunnel_port.toString(),
+                FRP_CUSTOM_DOMAIN: address + '.' + configs().frp.serverAddr,
+              },
             },
-          }));
+            false,
+          ));
         if (!status) {
           throw error;
         }
@@ -189,20 +201,24 @@ export class Provider {
           }
 
           ({ status, error, result } =
-            await this.containerOrchestration.runFlowContainer(frpcImage, {
-              name: 'frpc-api-' + address,
-              cmd: ['-c', '/etc/frp/frpc.toml'],
-              networks,
-              restart_policy: 'on-failure',
-              env: {
-                FRP_SERVER_ADDR: configs().frp.serverAddr,
-                FRP_SERVER_PORT: configs().frp.serverPort.toString(),
-                FRP_NAME: 'API-' + address,
-                FRP_LOCAL_IP: tunnel_name,
-                FRP_LOCAL_PORT: tunnel_port.toString(),
-                FRP_CUSTOM_DOMAIN: address + '.' + configs().frp.serverAddr,
+            await this.containerOrchestration.runFlowContainer(
+              frpcImage,
+              {
+                name: 'frpc-api-' + address,
+                cmd: ['-c', '/etc/frp/frpc.toml'],
+                networks,
+                restart_policy: 'on-failure',
+                env: {
+                  FRP_SERVER_ADDR: configs().frp.serverAddr,
+                  FRP_SERVER_PORT: configs().frp.serverPort.toString(),
+                  FRP_NAME: 'API-' + address,
+                  FRP_LOCAL_IP: tunnel_name,
+                  FRP_LOCAL_PORT: tunnel_port.toString(),
+                  FRP_CUSTOM_DOMAIN: address + '.' + configs().frp.serverAddr,
+                },
               },
-            }));
+              false,
+            ));
           if (!status) {
             throw error;
           }
@@ -296,6 +312,7 @@ export class Provider {
         let { status, error } = await this.containerOrchestration.pullImage(
           op.args.image,
         );
+
         if (!status) {
           throw error;
         }

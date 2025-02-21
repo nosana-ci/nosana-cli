@@ -3,6 +3,7 @@ import Dockerode from 'dockerode';
 import { repoTagsContainsImage } from './utils/repoTagsContainsImage.js';
 import { MultiProgressBarReporter } from '../services/NodeManager/node/utils/multiProgressBarReporter.js';
 import { createLoggingProxy } from '../services/NodeManager/monitoring/proxy/loggingProxy.js';
+import { abortControllerSelector } from '../services/NodeManager/node/abort/abortControllerSelector.js';
 
 export class DockerExtended extends Dockerode {
   async promisePull(image: string, controller: AbortController) {
@@ -12,8 +13,19 @@ export class DockerExtended extends Dockerode {
 
     return await new Promise((resolve, reject): any =>
       this.pull(image, (err: any, stream: any) => {
-        if (controller.signal.aborted) {
+        const destroy = () => {
           stream.destroy();
+          reject(
+            new Error(
+              `Pulling image aborted due to ${
+                abortControllerSelector().signal.reason
+              }`,
+            ),
+          );
+        };
+
+        if (controller.signal.aborted) {
+          destroy();
         }
 
         if (err) {
@@ -33,8 +45,6 @@ export class DockerExtended extends Dockerode {
         }) => {
           multiProgressBarReporter.update(event);
         };
-
-        const destroy = () => stream.destroy();
 
         controller.signal.addEventListener('abort', destroy);
 
