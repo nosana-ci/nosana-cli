@@ -20,6 +20,10 @@ import { ResourceManager } from './resource/resourceManager.js';
 import { selectContainerOrchestrationProvider } from '../provider/containerOrchestration/selectContainerOrchestration.js';
 import { RegisterHandler } from './register/index.js';
 import { BalanceHandler } from './balance/balanceHandler.js';
+import {
+  abortControllerSelector,
+  nodeAbortControllerSelector,
+} from './abort/abortControllerSelector.js';
 
 export class BasicNode {
   public isOnboarded: boolean = false;
@@ -140,6 +144,7 @@ export class BasicNode {
     await this.runHandler.stop();
     await this.jobHandler.stop();
     this.expiryHandler.stop();
+    nodeAbortControllerSelector().refresh();
   }
 
   async clean(): Promise<void> {
@@ -262,7 +267,12 @@ export class BasicNode {
                  * so we force close the current job and it causes the container.wait()
                  * to unblock and move to the next stage
                  */
-                await this.jobHandler.stopCurrentJob();
+                // await this.jobHandler.stopCurrentJob();
+
+                /**
+                 * we now use the abort controller to close the container operations
+                 */
+                abortControllerSelector().abort('expired');
               } catch (error) {
                 reject(error);
               }
