@@ -34,10 +34,13 @@ export class DockerExtended extends Dockerode {
           multiProgressBarReporter.update(event);
         };
 
-        controller.signal.addEventListener('abort', () => stream.destroy());
+        const destroy = () => stream.destroy();
+
+        controller.signal.addEventListener('abort', destroy);
 
         const onFinished = (err: any, _: any) => {
           multiProgressBarReporter.stop(`done pulling image ${image}`);
+          controller.signal.removeEventListener('abort', destroy);
           if (!err) {
             resolve(true);
             return;

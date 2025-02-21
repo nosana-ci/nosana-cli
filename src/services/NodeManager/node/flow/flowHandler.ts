@@ -44,7 +44,7 @@ export class FlowHandler {
       const op = flow.jobDefinition.ops[i];
       const opState = this.repository.getOpState(id, i);
 
-      if (!opState.endTime || abortControllerSelector().signal.aborted) {
+      if (opState.endTime || abortControllerSelector().signal.aborted) {
         continue;
       }
 

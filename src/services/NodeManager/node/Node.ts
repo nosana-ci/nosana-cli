@@ -156,6 +156,7 @@ export class BasicNode {
      */
     await this.jobHandler.stop();
     this.expiryHandler.stop();
+    nodeAbortControllerSelector().refresh();
   }
 
   async start(): Promise<void> {

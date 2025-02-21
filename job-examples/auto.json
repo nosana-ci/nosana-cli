@@ -1,0 +1,30 @@
+{
+  "ops": [
+    {
+      "id": "automatic1111",
+      "args": {
+        "cmd": [
+          "/bin/sh",
+          "-c",
+          "python -u launch.py --listen --port 7860 --enable-insecure-extension-access"
+        ],
+        "gpu": true,
+        "image": "nosana/automatic1111:0.0.2",
+        "expose": 7860,
+        "resources": [
+          {
+            "url": "https://models.nosana.io/stable-diffusion/1.5",
+            "type": "S3",
+            "target": "/stable-diffusion-webui/models/Stable-diffusion"
+          }
+        ]
+      },
+      "type": "container/run"
+    }
+  ],
+  "meta": {
+    "trigger": "dashboard"
+  },
+  "type": "container",
+  "version": "0.1"
+}

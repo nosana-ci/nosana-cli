@@ -27,6 +27,8 @@ export class DockerContainerOrchestration
   public name: string = 'docker';
   public gpu: string = 'all';
 
+  public listeners = new Map<string, Array<() => Promise<void>>>();
+
   constructor(server: string, gpu: string) {
     const { host, port, protocol } = createSeverObject(server);
 
@@ -209,9 +211,14 @@ export class DockerContainerOrchestration
       this.stopContainer(containerId);
     }
 
-    controller.signal.addEventListener('abort', () => {
-      this.stopContainer(containerId);
-    });
+    const stopFunction = async () => {
+      await this.stopContainer(containerId);
+    };
+
+    controller.signal.addEventListener('abort', stopFunction);
+    const current = this.listeners.get(containerId) || [];
+    current.push(stopFunction);
+    this.listeners.set(containerId, current);
   }
 
   async runContainer(
@@ -257,9 +264,15 @@ export class DockerContainerOrchestration
     }
   }
 
-  async stopContainer(id: string): Promise<ReturnedStatus> {
+  async stopContainer(containerId: string): Promise<ReturnedStatus> {
+    const listeners = this.listeners.get(containerId) || [];
+
+    for (const listener of listeners) {
+      abortControllerSelector().signal.removeEventListener('abort', listener);
+    }
+
     try {
-      const container = this.docker.getContainer(id);
+      const container = this.docker.getContainer(containerId);
       if (container.id) {
         let containerInfo: Dockerode.ContainerInspectInfo | undefined;
 
@@ -269,7 +282,7 @@ export class DockerContainerOrchestration
 
         if (containerInfo) {
           if (containerInfo.State.Status !== 'exited') {
-            this.docker.getContainer(id).stop();
+            this.docker.getContainer(containerId).stop();
           }
         }
       }
@@ -280,6 +293,12 @@ export class DockerContainerOrchestration
   }
 
   async stopAndDeleteContainer(containerId: string): Promise<ReturnedStatus> {
+    const listeners = this.listeners.get(containerId) || [];
+
+    for (const listener of listeners) {
+      abortControllerSelector().signal.removeEventListener('abort', listener);
+    }
+
     try {
       const container = this.docker.getContainer(containerId);
 
