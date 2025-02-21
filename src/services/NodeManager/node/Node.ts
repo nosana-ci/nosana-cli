@@ -257,27 +257,10 @@ export class BasicNode {
             jobAddress,
             this.jobHandler.accountEmitter,
             async () => {
-              try {
-                /**
-                 * upload the result and end the flow, also clean up flow.
-                 */
-                // await this.jobHandler.finish(run);
-
-                /**
-                 * so we force close the current job and it causes the container.wait()
-                 * to unblock and move to the next stage
-                 */
-                // await this.jobHandler.stopCurrentJob();
-
-                /**
-                 * we now use the abort controller to close the container operations
-                 */
-                abortControllerSelector().abort('expired');
-              } catch (error) {
-                reject(error);
-              }
-
-              // resolve(); // Signal that the process should end
+              /**
+               * we now use the abort controller to close the container operations
+               */
+              abortControllerSelector().abort('expired');
             },
           );
 

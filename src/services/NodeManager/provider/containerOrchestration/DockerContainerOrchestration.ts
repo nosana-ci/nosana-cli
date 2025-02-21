@@ -15,6 +15,7 @@ import {
   RunContainerArgs,
 } from './interface.js';
 import { ReturnedStatus } from '../types.js';
+import { abortControllerSelector } from '../../node/abort/abortControllerSelector.js';
 
 export class DockerContainerOrchestration
   implements ContainerOrchestrationInterface
@@ -72,8 +73,14 @@ export class DockerContainerOrchestration
       return { status: true };
     }
 
+    const controller = abortControllerSelector() as AbortController;
+
+    if (controller.signal.aborted) {
+      return { status: false, error: controller.signal.reason };
+    }
+
     try {
-      await this.docker.promisePull(image);
+      await this.docker.promisePull(image, controller);
       return { status: true };
     } catch (error) {
       return { status: false, error };
@@ -195,12 +202,30 @@ export class DockerContainerOrchestration
     return container;
   }
 
+  setupContainerAbortion(containerId: string) {
+    const controller = abortControllerSelector() as AbortController;
+
+    if (controller.signal.aborted) {
+      this.stopContainer(containerId);
+    }
+
+    controller.signal.addEventListener('abort', () => {
+      this.stopContainer(containerId);
+    });
+  }
+
   async runContainer(
     args: ContainerCreateOptions,
   ): Promise<ReturnedStatus<Container>> {
+    const controller = abortControllerSelector() as AbortController;
+    if (controller.signal.aborted) {
+      return { status: false, error: controller.signal.reason };
+    }
+
     try {
       const container = await this.docker.createContainer(args);
       await container.start();
+      this.setupContainerAbortion(container.id);
       return { status: true, result: container };
     } catch (error) {
       return { status: false, error };
@@ -211,11 +236,20 @@ export class DockerContainerOrchestration
     image: string,
     args: RunContainerArgs,
   ): Promise<ReturnedStatus<Container>> {
+    const controller = abortControllerSelector() as AbortController;
+    if (controller.signal.aborted) {
+      return { status: false, error: controller.signal.reason };
+    }
+
     try {
       const container = await this.docker.createContainer(
         mapRunContainerArgsToContainerCreateOpts(image, args, this.gpu),
       );
+
       await container.start();
+
+      this.setupContainerAbortion(container.id);
+
       console.log(container);
       return { status: true, result: container };
     } catch (error) {

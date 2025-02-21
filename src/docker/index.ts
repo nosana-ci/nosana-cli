@@ -1,16 +1,21 @@
 import Dockerode from 'dockerode';
+
 import { repoTagsContainsImage } from './utils/repoTagsContainsImage.js';
 import { MultiProgressBarReporter } from '../services/NodeManager/node/utils/multiProgressBarReporter.js';
 import { createLoggingProxy } from '../services/NodeManager/monitoring/proxy/loggingProxy.js';
 
 export class DockerExtended extends Dockerode {
-  async promisePull(image: string) {
+  async promisePull(image: string, controller: AbortController) {
     const multiProgressBarReporter = createLoggingProxy(
       new MultiProgressBarReporter(),
     );
 
     return await new Promise((resolve, reject): any =>
       this.pull(image, (err: any, stream: any) => {
+        if (controller.signal.aborted) {
+          stream.destroy();
+        }
+
         if (err) {
           reject(err);
           return;
@@ -28,6 +33,8 @@ export class DockerExtended extends Dockerode {
         }) => {
           multiProgressBarReporter.update(event);
         };
+
+        controller.signal.addEventListener('abort', () => stream.destroy());
 
         const onFinished = (err: any, _: any) => {
           multiProgressBarReporter.stop(`done pulling image ${image}`);

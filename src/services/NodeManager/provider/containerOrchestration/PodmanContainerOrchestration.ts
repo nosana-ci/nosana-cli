@@ -42,6 +42,7 @@ export class PodmanContainerOrchestration extends DockerContainerOrchestration {
         );
         if (start.status === 204) {
           const container = this.docker.getContainer(createResult.Id);
+          this.setupContainerAbortion(container.id);
           return { status: true, result: container };
         } else {
           return {
