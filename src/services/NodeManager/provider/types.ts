@@ -1,4 +1,5 @@
 import typia from 'typia';
+import { JobDefinition as JobDefinitionSDK } from '@nosana/sdk';
 
 export const validateJobDefinition =
   typia.createValidateEquals<JobDefinition>();
@@ -59,23 +60,11 @@ export interface ReceiveJobResultLogicstics {
   };
 }
 
-export type JobDefinition = {
-  version: string;
-  type: JobType;
+export type JobDefinition = JobDefinitionSDK & {
   logistics?: JobLogistics;
-  meta?: {
-    trigger?: string;
+  meta?: JobDefinitionSDK['meta'] & {
+    [key: string]: unknown;
   };
-  global?: {
-    image?: string;
-    gpu?: boolean;
-    entrypoint?: string | string[];
-    env?: {
-      [key: string]: string;
-    };
-    work_dir?: string;
-  };
-  ops: Ops;
 };
 export type JobType = 'container';
 

@@ -15,6 +15,7 @@ import {
   RunContainerArgs,
 } from './interface.js';
 import { ReturnedStatus } from '../types.js';
+import { abortControllerSelector } from '../../node/abort/abortControllerSelector.js';
 
 export class DockerContainerOrchestration
   implements ContainerOrchestrationInterface
@@ -25,6 +26,8 @@ export class DockerContainerOrchestration
   public protocol: 'https' | 'http' | 'ssh';
   public name: string = 'docker';
   public gpu: string = 'all';
+
+  public listeners = new Map<string, Array<() => Promise<void>>>();
 
   constructor(server: string, gpu: string) {
     const { host, port, protocol } = createSeverObject(server);
@@ -72,8 +75,14 @@ export class DockerContainerOrchestration
       return { status: true };
     }
 
+    const controller = abortControllerSelector() as AbortController;
+
+    if (controller.signal.aborted) {
+      return { status: false, error: controller.signal.reason };
+    }
+
     try {
-      await this.docker.promisePull(image);
+      await this.docker.promisePull(image, controller);
       return { status: true };
     } catch (error) {
       return { status: false, error };
@@ -195,12 +204,38 @@ export class DockerContainerOrchestration
     return container;
   }
 
+  setupContainerAbortListener(containerId: string) {
+    const controller = abortControllerSelector() as AbortController;
+
+    if (controller.signal.aborted) {
+      this.stopContainer(containerId);
+    }
+
+    const stopFunction = async () => {
+      await this.stopContainer(containerId);
+    };
+
+    controller.signal.addEventListener('abort', stopFunction);
+    const current = this.listeners.get(containerId) || [];
+    current.push(stopFunction);
+    this.listeners.set(containerId, current);
+  }
+
   async runContainer(
     args: ContainerCreateOptions,
+    addAbortListener = true,
   ): Promise<ReturnedStatus<Container>> {
+    const controller = abortControllerSelector() as AbortController;
+    if (controller.signal.aborted) {
+      return { status: false, error: controller.signal.reason };
+    }
+
     try {
       const container = await this.docker.createContainer(args);
       await container.start();
+      if (addAbortListener) {
+        this.setupContainerAbortListener(container.id);
+      }
       return { status: true, result: container };
     } catch (error) {
       return { status: false, error };
@@ -210,22 +245,39 @@ export class DockerContainerOrchestration
   async runFlowContainer(
     image: string,
     args: RunContainerArgs,
+    addAbortListener = true,
   ): Promise<ReturnedStatus<Container>> {
+    const controller = abortControllerSelector() as AbortController;
+    if (controller.signal.aborted) {
+      return { status: false, error: controller.signal.reason };
+    }
+
     try {
       const container = await this.docker.createContainer(
         mapRunContainerArgsToContainerCreateOpts(image, args, this.gpu),
       );
+
       await container.start();
-      console.log(container);
+
+      if (addAbortListener) {
+        this.setupContainerAbortListener(container.id);
+      }
+
       return { status: true, result: container };
     } catch (error) {
       return { status: false, error };
     }
   }
 
-  async stopContainer(id: string): Promise<ReturnedStatus> {
+  async stopContainer(containerId: string): Promise<ReturnedStatus> {
+    const listeners = this.listeners.get(containerId) || [];
+
+    for (const listener of listeners) {
+      abortControllerSelector().signal.removeEventListener('abort', listener);
+    }
+
     try {
-      const container = this.docker.getContainer(id);
+      const container = this.docker.getContainer(containerId);
       if (container.id) {
         let containerInfo: Dockerode.ContainerInspectInfo | undefined;
 
@@ -235,7 +287,7 @@ export class DockerContainerOrchestration
 
         if (containerInfo) {
           if (containerInfo.State.Status !== 'exited') {
-            this.docker.getContainer(id).stop();
+            this.docker.getContainer(containerId).stop();
           }
         }
       }
@@ -246,6 +298,12 @@ export class DockerContainerOrchestration
   }
 
   async stopAndDeleteContainer(containerId: string): Promise<ReturnedStatus> {
+    const listeners = this.listeners.get(containerId) || [];
+
+    for (const listener of listeners) {
+      abortControllerSelector().signal.removeEventListener('abort', listener);
+    }
+
     try {
       const container = this.docker.getContainer(containerId);
 

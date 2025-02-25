@@ -34,10 +34,12 @@ export interface ContainerOrchestrationInterface {
   getContainer(id: string): Promise<Container>;
   runContainer(
     args: ContainerCreateOptions,
+    addAbortListener?: boolean,
   ): Promise<ReturnedStatus<Container>>;
   runFlowContainer(
     image: string,
     args: RunContainerArgs,
+    addAbortListener?: boolean,
   ): Promise<ReturnedStatus<Container>>;
   stopContainer(id: string): Promise<ReturnedStatus>;
   stopAndDeleteContainer(id: string): Promise<ReturnedStatus>;

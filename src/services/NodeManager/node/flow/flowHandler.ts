@@ -9,6 +9,7 @@ import {
 import { Provider } from '../../provider/Provider.js';
 import { NodeRepository } from '../../repository/NodeRepository.js';
 import { applyLoggingProxyToClass } from '../../monitoring/proxy/loggingProxy.js';
+import { abortControllerSelector } from '../abort/abortControllerSelector.js';
 
 export class FlowHandler {
   constructor(private provider: Provider, private repository: NodeRepository) {
@@ -43,29 +44,31 @@ export class FlowHandler {
       const op = flow.jobDefinition.ops[i];
       const opState = this.repository.getOpState(id, i);
 
-      if (!opState.endTime) {
-        try {
-          if (
-            !(await this.provider.runOperation(op.type, {
-              id,
-              index: i,
-              name: this.repository.getFlowOperationName(id, i),
-            }))
-          ) {
-            this.repository.updateflowState(id, {
-              endTime: Date.now(),
-              status: 'failed',
-            });
-            return this.repository.getflow(id);
-          }
-        } catch (error) {
-          this.repository.updateflowStateError(id, error);
+      if (opState.endTime || abortControllerSelector().signal.aborted) {
+        continue;
+      }
+
+      try {
+        if (
+          !(await this.provider.runOperation(op.type, {
+            id,
+            index: i,
+            name: this.repository.getFlowOperationName(id, i),
+          }))
+        ) {
           this.repository.updateflowState(id, {
             endTime: Date.now(),
             status: 'failed',
           });
           return this.repository.getflow(id);
         }
+      } catch (error) {
+        this.repository.updateflowStateError(id, error);
+        this.repository.updateflowState(id, {
+          endTime: Date.now(),
+          status: 'failed',
+        });
+        return this.repository.getflow(id);
       }
     }
 

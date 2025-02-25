@@ -64,7 +64,6 @@ export class ApiHandler {
   public async start(): Promise<string> {
     try {
       const tunnelServer = await this.restartTunnelAndProxy();
-      await this.listen();
       this.startWebSocketServer();
 
       return tunnelServer;
@@ -81,6 +80,7 @@ export class ApiHandler {
     await sleep(3);
     initTunnel({ server: tunnelServer, port: this.port });
     this.startTunnelCheck(tunnelServer);
+    await this.listen();
     return tunnelServer;
   }
 
@@ -211,6 +211,10 @@ export class ApiHandler {
   }
 
   private async listen(): Promise<number> {
+    if (this.server) {
+      this.server.close();
+      this.server = null;
+    }
     return new Promise<number>((resolve, reject) => {
       this.server = this.api.listen(this.port, () => {
         resolve(this.port);

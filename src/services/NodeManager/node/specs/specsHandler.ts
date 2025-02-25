@@ -1,4 +1,4 @@
-import { Flow, OpState } from '@nosana/sdk';
+import { Client, Flow, OpState } from '@nosana/sdk';
 
 import { configs } from '../../configs/configs.js';
 import { FlowHandler } from '../flow/flowHandler.js';
@@ -16,11 +16,18 @@ import {
   CudaCheckSuccessResponse,
 } from '../../../../types/cudaCheck.js';
 import { NetworkInfoResults, SystemInfoResults } from './type.js';
+import { clientSelector, QueryClient } from '../../../../api/client.js';
 
 export class SpecsHandler {
+  private client: QueryClient;
   private flowHandler: FlowHandler;
 
-  constructor(private provider: Provider, private repository: NodeRepository) {
+  constructor(
+    private provider: Provider,
+    private repository: NodeRepository,
+    private sdk: Client,
+  ) {
+    this.client = clientSelector();
     this.flowHandler = new FlowHandler(this.provider, repository);
     applyLoggingProxyToClass(this);
   }
@@ -42,6 +49,7 @@ export class SpecsHandler {
 
       if (result && result.state.status === 'success') {
         await this.processSuccess(result.state.opStates);
+        await this.submitSystemSpecs();
       } else if (result && result.state.status === 'failed') {
         this.processFailure(result.state.opStates);
       } else {
@@ -52,6 +60,26 @@ export class SpecsHandler {
     }
 
     return false;
+  }
+
+  private async submitSystemSpecs(): Promise<void> {
+    const nodeInfo = this.repository.getNodeInfo();
+
+    await this.client
+      .POST('/api/nodes/{id}/submit-system-specs', {
+        params: {
+          path: { id: this.sdk.solana.provider!.wallet.publicKey.toString() },
+          header: {
+            authorization: this.sdk.authorization.generate(
+              configs().signMessage,
+            ),
+          },
+        },
+        body: nodeInfo,
+      })
+      .catch((error) => {
+        console.error(error);
+      });
   }
 
   private processSuccess(opStates: OpState[]): void {

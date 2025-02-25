@@ -2,13 +2,17 @@ import fs from 'fs';
 import os from 'os';
 import { LowSync } from 'lowdb/lib';
 import { JSONFileSyncPreset } from 'lowdb/node';
-import { CudaCheckSuccessResponse } from '../../../types/cudaCheck.js';
+
 import { Flow } from '../../../services/NodeManager/provider/types.js';
+import { CudaCheckSuccessResponse } from '../../../types/cudaCheck.js';
+
+import { pkg } from '../../../static/staticsImports.js';
 
 export type NodeDb = {
   flows: { [key: string]: Flow };
   resources: Resources;
   info: {
+    version: string;
     country: string;
     network: {
       ip: string;
@@ -50,6 +54,7 @@ const initial_state: NodeDb = {
   },
   flows: {},
   info: {
+    version: pkg.version,
     country: '',
     network: {
       ip: '',
@@ -67,8 +72,8 @@ const initial_state: NodeDb = {
     ram_mb: 0,
     gpus: {
       devices: [],
-      runtime_version: '0.0',
-      cuda_driver_version: '0.0',
+      runtime_version: 0,
+      cuda_driver_version: 0,
       nvml_driver_version: '0.0.0',
     },
   },
@@ -99,6 +104,16 @@ export class DB {
 
     if (!this.db.data.info) {
       this.db.data.info = initial_state.info;
+    }
+
+    if (this.db.data.info) {
+      this.db.data.info = { ...initial_state.info, ...this.db.data.info };
+    }
+
+    // @ts-ignore
+    if (this.db.data.info.disk) {
+      // @ts-ignore
+      delete this.db.data.info.disk; // remove old key
     }
 
     this.db.write();

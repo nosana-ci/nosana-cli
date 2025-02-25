@@ -23,7 +23,7 @@ let nosana: Client;
 let nosBalance: TokenAmount | undefined, solBalance: number;
 
 export async function setSDK(
-  network: string,
+  network: 'mainnet' | 'devnet',
   rpc: string | undefined,
   market: string | undefined,
   keyfile: string,

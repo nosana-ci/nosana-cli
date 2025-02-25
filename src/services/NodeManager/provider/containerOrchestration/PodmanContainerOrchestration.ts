@@ -16,6 +16,7 @@ export class PodmanContainerOrchestration extends DockerContainerOrchestration {
   async runFlowContainer(
     image: string,
     args: RunContainerArgs,
+    addAbortListener = true,
   ): Promise<ReturnedStatus<Container>> {
     let error;
     // Incase of error, retry 3 times
@@ -42,6 +43,9 @@ export class PodmanContainerOrchestration extends DockerContainerOrchestration {
         );
         if (start.status === 204) {
           const container = this.docker.getContainer(createResult.Id);
+          if (addAbortListener) {
+            this.setupContainerAbortListener(container.id);
+          }
           return { status: true, result: container };
         } else {
           return {
