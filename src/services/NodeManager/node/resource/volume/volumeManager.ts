@@ -54,17 +54,15 @@ export class VolumeManager {
 
   public async createRemoteVolume(resource: RequiredResource): Promise<string> {
     const resourceName = createResourceName(resource);
-    const savedResource = this.repository.getVolumeResource(
+
+    let volumeName: string = this.repository.getVolumeResource(
       createResourceName(resource),
     )?.volume;
 
-    if (savedResource) {
-      this.setVolume(resourceName, savedResource);
-      return savedResource;
-    }
+    let sync = true;
 
-    try {
-      let volumeName: string;
+    if (!volumeName) {
+      sync = false;
       const response = await this.containerOrchestration.createVolume();
 
       if (response.error || !response.result) {
@@ -78,15 +76,21 @@ export class VolumeManager {
       } else {
         volumeName = response.result.Name;
       }
+    }
 
+    try {
       if (resource.url) {
-        await this.runResourceManagerContainer(volumeName, {
-          url: resource.url,
-          files: resource.files,
-        });
+        await this.runResourceManagerContainer(
+          volumeName,
+          {
+            url: resource.url,
+            files: resource.files,
+          },
+          sync,
+        );
       } else {
         for (const bucket of resource.buckets!) {
-          await this.runResourceManagerContainer(volumeName, bucket);
+          await this.runResourceManagerContainer(volumeName, bucket, sync);
         }
       }
 
@@ -104,6 +108,7 @@ export class VolumeManager {
       url: string;
       files?: string[];
     },
+    syncing = false,
   ): Promise<void> {
     const { url, files } = resource;
 
@@ -143,7 +148,9 @@ export class VolumeManager {
           formatSize = format;
 
           this.progressBarReporter.start(
-            `downloading resource volume resource ${name}`,
+            `${
+              syncing ? 'Syncing' : 'Downloading'
+            } resource volume resource ${name}`,
             {
               format: `{bar} {percentage}% | {value}/{total}${format} | {valueFiles}/{totalFiles} files`,
             },
@@ -171,7 +178,9 @@ export class VolumeManager {
     // If download failed, remove volume
     if (StatusCode !== 0) {
       this.progressBarReporter.stop(
-        `downloading resource volume resource ${name} stopped`,
+        `${
+          syncing ? 'Syncing' : 'Downloading'
+        } resource volume resource ${name} stopped`,
       );
       const errrorBuffer = await container.logs({
         follow: false,
@@ -196,7 +205,9 @@ export class VolumeManager {
     }
 
     this.progressBarReporter.stop(
-      `downloading resource volume resource ${name} completed`,
+      `${
+        syncing ? 'Synced' : 'Downloaded'
+      } resource volume resource ${name} completed`,
     );
 
     await this.containerOrchestration.stopAndDeleteContainer(container.id);
