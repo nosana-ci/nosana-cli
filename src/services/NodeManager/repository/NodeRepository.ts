@@ -43,7 +43,7 @@ export class NodeRepository {
 
   public updateflowStateSecret(
     id: string,
-    updatedFields: { [key: string]: string },
+    updatedFields: { [key: string]: any },
   ): void {
     if (!this.db.data.flows[id]?.state?.secrets) {
       this.db.data.flows[id].state.secrets = {};
@@ -56,7 +56,7 @@ export class NodeRepository {
     this.db.write();
   }
 
-  public getFlowSecret(id: string, key: string): string | undefined {
+  public getFlowSecret(id: string, key: string): any | undefined {
     const secrets = this.db.data.flows[id]?.state?.secrets ?? {};
     return secrets[key];
   }

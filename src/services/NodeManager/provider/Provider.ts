@@ -10,10 +10,15 @@ import { jobEmitter } from '../node/job/jobHandler.js';
 import { configs } from '../configs/configs.js';
 import { s3HelperImage } from '../node/resource/types.js';
 import {
-  generateExposeId,
+  generateProxies,
+  generateUrlSecretObject,
   getExposePorts,
   isOpExposed,
 } from '../../../generic/expose-util.js';
+import { ExposedPortHealthCheck } from './ExposedPortHealthCheck.js';
+import { ExposedPort } from '@nosana/sdk';
+
+const frpcImage = 'docker.io/nosana/frpc:multi-v0.0.1';
 
 export class Provider {
   constructor(
@@ -24,15 +29,8 @@ export class Provider {
     applyLoggingProxyToClass(this);
   }
 
+  private exposedPortHealthCheck: ExposedPortHealthCheck | undefined;
   private currentContainer: Dockerode.Container | undefined;
-  private exposedUrlHealthChecks: NodeJS.Timeout | undefined;
-  private healthCheckTargets: {
-    id: string;
-    container: Dockerode.Container;
-    ports: number[];
-    urls: string[];
-    passed: Set<number>;
-  } | null = null;
 
   public async stopReverseProxyApi(address: string): Promise<boolean> {
     const tunnel_name = `tunnel-api-${address}`;
@@ -75,7 +73,7 @@ export class Provider {
 
   // set up reverse proxy api for api handler
   public async setUpReverseProxyApi(address: string): Promise<boolean> {
-    const frpcImage = 'registry.hub.docker.com/nosana/frpc:0.1.0';
+    // const frpcImage = 'registry.hub.docker.com/nosana/frpc:0.1.0';
     const tunnelImage = 'registry.hub.docker.com/nosana/tunnel:0.1.0';
     try {
       let result;
@@ -184,10 +182,12 @@ export class Provider {
               env: {
                 FRP_SERVER_ADDR: configs().frp.serverAddr,
                 FRP_SERVER_PORT: configs().frp.serverPort.toString(),
-                FRP_NAME: 'API-' + address,
-                FRP_LOCAL_IP: tunnel_name,
-                FRP_LOCAL_PORT: tunnel_port.toString(),
-                FRP_CUSTOM_DOMAIN: address + '.' + configs().frp.serverAddr,
+                FRP_PROXIES: JSON.stringify([{
+                  name: 'API-' + address,
+                  localIp: tunnel_name,
+                  localPort: tunnel_port.toString(),
+                  customDomain: address + '.' + configs().frp.serverAddr
+                }]),
               },
             },
             false,
@@ -222,10 +222,12 @@ export class Provider {
                 env: {
                   FRP_SERVER_ADDR: configs().frp.serverAddr,
                   FRP_SERVER_PORT: configs().frp.serverPort.toString(),
-                  FRP_NAME: 'API-' + address,
-                  FRP_LOCAL_IP: tunnel_name,
-                  FRP_LOCAL_PORT: tunnel_port.toString(),
-                  FRP_CUSTOM_DOMAIN: address + '.' + configs().frp.serverAddr,
+                  FRP_PROXIES: JSON.stringify([{
+                    name: 'API-' + address,
+                    localIp: tunnel_name,
+                    localPort: tunnel_port.toString(),
+                    customDomain: address + '.' + configs().frp.serverAddr
+                  }]),
                 },
               },
               false,
@@ -241,75 +243,8 @@ export class Provider {
     return true;
   }
 
-  private async startServiceExposedUrlHealthCheck(
-    id: string,
-    container: Dockerode.Container,
-    ports: number[],
-    urls: string[],
-  ) {
-    // Initialize tracking object
-    this.healthCheckTargets = {
-      id,
-      container,
-      ports,
-      urls,
-      passed: new Set(),
-    };
-
-    if (this.exposedUrlHealthChecks) {
-      return;
-    }
-
-    this.exposedUrlHealthChecks = setInterval(async () => {
-      if (!this.healthCheckTargets) return;
-
-      const { id, container, ports, urls, passed } = this.healthCheckTargets;
-
-      for (let i = 0; i < ports.length; i++) {
-        if (passed.has(ports[i])) continue;
-
-        try {
-          const exec = await container.exec({
-            Cmd: ['curl', '-s', `localhost:${ports[i]}`],
-            AttachStdout: true,
-            AttachStderr: true,
-          });
-
-          const stream = await exec.start({ Detach: false, Tty: false });
-          const output = await new Promise<string>((resolve, reject) => {
-            let result = '';
-            stream.on('data', (data) => {
-              result += data.toString();
-            });
-            stream.on('end', () => resolve(result));
-            stream.on('error', reject);
-          });
-
-          if (output) {
-            passed.add(ports[i]);
-          }
-        } catch (error) {
-          console.error(`Health check failed for ${urls[i]}:`, error);
-        }
-      }
-
-      if (passed.size === ports.length) {
-        jobEmitter.emit('run-exposed', { id, urls });
-        this.stopServiceExposedUrlHealthCheck();
-      }
-    }, 2000);
-  }
-
-  public stopServiceExposedUrlHealthCheck(): void {
-    if (this.exposedUrlHealthChecks) {
-      clearInterval(this.exposedUrlHealthChecks);
-      this.exposedUrlHealthChecks = undefined;
-    }
-    this.healthCheckTargets = null;
-  }
-
   async containerRunOperation(id: string, index: number): Promise<boolean> {
-    const frpcImage = 'registry.hub.docker.com/nosana/frpc:0.1.0';
+    // const frpcImage =  'localhost/frpc:latest' //'registry.hub.docker.com/nosana/frpc:0.1.0';
 
     const flow = this.repository.getflow(id);
     const opState = this.repository.getOpState(id, index);
@@ -369,7 +304,7 @@ export class Provider {
         };
 
         const networks: { [key: string]: {} } = {};
-        const generatedIds: string[] = [];
+        let idMaps: Map<string, ExposedPort> = new Map();
         const ports = getExposePorts(op);
 
         if (isOpExposed(op as Operation<'container/run'>)) {
@@ -389,25 +324,8 @@ export class Provider {
             throw error;
           }
 
-          const proxies = [];
-
-          for (let port of ports) {
-            const generatedId = generateExposeId(
-              flow.id,
-              op.id,
-              port.toString(),
-              op.args.private,
-            );
-
-            proxies.push({
-              name: `${generatedId}-${opState.operationId}`,
-              localIp: name,
-              localPort: port.toString(),
-              customDomain: generatedId + '.' + configs().frp.serverAddr,
-            });
-
-            generatedIds.push(generatedId);
-          }
+          const { proxies, idMap } = generateProxies(flow.id, op, ports, name, opState.operationId)
+          idMaps = idMap;
 
           ({ status, error, result } =
             await this.containerOrchestration.runFlowContainer(frpcImage, {
@@ -428,16 +346,12 @@ export class Provider {
 
           if (op.args.private) {
             this.repository.updateflowStateSecret(id, {
-              [id]: generatedIds
-                .map((id) => id + '.' + configs().frp.serverAddr)
-                .join(', '),
+              [id]: generateUrlSecretObject(idMap),
               urlmode: 'private',
             });
           } else {
             this.repository.updateflowStateSecret(id, {
-              [id]: generatedIds
-                .map((id) => id + '.' + configs().frp.serverAddr)
-                .join(', '),
+              [id]: generateUrlSecretObject(idMap),
               urlmode: 'public',
             });
           }
@@ -506,12 +420,9 @@ export class Provider {
         });
 
         if (isOpExposed(op)) {
-          await this.startServiceExposedUrlHealthCheck(
-            id,
-            container,
-            ports,
-            generatedIds,
-          );
+          this.exposedPortHealthCheck = new ExposedPortHealthCheck(flow.id, this.currentContainer, jobEmitter)
+          this.exposedPortHealthCheck.addExposedPortsMap(idMaps)
+          this.exposedPortHealthCheck.startServiceExposedUrlHealthCheck()
         }
 
         await container.wait();
@@ -563,12 +474,14 @@ export class Provider {
         ],
       });
 
-      this.stopServiceExposedUrlHealthCheck();
-
+      this.exposedPortHealthCheck?.stopAllHealthChecks()
+      this.exposedPortHealthCheck = undefined;
+      
       return false;
     }
 
-    this.stopServiceExposedUrlHealthCheck();
+    this.exposedPortHealthCheck?.stopAllHealthChecks()
+    this.exposedPortHealthCheck = undefined;
 
     return true;
   }

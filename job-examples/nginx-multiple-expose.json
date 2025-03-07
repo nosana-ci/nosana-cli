@@ -1,18 +1,39 @@
 {
-  "version": "0.1",
-  "type": "container",
-  "meta": {
-    "trigger": "cli"
-  },
   "ops": [
     {
-      "type": "container/run",
-      "id": "nginx",
+      "id": "nosana-chat-bot",
       "args": {
-        "cmd": [],
-        "image": "nginx",
-        "expose": [80]
-      }
+        "cmd": [
+          "-c",
+          "lmdeploy serve api_server ./models/snapshots/2123003760781134cfc31124aa6560a45b491fdf --model-name llama3.1 --chat-template ./chat_template.json --model-format awq & npm start"
+        ],
+        "gpu": true,
+        "image": "docker.io/nosana/nosana-chat-bot:0.1.1",
+        "expose": [
+          { 
+            "port": 3000
+          },
+          { 
+            "port": 2333
+          }
+        ],
+        "resources": [
+          {
+            "url": "s3://nos-ai-models-qllsn32u/hugging-face/llama3.1/70b/4x/models--hugging-quants--Meta-Llama-3.1-70B-Instruct-AWQ-INT4",
+            "type": "S3",
+            "target": "/app/models/"
+          }
+        ]
+      },
+      "type": "container/run"
     }
-  ]
+  ],
+  "meta": {
+    "trigger": "dashboard",
+    "system_requirements": {
+      "required_vram": 44
+    }
+  },
+  "type": "container",
+  "version": "0.1"
 }

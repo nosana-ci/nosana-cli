@@ -216,7 +216,7 @@ export async function run(
   }
   let response;
   try {
-    response = await nosana.jobs.list(ipfsHash, options.timeout);
+    response = await nosana.jobs.list(ipfsHash, options.timeout, market.address);
   } catch (e) {
     return formatter.throw(OUTPUT_EVENTS.OUTPUT_JOB_POSTED_ERROR, {
       error: e as Error,
@@ -230,7 +230,7 @@ export async function run(
   if (isExposed(json_flow as JobDefinition)) {
     if (!isPrivate(json_flow as JobDefinition)) {
       formatter.output(OUTPUT_EVENTS.OUTPUT_SERVICE_URL, {
-        url: getJobUrls(json_flow as JobDefinition, response.job, config).join(
+        url: getJobUrls(json_flow as JobDefinition, response.job).join(
           ',',
         ),
       });

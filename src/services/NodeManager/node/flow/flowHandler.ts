@@ -190,15 +190,14 @@ export class FlowHandler {
       );
   }
 
-  public operationExposed(id: string): string {
-    const mode = this.repository.getFlowSecret(id, 'urlmode');
-    const generatedIds = this.repository.getFlowSecret(id, id);
+  public operationExposed(data: any, healtcheck?: boolean): string {
+    const mode = this.repository.getFlowSecret(data.flowId, 'urlmode');
+    const generatedIds = this.repository.getFlowSecret(data.flowId, data.flowId);
 
     if (
-      this.repository.getFlowSecret(id, 'urlmode') != 'private' &&
-      generatedIds
+      mode != 'private' && generatedIds[data.id]
     ) {
-      return generatedIds;
+      return generatedIds[data.id].url;
     }
 
     return mode ?? '';

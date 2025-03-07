@@ -39,7 +39,15 @@ export class JobHandler {
     this.accountEmitter = new EventEmitter();
 
     jobEmitter.on('run-exposed', (data) => {
-      this.flowHandler.operationExposed(data.id);
+      this.flowHandler.operationExposed(data, undefined);
+    });
+
+    jobEmitter.on('startup-success', (data) => {
+      this.flowHandler.operationExposed(data, true);
+    });
+
+    jobEmitter.on('continuous-failure', (data) => {
+      this.flowHandler.operationExposed(data, false);
     });
   }
 
