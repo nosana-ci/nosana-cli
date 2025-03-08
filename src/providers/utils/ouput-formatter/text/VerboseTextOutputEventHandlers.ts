@@ -79,9 +79,7 @@ export const verboseTextOutputEventHandlers: OutputEventHandlers = {
   },
 
   [OUTPUT_EVENTS.OUTPUT_SERVICE_URL]: (param: ServiceUrlParam) => {
-    console.log(
-      chalk.cyan(`Service URL:\t${chalk.bold(`${param.url}`)}`),
-    );
+    console.log(chalk.cyan(`Service URL:\t${chalk.bold(`${param.url}`)}`));
   },
 
   [OUTPUT_EVENTS.OUTPUT_PRIVATE_URL_MESSAGE]: (param: CommandParam) => {
@@ -142,7 +140,8 @@ export const verboseTextOutputEventHandlers: OutputEventHandlers = {
 
   [OUTPUT_EVENTS.OUTPUT_JOB_STATUS]: (param: JobStatusParam) => {
     console.log(
-      `Status:\t\t${param.status === 'COMPLETED' ? colors.GREEN : colors.CYAN}${param.status
+      `Status:\t\t${param.status === 'COMPLETED' ? colors.GREEN : colors.CYAN}${
+        param.status
       }${colors.RESET}`,
     );
   },
@@ -154,7 +153,9 @@ export const verboseTextOutputEventHandlers: OutputEventHandlers = {
   },
 
   [OUTPUT_EVENTS.OUTPUT_JOB_POSTED_TX]: (param: TxParam) => {
-    console.log(`Solana tx:\t${colors.CYAN}https://explorer.solana.com/tx/${param.tx}`);
+    console.log(
+      `Solana tx:\t${colors.CYAN}https://explorer.solana.com/tx/${param.tx}`,
+    );
   },
 
   [OUTPUT_EVENTS.OUTPUT_JOB_VALIDATION_ERROR]: (
@@ -254,7 +255,8 @@ export const verboseTextOutputEventHandlers: OutputEventHandlers = {
     console.log('Logs:');
 
     console.log(
-      `\n${colors.CYAN}- Executed step ${param.opState.operationId} in ${(param.opState.endTime! - param.opState.startTime!) / 1000
+      `\n${colors.CYAN}- Executed step ${param.opState.operationId} in ${
+        (param.opState.endTime! - param.opState.startTime!) / 1000
       }s${colors.RESET}\n`,
     );
 
@@ -267,8 +269,10 @@ export const verboseTextOutputEventHandlers: OutputEventHandlers = {
 
     if (param.opState.status) {
       console.log(
-        `\n${param.opState.exitCode ? colors.RED : colors.GREEN
-        }Exited with status ${param.opState.status} with code ${param.opState.exitCode
+        `\n${
+          param.opState.exitCode ? colors.RED : colors.GREEN
+        }Exited with status ${param.opState.status} with code ${
+          param.opState.exitCode
         } ${colors.RESET}`,
       );
     }

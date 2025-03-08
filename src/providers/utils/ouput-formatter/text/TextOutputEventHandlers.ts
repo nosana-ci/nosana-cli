@@ -43,7 +43,7 @@ type OutputEventHandlers = {
 
 function mapToDoNothingFunction(events: Array<keyof OutputEventHandlers>) {
   return events.reduce((handlers, event) => {
-    handlers[event] = () => { };
+    handlers[event] = () => {};
     return handlers;
   }, {} as OutputEventHandlers);
 }
@@ -63,9 +63,7 @@ export const textOutputEventHandlers: OutputEventHandlers = {
     OUTPUT_EVENTS.OUTPUT_JOB_EXECUTION,
   ]),
   [OUTPUT_EVENTS.OUTPUT_SERVICE_URL]: (param: ServiceUrlParam) => {
-    console.log(
-      chalk.cyan(`Service URL:\t${chalk.bold(`${param.url}`)}`),
-    );
+    console.log(chalk.cyan(`Service URL:\t${chalk.bold(`${param.url}`)}`));
   },
   [OUTPUT_EVENTS.OUTPUT_PRIVATE_URL_MESSAGE]: (param: CommandParam) => {
     console.log(
@@ -124,7 +122,8 @@ export const textOutputEventHandlers: OutputEventHandlers = {
   },
   [OUTPUT_EVENTS.OUTPUT_JOB_STATUS]: (param: JobStatusParam) => {
     console.log(
-      `Status:\t\t${param.status === 'COMPLETED' ? colors.GREEN : colors.CYAN}${param.status
+      `Status:\t\t${param.status === 'COMPLETED' ? colors.GREEN : colors.CYAN}${
+        param.status
       }${colors.RESET}`,
     );
   },
