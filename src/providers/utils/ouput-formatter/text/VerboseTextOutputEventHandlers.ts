@@ -74,7 +74,7 @@ export const verboseTextOutputEventHandlers: OutputEventHandlers = {
 
   [OUTPUT_EVENTS.OUTPUT_IPFS_UPLOADED]: (param: IpfsParam) => {
     console.log(
-      `ipfs uploaded:\t${colors.BLUE}${param.ipfsHash}${colors.RESET}`,
+      `IPFS uploaded:\t${colors.BLUE}${param.ipfsHash}${colors.RESET}`,
     );
   },
 
