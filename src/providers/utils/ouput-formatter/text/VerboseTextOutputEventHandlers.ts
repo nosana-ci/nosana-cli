@@ -117,7 +117,7 @@ export const verboseTextOutputEventHandlers: OutputEventHandlers = {
   },
 
   [OUTPUT_EVENTS.OUTPUT_JOB_URL]: (param: JobUrlParam) => {
-    console.log(`Job:\t\t${colors.BLUE}${param.job_url}${colors.RESET}`);
+    console.log(`Job URL:\t${colors.BLUE}${param.job_url}${colors.RESET}`);
   },
 
   [OUTPUT_EVENTS.OUTPUT_JSON_FLOW_URL]: (param: JsonFlowUrlParam) => {
@@ -148,7 +148,7 @@ export const verboseTextOutputEventHandlers: OutputEventHandlers = {
 
   [OUTPUT_EVENTS.OUTPUT_JOB_POSTING]: (param: JobPostingParam) => {
     console.log(
-      `Deployment:\t${colors.CYAN}${param.market_address}${colors.RESET} for price ${colors.YELLOW}${param.price} NOS/s${colors.RESET} (total: ${param.total} NOS)`,
+      `Job:\t\t${colors.CYAN}${param.market_address}${colors.RESET} for price ${colors.YELLOW}${param.price} NOS/s${colors.RESET} (total: ${param.total} NOS)`,
     );
   },
 
