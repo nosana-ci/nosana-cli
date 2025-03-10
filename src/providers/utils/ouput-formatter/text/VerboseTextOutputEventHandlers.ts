@@ -148,7 +148,7 @@ export const verboseTextOutputEventHandlers: OutputEventHandlers = {
 
   [OUTPUT_EVENTS.OUTPUT_JOB_POSTING]: (param: JobPostingParam) => {
     console.log(
-      `Deployment:\t${colors.CYAN}${param.market_address}${colors.RESET} for price ${colors.YELLOW}${param.price} NOS/s${colors.RESET} (total: ${param.total} NOS)`,
+      `Job:\t${colors.CYAN}${param.market_address}${colors.RESET} for price ${colors.YELLOW}${param.price} NOS/s${colors.RESET} (total: ${param.total} NOS)`,
     );
   },
 
