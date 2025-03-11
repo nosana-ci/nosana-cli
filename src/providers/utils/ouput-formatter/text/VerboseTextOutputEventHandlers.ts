@@ -74,14 +74,12 @@ export const verboseTextOutputEventHandlers: OutputEventHandlers = {
 
   [OUTPUT_EVENTS.OUTPUT_IPFS_UPLOADED]: (param: IpfsParam) => {
     console.log(
-      `ipfs uploaded:\t${colors.BLUE}${param.ipfsHash}${colors.RESET}`,
+      `IPFS uploaded:\t${colors.BLUE}${param.ipfsHash}${colors.RESET}`,
     );
   },
 
   [OUTPUT_EVENTS.OUTPUT_SERVICE_URL]: (param: ServiceUrlParam) => {
-    console.log(
-      chalk.cyan(`Services will be exposed at ${chalk.bold(`${param.url}`)}`),
-    );
+    console.log(chalk.cyan(`Service URL:\t${chalk.bold(`${param.url}`)}`));
   },
 
   [OUTPUT_EVENTS.OUTPUT_PRIVATE_URL_MESSAGE]: (param: CommandParam) => {
@@ -119,7 +117,7 @@ export const verboseTextOutputEventHandlers: OutputEventHandlers = {
   },
 
   [OUTPUT_EVENTS.OUTPUT_JOB_URL]: (param: JobUrlParam) => {
-    console.log(`Job:\t\t${colors.BLUE}${param.job_url}${colors.RESET}`);
+    console.log(`Job URL:\t${colors.BLUE}${param.job_url}${colors.RESET}`);
   },
 
   [OUTPUT_EVENTS.OUTPUT_JSON_FLOW_URL]: (param: JsonFlowUrlParam) => {
@@ -150,12 +148,14 @@ export const verboseTextOutputEventHandlers: OutputEventHandlers = {
 
   [OUTPUT_EVENTS.OUTPUT_JOB_POSTING]: (param: JobPostingParam) => {
     console.log(
-      `posting job to market ${colors.CYAN}${param.market_address}${colors.RESET} for price ${colors.YELLOW}${param.price} NOS/s${colors.RESET} (total: ${param.total} NOS)`,
+      `Job:\t\t${colors.CYAN}${param.market_address}${colors.RESET} for price ${colors.YELLOW}${param.price} NOS/s${colors.RESET} (total: ${param.total} NOS)`,
     );
   },
 
   [OUTPUT_EVENTS.OUTPUT_JOB_POSTED_TX]: (param: TxParam) => {
-    console.log(`job posted with tx ${chalk.cyan(param.tx)}!`);
+    console.log(
+      `Solana tx:\t${colors.CYAN}https://explorer.solana.com/tx/${param.tx}`,
+    );
   },
 
   [OUTPUT_EVENTS.OUTPUT_JOB_VALIDATION_ERROR]: (

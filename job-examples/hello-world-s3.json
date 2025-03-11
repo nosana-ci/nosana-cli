@@ -9,7 +9,7 @@
       "type": "container/run",
       "id": "hello-world",
       "args": {
-        "cmd": "echo hello world",
+        "cmd": "ls test && cat 'test/Hello version 1.txt'",
         "image": "ubuntu",
         "resources": [
           {
