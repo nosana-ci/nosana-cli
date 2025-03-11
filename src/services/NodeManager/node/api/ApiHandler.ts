@@ -64,7 +64,6 @@ export class ApiHandler {
   public async start(): Promise<string> {
     try {
       const tunnelServer = await this.restartTunnelAndProxy();
-      this.startWebSocketServer();
 
       return tunnelServer;
     } catch (error) {
@@ -76,11 +75,18 @@ export class ApiHandler {
     await this.stopTunnelAndProxy();
     await this.provider.setUpReverseProxyApi(this.address.toString());
 
+    this.stopServerAndWebSocket();
+
     const tunnelServer = `https://${this.address}.${configs().frp.serverAddr}`;
+
     await sleep(3);
+
     initTunnel({ server: tunnelServer, port: this.port });
     this.startTunnelCheck(tunnelServer);
+
     await this.listen();
+    this.startWebSocketServer();
+
     return tunnelServer;
   }
 
@@ -233,14 +239,17 @@ export class ApiHandler {
     }
   }
 
-  public async stop() {
-    await this.stopTunnelAndProxy();
-
+  public stopServerAndWebSocket() {
     if (this.server) {
       this.server.close();
     }
     if (this.wss) {
       this.wss.close();
     }
+  }
+
+  public async stop() {
+    await this.stopTunnelAndProxy();
+    this.stopServerAndWebSocket();
   }
 }
