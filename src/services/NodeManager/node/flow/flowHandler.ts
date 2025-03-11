@@ -192,11 +192,12 @@ export class FlowHandler {
 
   public operationExposed(data: any, healtcheck?: boolean): string {
     const mode = this.repository.getFlowSecret(data.flowId, 'urlmode');
-    const generatedIds = this.repository.getFlowSecret(data.flowId, data.flowId);
+    const generatedIds = this.repository.getFlowSecret(
+      data.flowId,
+      data.flowId,
+    );
 
-    if (
-      mode != 'private' && generatedIds[data.id]
-    ) {
+    if (mode != 'private' && generatedIds[data.id]) {
       return generatedIds[data.id].url;
     }
 

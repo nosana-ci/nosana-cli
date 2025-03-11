@@ -180,12 +180,14 @@ export class Provider {
               env: {
                 FRP_SERVER_ADDR: configs().frp.serverAddr,
                 FRP_SERVER_PORT: configs().frp.serverPort.toString(),
-                FRP_PROXIES: JSON.stringify([{
-                  name: 'API-' + address,
-                  localIp: tunnel_name,
-                  localPort: tunnel_port.toString(),
-                  customDomain: address + '.' + configs().frp.serverAddr
-                }]),
+                FRP_PROXIES: JSON.stringify([
+                  {
+                    name: 'API-' + address,
+                    localIp: tunnel_name,
+                    localPort: tunnel_port.toString(),
+                    customDomain: address + '.' + configs().frp.serverAddr,
+                  },
+                ]),
               },
             },
             false,
@@ -220,12 +222,14 @@ export class Provider {
                 env: {
                   FRP_SERVER_ADDR: configs().frp.serverAddr,
                   FRP_SERVER_PORT: configs().frp.serverPort.toString(),
-                  FRP_PROXIES: JSON.stringify([{
-                    name: 'API-' + address,
-                    localIp: tunnel_name,
-                    localPort: tunnel_port.toString(),
-                    customDomain: address + '.' + configs().frp.serverAddr
-                  }]),
+                  FRP_PROXIES: JSON.stringify([
+                    {
+                      name: 'API-' + address,
+                      localIp: tunnel_name,
+                      localPort: tunnel_port.toString(),
+                      customDomain: address + '.' + configs().frp.serverAddr,
+                    },
+                  ]),
                 },
               },
               false,
@@ -322,7 +326,13 @@ export class Provider {
             throw error;
           }
 
-          const { proxies, idMap } = generateProxies(flow.id, op, ports, name, opState.operationId)
+          const { proxies, idMap } = generateProxies(
+            flow.id,
+            op,
+            ports,
+            name,
+            opState.operationId,
+          );
           idMaps = idMap;
 
           ({ status, error, result } =
@@ -418,9 +428,13 @@ export class Provider {
         });
 
         if (isOpExposed(op)) {
-          this.exposedPortHealthCheck = new ExposedPortHealthCheck(flow.id, this.currentContainer, jobEmitter)
-          this.exposedPortHealthCheck.addExposedPortsMap(idMaps)
-          this.exposedPortHealthCheck.startServiceExposedUrlHealthCheck()
+          this.exposedPortHealthCheck = new ExposedPortHealthCheck(
+            flow.id,
+            this.currentContainer,
+            jobEmitter,
+          );
+          this.exposedPortHealthCheck.addExposedPortsMap(idMaps);
+          this.exposedPortHealthCheck.startServiceExposedUrlHealthCheck();
         }
 
         await container.wait();
@@ -472,13 +486,13 @@ export class Provider {
         ],
       });
 
-      this.exposedPortHealthCheck?.stopAllHealthChecks()
+      this.exposedPortHealthCheck?.stopAllHealthChecks();
       this.exposedPortHealthCheck = undefined;
-      
+
       return false;
     }
 
-    this.exposedPortHealthCheck?.stopAllHealthChecks()
+    this.exposedPortHealthCheck?.stopAllHealthChecks();
     this.exposedPortHealthCheck = undefined;
 
     return true;

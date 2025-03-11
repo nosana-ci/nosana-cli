@@ -1,6 +1,10 @@
-import { ExposedPort, HttpHealthCheck, WebSocketHealthCheck } from "@nosana/sdk";
-import Dockerode from "dockerode";
-import EventEmitter from "events";
+import {
+  ExposedPort,
+  HttpHealthCheck,
+  WebSocketHealthCheck,
+} from '@nosana/sdk';
+import Dockerode from 'dockerode';
+import EventEmitter from 'events';
 
 export class ExposedPortHealthCheck {
   private exposedPortMap: Map<string, ExposedPort> = new Map();
@@ -16,7 +20,13 @@ export class ExposedPortHealthCheck {
 
   private flowId: string;
 
-  constructor(flowId: string, container: Dockerode.Container, jobEmitter: EventEmitter, startupIntervalMs = 5000, continuousIntervalMs = 30000) {
+  constructor(
+    flowId: string,
+    container: Dockerode.Container,
+    jobEmitter: EventEmitter,
+    startupIntervalMs = 5000,
+    continuousIntervalMs = 30000,
+  ) {
     this.flowId = flowId;
     this.container = container;
     this.jobEmitter = jobEmitter;
@@ -39,16 +49,26 @@ export class ExposedPortHealthCheck {
 
     startupCheckInterval = setInterval(async () => {
       const success = await this.checkPortHealth(exposedPort);
-      
-      if(success == null){
+
+      if (success == null) {
         clearInterval(startupCheckInterval!);
-        this.jobEmitter.emit('run-exposed', { id, flowId: this.flowId, port: exposedPort.port, service: exposedPort.type });
+        this.jobEmitter.emit('run-exposed', {
+          id,
+          flowId: this.flowId,
+          port: exposedPort.port,
+          service: exposedPort.type,
+        });
         return;
       }
 
       if (success) {
         clearInterval(startupCheckInterval!);
-        this.jobEmitter.emit("startup-success", { id, flowId: this.flowId, port: exposedPort.port, service: exposedPort.type });
+        this.jobEmitter.emit('startup-success', {
+          id,
+          flowId: this.flowId,
+          port: exposedPort.port,
+          service: exposedPort.type,
+        });
 
         // **Start continuous health check only after startup success**
         this.startContinuousHealthCheck(id, exposedPort);
@@ -67,20 +87,24 @@ export class ExposedPortHealthCheck {
         clearInterval(continuousCheckInterval!);
         return; // Skip logging or emitting events if no check was done.
       }
-  
+
       const previousState = this.healthStatus.get(id) || false;
-  
+
       if (healthStatus !== previousState) {
         this.healthStatus.set(id, healthStatus);
         if (!healthStatus) {
-          this.jobEmitter.emit("continuous-failure", { id, flowId: this.flowId, port: exposedPort.port, service: exposedPort.type });
+          this.jobEmitter.emit('continuous-failure', {
+            id,
+            flowId: this.flowId,
+            port: exposedPort.port,
+            service: exposedPort.type,
+          });
         }
       }
     }, this.continuousIntervalMs);
-  
+
     this.intervals.set(id, continuousCheckInterval);
   }
-  
 
   public stopHealthCheckForId(id: string) {
     if (this.intervals.has(id)) {
@@ -100,37 +124,64 @@ export class ExposedPortHealthCheck {
     this.exposedPortMap.clear();
   }
 
-  private async checkPortHealth(exposedPort: ExposedPort): Promise<boolean | null> {
+  private async checkPortHealth(
+    exposedPort: ExposedPort,
+  ): Promise<boolean | null> {
     if (!exposedPort.health_checks || exposedPort.health_checks.length === 0) {
       return null; // Return null to indicate no check was done.
     }
-  
+
     for (const healthCheck of exposedPort.health_checks) {
-      if (healthCheck.type === "http") {
-        const success = await this.runHttpHealthCheck(exposedPort.port, healthCheck);
+      if (healthCheck.type === 'http') {
+        const success = await this.runHttpHealthCheck(
+          exposedPort.port,
+          healthCheck,
+        );
         if (!success) return false;
-      } else if (healthCheck.type === "websocket") {
-        const success = await this.runWebSocketHealthCheck(exposedPort.port, healthCheck);
+      } else if (healthCheck.type === 'websocket') {
+        const success = await this.runWebSocketHealthCheck(
+          exposedPort.port,
+          healthCheck,
+        );
         if (!success) return false;
       }
     }
-  
+
     return true;
   }
-  
-  private async runHttpHealthCheck(port: number, healthCheck: HttpHealthCheck): Promise<boolean> {
-    const cmd = ["curl", "-s", "-o", "/dev/null", "-w", "%{http_code}", `http://localhost:${port}${healthCheck.path}`];
+
+  private async runHttpHealthCheck(
+    port: number,
+    healthCheck: HttpHealthCheck,
+  ): Promise<boolean> {
+    const cmd = [
+      'curl',
+      '-s',
+      '-o',
+      '/dev/null',
+      '-w',
+      '%{http_code}',
+      `http://localhost:${port}${healthCheck.path}`,
+    ];
 
     try {
       const output = await this.execCommand(cmd);
-      return Buffer.from(output, 'utf-8').toString().replace(/[^\x20-\x7E]/g, '').trim() == healthCheck.expected_status.toString()
+      return (
+        Buffer.from(output, 'utf-8')
+          .toString()
+          .replace(/[^\x20-\x7E]/g, '')
+          .trim() == healthCheck.expected_status.toString()
+      );
     } catch (error) {
       return false;
     }
   }
 
-  private async runWebSocketHealthCheck(port: number, healthCheck: WebSocketHealthCheck): Promise<boolean> {
-    const cmd = ["curl", "--include", "--no-buffer", `ws://localhost:${port}`];
+  private async runWebSocketHealthCheck(
+    port: number,
+    healthCheck: WebSocketHealthCheck,
+  ): Promise<boolean> {
+    const cmd = ['curl', '--include', '--no-buffer', `ws://localhost:${port}`];
 
     try {
       const output = await this.execCommand(cmd);
@@ -151,17 +202,17 @@ export class ExposedPortHealthCheck {
       const stream = await exec.start({ hijack: true, stdin: true });
 
       return new Promise((resolve, reject) => {
-        let output = "";
+        let output = '';
 
-        stream.on("data", (chunk) => {
+        stream.on('data', (chunk) => {
           output += chunk.toString();
         });
 
-        stream.on("end", () => {
+        stream.on('end', () => {
           resolve(output);
         });
 
-        stream.on("error", (err) => {
+        stream.on('error', (err) => {
           reject(err);
         });
       });
