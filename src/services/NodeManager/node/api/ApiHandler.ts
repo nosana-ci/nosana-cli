@@ -75,7 +75,7 @@ export class ApiHandler {
     await this.stopTunnelAndProxy();
     await this.provider.setUpReverseProxyApi(this.address.toString());
 
-    this.stopServerAndWebSocket()
+    this.stopServerAndWebSocket();
 
     const tunnelServer = `https://${this.address}.${configs().frp.serverAddr}`;
 
@@ -86,7 +86,7 @@ export class ApiHandler {
 
     await this.listen();
     this.startWebSocketServer();
-    
+
     return tunnelServer;
   }
 
@@ -250,6 +250,6 @@ export class ApiHandler {
 
   public async stop() {
     await this.stopTunnelAndProxy();
-    this.stopServerAndWebSocket()
+    this.stopServerAndWebSocket();
   }
 }
