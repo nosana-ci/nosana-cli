@@ -12,11 +12,9 @@ import { s3HelperImage } from '../node/resource/types.js';
 import {
   generateProxies,
   generateUrlSecretObject,
-  getExposePorts,
-  isOpExposed,
 } from '../../../generic/expose-util.js';
 import { ExposedPortHealthCheck } from './ExposedPortHealthCheck.js';
-import { ExposedPort } from '@nosana/sdk';
+import { ExposedPort, getExposePorts, isOpExposed } from '@nosana/sdk';
 
 const frpcImage = 'docker.io/nosana/frpc:multi-v0.0.1';
 
