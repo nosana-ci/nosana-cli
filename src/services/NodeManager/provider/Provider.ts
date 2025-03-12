@@ -329,6 +329,7 @@ export class Provider {
           const { proxies, idMap } = generateProxies(
             flow.id,
             op,
+            index,
             ports,
             name,
             opState.operationId,

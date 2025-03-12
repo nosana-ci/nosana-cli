@@ -17,8 +17,8 @@ import {
 
 export const generateExposeId = (
   flowId: string,
-  opId: string,
-  port: string,
+  opIndex: number,
+  port: number,
   isPrivate?: boolean,
 ): string => {
   const idLength = 45;
@@ -27,7 +27,7 @@ export const generateExposeId = (
     const randomData = randomBytes(45).toString('hex');
     return createHash(randomData, idLength);
   } else {
-    return getExposeIdHash(flowId, opId, port);
+    return getExposeIdHash(flowId, opIndex, port);
   }
 };
 
@@ -39,12 +39,12 @@ export const getJobUrls = (job: JobDefinition, flowId: string): string[] => {
     return ['private'];
   }
 
-  Object.entries(job.ops).forEach(([, op]) => {
+  Object.entries(job.ops).forEach(([, op], index) => {
     if (isOpExposed(op as Operation<'container/run'>)) {
       const exposePorts = getExposePorts(op as Operation<'container/run'>);
 
       exposePorts.forEach((port) => {
-        const exposeId = getExposeIdHash(flowId, op.id, port.port.toString());
+        const exposeId = getExposeIdHash(flowId, index, port.port);
         const url = `${exposeId}.${configs().frp.serverAddr}`;
         urls.push(url);
       });
@@ -57,6 +57,7 @@ export const getJobUrls = (job: JobDefinition, flowId: string): string[] => {
 export const generateProxies = (
   flowId: string,
   op: any,
+  opIndex: number,
   ports: ExposedPort[],
   name: string,
   operationId: string | null,
@@ -68,8 +69,8 @@ export const generateProxies = (
   for (let exosedport of ports) {
     const generatedId = generateExposeId(
       flowId,
-      op.id,
-      exosedport.port.toString(),
+      opIndex,
+      exosedport.port,
       op.args.private,
     );
 
