@@ -8,7 +8,8 @@ import EventEmitter from 'events';
 
 export class ExposedPortHealthCheck {
   private exposedPortMap: Map<string, ExposedPort> = new Map();
-  private container: Dockerode.Container;
+  private frpcContainer: Dockerode.Container;
+  private containerName: string;
   private startupIntervalMs: number;
   private continuousIntervalMs: number;
   /**
@@ -22,14 +23,16 @@ export class ExposedPortHealthCheck {
 
   constructor(
     flowId: string,
-    container: Dockerode.Container,
+    frpcContainer: Dockerode.Container,
     jobEmitter: EventEmitter,
+    containerName: string,
     startupIntervalMs = 5000,
     continuousIntervalMs = 30000,
   ) {
     this.flowId = flowId;
-    this.container = container;
+    this.frpcContainer = frpcContainer;
     this.jobEmitter = jobEmitter;
+    this.containerName = containerName;
     this.startupIntervalMs = startupIntervalMs;
     this.continuousIntervalMs = continuousIntervalMs;
   }
@@ -161,7 +164,7 @@ export class ExposedPortHealthCheck {
       '/dev/null',
       '-w',
       '%{http_code}',
-      `http://localhost:${port}${healthCheck.path}`,
+      `http://${this.containerName}:${port}${healthCheck.path}`,
     ];
 
     try {
@@ -193,7 +196,7 @@ export class ExposedPortHealthCheck {
 
   private async execCommand(cmd: string[]): Promise<string> {
     try {
-      const exec = await this.container.exec({
+      const exec = await this.frpcContainer.exec({
         Cmd: cmd,
         AttachStdout: true,
         AttachStderr: true,

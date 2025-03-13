@@ -252,6 +252,8 @@ export class Provider {
     const opState = this.repository.getOpState(id, index);
     const op = flow.jobDefinition.ops[index] as Operation<'container/run'>;
 
+    let frpcContainer;
+
     try {
       this.repository.updateOpState(id, index, {
         startTime: Date.now(),
@@ -353,6 +355,8 @@ export class Provider {
             throw error;
           }
 
+          frpcContainer = result;
+
           if (op.args.private) {
             this.repository.updateflowStateSecret(id, {
               [id]: generateUrlSecretObject(idMap),
@@ -431,8 +435,9 @@ export class Provider {
         if (isOpExposed(op)) {
           this.exposedPortHealthCheck = new ExposedPortHealthCheck(
             flow.id,
-            this.currentContainer,
+            frpcContainer as Dockerode.Container,
             jobEmitter,
+            name,
           );
           this.exposedPortHealthCheck.addExposedPortsMap(idMaps);
           this.exposedPortHealthCheck.startServiceExposedUrlHealthCheck();
