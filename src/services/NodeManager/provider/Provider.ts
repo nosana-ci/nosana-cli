@@ -71,7 +71,6 @@ export class Provider {
 
   // set up reverse proxy api for api handler
   public async setUpReverseProxyApi(address: string): Promise<boolean> {
-    // const frpcImage = 'registry.hub.docker.com/nosana/frpc:0.1.0';
     const tunnelImage = 'registry.hub.docker.com/nosana/tunnel:0.1.0';
     try {
       let result;
@@ -246,8 +245,6 @@ export class Provider {
   }
 
   async containerRunOperation(id: string, index: number): Promise<boolean> {
-    // const frpcImage =  'localhost/frpc:latest' //'registry.hub.docker.com/nosana/frpc:0.1.0';
-
     const flow = this.repository.getflow(id);
     const opState = this.repository.getOpState(id, index);
     const op = flow.jobDefinition.ops[index] as Operation<'container/run'>;
