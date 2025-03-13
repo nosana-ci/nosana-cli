@@ -16,7 +16,7 @@ import {
 import { ExposedPortHealthCheck } from './ExposedPortHealthCheck.js';
 import { ExposedPort, getExposePorts, isOpExposed } from '@nosana/sdk';
 
-const frpcImage = 'docker.io/nosana/frpc:multi-v0.0.1';
+const frpcImage = 'docker.io/nosana/frpc:multi-v0.0.2';
 
 export class Provider {
   constructor(
