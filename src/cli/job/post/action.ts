@@ -220,6 +220,7 @@ export async function run(
       ipfsHash,
       options.timeout,
       market.address,
+      options.host,
     );
   } catch (e) {
     return formatter.throw(OUTPUT_EVENTS.OUTPUT_JOB_POSTED_ERROR, {
