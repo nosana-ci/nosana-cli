@@ -16,7 +16,10 @@ export const postJobCommand = new Command('post')
   .addOption(networkOption)
   .addOption(rpcOption)
   .addOption(
-    new Option('--host', 'Assign job to host within the market queue.'),
+    new Option(
+      '-h, --host <host>',
+      'Assign job to host within the market queue.',
+    ),
   )
   .addOption(
     new Option(

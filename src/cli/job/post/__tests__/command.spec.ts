@@ -25,13 +25,14 @@ describe('postJobCommand', () => {
     expect(postJobCommand.args[0]).toBe('run command');
   });
 
-  it('should have 17 options', () => {
-    expect(postJobCommand.options.length).toBe(17);
+  it('should have 18 options', () => {
+    expect(postJobCommand.options.length).toBe(18);
   });
 
   it.each([
     ['--network', '-n', 'mainnet'],
     ['--rpc', undefined, undefined],
+    ['--host', '-h', undefined],
     ['--airdrop', undefined, true],
     ['--no-airdrop', undefined, undefined],
     ['--gpu', undefined, undefined],
