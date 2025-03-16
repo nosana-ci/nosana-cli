@@ -206,7 +206,7 @@ export class FlowHandler {
 
   public async clearOldFlows(): Promise<void> {
     const date = new Date();
-    date.setDate(date.getDate() - 3);
+    date.setDate(date.getDate() - 1);
 
     for (const id in this.repository.getFlows()) {
       const flow = this.repository.getflow(id);
