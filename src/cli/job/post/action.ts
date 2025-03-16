@@ -222,7 +222,13 @@ export async function run(
       market.address,
       options.host,
     );
-  } catch (e) {
+  } catch (e: any) {
+    if (e.error) {
+      return formatter.throw(OUTPUT_EVENTS.OUTPUT_JOB_POSTED_ERROR, {
+        error: e.error,
+      });
+    }
+    console.log(e);
     return formatter.throw(OUTPUT_EVENTS.OUTPUT_JOB_POSTED_ERROR, {
       error: e as Error,
     });
