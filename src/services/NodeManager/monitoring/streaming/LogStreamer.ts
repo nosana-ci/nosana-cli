@@ -21,6 +21,10 @@ export class LogStreamer implements LogObserver {
     log().addObserver(this);
   }
 
+  public isNodeObserver(): boolean {
+    return true;
+  }
+
   public clear() {
     this.logs.clear();
   }

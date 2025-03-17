@@ -29,10 +29,14 @@ export class ConsoleLogger implements LogObserver {
 
   spinner!: Ora;
 
-  constructor() {}
+  constructor(public isNode: boolean = true) {}
 
   addObserver() {
     log().addObserver(this);
+  }
+
+  public isNodeObserver() {
+    return this.isNode;
   }
 
   public update(log: NodeLogEntry, isNode: boolean = true) {

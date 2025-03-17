@@ -4,7 +4,7 @@ import { getSDK } from './sdk.js';
 import { ConsoleLogger } from './NodeManager/monitoring/log/console/ConsoleLogger.js';
 import { configs } from './NodeManager/configs/configs.js';
 
-const logger = new ConsoleLogger();
+const logger = new ConsoleLogger(false);
 
 const getSignature = async () => {
   const nosana: Client = getSDK();

@@ -3,7 +3,8 @@ import { logEmitter, LogEntry } from '../proxy/loggingProxy.js';
 import { SECONDS_PER_DAY } from '../../../../generic/utils.js';
 
 export interface LogObserver {
-  update(log: NodeLogEntry): void;
+  isNodeObserver(): boolean;
+  update(log: NodeLogEntry, isNode?: boolean): void;
 }
 
 export const log = (() => {
@@ -51,7 +52,7 @@ class NodeLog {
 
   private notifyObservers(log: NodeLogEntry) {
     for (const observer of this.observers) {
-      observer.update(log);
+      observer.update(log, observer.isNodeObserver());
     }
   }
 
