@@ -65,12 +65,6 @@ export async function runJob(
     const logger = new ConsoleLogger(false);
     logger.addObserver();
 
-    /**
-     * this is one of the subscriber to @function log()
-     * this prints the logs to the console.
-     */
-    consoleLogging();
-
     const id = flowHandler.generateRandomId(32);
 
     const exitHandler = async () => {
