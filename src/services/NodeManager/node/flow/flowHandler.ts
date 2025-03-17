@@ -190,13 +190,23 @@ export class FlowHandler {
       );
   }
 
-  public operationExposed(id: string): string {
-    return this.repository.getFlowSecret(id, 'url') ?? 'private';
+  public operationExposed(data: any, healtcheck?: boolean): string {
+    const mode = this.repository.getFlowSecret(data.flowId, 'urlmode');
+    const generatedIds = this.repository.getFlowSecret(
+      data.flowId,
+      data.flowId,
+    );
+
+    if (mode != 'private' && generatedIds[data.id]) {
+      return generatedIds[data.id].url;
+    }
+
+    return mode ?? '';
   }
 
   public async clearOldFlows(): Promise<void> {
     const date = new Date();
-    date.setDate(date.getDate() - 3);
+    date.setDate(date.getDate() - 1);
 
     for (const id in this.repository.getFlows()) {
       const flow = this.repository.getflow(id);

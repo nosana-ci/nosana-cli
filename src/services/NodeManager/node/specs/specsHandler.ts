@@ -1,4 +1,4 @@
-import { Client, Flow, OpState } from '@nosana/sdk';
+import { Client } from '@nosana/sdk';
 
 import { configs } from '../../configs/configs.js';
 import { FlowHandler } from '../flow/flowHandler.js';
@@ -17,6 +17,7 @@ import {
 } from '../../../../types/cudaCheck.js';
 import { NetworkInfoResults, SystemInfoResults } from './type.js';
 import { clientSelector, QueryClient } from '../../../../api/client.js';
+import { Flow, OpState } from '../../provider/types.js';
 
 export class SpecsHandler {
   private client: QueryClient;

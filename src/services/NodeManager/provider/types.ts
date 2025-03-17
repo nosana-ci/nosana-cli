@@ -1,5 +1,5 @@
 import typia from 'typia';
-import { JobDefinition as JobDefinitionSDK } from '@nosana/sdk';
+import { ExposedPort, JobDefinition as JobDefinitionSDK } from '@nosana/sdk';
 
 export const validateJobDefinition =
   typia.createValidateEquals<JobDefinition>();
@@ -84,7 +84,7 @@ export interface OperationArgsMap {
         dest: string;
       },
     ];
-    expose?: number;
+    expose?: number | (number | ExposedPort)[];
     private?: boolean;
     gpu?: boolean;
     work_dir?: string;

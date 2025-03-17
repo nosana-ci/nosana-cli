@@ -63,7 +63,9 @@ export const textOutputEventHandlers: OutputEventHandlers = {
     OUTPUT_EVENTS.OUTPUT_JOB_EXECUTION,
   ]),
   [OUTPUT_EVENTS.OUTPUT_SERVICE_URL]: (param: ServiceUrlParam) => {
-    console.log(chalk.cyan(`Service URL:\t${chalk.bold(`${param.url}`)}`));
+    console.log(
+      chalk.cyan(`Service URL:\t${chalk.bold(`https://${param.url}`)}`),
+    );
   },
   [OUTPUT_EVENTS.OUTPUT_PRIVATE_URL_MESSAGE]: (param: CommandParam) => {
     console.log(

@@ -277,12 +277,10 @@ export class BasicNode {
           await this.expiryHandler.waitUntilExpired();
         }
 
-        if (!resolved) {
-          /**
-           * Upload the result and end the flow; also clean up flow.
-           */
-          await this.jobHandler.finish(run);
-        }
+        /**
+         * Upload the result and end the flow; also clean up flow.
+         */
+        await this.jobHandler.finish(run, resolved);
 
         // Resolve the Promise normally
         resolve();

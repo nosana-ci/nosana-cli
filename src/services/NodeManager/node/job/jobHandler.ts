@@ -39,7 +39,15 @@ export class JobHandler {
     this.accountEmitter = new EventEmitter();
 
     jobEmitter.on('run-exposed', (data) => {
-      this.flowHandler.operationExposed(data.id);
+      this.flowHandler.operationExposed(data, undefined);
+    });
+
+    jobEmitter.on('startup-success', (data) => {
+      this.flowHandler.operationExposed(data, true);
+    });
+
+    jobEmitter.on('continuous-failure', (data) => {
+      this.flowHandler.operationExposed(data, false);
     });
   }
 
@@ -226,20 +234,25 @@ export class JobHandler {
     return this.flowHandler.exposed(this.jobId());
   }
 
-  async finish(run: Run): Promise<void> {
+  async finish(run: Run, complete = false): Promise<void> {
     if (!this.repository.getflow(this.jobId())) {
       return await this.quit(run);
     }
 
     try {
-      let result = await this.jobExternalUtil.resolveResult(this.jobId());
+      const jobId = this.jobId();
+      let result = await this.jobExternalUtil.resolveResult(jobId);
       const ipfsResult = await this.sdk.ipfs.pin(result as object);
       const bytesArray = this.sdk.ipfs.IpfsHashToByteArray(ipfsResult);
-      await this.sdk.jobs.submitResult(
-        bytesArray,
-        run,
-        this.getJobOrThrow().market.toString(),
-      );
+      if (complete) {
+        await this.sdk.jobs.complete(bytesArray, jobId);
+      } else {
+        await this.sdk.jobs.submitResult(
+          bytesArray,
+          run,
+          this.getJobOrThrow().market.toString(),
+        );
+      }
     } catch (e) {
       throw new Error(`Failed to finish job: ${e}`);
     }

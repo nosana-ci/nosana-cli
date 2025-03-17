@@ -17,6 +17,12 @@ export const postJobCommand = new Command('post')
   .addOption(rpcOption)
   .addOption(
     new Option(
+      '-h, --host <host>',
+      'Assign job to host within the market queue.',
+    ),
+  )
+  .addOption(
+    new Option(
       '--airdrop',
       'request an airdrop when low on SOL on devnet',
     ).default(true),

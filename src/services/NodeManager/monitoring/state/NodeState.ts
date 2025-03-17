@@ -424,6 +424,7 @@ export class NodeState {
             market: this.shared.market,
             job: this.shared.job,
             url: data.result,
+            args: data.arguments[0],
           });
         }
       }

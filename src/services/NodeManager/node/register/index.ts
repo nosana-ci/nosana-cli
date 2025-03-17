@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { Client, Flow, OpState } from '@nosana/sdk';
+import { Client } from '@nosana/sdk';
 import { confirm, input } from '@inquirer/prompts';
 
 import { FlowHandler } from '../flow/flowHandler.js';
@@ -10,6 +10,7 @@ import { specsAndNetworkJob } from '../../../../static/staticsImports.js';
 import { Provider } from '../../provider/Provider.js';
 import { NodeRepository } from '../../repository/NodeRepository.js';
 import { applyLoggingProxyToClass } from '../../monitoring/proxy/loggingProxy.js';
+import { Flow, OpState } from '../../provider/types.js';
 
 export class RegisterHandler {
   private nodeId: string;

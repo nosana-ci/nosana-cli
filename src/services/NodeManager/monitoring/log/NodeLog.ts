@@ -1478,18 +1478,35 @@ class NodeLog {
 
     if (data.method === 'operationExposed') {
       if (data.type === 'return') {
-        this.shared.exposed = true;
-        this.addLog({
-          method: `${data.class}.${data.method}`,
-          job: this.job,
-          log: chalk.green(
-            `Job ${chalk.bold(this.job)} is now exposed (${chalk.bold(
-              data.result,
-            )})`,
-          ),
-          timestamp: Date.now(),
-          type: 'info',
-        });
+        if (data.arguments[1] == null || data.arguments[1]) {
+          this.shared.exposed = true;
+          const healtcheckstring = data.arguments[1]
+            ? '✅  Healthcheck Passed'
+            : '⚠️  No Healthcheck Provided';
+          this.addLog({
+            method: `${data.class}.${data.method}`,
+            job: this.job,
+            log: chalk.green(
+              `[ ${healtcheckstring} ] Job ${chalk.bold(this.job)} (Port ${
+                data.arguments[0].port
+              }) is now exposed (${chalk.bold(data.result)})`,
+            ),
+            timestamp: Date.now(),
+            type: 'info',
+          });
+        } else {
+          this.addLog({
+            method: `${data.class}.${data.method}`,
+            job: this.job,
+            log: chalk.green(
+              `Job ${chalk.bold(this.job)} (Port${
+                data.arguments[0].port
+              }) failed healthchecks (${chalk.bold(data.result)})`,
+            ),
+            timestamp: Date.now(),
+            type: 'info',
+          });
+        }
       }
     }
   }
