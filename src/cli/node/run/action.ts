@@ -12,6 +12,12 @@ import { DB } from '../../../providers/modules/db/index.js';
 import { selectContainerOrchestrationProvider } from '../../../services/NodeManager/provider/containerOrchestration/selectContainerOrchestration.js';
 import { FlowHandler } from '../../../services/NodeManager/node/flow/flowHandler.js';
 import { IValidation } from 'typia';
+import { createLoggingProxy } from '../../../services/NodeManager/monitoring/proxy/loggingProxy.js';
+import { log } from '../../../services/NodeManager/monitoring/log/NodeLog.js';
+import {
+  ConsoleLogger,
+  consoleLogging,
+} from '../../../services/NodeManager/monitoring/log/console/ConsoleLogger.js';
 
 // This is still a WIP: i will still have to expose the logs and progress logs
 export async function runJob(
@@ -46,7 +52,24 @@ export async function runJob(
       resourceManager,
     );
 
-    const flowHandler = new FlowHandler(provider, repository);
+    const flowHandler = createLoggingProxy(
+      new FlowHandler(provider, repository),
+    );
+
+    /**
+     * set up log listening, any instance can listen to log produces from the node
+     * the logs are produces from the log proxy
+     */
+    log();
+
+    const logger = new ConsoleLogger(false);
+    logger.addObserver();
+
+    /**
+     * this is one of the subscriber to @function log()
+     * this prints the logs to the console.
+     */
+    consoleLogging();
 
     const id = flowHandler.generateRandomId(32);
 
@@ -66,8 +89,10 @@ export async function runJob(
       'result: ',
       util.inspect(result, { showHidden: false, depth: null, colors: true }),
     );
+    process.exit();
   } catch (error: any) {
     console.log(error);
+    process.exit();
   }
 }
 
