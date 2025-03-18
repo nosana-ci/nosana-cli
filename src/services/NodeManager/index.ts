@@ -164,7 +164,9 @@ export default class NodeManager {
        *
        * Enter the queue to wait for a job since we have no pending jobs.
        */
-      await this.node.queue(market);
+      await this.node.queue(async () => {
+        await this.restart(market);
+      }, market);
     }
 
     /**
