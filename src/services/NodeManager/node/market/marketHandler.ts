@@ -144,7 +144,7 @@ export class MarketHandler {
       console.warn('\nCould not update queue status', error);
     }
 
-    // Check market queue status every 2 minutes
+    // Check market queue status every minute
     this.checkQueuedInterval = setInterval(async () => {
       try {
         const queuedMarketInfo = await this.checkQueuedInMarket();
