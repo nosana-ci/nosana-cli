@@ -1,3 +1,5 @@
+import chalk from 'chalk';
+import EventEmitter from 'events';
 import { Client, Market } from '@nosana/sdk';
 
 import { getSDK } from '../../sdk.js';
@@ -295,7 +297,10 @@ export class BasicNode {
     return !!(await this.runHandler.checkRun());
   }
 
-  async queue(market?: string): Promise<void> {
+  async queue(
+    restartHandler: () => Promise<void>,
+    market?: string,
+  ): Promise<void> {
     /**
      * check if market was specified and if it wasnt select market from list
      */
@@ -326,19 +331,36 @@ export class BasicNode {
     }
 
     let firstMarketCheck = true;
+
+    const leaveMarketQueueListener = new EventEmitter();
+
+    leaveMarketQueueListener.addListener(
+      'LEFT QUEUE',
+      async () => await restartHandler(),
+    );
+
     /**
      * here we listen to the market queue and listen to any chnages
      * here we can use it to log or get info, but not run job because
      * it is not a blocking process
      */
     this.marketHandler.startMarketQueueMonitoring(
-      (market: Market | undefined) => {
+      (market: Market | undefined, hasRuns: boolean) => {
         try {
           if (!market) {
             /**
              * once we have found a job in the market we want to stop this queue monitoring
              */
             this.marketHandler.stopMarketQueueMonitoring();
+
+            if (!hasRuns) {
+              console.log(
+                chalk.yellow(
+                  'Your host has been detected as being offline and has been automatically removed from the market queue.',
+                ),
+              );
+              leaveMarketQueueListener.emit('LEFT QUEUE');
+            }
           } else {
             /**
              * update the market position on queue
