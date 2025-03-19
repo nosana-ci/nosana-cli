@@ -338,15 +338,14 @@ export class BasicNode {
       // wait for minute just to make sure we are not running a job
       await new Promise((resolve) => setTimeout(resolve, 60000));
 
+      const run = this.runHandler.getRun();
       // determine if there is a job
-      if (!this.runHandler.getRun()) {
+      if (!run) {
         console.log(
-          chalk.yellow(
-            'Your host has been detected as being offline and has been automatically removed from the market queue.',
-          ),
+          chalk.yellow(`${new Date()} Online test failed without run.\n${run}`),
         );
 
-        await restartHandler();
+        // await restartHandler();
       }
     });
 
@@ -364,7 +363,13 @@ export class BasicNode {
              */
             this.marketHandler.stopMarketQueueMonitoring();
 
-            if (!this.runHandler.getRun()) {
+            const run = this.runHandler.getRun();
+            if (!run) {
+              console.log(
+                chalk.yellow(
+                  `${new Date()} Online test failed without run.\n${run}`,
+                ),
+              );
               leaveMarketQueueListener.emit('LEFT QUEUE');
             }
           } else {
