@@ -131,6 +131,9 @@ export class MarketHandler {
     try {
       // Perform an immediate check
       const queuedMarketInfo = await this.checkQueuedInMarket();
+
+      await new Promise((resolve) => setTimeout(resolve, 60000));
+
       const runs = await this.sdk.jobs.getRuns([
         {
           memcmp: {
@@ -148,6 +151,9 @@ export class MarketHandler {
     this.checkQueuedInterval = setInterval(async () => {
       try {
         const queuedMarketInfo = await this.checkQueuedInMarket();
+
+        await new Promise((resolve) => setTimeout(resolve, 60000));
+
         const runs = await this.sdk.jobs.getRuns([
           {
             memcmp: {
