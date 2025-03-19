@@ -132,7 +132,7 @@ export class MarketHandler {
       // Perform an immediate check
       const queuedMarketInfo = await this.checkQueuedInMarket();
 
-      await new Promise(resolve => setTimeout(resolve, 60000));
+      await new Promise((resolve) => setTimeout(resolve, 60000));
 
       const runs = await this.sdk.jobs.getRuns([
         {
@@ -152,7 +152,7 @@ export class MarketHandler {
       try {
         const queuedMarketInfo = await this.checkQueuedInMarket();
 
-        await new Promise(resolve => setTimeout(resolve, 60000));
+        await new Promise((resolve) => setTimeout(resolve, 60000));
 
         const runs = await this.sdk.jobs.getRuns([
           {
