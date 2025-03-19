@@ -123,7 +123,7 @@ export class MarketHandler {
   }
 
   public async startMarketQueueMonitoring(
-    updateCallback: (market: Market | undefined, hasRuns: boolean) => void,
+    updateCallback: (market: Market | undefined) => void,
   ): Promise<void> {
     // Ensure no multiple intervals
     this.stopMarketQueueMonitoring();
@@ -131,18 +131,7 @@ export class MarketHandler {
     try {
       // Perform an immediate check
       const queuedMarketInfo = await this.checkQueuedInMarket();
-
-      await new Promise((resolve) => setTimeout(resolve, 60000));
-
-      const runs = await this.sdk.jobs.getRuns([
-        {
-          memcmp: {
-            offset: 40,
-            bytes: this.address.toString(),
-          },
-        },
-      ]);
-      updateCallback(queuedMarketInfo, !!runs.length);
+      updateCallback(queuedMarketInfo);
     } catch (error) {
       console.warn('\nCould not update queue status', error);
     }
@@ -151,18 +140,7 @@ export class MarketHandler {
     this.checkQueuedInterval = setInterval(async () => {
       try {
         const queuedMarketInfo = await this.checkQueuedInMarket();
-
-        await new Promise((resolve) => setTimeout(resolve, 60000));
-
-        const runs = await this.sdk.jobs.getRuns([
-          {
-            memcmp: {
-              offset: 40,
-              bytes: this.address.toString(),
-            },
-          },
-        ]);
-        updateCallback(queuedMarketInfo, !!runs.length);
+        updateCallback(queuedMarketInfo);
       } catch (error) {
         console.warn('\nCould not update queue status', error);
       }
