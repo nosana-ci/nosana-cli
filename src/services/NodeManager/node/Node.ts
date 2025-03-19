@@ -334,10 +334,21 @@ export class BasicNode {
 
     const leaveMarketQueueListener = new EventEmitter();
 
-    leaveMarketQueueListener.addListener(
-      'LEFT QUEUE',
-      async () => await restartHandler(),
-    );
+    leaveMarketQueueListener.addListener('LEFT QUEUE', async () => {
+      // wait for minute just to make sure we are not running a job
+      await new Promise((resolve) => setTimeout(resolve, 60000));
+
+      // determine if there is a job
+      if (!this.runHandler.getRun()) {
+        console.log(
+          chalk.yellow(
+            'Your host has been detected as being offline and has been automatically removed from the market queue.',
+          ),
+        );
+
+        await restartHandler();
+      }
+    });
 
     /**
      * here we listen to the market queue and listen to any chnages
@@ -345,7 +356,7 @@ export class BasicNode {
      * it is not a blocking process
      */
     this.marketHandler.startMarketQueueMonitoring(
-      (market: Market | undefined, hasRuns: boolean) => {
+      (market: Market | undefined) => {
         try {
           if (!market) {
             /**
@@ -353,12 +364,7 @@ export class BasicNode {
              */
             this.marketHandler.stopMarketQueueMonitoring();
 
-            if (!hasRuns) {
-              console.log(
-                chalk.yellow(
-                  'Your host has been detected as being offline and has been automatically removed from the market queue.',
-                ),
-              );
+            if (!this.runHandler.getRun()) {
               leaveMarketQueueListener.emit('LEFT QUEUE');
             }
           } else {

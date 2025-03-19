@@ -101,6 +101,7 @@ export class RunHandler {
                 account: runAccount,
                 publicKey: event.accountId,
               };
+              this.setRun(run);
               resolve(run);
             },
             'confirmed',
