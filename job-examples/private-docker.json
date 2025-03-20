@@ -13,8 +13,8 @@
         "image": "ubuntu",
         "authentication": {
           "docker": {
-            "username": "jesse.eisses@gmail.com",
-            "password": "glpat-KXqzs_RUcWUWayawm-z9"
+            "username": "",
+            "password": ""
           }
         }
       }
