@@ -2,7 +2,7 @@ import { Client, sleep } from '@nosana/sdk';
 import fs from 'node:fs';
 import { randomUUID } from 'crypto';
 import { IValidation } from 'typia';
-import { config } from '../../../generic/config.js';
+import { privateBlankJobDefintion, config } from '../../../generic/config.js';
 import { getJob } from '../get/action.js';
 import { colors } from '../../../generic/utils.js';
 import { getNosBalance, getSDK, getSolBalance } from '../../../services/sdk.js';
@@ -16,6 +16,10 @@ import {
   validateJobDefinition,
 } from '../../../services/NodeManager/provider/types.js';
 import { getJobUrls } from '../../../generic/expose-util.js';
+import {
+  waitForJobCompletion,
+  waitForJobRunOrCompletion,
+} from '../../../services/jobs.js';
 
 export async function run(
   command: Array<string>,
@@ -135,7 +139,10 @@ export async function run(
     });
   }
 
-  const ipfsHash = await nosana.ipfs.pin(json_flow);
+  const ipfsHash = await nosana.ipfs.pin(
+    options.private ? privateBlankJobDefintion : json_flow,
+  );
+
   formatter.output(OUTPUT_EVENTS.OUTPUT_IPFS_UPLOADED, {
     ipfsHash: `${nosana.ipfs.config.gateway + ipfsHash}`,
   });
@@ -259,6 +266,69 @@ export async function run(
         command: '',
       });
     }
+  }
+
+  if (options.private) {
+    const runningJob = await waitForJobRunOrCompletion(
+      new PublicKey(response.job),
+    );
+
+    const headers = nosana.authorization.generateHeader(ipfsHash, {
+      includeTime: true,
+    });
+
+    headers.append('Content-Type', 'application/json');
+
+    try {
+      const res = await fetch(
+        `https://${runningJob.node}.${
+          options.network === 'devnet'
+            ? 'node.k8s.dev.nos.ci'
+            : config.frp.serverAddr
+        }/job-definition/${response.job}`,
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(json_flow),
+        },
+      );
+
+      if (res.status !== 200) {
+        console.log('Failed to send job definition to host.');
+      }
+    } catch (e) {
+      console.log('Failed to send job definition to host.');
+    }
+
+    if (options.wait) {
+      await waitForJobCompletion(new PublicKey(response.job));
+
+      const results_headers = nosana.authorization.generateHeader(ipfsHash, {
+        includeTime: true,
+      });
+
+      results_headers.append('Content-Type', 'application/json');
+
+      const results_response = await fetch(
+        `https://${runningJob.node}.${
+          options.network === 'devnet'
+            ? 'node.k8s.dev.nos.ci'
+            : config.frp.serverAddr
+        }/job-result/${response.job}`,
+        {
+          headers: results_headers,
+        },
+      );
+
+      if (results_response.status !== 200) {
+        console.log('Failed to fetch job results from host.');
+        return;
+      }
+
+      const results = await results_response.json();
+    }
+
+    return;
   }
 
   await getJob(response.job, options, undefined);

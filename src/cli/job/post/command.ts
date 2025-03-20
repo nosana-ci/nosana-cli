@@ -63,6 +63,7 @@ export const postJobCommand = new Command('post')
       'download external artifacts to specified path  (implies --wait)',
     ).conflicts('file'),
   )
+  .addOption(new Option('--private', 'posts a private job peer to peer.'))
   .addOption(timeoutOption)
   .addOption(formatOption)
   .addOption(verboseOption)

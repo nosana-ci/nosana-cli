@@ -1,3 +1,4 @@
+import { JobDefinition } from '@nosana/sdk';
 import dotenv from 'dotenv';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
@@ -47,4 +48,23 @@ export const config: configType = {
   minDiskSpace: process.env.MIN_DISK_SPACE
     ? parseInt(process.env.MIN_DISK_SPACE)
     : 25000,
+};
+
+export const privateBlankJobDefintion: JobDefinition = {
+  version: '0.1',
+  type: 'container',
+  meta: {
+    trigger: 'cli',
+  },
+  logistics: {
+    send: {
+      type: 'api-listen',
+      args: {},
+    },
+    receive: {
+      type: 'api-listen',
+      args: {},
+    },
+  },
+  ops: [],
 };

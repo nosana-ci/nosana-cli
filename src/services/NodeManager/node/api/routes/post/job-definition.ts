@@ -4,11 +4,11 @@ import { JobDefinition } from '../../../../provider/types.js';
 import { NodeAPIRequest } from '../../types/index.js';
 
 export function postJobDefinitionRoute(
-  req: NodeAPIRequest<{ jobId: string }, { jobDefinition: JobDefinition }>,
+  req: NodeAPIRequest<{ jobId: string }, JobDefinition>,
   res: Response,
 ) {
   const id = req.params.jobId;
-  const jobDefinition = req.body.jobDefinition;
+  const jobDefinition = req.body;
   if (!jobDefinition || !id) {
     return res.status(400).send('job definition parameters not provided');
   }

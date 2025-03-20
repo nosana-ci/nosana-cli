@@ -27,15 +27,13 @@ export async function verifyJobOwnerSignatureMiddleware(
 
     if (
       !sdk.authorization.validateHeader(req.headers, {
+        key: 'authorization',
         expiry: job.timeout,
         publicKey: new PublicKey(job.project),
       })
     ) {
       return res.status(401).send('Unathorized Request');
     }
-    res.locals['session_id'] = (req.headers['x-session-id'] as string).split(
-      ':',
-    )[0];
 
     next();
   } catch (error) {
