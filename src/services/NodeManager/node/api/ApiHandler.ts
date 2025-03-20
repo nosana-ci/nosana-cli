@@ -188,7 +188,7 @@ export class ApiHandler {
 
     // GET Routes
     this.api.get('/', (_: Request, res: Response) => res.send(this.address));
-    this.api.get('/job-definition/:id', express.json(), getJobDefinitionRoute);
+    this.api.get('/job-result/:id', express.json(), getJobDefinitionRoute);
     this.api.get('/node/info', getNodeInfoRoute);
     this.api.get(
       '/service/url/:jobId',

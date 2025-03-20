@@ -30,7 +30,7 @@ export function getServiceUrlRoute(
       }
 
       res.status(200).json({
-        url: `https://${secrets[jobId]}.${configs().frp.serverAddr}`,
+        urls: secrets[jobId],
         status,
       });
       return;

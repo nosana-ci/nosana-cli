@@ -5,8 +5,6 @@ export class ApiListenResultReturnStrategy implements ResultReturnStrategy {
   constructor(private eventEmitter: EventEmitter) {}
 
   async load(jobId: string): Promise<boolean> {
-    console.log('waiting for job result collection');
-
     return new Promise((resolve, reject) => {
       const onResultReturn = (data: { id: string }) => {
         if (data.id === jobId) {
@@ -16,11 +14,11 @@ export class ApiListenResultReturnStrategy implements ResultReturnStrategy {
         }
       };
 
-      // Set a timeout to reject if the result isn't received within 5 minutes
+      // Set a timeout to reject if the result isn't received within 1 minutes
       const timeout = setTimeout(() => {
         this.eventEmitter.removeListener('job-result', onResultReturn);
-        reject(new Error('Timeout: Job result not received within 5 minutes'));
-      }, 300000); // 300000 ms = 5 minutes
+        resolve(false);
+      }, 1 * 60 * 1000); // 2 * 60 * 1000 ms = 1 minutes
 
       this.eventEmitter.on('job-result', onResultReturn);
     });
