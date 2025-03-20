@@ -64,6 +64,7 @@ export const OUTPUT_EVENTS = {
   OUTPUT_JOB_URL_NOT_READY: 'OUTPUT_JOB_URL_NOT_READY',
   OUTPUT_JOB_INVALID: 'OUTPUT_JOB_INVALID',
   OUTPUT_JOB_SERVICE_URL: 'OUTPUT_JOB_SERVICE_URL',
+  OUTPUT_JOB_POSTER_AUTH_TOKEN: 'OUTPUT_JOB_POSTER_AUTH_TOKEN',
 } as const;
 
 export type OutputEvent = (typeof OUTPUT_EVENTS)[keyof typeof OUTPUT_EVENTS];
@@ -90,6 +91,7 @@ export type JobPostingParam = {
   price: number;
   total: string;
 };
+export type JobPosterAuthToken = string;
 export type TotalCostParam = { cost: number };
 export type TxParam = { tx: string };
 export type ValidationErrorParam = { error: IValidation.IError[] };
@@ -149,4 +151,5 @@ export type OutputEventParams = {
   [OUTPUT_EVENTS.OUTPUT_JOB_URL_NOT_READY]: JobServiceUrlNotReadyParam | null;
   [OUTPUT_EVENTS.OUTPUT_JOB_INVALID]: JobServiceUrlInvalidParam | null;
   [OUTPUT_EVENTS.OUTPUT_JOB_SERVICE_URL]: JobServiceUrlParam;
+  [OUTPUT_EVENTS.OUTPUT_JOB_POSTER_AUTH_TOKEN]: JobPosterAuthToken;
 };

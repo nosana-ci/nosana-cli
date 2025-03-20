@@ -8,14 +8,17 @@ import Dockerode, {
   VolumeCreateResponse,
   VolumeInspectInfo,
 } from 'dockerode';
+import { DockerAuth } from '@nosana/sdk';
+
 import { DockerExtended } from '../../../../docker/index.js';
 import { createSeverObject } from '../../../../providers/utils/createServerObject.js';
+import { abortControllerSelector } from '../../node/abort/abortControllerSelector.js';
 import {
   ContainerOrchestrationInterface,
   RunContainerArgs,
 } from './interface.js';
+
 import { ReturnedStatus } from '../types.js';
-import { abortControllerSelector } from '../../node/abort/abortControllerSelector.js';
 
 export class DockerContainerOrchestration
   implements ContainerOrchestrationInterface
@@ -70,7 +73,10 @@ export class DockerContainerOrchestration
     return this.docker;
   }
 
-  async pullImage(image: string): Promise<ReturnedStatus> {
+  async pullImage(
+    image: string,
+    authorisation?: DockerAuth,
+  ): Promise<ReturnedStatus> {
     if (await this.docker.hasImage(image)) {
       return { status: true };
     }
@@ -82,7 +88,7 @@ export class DockerContainerOrchestration
     }
 
     try {
-      await this.docker.promisePull(image, controller);
+      await this.docker.promisePull(image, controller, authorisation);
       return { status: true };
     } catch (error) {
       return { status: false, error };

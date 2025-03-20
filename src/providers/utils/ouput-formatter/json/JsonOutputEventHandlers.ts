@@ -32,6 +32,7 @@ import {
   JobServiceUrlParam,
   JobServiceUrlExpiredParam,
   JobServiceUrlErrorParam,
+  JobPosterAuthToken,
 } from '../outputEvents.js';
 import { OutputEventParams } from '../outputEvents.js';
 import { JsonResponseType } from './JsonOutputFormatter.js';
@@ -188,6 +189,13 @@ export const jsonOutputEventHandlers: OutputEventHandlers = {
     param: JobStatusParam,
   ) => {
     response.status = param.status;
+  },
+
+  [OUTPUT_EVENTS.OUTPUT_JOB_POSTER_AUTH_TOKEN]: (
+    response: JsonResponseType,
+    param: JobPosterAuthToken,
+  ) => {
+    response.authorization = param;
   },
 
   [OUTPUT_EVENTS.OUTPUT_JOB_POSTING]: (

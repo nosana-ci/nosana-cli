@@ -7,12 +7,14 @@ import {
   VolumeInspectInfo,
   ContainerCreateOptions,
 } from 'dockerode';
+import { DockerAuth } from '@nosana/sdk';
+
 import { ReturnedStatus } from '../types.js';
 
 export interface ContainerOrchestrationInterface {
   getConnection(): any;
 
-  pullImage(image: string): Promise<ReturnedStatus>;
+  pullImage(image: string, authorisation?: DockerAuth): Promise<ReturnedStatus>;
   hasImage(image: string): Promise<boolean>;
   getImage(image: string): Promise<Image>;
   listImages(): Promise<ImageInfo[]>;

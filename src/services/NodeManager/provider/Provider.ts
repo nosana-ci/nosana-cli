@@ -286,6 +286,7 @@ export class Provider {
         let result;
         let { status, error } = await this.containerOrchestration.pullImage(
           op.args.image,
+          op.args.authentication?.docker,
         );
 
         if (!status) {

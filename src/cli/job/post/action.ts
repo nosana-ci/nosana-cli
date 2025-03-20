@@ -210,18 +210,29 @@ export async function run(
     total: nosNeeded.toFixed(4),
   });
 
+  if ((json_flow as JobDefinition).logistics) {
+    formatter.output(
+      OUTPUT_EVENTS.OUTPUT_JOB_POSTER_AUTH_TOKEN,
+      nosana.authorization.generate(ipfsHash, { includeTime: true }),
+    );
+  }
+
   await nosana.jobs.setAccounts();
   if (market.jobPrice == 0) {
     nosana.jobs.accounts!.user = nosana.jobs.accounts!.vault;
   }
   let response;
   try {
-    response = await nosana.jobs.list(
+    response = (await nosana.jobs.list(
       ipfsHash,
       options.timeout,
       market.address,
       options.host,
-    );
+    )) as {
+      tx: string;
+      job: string;
+      run: string;
+    };
   } catch (e: any) {
     if (e.error) {
       return formatter.throw(OUTPUT_EVENTS.OUTPUT_JOB_POSTED_ERROR, {

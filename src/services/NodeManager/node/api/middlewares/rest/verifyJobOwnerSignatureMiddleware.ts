@@ -27,8 +27,7 @@ export async function verifyJobOwnerSignatureMiddleware(
 
     if (
       !sdk.authorization.validateHeader(req.headers, {
-        expiry: 300,
-        key: 'x-session-id',
+        expiry: job.timeout,
         publicKey: new PublicKey(job.project),
       })
     ) {
