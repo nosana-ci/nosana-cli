@@ -25,7 +25,7 @@ import {
 
 import {
   getNodeInfoRoute,
-  getJobDefinitionRoute,
+  getJobResultsRoute,
   getServiceUrlRoute,
   postJobDefinitionRoute,
   postServiceStopRoute,
@@ -192,7 +192,7 @@ export class ApiHandler {
       '/job-result/:jobId',
       express.json(),
       verifyJobOwnerSignatureMiddleware,
-      getJobDefinitionRoute,
+      getJobResultsRoute,
     );
     this.api.get('/node/info', getNodeInfoRoute);
     this.api.get(

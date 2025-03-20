@@ -2,7 +2,7 @@ import { Response } from 'express';
 
 import { NodeAPIRequest } from '../../types/index.js';
 
-export function getJobDefinitionRoute(
+export function getJobResultsRoute(
   req: NodeAPIRequest<{ jobId: string }>,
   res: Response,
 ) {
