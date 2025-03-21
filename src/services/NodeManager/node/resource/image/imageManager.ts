@@ -57,7 +57,7 @@ export class ImageManager {
   }
 
   public async resyncImagesDB(): Promise<void> {
-    for (const [image, { lastUsed, required }] of Object.entries(
+    for (const [image, { lastUsed, required, isPrivate }] of Object.entries(
       this.repository.getImagesResources(),
     )) {
       if (!(await this.containerOrchestration.hasImage(image))) {
@@ -73,19 +73,19 @@ export class ImageManager {
       }
 
       const hoursSinceLastUsed = hoursSinceDate(new Date(lastUsed));
-      if (hoursSinceLastUsed > 24) {
+      if (hoursSinceLastUsed > 24 || isPrivate) {
         await this.containerOrchestration.deleteImage(image);
         this.repository.deleteImageResource(image);
       }
     }
   }
 
-  public async setImage(image: string): Promise<void> {
+  public async setImage(image: string, isPrivate = false): Promise<void> {
     const imageObj = this.repository.getImageResource(image);
     this.repository.updateImageResource(image, {
-      required: true,
       lastUsed: new Date(),
       usage: imageObj?.usage + 1 || 1,
+      isPrivate,
     });
   }
 }
