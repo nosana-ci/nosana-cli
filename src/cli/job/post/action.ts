@@ -268,68 +268,7 @@ export async function run(
     }
   }
 
-  if (options.private) {
-    const runningJob = await waitForJobRunOrCompletion(
-      new PublicKey(response.job),
-    );
-
-    const headers = nosana.authorization.generateHeader(ipfsHash, {
-      includeTime: true,
-    });
-
-    headers.append('Content-Type', 'application/json');
-
-    try {
-      const res = await fetch(
-        `https://${runningJob.node}.${
-          options.network === 'devnet'
-            ? 'node.k8s.dev.nos.ci'
-            : config.frp.serverAddr
-        }/job-definition/${response.job}`,
-        {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(json_flow),
-        },
-      );
-
-      if (res.status !== 200) {
-        console.log('Failed to send job definition to host.');
-      }
-    } catch (e) {
-      console.log('Failed to send job definition to host.');
-    }
-  }
-
-  await getJob(response.job, options, undefined);
-
-  if (options.wait) {
-    await waitForJobCompletion(new PublicKey(response.job));
-
-    const results_headers = nosana.authorization.generateHeader(ipfsHash, {
-      includeTime: true,
-    });
-
-    results_headers.append('Content-Type', 'application/json');
-
-    const results_response = await fetch(
-      `https://${response.job}.${
-        options.network === 'devnet'
-          ? 'node.k8s.dev.nos.ci'
-          : config.frp.serverAddr
-      }/job-result/${response.job}`,
-      {
-        headers: results_headers,
-      },
-    );
-
-    if (results_response.status !== 200) {
-      console.log('Failed to fetch job results from host.');
-      return;
-    }
-
-    const results = await results_response.json();
-  }
+  await getJob(response.job, options, undefined, json_flow);
 
   if (!(options.wait || options.download)) {
     formatter.output(OUTPUT_EVENTS.OUTPUT_RETRIVE_JOB_COMMAND, {
