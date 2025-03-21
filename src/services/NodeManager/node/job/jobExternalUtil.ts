@@ -42,7 +42,7 @@ export class JobExternalUtil {
     let jobDefinition: JobDefinition = await this.sdk.ipfs.retrieve(
       job.ipfsJob,
     );
-    
+
     if (jobDefinition.logistics?.receive?.type) {
       const strategySelector = new ResultReturnStrategySelector();
       const strategy = strategySelector.selectStrategy(

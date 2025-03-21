@@ -20,8 +20,8 @@ import { listenToWebSocketLogs } from '../../../services/websocket.js';
 import { configs } from '../../../services/NodeManager/configs/configs.js';
 import { OpState } from '../../../services/NodeManager/provider/types.js';
 
-// clear these timeouts 
-let retryTimeoutId:  NodeJS.Timeout | null = null;
+// clear these timeouts
+let retryTimeoutId: NodeJS.Timeout | null = null;
 let resultRetryTimeoutId: NodeJS.Timeout | null = null;
 
 export async function getJob(
@@ -106,8 +106,21 @@ export async function getJob(
           });
           headers.append('Content-Type', 'application/json');
 
-          postJobDefinitionUntilSuccess({ job, jobAddress, headers, json_flow, options, config})
-          getJobResultUntilSuccess({ job, jobAddress, headers, options, config})
+          postJobDefinitionUntilSuccess({
+            job,
+            jobAddress,
+            headers,
+            json_flow,
+            options,
+            config,
+          });
+          getJobResultUntilSuccess({
+            job,
+            jobAddress,
+            headers,
+            options,
+            config,
+          });
         }
 
         ws = listenToWebSocketLogs(
@@ -269,7 +282,8 @@ async function fetchServiceURLWithRetry(
   const intervalId = setInterval(async () => {
     try {
       const response = await fetch(
-        `https://${job.node}.${configs().frp.serverAddr
+        `https://${job.node}.${
+          configs().frp.serverAddr
         }/service/url/${jobAddress}`,
         { method: 'GET', headers },
       );
@@ -309,10 +323,9 @@ function postJobDefinitionUntilSuccess({
   options: any;
   config: any;
 }) {
-  const url = `https://${job.node}.${options.network === 'devnet'
-      ? 'node.k8s.dev.nos.ci'
-      : config.frp.serverAddr
-    }/job-definition/${jobAddress}`;
+  const url = `https://${job.node}.${
+    options.network === 'devnet' ? 'node.k8s.dev.nos.ci' : config.frp.serverAddr
+  }/job-definition/${jobAddress}`;
 
   async function attemptPost() {
     try {
@@ -325,8 +338,9 @@ function postJobDefinitionUntilSuccess({
       if (res.ok) {
         retryTimeoutId = null;
         return;
-      } else { }
-    } catch (err) { }
+      } else {
+      }
+    } catch (err) {}
 
     retryTimeoutId = setTimeout(attemptPost, 5000);
   }
@@ -354,15 +368,16 @@ function getJobResultUntilSuccess({
   async function attemptFetch() {
     try {
       const res = await fetch(url, { headers });
-      console.log(res)
+      console.log(res);
       if (res.ok) {
         console.log('✅ Job result fetched successfully.');
         resultRetryTimeoutId = null;
 
         const resultData = await res.json();
-        console.log(resultData)
+        console.log(resultData);
         return;
-      } else {}
+      } else {
+      }
     } catch (err: any) {}
 
     resultRetryTimeoutId = setTimeout(attemptFetch, 15000);

@@ -252,7 +252,10 @@ export class JobHandler {
 
     try {
       const jobId = this.jobId();
-      let result = await this.jobExternalUtil.resolveResult(jobId, this.get() as Job);
+      let result = await this.jobExternalUtil.resolveResult(
+        jobId,
+        this.get() as Job,
+      );
       const ipfsResult = await this.sdk.ipfs.pin(result as object);
       const bytesArray = this.sdk.ipfs.IpfsHashToByteArray(ipfsResult);
       if (complete) {

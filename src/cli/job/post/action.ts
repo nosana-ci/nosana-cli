@@ -267,7 +267,7 @@ export async function run(
       });
     }
   }
-  
+
   await getJob(response.job, options, undefined, json_flow);
 
   if (!(options.wait || options.download)) {
