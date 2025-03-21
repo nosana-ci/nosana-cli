@@ -41,6 +41,7 @@ export type ResourceHistory = {
   lastUsed: Date;
   usage: number;
   required: boolean;
+  isPrivate?: boolean;
 };
 
 export type VolumeResource = ResourceHistory & {
