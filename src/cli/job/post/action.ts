@@ -1,4 +1,4 @@
-import { Client, sleep } from '@nosana/sdk';
+import { AuthorizationManager, Client, sleep } from '@nosana/sdk';
 import fs from 'node:fs';
 import { randomUUID } from 'crypto';
 import { IValidation } from 'typia';
@@ -268,12 +268,72 @@ export async function run(
     }
   }
 
+  if (options.private) {
+    const job = await waitForJobRunOrCompletion(new PublicKey(response.job));
+    postJobDefinitionUntilSuccess({
+      id: response.job,
+      node: job.node,
+      hash: ipfsHash,
+      json_flow,
+      serverAddr:
+        options.network === 'devnet'
+          ? 'node.k8s.dev.nos.ci'
+          : config.frp.serverAddr,
+    });
+  }
+
   await getJob(response.job, options, undefined, json_flow);
 
-  if (!(options.wait || options.download)) {
+  if (!(options.wait || options.download || options.private)) {
     formatter.output(OUTPUT_EVENTS.OUTPUT_RETRIVE_JOB_COMMAND, {
       job: response.job,
       network: options.network,
     });
   }
+}
+
+let retryTimeoutId: NodeJS.Timeout | null = null;
+
+function postJobDefinitionUntilSuccess({
+  id,
+  node,
+  hash,
+  json_flow,
+  serverAddr,
+}: {
+  id: string;
+  node: string;
+  hash: string;
+  json_flow: any;
+  serverAddr: string;
+}) {
+  const nosana: Client = getSDK();
+  const headers = nosana.authorization.generateHeader(hash, {
+    includeTime: true,
+  });
+  headers.append('Content-Type', 'application/json');
+
+  const url = `https://${node}.${serverAddr}/job-definition/${id}`;
+
+  async function attemptPost() {
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(json_flow),
+      });
+
+      console.log(res.status);
+
+      if (res.ok) {
+        retryTimeoutId = null;
+        return;
+      } else {
+      }
+    } catch (err) {}
+
+    retryTimeoutId = setTimeout(attemptPost, 5000);
+  }
+
+  attemptPost();
 }

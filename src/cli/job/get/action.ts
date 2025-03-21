@@ -1,7 +1,7 @@
 import ora from 'ora';
 import chalk from 'chalk';
 import { Command } from 'commander';
-import { Client, Job } from '@nosana/sdk';
+import { AuthorizationManager, Client, Job } from '@nosana/sdk';
 import { PublicKey } from '@solana/web3.js';
 import 'rpc-websockets/dist/lib/client.js';
 import { download } from '../download/action.js';
@@ -101,23 +101,9 @@ export async function getJob(
         }
 
         if (options.private) {
-          const headers = nosana.authorization.generateHeader(job.ipfsJob, {
-            includeTime: true,
-          });
-          headers.append('Content-Type', 'application/json');
-
-          postJobDefinitionUntilSuccess({
-            job,
-            jobAddress,
-            headers,
-            json_flow,
-            options,
-            config,
-          });
           getJobResultUntilSuccess({
             job,
             jobAddress,
-            headers,
             options,
             config,
           });
@@ -308,59 +294,24 @@ async function fetchServiceURLWithRetry(
   }, retryInterval);
 }
 
-function postJobDefinitionUntilSuccess({
-  job,
-  jobAddress,
-  headers,
-  json_flow,
-  options,
-  config,
-}: {
-  job: any;
-  jobAddress: string;
-  headers: Headers;
-  json_flow: any;
-  options: any;
-  config: any;
-}) {
-  const url = `https://${job.node}.${
-    options.network === 'devnet' ? 'node.k8s.dev.nos.ci' : config.frp.serverAddr
-  }/job-definition/${jobAddress}`;
-
-  async function attemptPost() {
-    try {
-      const res = await fetch(url, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(json_flow),
-      });
-
-      if (res.ok) {
-        retryTimeoutId = null;
-        return;
-      } else {
-      }
-    } catch (err) {}
-
-    retryTimeoutId = setTimeout(attemptPost, 5000);
-  }
-
-  attemptPost();
-}
-
 function getJobResultUntilSuccess({
   job,
   jobAddress,
-  headers,
   options,
   config,
 }: {
   job: any;
   jobAddress: string;
-  headers: Headers;
   options: any;
   config: any;
 }) {
+  const nosana: Client = getSDK();
+
+  const headers = nosana.authorization.generateHeader(job.ipfsJob, {
+    includeTime: true,
+  });
+  headers.append('Content-Type', 'application/json');
+
   const url = `https://${job.node}.${
     options.network === 'devnet' ? 'node.k8s.dev.nos.ci' : config.frp.serverAddr
   }/job-result/${jobAddress}`;
@@ -368,7 +319,6 @@ function getJobResultUntilSuccess({
   async function attemptFetch() {
     try {
       const res = await fetch(url, { headers });
-      console.log(res);
       if (res.ok) {
         console.log('✅ Job result fetched successfully.');
         resultRetryTimeoutId = null;
