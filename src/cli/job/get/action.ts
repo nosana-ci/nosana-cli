@@ -20,12 +20,19 @@ import { listenToWebSocketLogs } from '../../../services/websocket.js';
 import { configs } from '../../../services/NodeManager/configs/configs.js';
 import { OpState } from '../../../services/NodeManager/provider/types.js';
 
+// clear these timeouts 
+let retryTimeoutId:  NodeJS.Timeout | null = null;
+let resultRetryTimeoutId: NodeJS.Timeout | null = null;
+
 export async function getJob(
   jobAddress: string,
   options: {
     [key: string]: any;
   },
   cmd: Command | undefined,
+  json_flow?: {
+    [key: string]: any;
+  },
 ): Promise<void> {
   const config = configs();
   const nosana: Client = getSDK();
@@ -91,6 +98,16 @@ export async function getJob(
 
         if (isPrivate(ipfsJob)) {
           await fetchServiceURLWithRetry(job, jobAddress, formatter, headers);
+        }
+
+        if (options.private) {
+          const headers = nosana.authorization.generateHeader(job.ipfsJob, {
+            includeTime: true,
+          });
+          headers.append('Content-Type', 'application/json');
+
+          postJobDefinitionUntilSuccess({ job, jobAddress, headers, json_flow, options, config})
+          getJobResultUntilSuccess({ job, jobAddress, headers, options, config})
         }
 
         ws = listenToWebSocketLogs(
@@ -252,8 +269,7 @@ async function fetchServiceURLWithRetry(
   const intervalId = setInterval(async () => {
     try {
       const response = await fetch(
-        `https://${job.node}.${
-          configs().frp.serverAddr
+        `https://${job.node}.${configs().frp.serverAddr
         }/service/url/${jobAddress}`,
         { method: 'GET', headers },
       );
@@ -276,4 +292,81 @@ async function fetchServiceURLWithRetry(
       // The interval will continue, no need to manually retry here
     }
   }, retryInterval);
+}
+
+function postJobDefinitionUntilSuccess({
+  job,
+  jobAddress,
+  headers,
+  json_flow,
+  options,
+  config,
+}: {
+  job: any;
+  jobAddress: string;
+  headers: Headers;
+  json_flow: any;
+  options: any;
+  config: any;
+}) {
+  const url = `https://${job.node}.${options.network === 'devnet'
+      ? 'node.k8s.dev.nos.ci'
+      : config.frp.serverAddr
+    }/job-definition/${jobAddress}`;
+
+  async function attemptPost() {
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(json_flow),
+      });
+
+      if (res.ok) {
+        retryTimeoutId = null;
+        return;
+      } else { }
+    } catch (err) { }
+
+    retryTimeoutId = setTimeout(attemptPost, 5000);
+  }
+
+  attemptPost();
+}
+
+function getJobResultUntilSuccess({
+  job,
+  jobAddress,
+  headers,
+  options,
+  config,
+}: {
+  job: any;
+  jobAddress: string;
+  headers: Headers;
+  options: any;
+  config: any;
+}) {
+  const url = `https://${job.node}.${
+    options.network === 'devnet' ? 'node.k8s.dev.nos.ci' : config.frp.serverAddr
+  }/job-result/${jobAddress}`;
+
+  async function attemptFetch() {
+    try {
+      const res = await fetch(url, { headers });
+      console.log(res)
+      if (res.ok) {
+        console.log('✅ Job result fetched successfully.');
+        resultRetryTimeoutId = null;
+
+        const resultData = await res.json();
+        console.log(resultData)
+        return;
+      } else {}
+    } catch (err: any) {}
+
+    resultRetryTimeoutId = setTimeout(attemptFetch, 15000);
+  }
+
+  attemptFetch();
 }

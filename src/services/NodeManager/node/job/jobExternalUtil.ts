@@ -20,10 +20,10 @@ export class JobExternalUtil {
       job.ipfsJob,
     );
 
-    if (jobDefinition.logistics?.receive?.type) {
+    if (jobDefinition.logistics?.send?.type) {
       const strategySelector = new JobDefinitionStrategySelector();
       const strategy = strategySelector.selectStrategy(
-        jobDefinition.logistics?.receive?.type,
+        jobDefinition.logistics?.send?.type,
       );
 
       this.repository.updateflowState(id, {
@@ -36,15 +36,17 @@ export class JobExternalUtil {
     return jobDefinition;
   }
 
-  public async resolveResult(id: string): Promise<FlowState> {
+  public async resolveResult(id: string, job: Job): Promise<FlowState> {
     let result = this.repository.getFlowState(id);
 
-    const jobDefinition = this.repository.getflow(id).jobDefinition;
-
-    if (jobDefinition.logistics?.send?.type) {
+    let jobDefinition: JobDefinition = await this.sdk.ipfs.retrieve(
+      job.ipfsJob,
+    );
+    
+    if (jobDefinition.logistics?.receive?.type) {
       const strategySelector = new ResultReturnStrategySelector();
       const strategy = strategySelector.selectStrategy(
-        jobDefinition.logistics?.send?.type,
+        jobDefinition.logistics?.receive?.type,
       );
 
       this.repository.updateflowState(id, {
