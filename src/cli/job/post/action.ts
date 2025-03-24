@@ -1,8 +1,8 @@
-import { Client, sleep } from '@nosana/sdk';
+import { AuthorizationManager, Client, sleep } from '@nosana/sdk';
 import fs from 'node:fs';
 import { randomUUID } from 'crypto';
 import { IValidation } from 'typia';
-import { config } from '../../../generic/config.js';
+import { privateBlankJobDefintion, config } from '../../../generic/config.js';
 import { getJob } from '../get/action.js';
 import { colors } from '../../../generic/utils.js';
 import { getNosBalance, getSDK, getSolBalance } from '../../../services/sdk.js';
@@ -16,6 +16,10 @@ import {
   validateJobDefinition,
 } from '../../../services/NodeManager/provider/types.js';
 import { getJobUrls } from '../../../generic/expose-util.js';
+import {
+  waitForJobCompletion,
+  waitForJobRunOrCompletion,
+} from '../../../services/jobs.js';
 
 export async function run(
   command: Array<string>,
@@ -135,7 +139,10 @@ export async function run(
     });
   }
 
-  const ipfsHash = await nosana.ipfs.pin(json_flow);
+  const ipfsHash = await nosana.ipfs.pin(
+    options.confidential ? privateBlankJobDefintion : json_flow,
+  );
+
   formatter.output(OUTPUT_EVENTS.OUTPUT_IPFS_UPLOADED, {
     ipfsHash: `${nosana.ipfs.config.gateway + ipfsHash}`,
   });
@@ -210,18 +217,29 @@ export async function run(
     total: nosNeeded.toFixed(4),
   });
 
+  if ((json_flow as JobDefinition).logistics) {
+    formatter.output(
+      OUTPUT_EVENTS.OUTPUT_JOB_POSTER_AUTH_TOKEN,
+      nosana.authorization.generate(ipfsHash, { includeTime: true }),
+    );
+  }
+
   await nosana.jobs.setAccounts();
   if (market.jobPrice == 0) {
     nosana.jobs.accounts!.user = nosana.jobs.accounts!.vault;
   }
   let response;
   try {
-    response = await nosana.jobs.list(
+    response = (await nosana.jobs.list(
       ipfsHash,
       options.timeout,
       market.address,
       options.host,
-    );
+    )) as {
+      tx: string;
+      job: string;
+      run: string;
+    };
   } catch (e: any) {
     if (e.error) {
       return formatter.throw(OUTPUT_EVENTS.OUTPUT_JOB_POSTED_ERROR, {
@@ -250,12 +268,70 @@ export async function run(
     }
   }
 
-  await getJob(response.job, options, undefined);
+  if (options.confidential) {
+    const job = await waitForJobRunOrCompletion(new PublicKey(response.job));
+    postJobDefinitionUntilSuccess({
+      id: response.job,
+      node: job.node,
+      hash: ipfsHash,
+      json_flow,
+      serverAddr:
+        options.network === 'devnet'
+          ? 'node.k8s.dev.nos.ci'
+          : config.frp.serverAddr,
+    });
+  }
 
-  if (!(options.wait || options.download)) {
+  await getJob(response.job, options, undefined, json_flow);
+
+  if (!(options.wait || options.download || options.confidential)) {
     formatter.output(OUTPUT_EVENTS.OUTPUT_RETRIVE_JOB_COMMAND, {
       job: response.job,
       network: options.network,
     });
   }
+}
+
+let retryTimeoutId: NodeJS.Timeout | null = null;
+
+function postJobDefinitionUntilSuccess({
+  id,
+  node,
+  hash,
+  json_flow,
+  serverAddr,
+}: {
+  id: string;
+  node: string;
+  hash: string;
+  json_flow: any;
+  serverAddr: string;
+}) {
+  const nosana: Client = getSDK();
+  const headers = nosana.authorization.generateHeader(hash, {
+    includeTime: true,
+  });
+  headers.append('Content-Type', 'application/json');
+
+  const url = `https://${node}.${serverAddr}/job-definition/${id}`;
+
+  async function attemptPost() {
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(json_flow),
+      });
+
+      if (res.ok) {
+        retryTimeoutId = null;
+        return;
+      } else {
+      }
+    } catch (err) {}
+
+    retryTimeoutId = setTimeout(attemptPost, 5000);
+  }
+
+  attemptPost();
 }

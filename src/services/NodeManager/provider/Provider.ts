@@ -97,12 +97,16 @@ export class Provider {
         throw error;
       }
 
+      this.resourceManager.images.setImage(frpcImage);
+
       ({ status, error } = await this.containerOrchestration.pullImage(
         tunnelImage,
       ));
       if (!status) {
         throw error;
       }
+
+      this.resourceManager.images.setImage(tunnelImage);
 
       ({ status, error, result } =
         await this.containerOrchestration.doesContainerExist(tunnel_name));
@@ -286,10 +290,15 @@ export class Provider {
         let result;
         let { status, error } = await this.containerOrchestration.pullImage(
           op.args.image,
+          op.args.authentication?.docker,
         );
 
         if (!status) {
           throw error;
+        }
+
+        if (!op.args.authentication?.docker) {
+          this.resourceManager.images.setImage(op.args.image);
         }
 
         const name = flow.id + '-' + opState.operationId;
@@ -324,6 +333,8 @@ export class Provider {
           if (!status) {
             throw error;
           }
+
+          this.resourceManager.images.setImage(frpcImage);
 
           const { proxies, idMap } = generateProxies(
             flow.id,
@@ -374,6 +385,7 @@ export class Provider {
           if (!status) {
             throw error;
           }
+          this.resourceManager.images.setImage(s3HelperImage);
 
           const resourceVolumes = await this.resourceManager.getResourceVolumes(
             op.args.resources ?? [],
@@ -523,6 +535,18 @@ export class Provider {
       await this.containerOrchestration.stopAndDeleteContainer(c.id);
     }
     await this.containerOrchestration.deleteNetwork(name);
+
+    if (
+      (flow.jobDefinition.ops[index].args as OperationArgsMap['container/run'])
+        .authentication?.docker
+    ) {
+      await this.containerOrchestration.deleteImage(
+        (
+          flow.jobDefinition.ops[index]
+            .args as OperationArgsMap['container/run']
+        ).image,
+      );
+    }
 
     return true;
   }

@@ -8,6 +8,7 @@ import { Provider } from '../../provider/Provider.js';
 import { applyLoggingProxyToClass } from '../../monitoring/proxy/loggingProxy.js';
 import { NodeRepository } from '../../repository/NodeRepository.js';
 import { JobExternalUtil } from './jobExternalUtil.js';
+import { abortControllerSelector } from '../abort/abortControllerSelector.js';
 
 export const jobEmitter = new EventEmitter();
 
@@ -164,8 +165,18 @@ export class JobHandler {
     if (!flow) {
       this.flowHandler.init(this.jobId());
 
-      let jobDefinition: JobDefinition =
-        await this.jobExternalUtil.resolveJobDefinition(this.jobId(), job);
+      const jobDefinition: JobDefinition | null = await Promise.race([
+        this.jobExternalUtil.resolveJobDefinition(this.jobId(), job),
+        new Promise<JobDefinition | null>((resolve) =>
+          abortControllerSelector().signal.addEventListener('abort', () =>
+            resolve(null),
+          ),
+        ),
+      ]);
+
+      if (!jobDefinition) {
+        return false;
+      }
 
       if (!(await this.jobExternalUtil.validate(this.jobId(), jobDefinition))) {
         return false;
@@ -241,7 +252,10 @@ export class JobHandler {
 
     try {
       const jobId = this.jobId();
-      let result = await this.jobExternalUtil.resolveResult(jobId);
+      let result = await this.jobExternalUtil.resolveResult(
+        jobId,
+        this.get() as Job,
+      );
       const ipfsResult = await this.sdk.ipfs.pin(result as object);
       const bytesArray = this.sdk.ipfs.IpfsHashToByteArray(ipfsResult);
       if (complete) {

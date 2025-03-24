@@ -1,12 +1,15 @@
 {
   "version": "0.1",
   "type": "container",
-  "logicstics": {
-    "receive": {
+  "meta": {
+    "trigger": "cli"
+  },
+  "logistics": {
+    "send": {
       "type": "api-listen",
       "args": {}
     },
-    "send": {
+    "receive": {
       "type": "api-listen",
       "args": {}
     }

@@ -25,7 +25,7 @@ import {
 
 import {
   getNodeInfoRoute,
-  getJobDefinitionRoute,
+  getJobResultsRoute,
   getServiceUrlRoute,
   postJobDefinitionRoute,
   postServiceStopRoute,
@@ -188,7 +188,12 @@ export class ApiHandler {
 
     // GET Routes
     this.api.get('/', (_: Request, res: Response) => res.send(this.address));
-    this.api.get('/job-definition/:id', express.json(), getJobDefinitionRoute);
+    this.api.get(
+      '/job-result/:jobId',
+      express.json(),
+      verifyJobOwnerSignatureMiddleware,
+      getJobResultsRoute,
+    );
     this.api.get('/node/info', getNodeInfoRoute);
     this.api.get(
       '/service/url/:jobId',

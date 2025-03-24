@@ -2,11 +2,11 @@ import { Response } from 'express';
 
 import { NodeAPIRequest } from '../../types/index.js';
 
-export function getJobDefinitionRoute(
-  req: NodeAPIRequest<{ id: string }>,
+export function getJobResultsRoute(
+  req: NodeAPIRequest<{ jobId: string }>,
   res: Response,
 ) {
-  const id = req.params.id;
+  const id = req.params.jobId;
 
   if (!id) {
     return res.status(400).send('job id parameter not provided');

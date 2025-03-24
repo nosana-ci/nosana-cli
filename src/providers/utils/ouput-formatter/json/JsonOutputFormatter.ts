@@ -52,4 +52,5 @@ export interface JsonResponseType {
     exitCode?: number | null;
     status?: string;
   }>;
+  authorization?: string;
 }

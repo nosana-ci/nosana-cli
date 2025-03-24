@@ -1,5 +1,9 @@
 import typia from 'typia';
-import { ExposedPort, JobDefinition as JobDefinitionSDK } from '@nosana/sdk';
+import {
+  DockerAuth,
+  ExposedPort,
+  JobDefinition as JobDefinitionSDK,
+} from '@nosana/sdk';
 
 export const validateJobDefinition =
   typia.createValidateEquals<JobDefinition>();
@@ -94,6 +98,9 @@ export interface OperationArgsMap {
       [key: string]: string;
     };
     resources?: Resource[];
+    authentication?: {
+      docker?: DockerAuth;
+    };
   };
   'container/create-volume': {
     name: string;

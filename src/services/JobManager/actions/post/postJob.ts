@@ -48,7 +48,15 @@ export function postJob(
     }
 
     try {
-      const response = await nosana.jobs.list(ipfsHash, 120, market.address);
+      const response = (await nosana.jobs.list(
+        ipfsHash,
+        120,
+        market.address,
+      )) as {
+        tx: string;
+        job: string;
+        run: string;
+      };
       resolve({
         job: response.job,
         tx: response.tx,

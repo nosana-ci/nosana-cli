@@ -1,7 +1,7 @@
 import ora from 'ora';
 import chalk from 'chalk';
 import { Command } from 'commander';
-import { Client, Job } from '@nosana/sdk';
+import { AuthorizationManager, Client, Job } from '@nosana/sdk';
 import { PublicKey } from '@solana/web3.js';
 import 'rpc-websockets/dist/lib/client.js';
 import { download } from '../download/action.js';
@@ -20,12 +20,19 @@ import { listenToWebSocketLogs } from '../../../services/websocket.js';
 import { configs } from '../../../services/NodeManager/configs/configs.js';
 import { OpState } from '../../../services/NodeManager/provider/types.js';
 
+// clear these timeouts
+let retryTimeoutId: NodeJS.Timeout | null = null;
+let resultRetryTimeoutId: NodeJS.Timeout | null = null;
+
 export async function getJob(
   jobAddress: string,
   options: {
     [key: string]: any;
   },
   cmd: Command | undefined,
+  json_flow?: {
+    [key: string]: any;
+  },
 ): Promise<void> {
   const config = configs();
   const nosana: Client = getSDK();
@@ -91,6 +98,15 @@ export async function getJob(
 
         if (isPrivate(ipfsJob)) {
           await fetchServiceURLWithRetry(job, jobAddress, formatter, headers);
+        }
+
+        if (options.private) {
+          getJobResultUntilSuccess({
+            job,
+            jobAddress,
+            options,
+            config,
+          });
         }
 
         ws = listenToWebSocketLogs(
@@ -276,4 +292,46 @@ async function fetchServiceURLWithRetry(
       // The interval will continue, no need to manually retry here
     }
   }, retryInterval);
+}
+
+function getJobResultUntilSuccess({
+  job,
+  jobAddress,
+  options,
+  config,
+}: {
+  job: any;
+  jobAddress: string;
+  options: any;
+  config: any;
+}) {
+  const nosana: Client = getSDK();
+
+  const headers = nosana.authorization.generateHeader(job.ipfsJob, {
+    includeTime: true,
+  });
+  headers.append('Content-Type', 'application/json');
+
+  const url = `https://${job.node}.${
+    options.network === 'devnet' ? 'node.k8s.dev.nos.ci' : config.frp.serverAddr
+  }/job-result/${jobAddress}`;
+
+  async function attemptFetch() {
+    try {
+      const res = await fetch(url, { headers });
+      if (res.ok) {
+        console.log('✅ Job result fetched successfully.');
+        resultRetryTimeoutId = null;
+
+        const resultData = await res.json();
+        console.log(resultData);
+        return;
+      } else {
+      }
+    } catch (err: any) {}
+
+    resultRetryTimeoutId = setTimeout(attemptFetch, 15000);
+  }
+
+  attemptFetch();
 }

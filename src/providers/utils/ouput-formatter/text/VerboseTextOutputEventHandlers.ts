@@ -32,6 +32,7 @@ import {
   JobServiceUrlErrorParam,
   JobServiceUrlExpiredParam,
   JobServiceUrlParam,
+  JobPosterAuthToken,
 } from '../outputEvents.js';
 import { OutputEventParams } from '../outputEvents.js';
 import chalk from 'chalk';
@@ -146,6 +147,10 @@ export const verboseTextOutputEventHandlers: OutputEventHandlers = {
         param.status
       }${colors.RESET}`,
     );
+  },
+
+  [OUTPUT_EVENTS.OUTPUT_JOB_POSTER_AUTH_TOKEN]: (param: JobPosterAuthToken) => {
+    console.log(`Authorization:\t${colors.GREEN}${param}${colors.RESET}`);
   },
 
   [OUTPUT_EVENTS.OUTPUT_JOB_POSTING]: (param: JobPostingParam) => {
