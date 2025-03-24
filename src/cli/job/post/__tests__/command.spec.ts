@@ -49,7 +49,7 @@ describe('postJobCommand', () => {
     ['--download', undefined, undefined],
     ['--url', undefined, undefined],
     ['--timeout', '-t', undefined],
-    ['--private', undefined, undefined],
+    ['--confidential', undefined, undefined],
   ])('should have %s option', (long, short, defaultValue) => {
     const option = postJobCommand.options.find((i) => i.long === long);
     expect(option?.long).toBe(long);

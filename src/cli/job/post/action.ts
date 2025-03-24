@@ -140,7 +140,7 @@ export async function run(
   }
 
   const ipfsHash = await nosana.ipfs.pin(
-    options.private ? privateBlankJobDefintion : json_flow,
+    options.confidential ? privateBlankJobDefintion : json_flow,
   );
 
   formatter.output(OUTPUT_EVENTS.OUTPUT_IPFS_UPLOADED, {
@@ -268,7 +268,7 @@ export async function run(
     }
   }
 
-  if (options.private) {
+  if (options.confidential) {
     const job = await waitForJobRunOrCompletion(new PublicKey(response.job));
     postJobDefinitionUntilSuccess({
       id: response.job,
@@ -284,7 +284,7 @@ export async function run(
 
   await getJob(response.job, options, undefined, json_flow);
 
-  if (!(options.wait || options.download || options.private)) {
+  if (!(options.wait || options.download || options.confidential)) {
     formatter.output(OUTPUT_EVENTS.OUTPUT_RETRIVE_JOB_COMMAND, {
       job: response.job,
       network: options.network,
