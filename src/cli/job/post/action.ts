@@ -323,8 +323,6 @@ function postJobDefinitionUntilSuccess({
         body: JSON.stringify(json_flow),
       });
 
-      console.log(res.status);
-
       if (res.ok) {
         retryTimeoutId = null;
         return;
