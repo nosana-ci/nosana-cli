@@ -420,7 +420,9 @@ export class BasicNode {
 
       if (!runs?.length) {
         console.log(
-          chalk.yellow(`\n${new Date()} Online test failed, Host will restart`),
+          chalk.yellow(
+            `Your host has been detected as being offline and has been automatically removed from the market queue.`,
+          ),
         );
 
         await restartHandler();
