@@ -44,6 +44,7 @@ export class BasicNode {
   private resourceManager: ResourceManager;
   private provider: Provider;
   private containerOrchestration: ContainerOrchestrationInterface;
+  private leaveMarketQueueListener: EventEmitter;
   private exiting = false;
 
   private sdk: Client;
@@ -101,6 +102,7 @@ export class BasicNode {
     );
 
     this.expiryHandler = new ExpiryHandler(this.sdk);
+    this.leaveMarketQueueListener = new EventEmitter();
 
     applyLoggingProxyToClass(this);
   }
@@ -212,6 +214,8 @@ export class BasicNode {
           periodicHealthcheck,
         );
 
+        this.stopLeaveMarketQueueListener();
+
         /**
          * Once we have found a run in the queue, we want to stop this run monitoring
          */
@@ -301,7 +305,9 @@ export class BasicNode {
     restartHandler: () => Promise<void>,
     market?: string,
   ): Promise<void> {
+    this.stopLeaveMarketQueueListener();
     /**
+     *
      * check if market was specified and if it wasnt select market from list
      */
     if (!market) {
@@ -332,22 +338,7 @@ export class BasicNode {
 
     let firstMarketCheck = true;
 
-    const leaveMarketQueueListener = new EventEmitter();
-
-    leaveMarketQueueListener.addListener('LEFT QUEUE', async () => {
-      // wait for minute just to make sure we are not running a job
-      await new Promise((resolve) => setTimeout(resolve, 60000));
-
-      const run = this.runHandler.getRun();
-      // determine if there is a job
-      if (!run) {
-        console.log(
-          chalk.yellow(`${new Date()} Online test failed without run.\n${run}`),
-        );
-
-        // await restartHandler();
-      }
-    });
+    this.setupLeaveMarketQueueListener(restartHandler);
 
     /**
      * here we listen to the market queue and listen to any chnages
@@ -364,13 +355,9 @@ export class BasicNode {
             this.marketHandler.stopMarketQueueMonitoring();
 
             const run = this.runHandler.getRun();
+
             if (!run) {
-              console.log(
-                chalk.yellow(
-                  `${new Date()} Online test failed without run.\n${run}`,
-                ),
-              );
-              leaveMarketQueueListener.emit('LEFT QUEUE');
+              this.leaveMarketQueueListener.emit('LEFT QUEUE');
             }
           } else {
             /**
@@ -386,6 +373,61 @@ export class BasicNode {
         } catch (error) {}
       },
     );
+  }
+
+  public async stopLeaveMarketQueueListener() {
+    /**
+     * we want to stop any previous listeners
+     */
+    this.leaveMarketQueueListener.removeAllListeners('LEFT QUEUE');
+  }
+
+  public async setupLeaveMarketQueueListener(
+    restartHandler: () => Promise<void>,
+  ) {
+    let resolvedLeaveMarketQueueListener = false;
+
+    this.leaveMarketQueueListener.on('removeListener', (event, listener) => {
+      if (event === 'LEFT QUEUE') {
+        resolvedLeaveMarketQueueListener = true;
+      }
+    });
+
+    this.leaveMarketQueueListener.addListener('LEFT QUEUE', async () => {
+      if (resolvedLeaveMarketQueueListener) {
+        return;
+      }
+
+      // wait for minute just to make sure we are not running a job
+      await new Promise((resolve) => setTimeout(resolve, 30000));
+
+      if (resolvedLeaveMarketQueueListener) {
+        return;
+      }
+
+      const runs = await this.sdk.jobs.getRuns([
+        {
+          memcmp: {
+            offset: 40,
+            bytes: this.sdk.solana.provider!.wallet.publicKey.toString(),
+          },
+        },
+      ]);
+
+      if (resolvedLeaveMarketQueueListener) {
+        return;
+      }
+
+      if (!runs?.length) {
+        console.log(
+          chalk.yellow(
+            `Your host has been detected as being offline and has been automatically removed from the market queue.`,
+          ),
+        );
+
+        await restartHandler();
+      }
+    });
   }
 
   public async maintenance() {
