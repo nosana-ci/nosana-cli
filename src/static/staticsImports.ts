@@ -15,6 +15,5 @@ const pkg = readJsonFileSync<{ version: string }>('../../package.json');
 const specsAndNetworkJob = readJsonFileSync<JobDefinition>(
   './specs-and-network-job.json',
 );
-const specsJob = readJsonFileSync<JobDefinition>('./specs-job.json');
 
-export { pkg, specsAndNetworkJob, specsJob };
+export { pkg, specsAndNetworkJob };

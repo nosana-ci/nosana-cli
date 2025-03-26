@@ -123,7 +123,7 @@ export class BasicNode {
      * check the system using a premade job definitions
      * run dependent on market status
      */
-    return await this.specsHandler.check(this.marketHandler.isInMarket());
+    return await this.specsHandler.check();
   }
 
   async recommend(): Promise<string> {

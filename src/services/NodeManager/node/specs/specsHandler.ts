@@ -3,10 +3,7 @@ import { Client } from '@nosana/sdk';
 import { configs } from '../../configs/configs.js';
 import { FlowHandler } from '../flow/flowHandler.js';
 import { Provider } from '../../provider/Provider.js';
-import {
-  specsAndNetworkJob,
-  specsJob,
-} from '../../../../static/staticsImports.js';
+import { specsAndNetworkJob } from '../../../../static/staticsImports.js';
 import { NodeRepository } from '../../repository/NodeRepository.js';
 import { applyLoggingProxyToClass } from '../../monitoring/proxy/loggingProxy.js';
 
@@ -33,10 +30,10 @@ export class SpecsHandler {
     applyLoggingProxyToClass(this);
   }
 
-  async check(isInMarket: boolean): Promise<boolean> {
+  async check(): Promise<boolean> {
     const id = this.flowHandler.generateRandomId(32);
 
-    this.flowHandler.start(id, isInMarket ? specsJob : specsAndNetworkJob);
+    this.flowHandler.start(id, specsAndNetworkJob);
 
     let result: Flow | undefined;
     try {
