@@ -105,17 +105,16 @@ export class ApiHandler {
       });
     });
 
-    this.wss.on('connection', (ws, _) => {
+    this.wss.on('connection', (ws) => {
       let keepAliveInterval: NodeJS.Timeout;
-
       ws.on('message', async (message) => {
-        const { path, header, body } = JSON.parse(message.toString());
-
-        keepAliveInterval = setInterval(() => {
-          ws.ping();
-        }, 30000);
-
         try {
+          const { path, header, body } = JSON.parse(message.toString());
+
+          keepAliveInterval = setInterval(() => {
+            ws.ping();
+          }, 30000);
+
           switch (path) {
             case '/log':
               await verifyWSJobOwnerSignatureMiddleware(
@@ -134,10 +133,11 @@ export class ApiHandler {
               );
               break;
             default:
-              ws.close(404);
+              ws.close(3003, 'Invalid Path');
+              break;
           }
-        } catch (_) {
-          ws.close(500, 'Ops something went wrong');
+        } catch (err) {
+          ws.close(1011, 'Internal Server Error');
         }
       });
 
@@ -145,6 +145,7 @@ export class ApiHandler {
         if (keepAliveInterval) {
           clearInterval(keepAliveInterval);
         }
+
         stateStreaming(this.address.toString()).unsubscribe(ws);
       });
     });
