@@ -117,6 +117,8 @@ export class DB {
       delete this.db.data.info.disk; // remove old key
     }
 
+    this.db.data.info.version = pkg.version;
+
     this.db.write();
   }
 }
