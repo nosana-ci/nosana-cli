@@ -326,7 +326,7 @@ export class DockerContainerOrchestration
           } catch (error) {}
 
           try {
-            await container.remove({ force: true });
+            await container.remove({ force: true, v: true });
           } catch (error) {}
         }
       }

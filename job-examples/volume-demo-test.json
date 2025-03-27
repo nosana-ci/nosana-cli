@@ -1,0 +1,23 @@
+{
+    "version": "0.1",
+    "type": "container",
+    "meta": {
+      "trigger": "cli"
+    },
+    "ops": [
+      {
+        "type": "container/run",
+        "id": "run-from-cli",
+        "args": {
+          "image": "localhost/volume-demo:latest",
+          "resources": [
+            {
+              "type": "S3",
+              "url": "https://models.nosana.io/test",
+              "target": "/test"
+            }
+          ]
+        }
+      }
+    ]
+  }
