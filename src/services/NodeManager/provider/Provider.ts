@@ -15,6 +15,7 @@ import {
 } from '../../../generic/expose-util.js';
 import { ExposedPortHealthCheck } from './ExposedPortHealthCheck.js';
 import { ExposedPort, getExposePorts, isOpExposed } from '@nosana/sdk';
+import EventEmitter from 'events';
 
 const frpcImage = 'docker.io/nosana/frpc:multi-v0.0.2';
 
@@ -23,6 +24,7 @@ export class Provider {
     private containerOrchestration: ContainerOrchestrationInterface,
     private repository: NodeRepository,
     private resourceManager: ResourceManager,
+    private emitter?: EventEmitter,
   ) {
     applyLoggingProxyToClass(this);
   }
@@ -445,7 +447,7 @@ export class Provider {
           this.exposedPortHealthCheck = new ExposedPortHealthCheck(
             flow.id,
             frpcContainer as Dockerode.Container,
-            jobEmitter,
+            this.emitter ?? jobEmitter,
             name,
           );
           this.exposedPortHealthCheck.addExposedPortsMap(idMaps);
