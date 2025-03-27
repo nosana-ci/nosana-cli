@@ -18,6 +18,7 @@ import {
   ConsoleLogger,
   consoleLogging,
 } from '../../../services/NodeManager/monitoring/log/console/ConsoleLogger.js';
+import EventEmitter from 'events';
 
 // This is still a WIP: i will still have to expose the logs and progress logs
 export async function runJob(
@@ -46,15 +47,30 @@ export async function runJob(
       repository,
     );
 
+    const emitter = new EventEmitter()
+
     const provider = new Provider(
       containerOrchestration,
       repository,
       resourceManager,
+      emitter
     );
 
     const flowHandler = createLoggingProxy(
       new FlowHandler(provider, repository),
     );
+
+    emitter.on('run-exposed', (data) => {
+      flowHandler.operationExposed(data, undefined);
+    });
+
+    emitter.on('startup-success', (data) => {
+      flowHandler.operationExposed(data, true);
+    });
+
+    emitter.on('continuous-failure', (data) => {
+      flowHandler.operationExposed(data, false);
+    });
 
     /**
      * set up log listening, any instance can listen to log produces from the node
