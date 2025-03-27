@@ -24,7 +24,7 @@ export class Provider {
     private containerOrchestration: ContainerOrchestrationInterface,
     private repository: NodeRepository,
     private resourceManager: ResourceManager,
-    private emitter?: EventEmitter
+    private emitter?: EventEmitter,
   ) {
     applyLoggingProxyToClass(this);
   }

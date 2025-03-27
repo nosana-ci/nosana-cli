@@ -47,13 +47,13 @@ export async function runJob(
       repository,
     );
 
-    const emitter = new EventEmitter()
+    const emitter = new EventEmitter();
 
     const provider = new Provider(
       containerOrchestration,
       repository,
       resourceManager,
-      emitter
+      emitter,
     );
 
     const flowHandler = createLoggingProxy(
