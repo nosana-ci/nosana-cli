@@ -304,35 +304,49 @@ export default class NodeManager {
     // log crashes
     process.on('unhandledRejection', async (reason, p) => {
       try {
-        const e = reason as any
-        await reportError({ error_type: 'unhandledRejection', error_name: e.name, error_message: e.message, error_stack: e.stack ?? e.trace})
+        const e = reason as any;
+        await reportError({
+          error_type: 'unhandledRejection',
+          error_name: e.name,
+          error_message: e.message,
+          error_stack: e.stack ?? e.trace,
+        });
       } catch (_) {}
     });
     process.on('uncaughtException', async (reason) => {
       try {
-        const e = reason as any
-        await reportError({ error_type: 'uncaughtException', error_name: e.name, error_message: e.message, error_stack: e.stack ?? e.trace})
+        const e = reason as any;
+        await reportError({
+          error_type: 'uncaughtException',
+          error_name: e.name,
+          error_message: e.message,
+          error_stack: e.stack ?? e.trace,
+        });
       } catch (_) {}
     });
   }
 }
 
-const reportError = async (data: {error_type: string, error_name: string, error_message: string, error_stack: string }) => {
-  const nosana = getSDK()
-  const response = await fetch(
-    `${configs().backendUrl}/errors/report`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: nosana.authorization.generate(configs().signMessage, { includeTime: true }),
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        address: nosana.solana.provider!.wallet.publicKey.toString(),
-        ...data
+const reportError = async (data: {
+  error_type: string;
+  error_name: string;
+  error_message: string;
+  error_stack: string;
+}) => {
+  const nosana = getSDK();
+  const response = await fetch(`${configs().backendUrl}/errors/report`, {
+    method: 'POST',
+    headers: {
+      Authorization: nosana.authorization.generate(configs().signMessage, {
+        includeTime: true,
       }),
+      'Content-Type': 'application/json',
     },
-  );
-  const responseBody = await response.json()
+    body: JSON.stringify({
+      address: nosana.solana.provider!.wallet.publicKey.toString(),
+      ...data,
+    }),
+  });
+  const responseBody = await response.json();
   return responseBody;
-}
+};
