@@ -7,6 +7,8 @@ import { log } from './monitoring/log/NodeLog.js';
 import { logStreaming } from './monitoring/streaming/LogStreamer.js';
 import { consoleLogging } from './monitoring/log/console/ConsoleLogger.js';
 import { validateCLIVersion } from '../versions.js';
+import { configs } from './configs/configs.js';
+import { getSDK } from '../sdk.js';
 
 export default class NodeManager {
   private node: BasicNode;
@@ -300,7 +302,37 @@ export default class NodeManager {
     process.on('SIGTERM', exitHandler); // Handle termination signals
 
     // log crashes
-    process.on('unhandledRejection', exitHandler);
-    process.on('uncaughtException', exitHandler);
+    process.on('unhandledRejection', async (reason, p) => {
+      try {
+        const e = reason as any
+        await reportError({ error_type: 'unhandledRejection', error_name: e.name, error_message: e.message, error_stack: e.stack ?? e.trace})
+      } catch (_) {}
+    });
+    process.on('uncaughtException', async (reason) => {
+      try {
+        const e = reason as any
+        await reportError({ error_type: 'uncaughtException', error_name: e.name, error_message: e.message, error_stack: e.stack ?? e.trace})
+      } catch (_) {}
+    });
   }
+}
+
+const reportError = async (data: {error_type: string, error_name: string, error_message: string, error_stack: string }) => {
+  const nosana = getSDK()
+  const response = await fetch(
+    `${configs().backendUrl}/errors/report`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: nosana.authorization.generate(configs().signMessage, { includeTime: true }),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        address: nosana.solana.provider!.wallet.publicKey.toString(),
+        ...data
+      }),
+    },
+  );
+  const responseBody = await response.json()
+  return responseBody;
 }
