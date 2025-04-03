@@ -25,8 +25,8 @@ describe('runNodeCommand', () => {
     expect(runNodeCommand.args[0]).toBe('job definition path');
   });
 
-  it('should have 5 options', () => {
-    expect(runNodeCommand.options.length).toBe(5);
+  it('should have 6 options', () => {
+    expect(runNodeCommand.options.length).toBe(6);
   });
 
   it.each([
@@ -35,6 +35,7 @@ describe('runNodeCommand', () => {
     ['--podman', '--docker', 'http://localhost:8080'],
     ['--url', undefined, undefined],
     ['--gpu', undefined, 'all'],
+    ['--verbose', undefined, undefined],
   ])('should have %s option', (long, short, defaultValue) => {
     const option = runNodeCommand.options.find((i) => i.long === long);
     expect(option?.long).toBe(long);
