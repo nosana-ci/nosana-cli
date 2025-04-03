@@ -1,7 +1,8 @@
+import { OperationArgsMap } from '@nosana/sdk';
+
 import {
   JobDefinition,
   Operation,
-  OperationArgsMap,
   OperationType,
 } from '../services/NodeManager/provider/types.js';
 

@@ -1,0 +1,25 @@
+{
+  "version": "0.1",
+  "meta": {
+    "trigger": "cli"
+  },
+  "type": "container",
+  "ops": [
+    {
+      "id": "huggingface",
+      "type": "container/run",
+      "args": {
+        "cmd": ["ls", "/data-models"],
+        "gpu": true,
+        "image": "ubuntu",
+        "resources": [
+          {
+            "type": "S3",
+            "url": "https://models.nosana.io/test",
+            "target": "/data-models/"
+          }
+        ]
+      }
+    }
+  ]
+}

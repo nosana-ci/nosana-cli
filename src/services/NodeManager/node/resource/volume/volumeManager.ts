@@ -1,20 +1,24 @@
 import { Presets } from 'cli-progress';
+import { ContainerCreateOptions } from 'dockerode';
 import {
-  OperationArgsMap,
-  RequiredResource,
+  HFResource,
   Resource,
-  S3Secure,
-} from '../../../provider/types.js';
+  S3Resource,
+} from '@nosana/sdk/dist/types/resources.js';
+
+import { RequiredResource } from '../../../provider/types.js';
 import { extractLogsAndResultsFromLogBuffer } from '../../../../../providers/utils/extractLogsAndResultsFromLogBuffer.js';
 import { applyLoggingProxyToClass } from '../../../monitoring/proxy/loggingProxy.js';
-import { ContainerOrchestrationInterface } from '../../../provider/containerOrchestration/interface';
+import { ContainerOrchestrationInterface } from '../../../provider/containerOrchestration/interface.js';
 import { NodeRepository } from '../../../repository/NodeRepository.js';
 import { ProgressBarReporter } from '../../utils/progressBarReporter.js';
 import { createResourceName } from '../helpers/createResourceName.js';
 import { hasDockerVolume } from '../helpers/hasDockerVolume.js';
 import { hoursSinceDate } from '../helpers/hoursSunceDate.js';
-import { createS3HelperOpts, nosanaBucket, s3HelperImage } from '../types.js';
+import { nosanaBucket, s3HelperImage } from '../definition/index.js';
 import { convertFromBytes } from '../../../../../providers/utils/convertFromBytes.js';
+import { createHFArgs } from '../helpers/createHFArgs.js';
+import { createS3Args } from '../helpers/createS3Args.js';
 
 export class VolumeManager {
   private fetched: boolean = false;
@@ -78,45 +82,67 @@ export class VolumeManager {
       }
     }
 
-    try {
-      if (resource.url) {
-        await this.runResourceManagerContainer(
-          volumeName,
-          {
-            url: resource.url,
-            files: resource.files,
-          },
-          sync,
-        );
-      } else {
-        for (const bucket of resource.buckets!) {
-          await this.runResourceManagerContainer(volumeName, bucket, sync);
+    switch (resource.type) {
+      case 'S3':
+        const { url, files, bucket, buckets, IAM } = resource as S3Resource;
+        try {
+          if (url) {
+            const args = createS3Args(volumeName, { url, files, bucket }, IAM);
+
+            await this.runResourceManagerContainer(
+              volumeName,
+              resourceName,
+              args,
+              sync,
+            );
+          } else {
+            for (const bucket of buckets!) {
+              const args = createS3Args(
+                volumeName,
+                { url: bucket.url, files: bucket.files },
+                IAM,
+              );
+              await this.runResourceManagerContainer(
+                volumeName,
+                resourceName,
+                args,
+                sync,
+              );
+            }
+          }
+
+          this.setVolume(resourceName, volumeName);
+        } catch (err) {
+          throw new Error((err as Error).message);
         }
-      }
+        break;
+      case 'HF':
+        const { repo, revision, accessToken } = resource as HFResource;
+        const args = createHFArgs(volumeName, { repo, revision }, accessToken);
 
-      this.setVolume(resourceName, volumeName);
-
-      return volumeName;
-    } catch (err) {
-      throw new Error((err as Error).message);
+        try {
+          await this.runResourceManagerContainer(
+            volumeName,
+            resourceName,
+            args,
+            sync,
+          );
+          this.setVolume(resourceName, volumeName);
+        } catch (err) {
+          throw new Error((err as Error).message);
+        }
+        break;
     }
+
+    return volumeName;
   }
 
   private async runResourceManagerContainer(
+    volume: string,
     name: string,
-    resource: {
-      url: string;
-      files?: string[];
-    },
+    args: ContainerCreateOptions,
     syncing = false,
   ): Promise<void> {
-    const { url, files } = resource;
-
-    const args = createS3HelperOpts(
-      name,
-      { url, files },
-      (resource as S3Secure).IAM,
-    );
     const response = await this.containerOrchestration.runContainer(args);
 
     if (response.error || !response.result) {
@@ -148,9 +174,7 @@ export class VolumeManager {
           formatSize = format;
 
           this.progressBarReporter.start(
-            `${
-              syncing ? 'Syncing' : 'Downloading'
-            } resource volume resource ${name}`,
+            `${syncing ? 'Syncing' : 'Downloading'} resource ${name}`,
             {
               format: `{bar} {percentage}% | {value}/{total}${format} | {valueFiles}/{totalFiles} files`,
             },
@@ -178,9 +202,7 @@ export class VolumeManager {
     // If download failed, remove volume
     if (StatusCode !== 0) {
       this.progressBarReporter.stop(
-        `${
-          syncing ? 'Syncing' : 'Downloading'
-        } resource volume resource ${name} stopped`,
+        `${syncing ? 'Syncing' : 'Downloading'} resource ${name} stopped`,
       );
       const errrorBuffer = await container.logs({
         follow: false,
@@ -194,20 +216,16 @@ export class VolumeManager {
       );
 
       await container.remove({ force: true });
+      await this.containerOrchestration.deleteVolume(volume);
 
-      await this.containerOrchestration.deleteVolume(name);
-
-      const lastLog = logs[logs.length - 1].log?.replaceAll('\n', '');
-      const jsonLog = lastLog
-        ? JSON.parse(lastLog)
-        : { message: 'Unkown Error' };
-      throw new Error(jsonLog.message);
+      const errorLog = logs.find(({ log }) => log?.startsWith('Error:'));
+      if (errorLog) {
+        throw new Error(errorLog.log?.replace('Error: ', ''));
+      }
     }
 
     this.progressBarReporter.stop(
-      `${
-        syncing ? 'Synced' : 'Downloaded'
-      } resource volume resource ${name} completed`,
+      `${syncing ? 'Synced' : 'Downloaded'} resource ${name} completed`,
     );
 
     await this.containerOrchestration.stopAndDeleteContainer(container.id);

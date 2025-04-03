@@ -101,7 +101,20 @@ export async function runJob(
     );
     process.exit();
   } catch (error: any) {
-    console.log(error);
+    const formattedError = `
+      ========== ERROR ==========
+      Timestamp: ${new Date().toISOString()}
+      Error Name: ${error.name || 'Unknown Error'}
+      Message: ${error.message || 'No message available'}${
+      options.verbose
+        ? `
+      Trace: ${error.stack ?? error.trace}`
+        : ''
+    }
+      ============================
+      `;
+
+    console.error(formattedError);
     process.exit();
   }
 }

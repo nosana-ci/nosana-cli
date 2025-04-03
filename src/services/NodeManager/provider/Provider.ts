@@ -1,5 +1,7 @@
+import { OperationArgsMap } from '@nosana/sdk';
+
 import { ContainerOrchestrationInterface } from './containerOrchestration/interface.js';
-import { Flow, Operation, OperationArgsMap } from './types.js';
+import { Flow, Operation } from './types.js';
 import { applyLoggingProxyToClass } from '../monitoring/proxy/loggingProxy.js';
 import { NodeRepository } from '../repository/NodeRepository.js';
 import { promiseTimeoutWrapper } from '../../../generic/timeoutPromiseWrapper.js';
@@ -8,7 +10,7 @@ import { ResourceManager } from '../node/resource/resourceManager.js';
 import Dockerode from 'dockerode';
 import { jobEmitter } from '../node/job/jobHandler.js';
 import { configs } from '../configs/configs.js';
-import { s3HelperImage } from '../node/resource/types.js';
+import { s3HelperImage } from '../node/resource/definition/index.js';
 import {
   generateProxies,
   generateUrlSecretObject,

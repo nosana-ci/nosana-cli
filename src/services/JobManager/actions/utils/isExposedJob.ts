@@ -1,7 +1,6 @@
-import {
-  JobDefinition,
-  OperationArgsMap,
-} from '../../../NodeManager/provider/types.js';
+import { OperationArgsMap } from '@nosana/sdk';
+
+import { JobDefinition } from '../../../NodeManager/provider/types.js';
 
 export function isExposedJobOps(job: JobDefinition): boolean {
   return job.ops.some(

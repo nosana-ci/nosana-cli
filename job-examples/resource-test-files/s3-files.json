@@ -1,0 +1,26 @@
+{
+  "version": "0.1",
+  "meta": {
+    "trigger": "cli"
+  },
+  "type": "container",
+  "ops": [
+    {
+      "id": "huggingface",
+      "args": {
+        "cmd": ["ls", "/data-models"],
+        "gpu": true,
+        "image": "ubuntu",
+        "resources": [
+          {
+            "url": "https://pub-5bc58981af9f42659ff8ada57bfea92c.r2.dev/controlnets",
+            "type": "S3",
+            "files": ["control_v11e_sd15_ip2p_fp16.safetensors"],
+            "target": "/data-models/"
+          }
+        ]
+      },
+      "type": "container/run"
+    }
+  ]
+}

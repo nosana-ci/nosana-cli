@@ -1,10 +1,22 @@
+import { HFResource, S3Resource } from '@nosana/sdk/dist/types/resources.js';
 import { RequiredResource } from '../../../provider/types.js';
-import { nosanaBucket } from '../types.js';
+import { nosanaBucket } from '../definition/index.js';
 
 export function createResourceName(resource: RequiredResource) {
-  if (resource.url)
-    return resource.url.replace('s3://nos-ai-models-qllsn32u', nosanaBucket);
-
-  // TODO: Fix type to ensure that it is either url or bucket!
-  return resource.buckets!.map((bucket) => bucket.url).join('-');
+  switch (resource.type) {
+    case 'S3':
+      const s3Resource = resource as S3Resource;
+      if (s3Resource.url) {
+        return s3Resource.url.replace(
+          's3://nos-ai-models-qllsn32u',
+          nosanaBucket,
+        );
+      }
+      return s3Resource.buckets!.map((bucket) => bucket.url).join('-');
+    case 'HF':
+      const hfResource = resource as HFResource;
+      return `${hfResource.repo}${
+        hfResource.revision ? '-' + hfResource.revision : ''
+      }`;
+  }
 }

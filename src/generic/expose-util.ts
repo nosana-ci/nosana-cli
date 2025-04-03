@@ -1,9 +1,7 @@
-// import { Operation, OperationType, OperationArgsMap } from '@nosana/sdk';
 import { randomBytes } from 'crypto';
 import {
   JobDefinition,
   Operation,
-  OperationArgsMap,
 } from '../services/NodeManager/provider/types.js';
 import { isPrivate } from './ops-util.js';
 import { configs } from '../services/NodeManager/configs/configs.js';

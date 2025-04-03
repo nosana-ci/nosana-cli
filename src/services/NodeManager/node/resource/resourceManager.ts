@@ -1,6 +1,7 @@
+import { Resource } from '@nosana/sdk/dist/types/resources.js';
+
 import { clientSelector } from '../../../../api/client.js';
 import { ContainerOrchestrationInterface } from '../../provider/containerOrchestration/interface.js';
-import { OperationArgsMap, Resource } from '../../provider/types.js';
 import { NodeRepository } from '../../repository/NodeRepository.js';
 import { createResourceName } from './helpers/createResourceName.js';
 import { ImageManager } from './image/imageManager.js';
@@ -77,7 +78,7 @@ export class ResourceManager {
       volumes.push({
         dest: resource.target,
         name: await this.volumes.getVolume(resource)!,
-        readonly: resource.allowWrite ? false : true,
+        readonly: resource.type === 'S3' && resource.allowWrite ? false : true,
       });
     }
     return volumes;

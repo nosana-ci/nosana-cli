@@ -1,33 +1,13 @@
 import typia from 'typia';
 import {
-  DockerAuth,
-  ExposedPort,
   JobDefinition as JobDefinitionSDK,
+  type OperationArgsMap,
 } from '@nosana/sdk';
+
+import { type Resource } from '@nosana/sdk/dist/types/resources';
 
 export const validateJobDefinition =
   typia.createValidateEquals<JobDefinition>();
-
-export type S3Unsecure = {
-  type: 'S3';
-  url?: string;
-  target: string;
-  files?: string[];
-  allowWrite?: boolean;
-  buckets?: { url: string; files?: string[] }[];
-};
-
-export type S3Auth = {
-  REGION: string;
-  ACCESS_KEY_ID: string;
-  SECRET_ACCESS_KEY: string;
-};
-
-export type S3Secure = S3Unsecure & {
-  IAM: S3Auth;
-};
-
-export type Resource = S3Unsecure | S3Secure;
 
 export type RequiredResource = Omit<Resource, 'target'>;
 
@@ -78,34 +58,6 @@ export type Operation<T extends OperationType> = {
   args: OperationArgsMap[T];
   results?: OperationResults;
 };
-export interface OperationArgsMap {
-  'container/run': {
-    image: string;
-    cmd?: string[] | string;
-    volumes?: [
-      {
-        name: string;
-        dest: string;
-      },
-    ];
-    expose?: number | (number | ExposedPort)[];
-    private?: boolean;
-    gpu?: boolean;
-    work_dir?: string;
-    output?: string;
-    entrypoint?: string | string[];
-    env?: {
-      [key: string]: string;
-    };
-    resources?: Resource[];
-    authentication?: {
-      docker?: DockerAuth;
-    };
-  };
-  'container/create-volume': {
-    name: string;
-  };
-}
 export type OperationType = keyof OperationArgsMap;
 
 export type StdOptions = 'stdin' | 'stdout' | 'stderr' | 'nodeerr';

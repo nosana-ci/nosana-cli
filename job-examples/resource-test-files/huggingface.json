@@ -1,0 +1,25 @@
+{
+  "version": "0.1",
+  "meta": {
+    "trigger": "cli"
+  },
+  "type": "container",
+  "ops": [
+    {
+      "id": "huggingface",
+      "args": {
+        "cmd": ["ls", "/data-models"],
+        "gpu": true,
+        "image": "ubuntu",
+        "resources": [
+          {
+            "type": "HF",
+            "repo": "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+            "target": "/data-models/"
+          }
+        ]
+      },
+      "type": "container/run"
+    }
+  ]
+}

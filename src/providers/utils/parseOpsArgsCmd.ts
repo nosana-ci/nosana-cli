@@ -1,4 +1,4 @@
-import { OperationArgsMap } from '../../services/NodeManager/provider/types';
+import { OperationArgsMap } from '@nosana/sdk';
 
 export function parseOpArgsCmd(
   cmd: OperationArgsMap['container/run']['cmd'],

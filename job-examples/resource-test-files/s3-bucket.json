@@ -1,0 +1,31 @@
+{
+  "version": "0.1",
+  "type": "container",
+  "meta": {
+    "trigger": "cli"
+  },
+  "ops": [
+    {
+      "id": "huggingface",
+      "type": "container/run",
+      "args": {
+        "cmd": ["ls", "/data-models"],
+        "gpu": true,
+        "image": "ubuntu",
+        "resources": [
+          {
+            "type": "S3",
+            "url": "https://4c167eea238dd4f526c4aeadfdddf190.r2.cloudflarestorage.com/rubians-ai-model/entrypoint",
+            "bucket": "rubians-ai-model",
+            "target": "/data-models/",
+            "IAM": {
+              "REGION": "auto",
+              "ACCESS_KEY_ID": "04b8ef09b4164d5bf01b7e2ceeb35935",
+              "SECRET_ACCESS_KEY": "81c75ffdfe39f63226f34c30fde83ddf299cc275305b411c1e97fe502e07b4ec"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
