@@ -500,7 +500,7 @@ export class Provider {
         logs: [
           {
             type: 'nodeerr',
-            log: `${error}`,
+            log: (error as Error).message,
           },
         ],
       });
@@ -594,7 +594,7 @@ export class Provider {
         logs: [
           {
             type: 'nodeerr',
-            log: `${error}`,
+            log: (error as Error).message,
           },
         ],
       });
