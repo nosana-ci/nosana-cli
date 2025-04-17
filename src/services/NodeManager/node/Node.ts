@@ -354,11 +354,11 @@ export class BasicNode {
              */
             this.marketHandler.stopMarketQueueMonitoring();
 
-            const run = this.runHandler.getRun();
+            // const run = this.runHandler.getRun();
 
-            if (!run) {
-              this.leaveMarketQueueListener.emit('LEFT QUEUE');
-            }
+            // if (!run) {
+            //   this.leaveMarketQueueListener.emit('LEFT QUEUE');
+            // }
           } else {
             /**
              * update the market position on queue
