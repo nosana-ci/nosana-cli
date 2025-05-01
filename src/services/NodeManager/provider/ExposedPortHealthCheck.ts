@@ -169,17 +169,18 @@ export class ExposedPortHealthCheck {
       healthCheck.method,
       url,
     ];
-  
+
     if (healthCheck.headers) {
       for (const [key, value] of Object.entries(healthCheck.headers)) {
         cmd.push('-H', `${key}: ${value}`);
       }
     }
-  
+
     if (healthCheck.body && ['POST', 'PUT'].includes(healthCheck.method)) {
-      const bodyString = typeof healthCheck.body === 'string'
-        ? healthCheck.body
-        : JSON.stringify(healthCheck.body);
+      const bodyString =
+        typeof healthCheck.body === 'string'
+          ? healthCheck.body
+          : JSON.stringify(healthCheck.body);
       cmd.push('--data', bodyString);
     }
 
