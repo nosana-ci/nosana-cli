@@ -157,15 +157,32 @@ export class ExposedPortHealthCheck {
     port: number,
     healthCheck: HttpHealthCheck,
   ): Promise<boolean> {
-    const cmd = [
+    const url = `http://${this.containerName}:${port}${healthCheck.path}`;
+    const cmd: string[] = [
       'curl',
       '-s',
       '-o',
       '/dev/null',
       '-w',
       '%{http_code}',
-      `http://${this.containerName}:${port}${healthCheck.path}`,
+      '-X',
+      healthCheck.method,
+      url,
     ];
+
+    if (healthCheck.headers) {
+      for (const [key, value] of Object.entries(healthCheck.headers)) {
+        cmd.push('-H', `${key}: ${value}`);
+      }
+    }
+
+    if (healthCheck.body && ['POST', 'PUT'].includes(healthCheck.method)) {
+      const bodyString =
+        typeof healthCheck.body === 'string'
+          ? healthCheck.body
+          : JSON.stringify(healthCheck.body);
+      cmd.push('--data', bodyString);
+    }
 
     try {
       const output = await this.execCommand(cmd);
