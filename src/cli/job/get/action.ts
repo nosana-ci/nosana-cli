@@ -89,7 +89,7 @@ export async function getJob(
         });
 
         formatter.output(OUTPUT_EVENTS.OUTPUT_NODE_URL, {
-          url: `${config.explorerUrl}/nodes/${job.node}`,
+          url: `${config.explorerUrl}/host/${job.node}`,
         });
 
         const ipfsJob = await nosana.ipfs.retrieve(job.ipfsJob);
@@ -120,7 +120,7 @@ export async function getJob(
 
     if (job.state === 'COMPLETED' || job.state === 'STOPPED') {
       formatter.output(OUTPUT_EVENTS.OUTPUT_NODE_URL, {
-        url: `${config.explorerUrl}/nodes/${job.node}`,
+        url: `${config.explorerUrl}/host/${job.node}`,
       });
 
       if (job.timeStart) {
