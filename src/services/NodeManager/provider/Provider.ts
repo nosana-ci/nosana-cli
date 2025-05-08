@@ -305,7 +305,7 @@ export class Provider {
           this.resourceManager.images.setImage(op.args.image);
         }
 
-        const name = flow.id + '-' + opState.operationId;
+        const name = flow.id + '-' + index;
         const volumes = getVolumes(op.args, flow);
         const gpu = getGpu(op.args, flow);
         const entrypoint = getEntrypoint(op.args, flow);
@@ -528,7 +528,7 @@ export class Provider {
     const flow = this.repository.getflow(id);
     const opState = this.repository.getOpState(id, index);
 
-    const name = flow.id + '-' + opState.operationId;
+    const name = flow.id + '-' + index;
 
     const containers = await this.containerOrchestration.getContainersByName([
       name,
