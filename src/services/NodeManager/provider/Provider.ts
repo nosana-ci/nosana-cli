@@ -19,7 +19,7 @@ import { ExposedPortHealthCheck } from './ExposedPortHealthCheck.js';
 import { ExposedPort, getExposePorts, isOpExposed } from '@nosana/sdk';
 import EventEmitter from 'events';
 
-const frpcImage = 'docker.io/nosana/frpc:multi-v0.0.2';
+const frpcImage = 'docker.io/nosana/frpc:multi-v0.0.3';
 
 export class Provider {
   constructor(
@@ -196,6 +196,12 @@ export class Provider {
                   },
                 ]),
               },
+              volumes: [
+                {
+                  name: `frpc-${address}-logs`,
+                  dest: '/data',
+                },
+              ],
             },
             false,
           ));
@@ -238,6 +244,12 @@ export class Provider {
                     },
                   ]),
                 },
+                volumes: [
+                  {
+                    name: `frpc-${address}-logs`,
+                    dest: '/data',
+                  },
+                ],
               },
               false,
             ));
