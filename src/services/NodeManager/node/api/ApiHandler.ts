@@ -71,6 +71,19 @@ export class ApiHandler {
     }
   }
 
+  public async testTunnelServerOnce(tunnelServer: string): Promise<boolean> {
+    try {
+      const response = await fetch(`${tunnelServer}`);
+
+      if (!response.ok) return false;
+  
+      const responseText = await response.json();
+      return responseText === this.address.toString();
+    } catch {
+      return false;
+    }
+  }
+
   private async restartTunnelAndProxy() {
     await this.stopTunnelAndProxy();
     await this.provider.setUpReverseProxyApi(this.address.toString());
@@ -154,26 +167,13 @@ export class ApiHandler {
   private startTunnelCheck(tunnelServer: string) {
     if (!this.tunnelCheckInterval) {
       this.tunnelCheckInterval = setInterval(async () => {
-        let failed = false;
-        try {
-          const response = await fetch(`${tunnelServer}/`);
-          if (!response.ok) {
-            failed = true;
-          }
-
-          const responseText = await response.json();
-          if (responseText !== this.address.toString()) {
-            failed = true;
-          }
-        } catch (error) {
-          failed = true;
-        }
-
-        if (failed == true) {
+        const isAlive = await this.testTunnelServerOnce(tunnelServer);
+  
+        if (!isAlive) {
           console.log('API proxy is offline, restarting..');
           await this.restartTunnelAndProxy();
         }
-      }, 60000 * 5); // check every 5 mins
+      }, 60000 * 5); // every 5 minutes
     }
   }
 

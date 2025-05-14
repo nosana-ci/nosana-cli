@@ -26,6 +26,7 @@ import {
   abortControllerSelector,
   nodeAbortControllerSelector,
 } from './abort/abortControllerSelector.js';
+import { configs } from '../configs/configs.js';
 
 export class BasicNode {
   public isOnboarded: boolean = false;
@@ -137,6 +138,11 @@ export class BasicNode {
 
   public api(): ApiHandler {
     return this.apiHandler;
+  }
+
+  public async isApiActive(): Promise<boolean> {
+    const tunnelServer = `https://${this.node()}.${configs().frp.serverAddr}`;
+    return await this.apiHandler.testTunnelServerOnce(tunnelServer);
   }
 
   public node(): string {
