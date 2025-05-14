@@ -146,8 +146,8 @@ export default class NodeManager {
 
     if (!this.inJobLoop) {
       // test the api to see if we have connection, if we don't quit
-      if(!(await this.node.isApiActive())){
-        throw new Error("Node API is detected offline")
+      if (!(await this.node.isApiActive())) {
+        throw new Error('Node API is detected offline');
       }
     }
 

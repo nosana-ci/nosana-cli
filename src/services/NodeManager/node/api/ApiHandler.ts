@@ -76,7 +76,7 @@ export class ApiHandler {
       const response = await fetch(`${tunnelServer}`);
 
       if (!response.ok) return false;
-  
+
       const responseText = await response.json();
       return responseText === this.address.toString();
     } catch {
@@ -168,7 +168,7 @@ export class ApiHandler {
     if (!this.tunnelCheckInterval) {
       this.tunnelCheckInterval = setInterval(async () => {
         const isAlive = await this.testTunnelServerOnce(tunnelServer);
-  
+
         if (!isAlive) {
           console.log('API proxy is offline, restarting..');
           await this.restartTunnelAndProxy();
