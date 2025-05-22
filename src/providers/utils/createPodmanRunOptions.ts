@@ -53,8 +53,14 @@ export function createPodmanRunOptions(
     env,
     devices,
     restart_policy,
-    netns: { nsmode: network_mode || 'bridge' },
-    Networks: networks,
+    hostadd: [
+      'host.docker.internal:8.8.8.8',
+      'host.containers.internal:8.8.8.8',
+    ],
+    netns: { nsmode: 'bridge' },
+    Networks: {
+      NOSANA_GATEWAY: {},
+    },
     create_working_dir: true,
     cgroups_mode: 'disabled',
     work_dir,

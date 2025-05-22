@@ -123,7 +123,24 @@ export class DockerContainerOrchestration
 
   async createNetwork(name: string): Promise<ReturnedStatus> {
     try {
-      await this.docker.createNetwork({ Name: name });
+      if (await this.hasNetwork('NOSANA_GATEWAY')) {
+        return { status: true };
+      }
+    } catch {}
+
+    try {
+      await this.docker.createNetwork({
+        Name: 'NOSANA_GATEWAY',
+        IPAM: {
+          Driver: 'bridge',
+          Config: [
+            {
+              Subnet: '192.168.101.0/24',
+              Gateway: '192.168.101.1',
+            },
+          ],
+        },
+      });
       return { status: true };
     } catch (error) {
       return { status: false, error };
@@ -137,7 +154,7 @@ export class DockerContainerOrchestration
 
   async deleteNetwork(name: string): Promise<ReturnedStatus> {
     try {
-      await this.docker.getNetwork(name).remove();
+      // await this.docker.getNetwork(name).remove();
       return { status: true };
     } catch (error) {
       return { status: false, error };
@@ -446,11 +463,17 @@ function mapRunContainerArgsToContainerCreateOpts(
     WorkingDir: work_dir,
     Entrypoint: entrypoint,
     NetworkingConfig: {
-      EndpointsConfig: networks,
+      EndpointsConfig: {
+        NOSANA_GATEWAY: {},
+      },
     },
     HostConfig: {
+      ExtraHosts: [
+        'host.docker.internal:8.8.8.8',
+        'host.containers.internal:8.8.8.8',
+      ],
       Mounts: dockerVolumes,
-      NetworkMode: network_mode || 'bridge',
+      NetworkMode: 'bridge',
       DeviceRequests: devices,
     },
   };

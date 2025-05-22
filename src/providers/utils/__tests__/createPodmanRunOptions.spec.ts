@@ -23,7 +23,7 @@ describe('createPodmanRunOptions', () => {
       ),
     ).toEqual({
       Networks: {
-        testNet: 'TEST_NET',
+        NOSANA_GATEWAY: {},
       },
       cgroups_mode: 'disabled',
       command: ['echo test'],
@@ -37,6 +37,10 @@ describe('createPodmanRunOptions', () => {
       env: {
         ENV: 'TEST',
       },
+      hostadd: [
+        'host.docker.internal:8.8.8.8',
+        'host.containers.internal:8.8.8.8',
+      ],
       image: 'ubuntu',
       name: 'ubuntu-test',
       netns: {
