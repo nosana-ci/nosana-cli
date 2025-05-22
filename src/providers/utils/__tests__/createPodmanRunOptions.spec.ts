@@ -23,7 +23,7 @@ describe('createPodmanRunOptions', () => {
       ),
     ).toEqual({
       Networks: {
-        testNet: 'TEST_NET',
+        NOSANA_GATEWAY: {},
       },
       cgroups_mode: 'disabled',
       command: ['echo test'],
