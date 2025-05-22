@@ -37,6 +37,10 @@ describe('createPodmanRunOptions', () => {
       env: {
         ENV: 'TEST',
       },
+      hostadd: [
+        'host.docker.internal:8.8.8.8',
+        'host.containers.internal:8.8.8.8',
+      ],
       image: 'ubuntu',
       name: 'ubuntu-test',
       netns: {
