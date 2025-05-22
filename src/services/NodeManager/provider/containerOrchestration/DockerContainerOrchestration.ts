@@ -451,6 +451,10 @@ function mapRunContainerArgsToContainerCreateOpts(
       EndpointsConfig: networks,
     },
     HostConfig: {
+      ExtraHosts: [
+        'host.docker.internal:8.8.8.8',
+        'host.containers.internal:8.8.8.8',
+      ],
       Mounts: dockerVolumes,
       NetworkMode: 'bridge',
       DeviceRequests: devices,
