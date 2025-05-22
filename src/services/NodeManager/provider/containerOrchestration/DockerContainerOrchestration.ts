@@ -123,7 +123,9 @@ export class DockerContainerOrchestration
 
   async createNetwork(name: string): Promise<ReturnedStatus> {
     try {
-      await this.docker.createNetwork({ Name: name });
+      await this.docker.createNetwork({
+        Name: name,
+      });
       return { status: true };
     } catch (error) {
       return { status: false, error };
@@ -450,7 +452,7 @@ function mapRunContainerArgsToContainerCreateOpts(
     },
     HostConfig: {
       Mounts: dockerVolumes,
-      NetworkMode: network_mode || 'bridge',
+      NetworkMode: 'bridge',
       DeviceRequests: devices,
     },
   };
