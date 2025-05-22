@@ -58,7 +58,9 @@ export function createPodmanRunOptions(
       'host.containers.internal:8.8.8.8',
     ],
     netns: { nsmode: 'bridge' },
-    Networks: networks,
+    Networks: {
+      NOSANA_GATEWAY: {},
+    },
     create_working_dir: true,
     cgroups_mode: 'disabled',
     work_dir,
