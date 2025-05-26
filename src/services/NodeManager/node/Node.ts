@@ -26,6 +26,7 @@ import {
   abortControllerSelector,
   nodeAbortControllerSelector,
 } from './abort/abortControllerSelector.js';
+import { pollForRun } from './utils/poll.js';
 
 export class BasicNode {
   public isOnboarded: boolean = false;
@@ -214,8 +215,6 @@ export class BasicNode {
           periodicHealthcheck,
         );
 
-        this.stopLeaveMarketQueueListener();
-
         /**
          * Once we have found a run in the queue, we want to stop this run monitoring
          */
@@ -301,11 +300,7 @@ export class BasicNode {
     return !!(await this.runHandler.checkRun());
   }
 
-  async queue(
-    restartHandler: () => Promise<void>,
-    market?: string,
-  ): Promise<void> {
-    this.stopLeaveMarketQueueListener();
+  async queue(market?: string): Promise<void> {
     /**
      *
      * check if market was specified and if it wasnt select market from list
@@ -335,98 +330,58 @@ export class BasicNode {
     } else {
       this.marketHandler.setInMarket();
     }
+  }
 
+  public async monitorMarket() {
+    const timeout = 30000;
     let firstMarketCheck = true;
 
-    this.setupLeaveMarketQueueListener(restartHandler);
+    return new Promise((reject) => {
+      this.marketHandler.startMarketQueueMonitoring(
+        (market: Market | undefined) => {
+          try {
+            if (!market) {
+              this.marketHandler.stopMarketQueueMonitoring();
 
-    /**
-     * here we listen to the market queue and listen to any chnages
-     * here we can use it to log or get info, but not run job because
-     * it is not a blocking process
-     */
-    this.marketHandler.startMarketQueueMonitoring(
-      (market: Market | undefined) => {
-        try {
-          if (!market) {
-            /**
-             * once we have found a job in the market we want to stop this queue monitoring
-             */
-            this.marketHandler.stopMarketQueueMonitoring();
+              const { promise: runPolling, cancel } = pollForRun(() =>
+                this.runHandler.getRun(),
+              );
 
-            // const run = this.runHandler.getRun();
-
-            // if (!run) {
-            //   this.leaveMarketQueueListener.emit('LEFT QUEUE');
-            // }
-          } else {
-            /**
-             * update the market position on queue
-             */
-            this.marketHandler.processMarketQueuePosition(
-              market,
-              firstMarketCheck,
-            );
-
-            firstMarketCheck = false;
-          }
-        } catch (error) {}
-      },
-    );
-  }
-
-  public async stopLeaveMarketQueueListener() {
-    /**
-     * we want to stop any previous listeners
-     */
-    this.leaveMarketQueueListener.removeAllListeners('LEFT QUEUE');
-  }
-
-  public async setupLeaveMarketQueueListener(
-    restartHandler: () => Promise<void>,
-  ) {
-    let resolvedLeaveMarketQueueListener = false;
-
-    this.leaveMarketQueueListener.on('removeListener', (event, listener) => {
-      if (event === 'LEFT QUEUE') {
-        resolvedLeaveMarketQueueListener = true;
-      }
-    });
-
-    this.leaveMarketQueueListener.addListener('LEFT QUEUE', async () => {
-      if (resolvedLeaveMarketQueueListener) {
-        return;
-      }
-
-      // wait for minute just to make sure we are not running a job
-      await new Promise((resolve) => setTimeout(resolve, 30000));
-
-      if (resolvedLeaveMarketQueueListener) {
-        return;
-      }
-
-      const runs = await this.sdk.jobs.getRuns([
-        {
-          memcmp: {
-            offset: 40,
-            bytes: this.sdk.solana.provider!.wallet.publicKey.toString(),
-          },
+              Promise.race([
+                runPolling,
+                new Promise((_, rejectTimeout) =>
+                  setTimeout(
+                    () => rejectTimeout(new Error('TimedOutWaitingForRuns')),
+                    timeout,
+                  ),
+                ),
+              ])
+                .then(() => {
+                  cancel();
+                  // job found no need to do anything
+                })
+                .catch((err) => {
+                  cancel();
+                  if (
+                    err.message === 'TimedOutWaitingForRuns' &&
+                    !this.runHandler.getRun()
+                  ) {
+                    reject(
+                      new Error('Market Timeout Error: node exited market'),
+                    );
+                  } else {
+                  }
+                });
+            } else {
+              this.marketHandler.processMarketQueuePosition(
+                market,
+                firstMarketCheck,
+              );
+              firstMarketCheck = false;
+            }
+          } catch (error) {}
         },
-      ]);
-
-      if (resolvedLeaveMarketQueueListener) {
-        return;
-      }
-
-      if (!runs?.length) {
-        console.log(
-          chalk.yellow(
-            `Your host has been detected as being offline and has been automatically removed from the market queue.`,
-          ),
-        );
-
-        await restartHandler();
-      }
+      );
     });
   }
 
