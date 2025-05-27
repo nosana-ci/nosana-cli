@@ -59,7 +59,7 @@ export function createPodmanRunOptions(
     ],
     netns: { nsmode: 'bridge' },
     Networks: {
-      NOSANA_GATEWAY: {},
+      ...(entrypoint ? { NOSANA_GATEWAY: {} } : undefined),
     },
     create_working_dir: true,
     cgroups_mode: 'disabled',

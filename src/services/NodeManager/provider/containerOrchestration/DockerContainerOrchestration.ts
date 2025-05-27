@@ -464,7 +464,7 @@ function mapRunContainerArgsToContainerCreateOpts(
     Entrypoint: entrypoint,
     NetworkingConfig: {
       EndpointsConfig: {
-        NOSANA_GATEWAY: {},
+        ...(entrypoint ? { NOSANA_GATEWAY: {} } : undefined),
       },
     },
     HostConfig: {
