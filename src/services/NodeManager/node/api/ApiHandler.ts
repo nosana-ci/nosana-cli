@@ -71,6 +71,13 @@ export class ApiHandler {
     }
   }
 
+  public async preventMultipleApiStarts(){
+    const tunnelServer = `https://${this.address}.${configs().frp.serverAddr}`
+    if(await this.testTunnelServerOnce(`https://${this.address}.${configs().frp.serverAddr}`)){
+      throw new Error(`Node  ${this.address} is already online and active; you cannot start a new one`)
+    }
+  }
+
   public async testTunnelServerOnce(tunnelServer: string): Promise<boolean> {
     try {
       const response = await fetch(`${tunnelServer}`);
