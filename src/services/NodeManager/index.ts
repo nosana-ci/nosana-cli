@@ -86,7 +86,7 @@ export default class NodeManager {
      * we call this here in the init so the api survives restarts between jobs
      */
     if (!this.inJobLoop) {
-      await this.apiHandler.preventMultipleApiStarts()
+      await this.apiHandler.preventMultipleApiStarts();
       await this.apiHandler.start();
     }
   }
