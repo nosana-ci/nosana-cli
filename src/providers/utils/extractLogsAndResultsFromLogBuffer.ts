@@ -12,7 +12,7 @@ export function extractLogsAndResultsFromLogBuffer(
   logs: Log[];
   results: {} | undefined;
 } {
-  const logs: Log[] = [];
+  const allLogs: Log[] = [];
   const results: {} | undefined = operationResults
     ? createResultsObject(operationResults)
     : undefined;
@@ -22,9 +22,9 @@ export function extractLogsAndResultsFromLogBuffer(
 
   const timer = setTimeout(() => {
     running = false;
-    logs.push({
+    allLogs.push({
       type: 'nodeerr',
-      log: 'Took too long to retrive all logs',
+      log: 'Took too long to retrieve all logs',
     });
   }, expiryTimeout);
 
@@ -33,27 +33,24 @@ export function extractLogsAndResultsFromLogBuffer(
     const chunkType = head.readUInt8(0);
     const chunkLength = head.readUInt32BE(4);
     const content = logBuffer.subarray(index, (index += chunkLength));
+
     if (chunkType === 1 || chunkType === 2) {
       const logObj = {
         type: chunkType === 1 ? 'stdout' : ('stderr' as StdOptions),
         log: content.toString('utf-8'),
       };
-      logs.push(logObj);
+      allLogs.push(logObj);
+
       if (results && operationResults) {
         extractResultFromLog(results, logObj, operationResults);
-      }
-
-      if (logs.length >= 24999) {
-        running = false;
-        logs.push({
-          type: 'nodeerr',
-          log: 'Found too many logs...',
-        });
       }
     }
   }
 
   clearTimeout(timer);
+
+  // only return the last 25k logs
+  const logs = allLogs.slice(-25000);
 
   return { logs, results };
 }
