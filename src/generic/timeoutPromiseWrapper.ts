@@ -2,6 +2,7 @@ export function promiseTimeoutWrapper<T extends unknown>(
   promise: Promise<T>,
   expiry_time: number,
   abortController: AbortController,
+  ignoreAbortedSignal: boolean = false,
 ): Promise<T> {
   const timeoutError = new Error(
     'Promise took too long to settle, expiry timeout met.',
@@ -11,7 +12,7 @@ export function promiseTimeoutWrapper<T extends unknown>(
     abortController.abort();
   }, expiry_time * 1000);
 
-  if (abortController.signal.aborted) {
+  if (abortController.signal.aborted && !ignoreAbortedSignal) {
     return Promise.reject(timeoutError);
   }
 

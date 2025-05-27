@@ -486,6 +486,7 @@ export class Provider {
           }),
           360,
           controller,
+          true,
         );
 
         const logBuffer = await promiseTimeoutWrapper(
@@ -498,6 +499,7 @@ export class Provider {
           }),
           360,
           controller,
+          true,
         );
 
         const { logs, results } = extractLogsAndResultsFromLogBuffer(
