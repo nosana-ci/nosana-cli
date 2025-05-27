@@ -15,7 +15,7 @@
     "publish:next": "npm run build && npm publish --tag=next --access public",
     "publish:public": "npm run build && npm publish --access public",
     "prepare": "npm run generate && ts-patch install && typia patch",
-    "prettier": "prettier --check ./src",
+    "prettier": "prettier --write ./src",
     "prettier:fix": "prettier --write ./src",
     "eslint": "eslint ./src",
     "eslint:fix": "eslint --fix ./src",
