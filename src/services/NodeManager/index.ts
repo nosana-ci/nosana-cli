@@ -9,6 +9,7 @@ import { consoleLogging } from './monitoring/log/console/ConsoleLogger.js';
 import { validateCLIVersion } from '../versions.js';
 import { configs } from './configs/configs.js';
 import { getSDK } from '../sdk.js';
+import { ping } from './monitoring/ping/PingHandler.js';
 
 export default class NodeManager {
   private node: BasicNode;
@@ -29,6 +30,13 @@ export default class NodeManager {
   }
 
   async init(): Promise<void> {
+    /**
+     * ping
+     *
+     * make a call to the backend per interval to show live ness to the backend
+     */
+    ping();
+
     /**
      * setup state that any instance can listen to, state produced from the node via logging proxies.
      * set up node state processing, observers can connect to it and received state
@@ -78,7 +86,7 @@ export default class NodeManager {
      * we call this here in the init so the api survives restarts between jobs
      */
     if (!this.inJobLoop) {
-      await this.apiHandler.start();
+      // await this.apiHandler.start();
     }
   }
 
