@@ -428,7 +428,7 @@ export class Provider {
               cmd,
               env,
               networks,
-              requires_network_mode: !!entrypoint,
+              requires_network_mode: isOpExposed(op as Operation<'container/run'>),
               gpu,
               entrypoint,
               work_dir,
