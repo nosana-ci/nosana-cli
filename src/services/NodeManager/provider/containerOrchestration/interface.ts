@@ -60,7 +60,7 @@ export type RunContainerArgs = {
   networks?: { [key: string]: {} };
   cmd?: string[];
   gpu?: boolean;
-  network_mode?: 'bridge' | 'host' | 'none';
+  requires_network_mode?: boolean;
   volumes?: Array<{
     dest: string;
     name: string;
