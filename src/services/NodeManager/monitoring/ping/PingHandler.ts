@@ -23,7 +23,6 @@ export class PingHandler {
     if (this.intervalId) return;
     const time = 30; // seconds
     this.intervalId = setInterval(async () => {
-
       try {
         const sdk = getSDK();
         const address = sdk.solana.provider!.wallet.publicKey;
