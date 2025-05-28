@@ -33,6 +33,7 @@ import {
   wssLogRoute,
   wssStatusRoute,
 } from './routes/index.js';
+import { NodeAlreadyActiveError } from '../../errors/NodeAlreadyActiveError.js';
 
 export class ApiHandler {
   private api: Express;
@@ -78,9 +79,7 @@ export class ApiHandler {
         `https://${this.address}.${configs().frp.serverAddr}`,
       )
     ) {
-      throw new Error(
-        `Node  ${this.address} is already online and active; you cannot start a new one`,
-      );
+      throw new NodeAlreadyActiveError(this.address.toString());
     }
   }
 
