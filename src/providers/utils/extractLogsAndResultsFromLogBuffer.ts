@@ -8,7 +8,7 @@ export function extractLogsAndResultsFromLogBuffer(
   logBuffer: Buffer,
   operationResults: OperationResults | undefined,
   expiryTimeout = 180,
-  maxLogs = 25000
+  maxLogs = 25000,
 ): {
   logs: Log[];
   results: {} | undefined;
