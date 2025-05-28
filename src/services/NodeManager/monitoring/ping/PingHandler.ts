@@ -25,28 +25,23 @@ export class PingHandler {
     this.intervalId = setInterval(async () => {
       try {
         const sdk = getSDK();
-        const address = sdk.solana.provider!.wallet.publicKey;
-        const signature = await this.getAuthSignature(sdk);
+        const headers = sdk.authorization.generateHeader(
+          configs().signMessage,
+          {
+            includeTime: true,
+          },
+        );
+        headers.append('Content-Type', 'application/json');
 
         const response = await fetch(`${configs().backendUrl}/ping`, {
           method: 'POST',
-          headers: {
-            Authorization: `${address}:${signature}`,
-            'Content-Type': 'application/json',
-          },
+          headers,
           body: JSON.stringify({ ping: 'pong' }),
         });
       } catch (err) {
         console.error('Ping failed:', err);
       }
     }, time * 1000);
-  }
-
-  private async getAuthSignature(sdk: Client): Promise<string> {
-    const signature = (await sdk.solana.signMessage(
-      configs().signMessage,
-    )) as Uint8Array;
-    return Buffer.from(signature).toString('base64');
   }
 
   stop() {

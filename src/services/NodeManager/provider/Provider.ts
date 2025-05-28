@@ -130,7 +130,6 @@ export class Provider {
               env: {
                 PORT: tunnel_port.toString(),
               },
-            
             },
             false,
           ));
@@ -428,7 +427,9 @@ export class Provider {
               cmd,
               env,
               networks,
-              requires_network_mode: isOpExposed(op as Operation<'container/run'>),
+              requires_network_mode: isOpExposed(
+                op as Operation<'container/run'>,
+              ),
               gpu,
               entrypoint,
               work_dir,
