@@ -8,11 +8,12 @@ export function extractLogsAndResultsFromLogBuffer(
   logBuffer: Buffer,
   operationResults: OperationResults | undefined,
   expiryTimeout = 180,
+  maxLogs = 25000
 ): {
   logs: Log[];
   results: {} | undefined;
 } {
-  const allLogs: Log[] = [];
+  const logs: Log[] = [];
   const results: {} | undefined = operationResults
     ? createResultsObject(operationResults)
     : undefined;
@@ -22,7 +23,7 @@ export function extractLogsAndResultsFromLogBuffer(
 
   const timer = setTimeout(() => {
     running = false;
-    allLogs.push({
+    logs.push({
       type: 'nodeerr',
       log: 'Took too long to retrieve all logs',
     });
@@ -39,18 +40,28 @@ export function extractLogsAndResultsFromLogBuffer(
         type: chunkType === 1 ? 'stdout' : ('stderr' as StdOptions),
         log: content.toString('utf-8'),
       };
-      allLogs.push(logObj);
+
+      // add log to the buffer, and trim if over maxLogs
+      logs.push(logObj);
+      if (logs.length > maxLogs) {
+        logs.shift(); // remove the oldest log if we're over the limit
+      }
 
       if (results && operationResults) {
         extractResultFromLog(results, logObj, operationResults);
+      }
+
+      if (logs.length >= maxLogs) {
+        running = false;
+        logs.push({
+          type: 'nodeerr',
+          log: 'Found too many logs... truncating.',
+        });
       }
     }
   }
 
   clearTimeout(timer);
-
-  // only return the last 25k logs
-  const logs = allLogs.slice(-25000);
 
   return { logs, results };
 }
