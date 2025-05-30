@@ -33,6 +33,7 @@ import {
   wssLogRoute,
   wssStatusRoute,
 } from './routes/index.js';
+import { NodeAlreadyActiveError } from '../../errors/NodeAlreadyActiveError.js';
 
 export class ApiHandler {
   private api: Express;
@@ -68,6 +69,17 @@ export class ApiHandler {
       return tunnelServer;
     } catch (error) {
       throw error;
+    }
+  }
+
+  public async preventMultipleApiStarts() {
+    const tunnelServer = `https://${this.address}.${configs().frp.serverAddr}`;
+    if (
+      await this.testTunnelServerOnce(
+        `https://${this.address}.${configs().frp.serverAddr}`,
+      )
+    ) {
+      throw new NodeAlreadyActiveError(this.address.toString());
     }
   }
 
