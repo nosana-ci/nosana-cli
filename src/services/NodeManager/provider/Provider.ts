@@ -125,6 +125,7 @@ export class Provider {
             {
               name: tunnel_name,
               networks,
+              requires_network_mode: true,
               restart_policy: 'on-failure',
               env: {
                 PORT: tunnel_port.toString(),
@@ -157,6 +158,7 @@ export class Provider {
               {
                 name: tunnel_name,
                 networks,
+                requires_network_mode: true,
                 restart_policy: 'on-failure',
                 env: {
                   PORT: tunnel_port.toString(),
@@ -183,6 +185,7 @@ export class Provider {
               name: 'frpc-api-' + address,
               cmd: ['-c', '/etc/frp/frpc.toml'],
               networks,
+              requires_network_mode: true,
               restart_policy: 'on-failure',
               env: {
                 FRP_SERVER_ADDR: configs().frp.serverAddr,
@@ -231,6 +234,7 @@ export class Provider {
                 name: 'frpc-api-' + address,
                 cmd: ['-c', '/etc/frp/frpc.toml'],
                 networks,
+                requires_network_mode: true,
                 restart_policy: 'on-failure',
                 env: {
                   FRP_SERVER_ADDR: configs().frp.serverAddr,
@@ -367,6 +371,7 @@ export class Provider {
               name: 'frpc-' + name,
               cmd: ['/entrypoint.sh'],
               networks,
+              requires_network_mode: true,
               env: {
                 FRP_SERVER_ADDR: configs().frp.serverAddr,
                 FRP_SERVER_PORT: configs().frp.serverPort.toString(),
@@ -422,6 +427,9 @@ export class Provider {
               cmd,
               env,
               networks,
+              requires_network_mode: isOpExposed(
+                op as Operation<'container/run'>,
+              ),
               gpu,
               entrypoint,
               work_dir,
@@ -485,6 +493,7 @@ export class Provider {
             stdout: true,
             stderr: true,
             follow: false,
+            tail: 24999,
             abortSignal: controller.signal,
           }),
           360,

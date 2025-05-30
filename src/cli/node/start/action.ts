@@ -29,7 +29,9 @@ export async function startNode(
 
       console.error(formattedError);
 
-      // await nodeManager.error();
+      if (error.name == 'NodeAlreadyActiveError') {
+        process.exit();
+      }
 
       if (nodeManager.inJobLoop) {
         try {

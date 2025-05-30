@@ -14,6 +14,7 @@ describe('createPodmanRunOptions', () => {
             ENV: 'TEST',
           },
           gpu: true,
+          requires_network_mode: true,
           networks: {
             testNet: 'TEST_NET',
           },

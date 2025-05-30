@@ -412,7 +412,7 @@ function mapRunContainerArgsToContainerCreateOpts(
     volumes,
     env,
     work_dir,
-    network_mode,
+    requires_network_mode,
     entrypoint,
   }: RunContainerArgs,
   gpuOption: string,
@@ -464,7 +464,7 @@ function mapRunContainerArgsToContainerCreateOpts(
     Entrypoint: entrypoint,
     NetworkingConfig: {
       EndpointsConfig: {
-        NOSANA_GATEWAY: {},
+        ...(requires_network_mode ? { NOSANA_GATEWAY: {} } : undefined),
       },
     },
     HostConfig: {

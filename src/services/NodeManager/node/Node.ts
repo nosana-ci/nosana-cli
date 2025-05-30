@@ -27,6 +27,7 @@ import {
   nodeAbortControllerSelector,
 } from './abort/abortControllerSelector.js';
 import { pollForRun } from './utils/poll.js';
+import { configs } from '../configs/configs.js';
 
 export class BasicNode {
   public isOnboarded: boolean = false;
@@ -140,6 +141,11 @@ export class BasicNode {
     return this.apiHandler;
   }
 
+  public async isApiActive(): Promise<boolean> {
+    const tunnelServer = `https://${this.node()}.${configs().frp.serverAddr}`;
+    return await this.apiHandler.testTunnelServerOnce(tunnelServer);
+  }
+
   public node(): string {
     return this.sdk.solana.provider!.wallet.publicKey.toString();
   }
@@ -242,10 +248,11 @@ export class BasicNode {
           /**
            * start monitoring for the stop signal from the smart contract
            */
-          this.jobHandler.accountEmitter.on('stopped', (_) => {
-            this.jobHandler.stop();
+          this.jobHandler.accountEmitter.on('stopped', async (_) => {
+            // this.jobHandler.stop();
             resolved = true;
-            resolve();
+            // resolve();
+            abortControllerSelector().abort('stopped');
           });
 
           /**
