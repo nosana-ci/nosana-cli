@@ -8,7 +8,6 @@ export function extractLogsAndResultsFromLogBuffer(
   logBuffer: Buffer,
   operationResults: OperationResults | undefined,
   expiryTimeout = 180,
-  maxLogs = 25000,
 ): {
   logs: Log[];
   results: {} | undefined;
@@ -25,7 +24,7 @@ export function extractLogsAndResultsFromLogBuffer(
     running = false;
     logs.push({
       type: 'nodeerr',
-      log: 'Took too long to retrieve all logs',
+      log: 'Took too long to retrive all logs',
     });
   }, expiryTimeout);
 
@@ -34,28 +33,21 @@ export function extractLogsAndResultsFromLogBuffer(
     const chunkType = head.readUInt8(0);
     const chunkLength = head.readUInt32BE(4);
     const content = logBuffer.subarray(index, (index += chunkLength));
-
     if (chunkType === 1 || chunkType === 2) {
       const logObj = {
         type: chunkType === 1 ? 'stdout' : ('stderr' as StdOptions),
         log: content.toString('utf-8'),
       };
-
-      // add log to the buffer, and trim if over maxLogs
       logs.push(logObj);
-      if (logs.length > maxLogs) {
-        logs.shift(); // remove the oldest log if we're over the limit
-      }
-
       if (results && operationResults) {
         extractResultFromLog(results, logObj, operationResults);
       }
 
-      if (logs.length >= maxLogs) {
+      if (logs.length >= 24999) {
         running = false;
         logs.push({
           type: 'nodeerr',
-          log: 'Found too many logs... truncating.',
+          log: 'Found too many logs...',
         });
       }
     }

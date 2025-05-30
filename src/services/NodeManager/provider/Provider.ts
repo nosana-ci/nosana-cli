@@ -493,6 +493,7 @@ export class Provider {
             stdout: true,
             stderr: true,
             follow: false,
+            tail: 24999,
             abortSignal: controller.signal,
           }),
           360,
