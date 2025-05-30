@@ -182,20 +182,22 @@ export default class NodeManager {
        *
        * Enter the queue to wait for a job since we have no pending jobs.
        */
-      await this.node.queue(async () => {
-        await this.restart(market);
-      }, market);
+      await this.node.queue(market);
     }
 
     /**
-     * run
      *
-     * This listens to the queue and immediately starts a job when received.
-     * Once the job finishes, the process needs to be restarted.
+     * This starts two parallel tasks:
+     * 1. monitorMarket() - Watches for market removal and can trigger a restart.
+     * 2. run() - Waits for and executes the actual job when assigned.
      *
-     * NT: If the run doesn't get a job immediately, the process will wait.
+     * Whichever completes first determines the flow:
+     * - If a job is received and run() completes, the node proceeds normally.
+     * - If monitorMarket() detects no activity within a timeout, it triggers a restart.
+     *
+     * NT: run() is the primary job execution path. monitorMarket() is a background safeguard.
      */
-    await this.node.run();
+    await Promise.race([this.node.monitorMarket(), this.node.run()]);
 
     /**
      * start
