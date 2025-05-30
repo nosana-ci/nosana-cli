@@ -33,6 +33,7 @@ import {
   wssLogRoute,
   wssStatusRoute,
 } from './routes/index.js';
+import { NodeAlreadyActiveError } from '../../errors/NodeAlreadyActiveError.js';
 
 export class ApiHandler {
   private api: Express;
@@ -68,6 +69,30 @@ export class ApiHandler {
       return tunnelServer;
     } catch (error) {
       throw error;
+    }
+  }
+
+  public async preventMultipleApiStarts() {
+    const tunnelServer = `https://${this.address}.${configs().frp.serverAddr}`;
+    if (
+      await this.testTunnelServerOnce(
+        `https://${this.address}.${configs().frp.serverAddr}`,
+      )
+    ) {
+      throw new NodeAlreadyActiveError(this.address.toString());
+    }
+  }
+
+  public async testTunnelServerOnce(tunnelServer: string): Promise<boolean> {
+    try {
+      const response = await fetch(`${tunnelServer}`);
+
+      if (!response.ok) return false;
+
+      const responseText = await response.json();
+      return responseText === this.address.toString();
+    } catch {
+      return false;
     }
   }
 
@@ -154,26 +179,13 @@ export class ApiHandler {
   private startTunnelCheck(tunnelServer: string) {
     if (!this.tunnelCheckInterval) {
       this.tunnelCheckInterval = setInterval(async () => {
-        let failed = false;
-        try {
-          const response = await fetch(`${tunnelServer}/`);
-          if (!response.ok) {
-            failed = true;
-          }
+        const isAlive = await this.testTunnelServerOnce(tunnelServer);
 
-          const responseText = await response.json();
-          if (responseText !== this.address.toString()) {
-            failed = true;
-          }
-        } catch (error) {
-          failed = true;
-        }
-
-        if (failed == true) {
+        if (!isAlive) {
           console.log('API proxy is offline, restarting..');
           await this.restartTunnelAndProxy();
         }
-      }, 60000 * 5); // check every 5 mins
+      }, 60000 * 5); // every 5 minutes
     }
   }
 

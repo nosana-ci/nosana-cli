@@ -43,7 +43,7 @@ export function extractLogsAndResultsFromLogBuffer(
         extractResultFromLog(results, logObj, operationResults);
       }
 
-      if (logs.length >= 24999) {
+      if (logs.length >= 25000) {
         running = false;
         logs.push({
           type: 'nodeerr',
