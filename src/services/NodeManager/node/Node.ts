@@ -249,10 +249,11 @@ export class BasicNode {
           /**
            * start monitoring for the stop signal from the smart contract
            */
-          this.jobHandler.accountEmitter.on('stopped', (_) => {
-            this.jobHandler.stop();
+          this.jobHandler.accountEmitter.on('stopped', async (_) => {
+            // this.jobHandler.stop();
             resolved = true;
-            resolve();
+            // resolve();
+            abortControllerSelector().abort('stopped');
           });
 
           /**
