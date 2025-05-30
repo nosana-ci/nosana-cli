@@ -208,7 +208,7 @@ export class VolumeManager {
         follow: false,
         stdout: false,
         stderr: true,
-        tail: 24999
+        tail: 24999,
       });
 
       const { logs } = extractLogsAndResultsFromLogBuffer(
