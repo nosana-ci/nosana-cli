@@ -136,8 +136,8 @@ export class ExposedPortHealthCheck {
     }
 
     for (const healthCheck of exposedPort.health_checks) {
-      if(!initialRun && !healthCheck.continuous){
-        return null
+      if (!initialRun && !healthCheck.continuous) {
+        return null;
       }
       if (healthCheck.type === 'http') {
         const success = await this.runHttpHealthCheck(
