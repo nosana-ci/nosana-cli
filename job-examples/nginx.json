@@ -19,7 +19,8 @@
                 "type": "http",
                 "path": "/",
                 "method": "GET",
-                "expected_status": 200
+                "expected_status": 200,
+                "continuous": true
               }
             ] 
           }

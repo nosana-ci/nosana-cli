@@ -51,7 +51,7 @@ export class ExposedPortHealthCheck {
     let startupCheckInterval: NodeJS.Timeout | null = null;
 
     startupCheckInterval = setInterval(async () => {
-      const success = await this.checkPortHealth(exposedPort);
+      const success = await this.checkPortHealth(exposedPort, true);
 
       if (success == null) {
         clearInterval(startupCheckInterval!);
@@ -84,7 +84,7 @@ export class ExposedPortHealthCheck {
 
   private startContinuousHealthCheck(id: string, exposedPort: ExposedPort) {
     let continuousCheckInterval = setInterval(async () => {
-      const healthStatus = await this.checkPortHealth(exposedPort);
+      const healthStatus = await this.checkPortHealth(exposedPort, false);
 
       if (healthStatus === null) {
         clearInterval(continuousCheckInterval!);
@@ -129,12 +129,16 @@ export class ExposedPortHealthCheck {
 
   private async checkPortHealth(
     exposedPort: ExposedPort,
+    initialRun: boolean,
   ): Promise<boolean | null> {
     if (!exposedPort.health_checks || exposedPort.health_checks.length === 0) {
       return null; // Return null to indicate no check was done.
     }
 
     for (const healthCheck of exposedPort.health_checks) {
+      if(!initialRun && !healthCheck.continuous){
+        return null
+      }
       if (healthCheck.type === 'http') {
         const success = await this.runHttpHealthCheck(
           exposedPort.port,
