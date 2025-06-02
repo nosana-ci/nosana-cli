@@ -9,6 +9,7 @@ import { consoleLogging } from './monitoring/log/console/ConsoleLogger.js';
 import { validateCLIVersion } from '../versions.js';
 import { configs } from './configs/configs.js';
 import { getSDK } from '../sdk.js';
+import { ping } from './monitoring/ping/PingHandler.js';
 
 export default class NodeManager {
   private node: BasicNode;
@@ -29,6 +30,13 @@ export default class NodeManager {
   }
 
   async init(): Promise<void> {
+    /**
+     * ping
+     *
+     * make a call to the backend per interval to show live ness to the backend
+     */
+    // ping();
+
     /**
      * setup state that any instance can listen to, state produced from the node via logging proxies.
      * set up node state processing, observers can connect to it and received state
@@ -78,6 +86,7 @@ export default class NodeManager {
      * we call this here in the init so the api survives restarts between jobs
      */
     if (!this.inJobLoop) {
+      await this.apiHandler.preventMultipleApiStarts();
       await this.apiHandler.start();
     }
   }
@@ -144,6 +153,13 @@ export default class NodeManager {
       return await this.restart(marketArg);
     }
 
+    if (!this.inJobLoop) {
+      // test the api to see if we have connection, if we don't quit
+      if (!(await this.node.isApiActive())) {
+        throw new Error('Node API is detected offline');
+      }
+    }
+
     /**
      * this variable was added to know when the node has gone past the setup/checks stages
      * and is now starting job work and queueing,
@@ -166,20 +182,22 @@ export default class NodeManager {
        *
        * Enter the queue to wait for a job since we have no pending jobs.
        */
-      await this.node.queue(async () => {
-        await this.restart(market);
-      }, market);
+      await this.node.queue(market);
     }
 
     /**
-     * run
      *
-     * This listens to the queue and immediately starts a job when received.
-     * Once the job finishes, the process needs to be restarted.
+     * This starts two parallel tasks:
+     * 1. monitorMarket() - Watches for market removal and can trigger a restart.
+     * 2. run() - Waits for and executes the actual job when assigned.
      *
-     * NT: If the run doesn't get a job immediately, the process will wait.
+     * Whichever completes first determines the flow:
+     * - If a job is received and run() completes, the node proceeds normally.
+     * - If monitorMarket() detects no activity within a timeout, it triggers a restart.
+     *
+     * NT: run() is the primary job execution path. monitorMarket() is a background safeguard.
      */
-    await this.node.run();
+    await Promise.race([this.node.monitorMarket(), this.node.run()]);
 
     /**
      * start
