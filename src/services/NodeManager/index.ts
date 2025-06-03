@@ -153,13 +153,6 @@ export default class NodeManager {
       return await this.restart(marketArg);
     }
 
-    if (!this.inJobLoop) {
-      // test the api to see if we have connection, if we don't quit
-      if (!(await this.node.isApiActive())) {
-        throw new Error('Node API is detected offline');
-      }
-    }
-
     /**
      * this variable was added to know when the node has gone past the setup/checks stages
      * and is now starting job work and queueing,
@@ -168,6 +161,9 @@ export default class NodeManager {
      */
     this.inJobLoop = true;
 
+    if (!(await this.node.isApiActive())) {
+      throw new Error('Node API is detected offline');
+    }
     /**
      * pending
      *
