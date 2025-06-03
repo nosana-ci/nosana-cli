@@ -153,13 +153,6 @@ export default class NodeManager {
       return await this.restart(marketArg);
     }
 
-    if (!this.inJobLoop) {
-      // test the api to see if we have connection, if we don't quit
-      if (!(await this.node.isApiActive())) {
-        throw new Error('Node API is detected offline');
-      }
-    }
-
     /**
      * this variable was added to know when the node has gone past the setup/checks stages
      * and is now starting job work and queueing,
@@ -168,6 +161,9 @@ export default class NodeManager {
      */
     this.inJobLoop = true;
 
+    if (!(await this.node.isApiActive())) {
+      throw new Error('Node API is detected offline');
+    }
     /**
      * pending
      *
@@ -218,7 +214,7 @@ export default class NodeManager {
        * restarts after jobs
        */
       await this.apiHandler.stop();
-    } catch (error) {}
+    } catch (error) { }
 
     /**
      * check if the node exists then stop the node, this will involve killing and cleaning
@@ -329,7 +325,7 @@ export default class NodeManager {
           error_message: e.message,
           error_stack: e.stack ?? e.trace,
         });
-      } catch (_) {}
+      } catch (_) { }
     });
     process.on('uncaughtException', async (reason) => {
       try {
@@ -340,7 +336,7 @@ export default class NodeManager {
           error_message: e.message,
           error_stack: e.stack ?? e.trace,
         });
-      } catch (_) {}
+      } catch (_) { }
     });
   }
 }
