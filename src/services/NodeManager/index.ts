@@ -214,7 +214,7 @@ export default class NodeManager {
        * restarts after jobs
        */
       await this.apiHandler.stop();
-    } catch (error) { }
+    } catch (error) {}
 
     /**
      * check if the node exists then stop the node, this will involve killing and cleaning
@@ -325,7 +325,7 @@ export default class NodeManager {
           error_message: e.message,
           error_stack: e.stack ?? e.trace,
         });
-      } catch (_) { }
+      } catch (_) {}
     });
     process.on('uncaughtException', async (reason) => {
       try {
@@ -336,7 +336,7 @@ export default class NodeManager {
           error_message: e.message,
           error_stack: e.stack ?? e.trace,
         });
-      } catch (_) { }
+      } catch (_) {}
     });
   }
 }
