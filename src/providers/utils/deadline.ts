@@ -1,4 +1,4 @@
-import chalk from "chalk";
+import chalk from 'chalk';
 
 export function checkDeprecationDeadline() {
   // 4pm CET today before the error starts showing
@@ -15,10 +15,14 @@ export function checkDeprecationDeadline() {
 
   if (now > warning) {
     console.error(
-      chalk.red('WARNING: Using podman over HTTP is deprecated, use socket instead'),
+      chalk.red(
+        'WARNING: Using podman over HTTP is deprecated, use socket instead',
+      ),
     );
     console.error(
-      chalk.red('Restart your host with `bash <(wget -qO- https://nosana.com/start.sh)` before 06-06-2025 15:00 CET'),
+      chalk.red(
+        'Restart your host with `bash <(wget -qO- https://nosana.com/start.sh)` before 06-06-2025 15:00 CET',
+      ),
     );
   }
 }
