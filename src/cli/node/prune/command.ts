@@ -13,7 +13,7 @@ export const nodePruneCommand = new Command('prune')
     new Option(
       '--docker, --podman <URI>',
       'Podman/Docker connection URI',
-    ).default('http://localhost:8080'),
+    ).default('~/.nosana/podman/podman.sock'),
   )
   .addOption(
     new Option(

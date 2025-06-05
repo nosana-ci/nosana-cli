@@ -77,7 +77,7 @@ Options:
 ```
   --provider <provider>     provider used to run the job (choices: "docker", "podman", default: "podman")
   -w, --wallet <wallet>     path to wallet private key (default: "~/.nosana/nosana_key.json")
-  --docker, --podman <URI>  Podman/Docker connection URI (default: "http://localhost:8080")
+  --docker, --podman <URI>  Podman/Docker connection URI (default: "~/.nosana/podman/podman.sock")
   -h, --help                display help for command
 ```
 
@@ -90,7 +90,7 @@ Options:
 ```
   --provider <provider>     provider used to run the job (choices: "docker", "podman", default: "podman")
   -w, --wallet <wallet>     path to wallet private key (default: "~/.nosana/nosana_key.json")
-  --docker, --podman <URI>  Podman/Docker connection URI (default: "http://localhost:8080")
+  --docker, --podman <URI>  Podman/Docker connection URI (default: "~/.nosana/podman/podman.sock")
   -h, --help                display help for command
 ```
 

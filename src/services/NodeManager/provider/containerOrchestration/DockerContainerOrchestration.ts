@@ -1,3 +1,4 @@
+import os from 'os';
 import Dockerode, {
   Container,
   ContainerCreateOptions,
@@ -19,6 +20,7 @@ import {
 } from './interface.js';
 
 import { ReturnedStatus } from '../types.js';
+import { checkDeprecationDeadline } from '../../../../providers/utils/deadline.js';
 
 export class DockerContainerOrchestration
   implements ContainerOrchestrationInterface
@@ -26,25 +28,35 @@ export class DockerContainerOrchestration
   public docker: DockerExtended;
   public host: string;
   public port: string;
-  public protocol: 'https' | 'http' | 'ssh';
+  public protocol: 'https' | 'http' | 'ssh' | 'socket';
   public name: string = 'docker';
   public gpu: string = 'all';
 
   public listeners = new Map<string, Array<() => Promise<void>>>();
 
   constructor(server: string, gpu: string) {
-    const { host, port, protocol } = createSeverObject(server);
-
-    this.host = host;
-    this.port = port;
-    this.protocol = protocol;
     this.gpu = gpu;
+    if (server.startsWith('http') || server.startsWith('ssh')) {
+      const { host, port, protocol } = createSeverObject(server);
 
-    this.docker = new DockerExtended({
-      host: this.host,
-      port: this.port,
-      protocol: this.protocol,
-    });
+      this.host = host;
+      this.port = port;
+      this.protocol = protocol;
+      this.docker = new DockerExtended({
+        host: this.host,
+        port: this.port,
+        protocol: this.protocol,
+      });
+    } else {
+      // Assume server is a socket path
+      this.protocol = 'socket';
+      if (server.startsWith('~')) {
+        server = server.replace('~', os.homedir());
+      }
+      this.host = server;
+      this.port = '';
+      this.docker = new DockerExtended({ socketPath: this.host });
+    }
   }
 
   async getContainersByName(names: string[]): Promise<Container[]> {
@@ -211,6 +223,10 @@ export class DockerContainerOrchestration
   }
 
   async healthy(): Promise<ReturnedStatus> {
+    if (this.protocol != 'socket') {
+      checkDeprecationDeadline();
+    }
+
     try {
       const info = await this.docker.info();
       if (typeof info === 'object' && info !== null && info.ID) {

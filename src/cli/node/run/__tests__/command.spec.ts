@@ -32,7 +32,7 @@ describe('runNodeCommand', () => {
   it.each([
     ['--provider', undefined, 'podman'],
     ['--config', '-c', '~/.nosana/'],
-    ['--podman', '--docker', 'http://localhost:8080'],
+    ['--podman', '--docker', '~/.nosana/podman/podman.sock'],
     ['--url', undefined, undefined],
     ['--gpu', undefined, 'all'],
     ['--verbose', undefined, undefined],
