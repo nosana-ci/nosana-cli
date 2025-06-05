@@ -22,7 +22,8 @@ import {
 import { ReturnedStatus } from '../types.js';
 
 export class DockerContainerOrchestration
-  implements ContainerOrchestrationInterface {
+  implements ContainerOrchestrationInterface
+{
   public docker: DockerExtended;
   public host: string;
   public port: string;
@@ -137,7 +138,7 @@ export class DockerContainerOrchestration
       if (await this.hasNetwork('NOSANA_GATEWAY')) {
         return { status: true };
       }
-    } catch { }
+    } catch {}
 
     try {
       await this.docker.createNetwork({
@@ -317,7 +318,7 @@ export class DockerContainerOrchestration
 
         try {
           containerInfo = await container.inspect();
-        } catch (error) { }
+        } catch (error) {}
 
         if (containerInfo) {
           if (containerInfo.State.Status !== 'exited') {
@@ -346,16 +347,16 @@ export class DockerContainerOrchestration
 
         try {
           info = await container.inspect();
-        } catch (error) { }
+        } catch (error) {}
 
         if (info) {
           try {
             await container.stop();
-          } catch (error) { }
+          } catch (error) {}
 
           try {
             await container.remove({ force: true, v: true });
-          } catch (error) { }
+          } catch (error) {}
         }
       }
       return { status: true };
@@ -374,7 +375,7 @@ export class DockerContainerOrchestration
 
       try {
         containerInfo = await container.inspect();
-      } catch (error) { }
+      } catch (error) {}
 
       if (containerInfo) {
         return { status: true, result: containerInfo.State.Status == 'exited' };
@@ -430,14 +431,14 @@ function mapRunContainerArgsToContainerCreateOpts(
 ): ContainerCreateOptions {
   const devices = gpu
     ? [
-      {
-        ...(gpuOption === 'all'
-          ? { Count: -1 }
-          : { device_ids: gpuOption.split(',') }),
-        Driver: 'nvidia',
-        Capabilities: [['gpu']],
-      },
-    ]
+        {
+          ...(gpuOption === 'all'
+            ? { Count: -1 }
+            : { device_ids: gpuOption.split(',') }),
+          Driver: 'nvidia',
+          Capabilities: [['gpu']],
+        },
+      ]
     : [];
   const dockerVolumes: MountSettings[] = [];
   if (volumes && volumes.length > 0) {

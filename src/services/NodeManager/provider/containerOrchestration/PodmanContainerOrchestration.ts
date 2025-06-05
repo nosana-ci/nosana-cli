@@ -3,7 +3,7 @@ import { ReturnedStatus } from '../types.js';
 import { DockerContainerOrchestration } from './DockerContainerOrchestration.js';
 import { RunContainerArgs } from './interface.js';
 import { createPodmanRunOptions } from '../../../../providers/utils/createPodmanRunOptions.js';
-import { fetch, Agent, RequestInit, Response } from 'undici'
+import { fetch, Agent, RequestInit, Response } from 'undici';
 
 export class PodmanContainerOrchestration extends DockerContainerOrchestration {
   private api: string;
@@ -22,8 +22,8 @@ export class PodmanContainerOrchestration extends DockerContainerOrchestration {
     if (this.protocol === 'socket') {
       options.dispatcher = new Agent({
         connect: {
-          socketPath: this.host
-        }
+          socketPath: this.host,
+        },
       });
     }
 
@@ -50,9 +50,12 @@ export class PodmanContainerOrchestration extends DockerContainerOrchestration {
 
       if (create.status === 201) {
         const createResult: any = await create.json();
-        const start = await this.libPodAPICall(`/containers/${createResult.Id}/start`, {
-          method: 'POST',
-        });
+        const start = await this.libPodAPICall(
+          `/containers/${createResult.Id}/start`,
+          {
+            method: 'POST',
+          },
+        );
         if (start.status === 204) {
           const container = this.docker.getContainer(createResult.Id);
           if (addAbortListener) {
@@ -63,7 +66,8 @@ export class PodmanContainerOrchestration extends DockerContainerOrchestration {
           return {
             status: false,
             error: new Error(
-              'Cannot start container: ' + ((await start.json()) as any).message,
+              'Cannot start container: ' +
+                ((await start.json()) as any).message,
             ),
           };
         }
