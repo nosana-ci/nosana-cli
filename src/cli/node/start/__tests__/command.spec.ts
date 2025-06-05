@@ -36,7 +36,7 @@ describe('startNodeCommand', () => {
     ['--provider', undefined, 'podman'],
     ['--config', '-c', '~/.nosana/'],
     ['--port', '-p', 5001],
-    ['--podman', '--docker', 'http://localhost:8080'],
+    ['--podman', '--docker', '~/.nosana/podman/podman.sock'],
     ['--gpu', undefined, 'all'],
   ])('should have %s option', (long, short, defaultValue) => {
     const option = startNodeCommand.options.find((i) => i.long === long);

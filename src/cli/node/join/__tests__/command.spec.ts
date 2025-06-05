@@ -7,7 +7,7 @@ describe('joinCommand', () => {
 
   it.each([
     ['--provider', undefined, 'podman'],
-    ['--podman', '--docker', 'http://localhost:8080'],
+    ['--podman', '--docker', '~/.nosana/podman/podman.sock'],
     ['--wallet', '-w', '~/.nosana/nosana_key.json'],
     ['--network', '-n', 'mainnet'],
     ['--rpc', undefined, undefined],
