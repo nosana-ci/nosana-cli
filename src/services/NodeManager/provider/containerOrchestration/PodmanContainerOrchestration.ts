@@ -11,18 +11,23 @@ export class PodmanContainerOrchestration extends DockerContainerOrchestration {
 
   constructor(server: string, gpu: string) {
     super(server, gpu);
-    this.api = `${this.protocol}://${this.host}:${this.port}/v4.5.0/libpod`;
+    if (this.protocol === 'socket') {
+      this.api = `http://localhost/v4.5.0/libpod`;
+    } else {
+      this.api = `${this.protocol}://${this.host}:${this.port}/v4.5.0/libpod`;
+    }
   }
 
   async libPodAPICall(path: string, options: RequestInit): Promise<Response> {
-    return fetch(`${this.api}${path}`, {
-      ...options,
-      dispatcher: new Agent({
+    if (this.protocol === 'socket') {
+      options.dispatcher = new Agent({
         connect: {
-          socketPath: '/run/podman/podman.sock'
+          socketPath: this.host
         }
-      })
-    })
+      });
+    }
+
+    return fetch(`${this.api}${path}`, options);
   }
 
   async runFlowContainer(
