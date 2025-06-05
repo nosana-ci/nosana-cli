@@ -1,7 +1,9 @@
+import chalk from 'chalk';
+
 export function checkDeprecationDeadline() {
-  // 5pm CET today before the error starts showing
+  // 4pm CET today before the error starts showing
   // Check if current time is after the deadline
-  const warning = new Date('2025-06-05T17:00:00+02:00'); // 17:00 CET
+  const warning = new Date('2025-06-05T16:00:00+02:00'); // 05-06-2025 16:00 CET
   const deadline = new Date('2025-06-06T15:00:00+02:00'); // 06-06-2025 15:00 CET
   const now = new Date();
 
@@ -12,14 +14,15 @@ export function checkDeprecationDeadline() {
   }
 
   if (now > warning) {
-    const brightRed = '\x1b[91m'; // Bright red text
-    const reset = '\x1b[0m'; // Reset to default color
-
     console.error(
-      ` ${brightRed}WARNING: Using podman over HTTP is deprecated, use socket instead${reset}`,
+      chalk.red(
+        'WARNING: Using podman over HTTP is deprecated, use socket instead',
+      ),
     );
     console.error(
-      `${brightRed}Restart your host with \`bash <(wget -qO- https://nosana.com/start.sh)\` before 06-06-2025 15:00 CET${reset}`,
+      chalk.red(
+        'Restart your host with `bash <(wget -qO- https://nosana.com/start.sh)` before 06-06-2025 15:00 CET',
+      ),
     );
   }
 }
