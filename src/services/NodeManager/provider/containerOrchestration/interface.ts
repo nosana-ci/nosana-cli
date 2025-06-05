@@ -53,6 +53,8 @@ export interface ContainerOrchestrationInterface {
 
   healthy(): Promise<ReturnedStatus>;
   check(): Promise<string>;
+
+  getProtocol(): string;
 }
 
 export type RunContainerArgs = {
