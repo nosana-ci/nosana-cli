@@ -20,6 +20,7 @@ import {
 } from './interface.js';
 
 import { ReturnedStatus } from '../types.js';
+import { checkDeprecationDeadline } from '../../../../providers/utils/deadline.js';
 
 export class DockerContainerOrchestration
   implements ContainerOrchestrationInterface
@@ -35,24 +36,7 @@ export class DockerContainerOrchestration
 
   constructor(server: string, gpu: string) {
     this.gpu = gpu;
-
     if (server.startsWith('http') || server.startsWith('ssh')) {
-      // Check if current time is after the deadline
-      const deadline = new Date('2025-06-06T15:00:00+02:00'); // 06-06-2025 15:00 CET
-      const now = new Date();
-
-      if (now > deadline) {
-        throw new Error(
-          'HTTP connections are no longer supported. Please use socket connection instead. Restart your host with `bash <(wget -qO- https://nosana.com/start.sh)`',
-        );
-      }
-
-      console.warn(
-        'WARNING: Using podman over HTTP is deprecated, use socket instead',
-      );
-      console.warn(
-        'Restart your host with `bash <(wget -qO- https://nosana.com/start.sh)` before 06-06-2025 15:00 CET',
-      );
       const { host, port, protocol } = createSeverObject(server);
 
       this.host = host;
@@ -239,6 +223,10 @@ export class DockerContainerOrchestration
   }
 
   async healthy(): Promise<ReturnedStatus> {
+    if (this.protocol != 'socket') {
+      checkDeprecationDeadline();
+    }
+
     try {
       const info = await this.docker.info();
       if (typeof info === 'object' && info !== null && info.ID) {
