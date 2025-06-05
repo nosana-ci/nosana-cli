@@ -1,7 +1,7 @@
 export function checkDeprecationDeadline() {
   // 5pm CET today before the error starts showing
   // Check if current time is after the deadline
-  const warning = new Date('2025-06-05T17:00:00+02:00'); // 17:00 CET
+  const warning = new Date('2025-06-05T16:00:00+02:00'); // 05-06-2025 16:00 CET
   const deadline = new Date('2025-06-06T15:00:00+02:00'); // 06-06-2025 15:00 CET
   const now = new Date();
 
