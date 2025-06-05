@@ -78,7 +78,7 @@ const initial_state: NodeDb = {
       cuda_driver_version: 0,
       nvml_driver_version: '0.0.0',
     },
-    protocol: ''
+    protocol: '',
   },
 };
 

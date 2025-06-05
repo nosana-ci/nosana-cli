@@ -48,7 +48,9 @@ export class SpecsHandler {
       if (result && result.state.status === 'success') {
         await this.processSuccess(result.state.opStates);
 
-        this.repository.updateNodeInfo({ protocol: this.provider.containerOrchestration.getProtocol() })
+        this.repository.updateNodeInfo({
+          protocol: this.provider.containerOrchestration.getProtocol(),
+        });
 
         await this.submitSystemSpecs();
       } else if (result && result.state.status === 'failed') {
