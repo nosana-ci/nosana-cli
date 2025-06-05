@@ -2,7 +2,7 @@ import { jobCommand } from '../';
 
 describe('jobCommand', () => {
   it('should only have two commands', () => {
-    expect(jobCommand.commands.length).toBe(7);
+    expect(jobCommand.commands.length).toBe(8);
   });
 
   it.each([
@@ -13,6 +13,7 @@ describe('jobCommand', () => {
     ['upload'],
     ['stop'],
     ['extend'],
+    ['validate'],
   ])('should contain %s command', (command) => {
     // @ts-ignore
     expect(jobCommand.commands.map((command) => command._name)).toContain(
