@@ -1,27 +1,16 @@
 {
   "version": "0.1",
   "type": "container",
+  "meta": {
+    "trigger": "cli"
+  },
   "ops": [
     {
       "type": "container/run",
-      "id": "Vertical AI - Axolotl",
+      "id": "hello-world",
       "args": {
-        "expose": 8000,
-        "image": "ghcr.io/verticalstudio-ai/axolotlai/axolotl-cloud:latest",
-        "env": {
-          "MODEL_NAME": "{{ model_name }}",
-          "S3_BUCKET": "{{ s3_bucket }}",
-          "SQS_QUEUE_URL": "{{ sqs_queue_url }}",
-          "AWS_ACCESS_KEY_ID": "{{ aws_access_key_id }}",
-          "AWS_SECRET_ACCESS_KEY": "{{ aws_secret_access_key }}",
-          "AWS_DEFAULT_REGION": "{{ aws_region | default('eu-central-1') }}"
-        },
-        "authentication": {
-          "docker": {
-            "username": "{{ github_actor }}",
-            "password": "{{ github_token }}"
-          }
-        }
+        "cmd": "echo hello world",
+        "image": "ubuntu"
       }
     }
   ]
