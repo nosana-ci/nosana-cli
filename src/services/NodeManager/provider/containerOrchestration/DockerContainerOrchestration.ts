@@ -243,6 +243,10 @@ export class DockerContainerOrchestration
     return container;
   }
 
+  getProtocol(): string {
+    return this.protocol;
+  }
+
   setupContainerAbortListener(containerId: string) {
     const controller = abortControllerSelector() as AbortController;
 
