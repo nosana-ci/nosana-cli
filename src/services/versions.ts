@@ -33,13 +33,12 @@ export async function validateCLIVersion() {
     const registryLatestVersion = packageJSON['dist-tags']?.latest;
 
     if (!registryLatestVersion || typeof registryLatestVersion !== 'string') {
-      throw new Error('Could not retrive valid package information from npm');
+      throw new Error('Could not retrieve valid package information from npm');
     }
 
     const [required_major, required_minor, required_patch] =
       registryLatestVersion.split('.');
 
-    // TODO: Refactor into a recurrsive loop
     if (parseInt(required_major) === parseInt(current_major)) {
       if (parseInt(required_minor) === parseInt(current_minor)) {
         if (requiresNewVersion(required_patch, current_patch)) {
@@ -56,7 +55,7 @@ export async function validateCLIVersion() {
       }
     }
   } catch (error: any) {
-    throw new Error(
+    console.log(
       `${chalk.red(
         "Failed to fetch CLI's minium required version.",
       )}\n${error}`,
