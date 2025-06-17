@@ -23,7 +23,7 @@ const frpcImage = 'docker.io/nosana/frpc:multi-v0.0.4';
 
 export class Provider {
   constructor(
-    private containerOrchestration: ContainerOrchestrationInterface,
+    public containerOrchestration: ContainerOrchestrationInterface,
     private repository: NodeRepository,
     private resourceManager: ResourceManager,
     private emitter?: EventEmitter,

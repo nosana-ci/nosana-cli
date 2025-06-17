@@ -28,7 +28,7 @@ export const runNodeCommand = new Command('run')
     new Option(
       '--docker, --podman <URI>',
       'Podman/Docker connection URI',
-    ).default('http://localhost:8080'),
+    ).default('~/.nosana/podman/podman.sock'),
   )
   .addOption(gpuOption)
   .addOption(verboseOption)
