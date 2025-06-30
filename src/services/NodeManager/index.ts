@@ -35,7 +35,7 @@ export default class NodeManager {
      *
      * make a call to the backend per interval to show live ness to the backend
      */
-    // ping();
+    ping();
 
     /**
      * setup state that any instance can listen to, state produced from the node via logging proxies.
