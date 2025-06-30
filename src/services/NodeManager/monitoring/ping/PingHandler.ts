@@ -38,17 +38,22 @@ export class PingHandler {
       });
       headers.append('Content-Type', 'application/json');
 
-      const response = await fetch(`${configs().backendUrl}/api/nodes/heartbeat`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ ping: 'pong' }),
-      });
+      const response = await fetch(
+        `${configs().backendUrl}/api/nodes/heartbeat`,
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ ping: 'pong' }),
+        },
+      );
 
       if (response.ok) {
         const json = await response.json();
 
         if (json.maxHeartbeatsPerDay) {
-          const newInterval = Math.floor((24 * 60 * 60) / json.maxHeartbeatsPerDay);
+          const newInterval = Math.floor(
+            (24 * 60 * 60) / json.maxHeartbeatsPerDay,
+          );
           if (newInterval !== this.intervalSeconds) {
             this.updateInterval(newInterval);
           }
