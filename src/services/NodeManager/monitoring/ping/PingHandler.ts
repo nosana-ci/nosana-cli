@@ -1,6 +1,7 @@
-import { Client } from '@nosana/sdk';
+import { Client as SDK } from '@nosana/sdk';
 import { getSDK } from '../../../sdk.js';
 import { configs } from '../../configs/configs.js';
+import { PublicKey } from '@solana/web3.js';
 
 export const ping = (() => {
   let instance: PingHandler | null = null;
@@ -18,7 +19,13 @@ export class PingHandler {
   private intervalId: NodeJS.Timeout | null = null;
   private intervalSeconds = 30;
 
-  constructor() {}
+  private sdk: SDK
+  private address: PublicKey;
+
+  constructor() {
+    this.sdk = getSDK();
+    this.address = this.sdk.solana.provider!.wallet.publicKey;
+  }
 
   async start() {
     if (this.intervalId) return;
@@ -32,17 +39,17 @@ export class PingHandler {
 
   private async ping() {
     try {
-      const sdk = getSDK();
-      const headers = sdk.authorization.generateHeader(configs().signMessage, {
-        includeTime: true,
-      });
-      headers.append('Content-Type', 'application/json');
-
-      const response = await fetch(`${configs().backendUrl}/nodes/heartbeat`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ ping: 'pong' }),
-      });
+      const response = await fetch(
+        `${configs().backendUrl}/nodes/heartbeat`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `${this.address}:${await this.getAuthSignature()}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ping: 'pong' }),
+        },
+      );
 
       if (response.ok) {
         const json = await response.json();
@@ -59,6 +66,13 @@ export class PingHandler {
     } catch (err) {
       console.error('Ping failed:', err);
     }
+  }
+
+  private async getAuthSignature(): Promise<string> {
+    const signature = (await this.sdk.solana.signMessage(
+      configs().signMessage,
+    )) as Uint8Array;
+    return Buffer.from(signature).toString('base64');
   }
 
   private updateInterval(newSeconds: number) {
