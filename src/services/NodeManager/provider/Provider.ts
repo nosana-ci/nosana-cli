@@ -357,11 +357,11 @@ export class Provider {
           this.resourceManager.images.setImage(frpcImage);
 
           /**
-           * because of the introduction of projectId(load balancing key) instead of using flow.id we use projectId for more
+           * because of the introduction of deployment_id(load balancing key) instead of using flow.id we use deployment_id for more
            * deterministic url generation
            */
-          const isLoadBalanced = !!flow.jobDefinition.projectId;
-          const flowKey = flow.jobDefinition.projectId ?? flow.id;
+          const isLoadBalanced = !!flow.jobDefinition.deployment_id;
+          const flowKey = flow.jobDefinition.deployment_id ?? flow.id;
 
           const { proxies, idMap } = generateProxies(
             flowKey,
@@ -386,7 +386,6 @@ export class Provider {
                 FRP_PROXIES: JSON.stringify(proxies),
                 ...(isLoadBalanced && {
                   FRP_LB_GROUP: flowKey,
-                  FRP_LB_KEY: flowKey,
                 }),
               },
             }));
