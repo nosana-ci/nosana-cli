@@ -19,7 +19,7 @@ export class PingHandler {
   private intervalId: NodeJS.Timeout | null = null;
   private intervalSeconds = 30;
 
-  private sdk: SDK
+  private sdk: SDK;
   private address: PublicKey;
 
   constructor() {
@@ -39,17 +39,14 @@ export class PingHandler {
 
   private async ping() {
     try {
-      const response = await fetch(
-        `${configs().backendUrl}/nodes/heartbeat`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `${this.address}:${await this.getAuthSignature()}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ ping: 'pong' }),
+      const response = await fetch(`${configs().backendUrl}/nodes/heartbeat`, {
+        method: 'POST',
+        headers: {
+          Authorization: `${this.address}:${await this.getAuthSignature()}`,
+          'Content-Type': 'application/json',
         },
-      );
+        body: JSON.stringify({ ping: 'pong' }),
+      });
 
       if (response.ok) {
         const json = await response.json();
