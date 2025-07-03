@@ -23,7 +23,7 @@ export class PingHandler {
   async start() {
     if (this.intervalId) return;
 
-    await this.ping(); // start immediately to get the interval
+    this.ping(); // start immediately to get the interval
 
     this.intervalId = setInterval(() => {
       this.ping();
@@ -38,14 +38,11 @@ export class PingHandler {
       });
       headers.append('Content-Type', 'application/json');
 
-      const response = await fetch(
-        `${configs().backendUrl}/api/nodes/heartbeat`,
-        {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({ ping: 'pong' }),
-        },
-      );
+      const response = await fetch(`${configs().backendUrl}/nodes/heartbeat`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ ping: 'pong' }),
+      });
 
       if (response.ok) {
         const json = await response.json();
