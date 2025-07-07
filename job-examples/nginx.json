@@ -1,6 +1,7 @@
 {
   "version": "0.1",
   "type": "container",
+  "deployment_id": "first_deployment",
   "meta": {
     "trigger": "cli"
   },

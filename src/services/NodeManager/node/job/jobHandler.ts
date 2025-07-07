@@ -183,9 +183,9 @@ export class JobHandler {
       }
 
       // we want to hash the the provided deployment id with the public key of job poster to make it unique
-      if (jobDefinition.deployment_id ) {
+      if (jobDefinition.deployment_id) {
         const input = `${jobDefinition.deployment_id}:${job.project}`;
-        jobDefinition.projectKey = createHash(input, 45)
+        jobDefinition.deployment_id = createHash(input, 45);
       }
 
       this.flowHandler.start(this.jobId(), jobDefinition);

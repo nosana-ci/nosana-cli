@@ -1,4 +1,4 @@
-import { AuthorizationManager, Client, sleep } from '@nosana/sdk';
+import { AuthorizationManager, Client, createHash, sleep } from '@nosana/sdk';
 import fs from 'node:fs';
 import { randomUUID } from 'crypto';
 import { IValidation } from 'typia';
@@ -258,8 +258,17 @@ export async function run(
 
   if (isExposed(json_flow as JobDefinition)) {
     if (!isPrivate(json_flow as JobDefinition)) {
+      let flowkey = response.job;
+
+      if (json_flow.deployment_id) {
+        const input = `${json_flow.deployment_id}:${
+          nosana.solana.provider!.wallet.publicKey
+        }`;
+        flowkey = createHash(input, 45);
+      }
+
       formatter.output(OUTPUT_EVENTS.OUTPUT_SERVICE_URL, {
-        url: getJobUrls(json_flow as JobDefinition, response.job).join(','),
+        url: getJobUrls(json_flow as JobDefinition, flowkey).join(','),
       });
     } else {
       formatter.output(OUTPUT_EVENTS.OUTPUT_PRIVATE_URL_MESSAGE, {
