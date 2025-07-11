@@ -34,16 +34,16 @@ export class PingHandler {
     await this.scheduleNextPing(Date.now());
   }
 
-private async scheduleNextPing(expectedTime: number) {
-  await this.ping();
+  private async scheduleNextPing(expectedTime: number) {
+    await this.ping();
 
-  const nextExpected = expectedTime + this.intervalSeconds * 1000;
+    const nextExpected = expectedTime + this.intervalSeconds * 1000;
 
-  const delay = Math.max(nextExpected - Date.now(), 0);
-  this.timeoutId = setTimeout(() => {
-    this.scheduleNextPing(nextExpected);
-  }, delay);
-}
+    const delay = Math.max(nextExpected - Date.now(), 0);
+    this.timeoutId = setTimeout(() => {
+      this.scheduleNextPing(nextExpected);
+    }, delay);
+  }
 
   private async ping() {
     try {
@@ -63,7 +63,7 @@ private async scheduleNextPing(expectedTime: number) {
           const newInterval = Math.floor(
             (24 * 60 * 60) / json.maxHeartbeatsPerDay,
           );
- 
+
           if (newInterval !== this.intervalSeconds) {
             this.intervalSeconds = newInterval;
           }
