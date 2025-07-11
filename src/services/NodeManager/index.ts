@@ -31,13 +31,6 @@ export default class NodeManager {
 
   async init(): Promise<void> {
     /**
-     * ping
-     *
-     * make a call to the backend per interval to show live ness to the backend
-     */
-    ping();
-
-    /**
      * setup state that any instance can listen to, state produced from the node via logging proxies.
      * set up node state processing, observers can connect to it and received state
      * updates of the node.
@@ -88,6 +81,13 @@ export default class NodeManager {
     if (!this.inJobLoop) {
       await this.apiHandler.preventMultipleApiStarts();
       await this.apiHandler.start();
+
+      /**
+       * ping
+       *
+       * make a call to the backend per interval to show live ness to the backend
+       */
+      await ping();
     }
   }
 
