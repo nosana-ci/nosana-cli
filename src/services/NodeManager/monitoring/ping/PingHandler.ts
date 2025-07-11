@@ -6,17 +6,17 @@ import { PublicKey } from '@solana/web3.js';
 export const ping = (() => {
   let instance: PingHandler | null = null;
 
-  return () => {
+  return async () => {
     if (!instance) {
       instance = new PingHandler();
     }
-    instance.start();
+    await instance.start();
     return instance;
   };
 })();
 
 export class PingHandler {
-  private intervalId: NodeJS.Timeout | null = null;
+  private timeoutId: NodeJS.Timeout | null = null;
   private intervalSeconds = 30;
 
   private sdk: SDK;
@@ -28,13 +28,21 @@ export class PingHandler {
   }
 
   async start() {
-    if (this.intervalId) return;
+    if (this.timeoutId) return;
 
-    this.ping(); // start immediately to get the interval
+    // start with an immediate ping
+    await this.scheduleNextPing(Date.now());
+  }
 
-    this.intervalId = setInterval(() => {
-      this.ping();
-    }, this.intervalSeconds * 1000);
+  private async scheduleNextPing(expectedTime: number) {
+    await this.ping();
+
+    const nextExpected = expectedTime + this.intervalSeconds * 1000;
+
+    const delay = Math.max(nextExpected - Date.now(), 0);
+    this.timeoutId = setTimeout(() => {
+      this.scheduleNextPing(nextExpected);
+    }, delay);
   }
 
   private async ping() {
@@ -55,8 +63,9 @@ export class PingHandler {
           const newInterval = Math.floor(
             (24 * 60 * 60) / json.maxHeartbeatsPerDay,
           );
+
           if (newInterval !== this.intervalSeconds) {
-            this.updateInterval(newInterval);
+            this.intervalSeconds = newInterval;
           }
         }
       }
@@ -72,20 +81,10 @@ export class PingHandler {
     return Buffer.from(signature).toString('base64');
   }
 
-  private updateInterval(newSeconds: number) {
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-    }
-    this.intervalSeconds = newSeconds;
-    this.intervalId = setInterval(() => {
-      this.ping();
-    }, this.intervalSeconds * 1000);
-  }
-
   stop() {
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-      this.intervalId = null;
+    if (this.timeoutId) {
+      clearTimeout(this.timeoutId);
+      this.timeoutId = null;
     }
   }
 }
