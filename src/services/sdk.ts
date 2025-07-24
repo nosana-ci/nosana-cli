@@ -38,6 +38,18 @@ export async function setSDK(
   };
   if (market) config.solana!.market_address = market;
 
+  const createNewKeyPair = (filePath: string): Keypair => {
+    formatter.output(OUTPUT_EVENTS.CREATE_KEYFILE, { keyfile: keyfile });
+    const keypair = Keypair.generate();
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    fs.writeFileSync(
+      filePath,
+      JSON.stringify(Buffer.from(keypair.secretKey).toJSON().data),
+    );
+
+    return keypair;
+  };
+
   let wallet: Wallet | string | Keypair | Iterable<number> | undefined =
     undefined;
   if (keyfile) {
@@ -48,15 +60,15 @@ export async function setSDK(
       if (fs.existsSync(keyfile)) {
         formatter.output(OUTPUT_EVENTS.READ_KEYFILE, { keyfile: keyfile });
         const privateKey = fs.readFileSync(keyfile, 'utf8');
-        wallet = privateKey;
+        if (privateKey === '') {
+          formatter.output(OUTPUT_EVENTS.EMPTY_KEYFILE, { keyfile: keyfile });
+          const keypair = createNewKeyPair(keyfile);
+          wallet = keypair;
+        } else {
+          wallet = privateKey;
+        }
       } else {
-        formatter.output(OUTPUT_EVENTS.CREATE_KEYFILE, { keyfile: keyfile });
-        const keypair = Keypair.generate();
-        fs.mkdirSync(path.dirname(keyfile), { recursive: true });
-        fs.writeFileSync(
-          keyfile,
-          JSON.stringify(Buffer.from(keypair.secretKey).toJSON().data),
-        );
+        const keypair = createNewKeyPair(keyfile);
         wallet = keypair;
       }
     }
