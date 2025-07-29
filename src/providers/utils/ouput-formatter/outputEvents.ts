@@ -26,6 +26,7 @@ import { OpState } from '../../../services/NodeManager/provider/types.js';
 export const OUTPUT_EVENTS = {
   READ_KEYFILE: 'READ_KEYFILE',
   CREATE_KEYFILE: 'CREATE_KEYFILE',
+  EMPTY_KEYFILE: 'EMPTY_KEYFILE',
   OUTPUT_JOB_URL: 'OUTPUT_JOB_URL',
   OUTPUT_JSON_FLOW_URL: 'OUTPUT_JSON_FLOW_URL',
   OUTPUT_MARKET_URL: 'OUTPUT_MARKET_URL',
@@ -114,6 +115,7 @@ export type JobExecutionParam = {
 
 export type OutputEventParams = {
   [OUTPUT_EVENTS.READ_KEYFILE]: KeyfileParam;
+  [OUTPUT_EVENTS.EMPTY_KEYFILE]: KeyfileParam;
   [OUTPUT_EVENTS.CREATE_KEYFILE]: KeyfileParam;
   [OUTPUT_EVENTS.OUTPUT_BALANCES]: BalanceParam;
   [OUTPUT_EVENTS.OUTPUT_NETWORK]: NetworkParam;

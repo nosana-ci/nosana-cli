@@ -99,6 +99,11 @@ export const textOutputEventHandlers: OutputEventHandlers = {
       `Reading keypair from ${colors.CYAN}${param.keyfile}${colors.RESET}\n`,
     );
   },
+  [OUTPUT_EVENTS.EMPTY_KEYFILE]: (param: KeyfileParam) => {
+    console.log(
+      `Found empty string within ${colors.CYAN}${param.keyfile}${colors.RESET}\n`,
+    );
+  },
   [OUTPUT_EVENTS.CREATE_KEYFILE]: (param: KeyfileParam) => {
     console.log(
       `Creating new keypair and storing it in ${colors.CYAN}${param.keyfile}${colors.RESET}\n`,
