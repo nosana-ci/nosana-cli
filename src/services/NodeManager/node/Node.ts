@@ -28,6 +28,8 @@ import {
 } from './abort/abortControllerSelector.js';
 import { pollForRun } from './utils/poll.js';
 import { configs } from '../configs/configs.js';
+import { TaskManagerRegistry } from './task/TaskManagerRegistry.js';
+import TaskManager, { StopReason, StopReasons } from './task/TaskManager.js';
 
 export class BasicNode {
   public isOnboarded: boolean = false;
@@ -46,7 +48,6 @@ export class BasicNode {
   private resourceManager: ResourceManager;
   private provider: Provider;
   private containerOrchestration: ContainerOrchestrationInterface;
-  private leaveMarketQueueListener: EventEmitter;
   private exiting = false;
 
   private sdk: Client;
@@ -104,7 +105,6 @@ export class BasicNode {
     );
 
     this.expiryHandler = new ExpiryHandler(this.sdk);
-    this.leaveMarketQueueListener = new EventEmitter();
 
     applyLoggingProxyToClass(this);
   }
@@ -153,7 +153,9 @@ export class BasicNode {
   async stop(): Promise<void> {
     await this.marketHandler.stop();
     await this.runHandler.stop();
-    await this.jobHandler.stop();
+
+    await this.jobHandler.nodeStop();
+
     this.expiryHandler.stop();
     nodeAbortControllerSelector().refresh();
   }
@@ -165,7 +167,9 @@ export class BasicNode {
     /**
      * we want to use stop because it functions like we want
      */
-    await this.jobHandler.stop();
+    await this.jobHandler.nodeStop();
+
+    // await this.jobHandler.stop();
     this.expiryHandler.stop();
     nodeAbortControllerSelector().refresh();
   }
@@ -207,7 +211,7 @@ export class BasicNode {
   run(): Promise<void> {
     return new Promise<void>(async (resolve, reject) => {
       try {
-        let resolved = false;
+        let resolvedStatus: StopReason = StopReasons.COMPLETED
 
         const periodicHealthcheck = async (): Promise<boolean> => {
           const { status, error } = await this.containerOrchestration.healthy();
@@ -240,36 +244,60 @@ export class BasicNode {
          */
         const job = await this.jobHandler.claim(jobAddress);
 
+        /** 
+         * register the job in the job registry
+        */
+        this.jobHandler.register(jobAddress, run, job)
+
         /**
          * Check if the job is expired. If it is, quit the job;
          * otherwise, continue to start.
          */
         if (!this.expiryHandler.expired(run, job)) {
-          /**
-           * start monitoring for the stop signal from the smart contract
-           */
-          this.jobHandler.accountEmitter.on('stopped', async (_) => {
-            // this.jobHandler.stop();
-            resolved = true;
-            // resolve();
-            abortControllerSelector().abort('stopped');
-          });
+          const stopReason = new Promise<(typeof StopReasons)[keyof typeof StopReasons]>((resolveStop) => {
+            /**
+             * start monitoring for the stop signal from the smart contract
+             */
+            this.jobHandler.accountEmitter.once('stopped', async () => {
+              const task = TaskManagerRegistry.getInstance().get(jobAddress);
+              if (task) {
+                await task.stop(StopReasons.STOPPED);
+              }
 
-          /**
-           * This starts the expiry settings to monitor expiry time
-           */
-          this.expiryHandler.init<void>(
-            run,
-            job,
-            jobAddress,
-            this.jobHandler.accountEmitter,
-            async () => {
-              /**
-               * we now use the abort controller to close the container operations
-               */
-              abortControllerSelector().abort('expired');
-            },
-          );
+              abortControllerSelector().abort('stopped');
+              resolveStop(StopReasons.STOPPED);
+            });
+
+            /**
+             * start the signal from the job completed
+             */
+            this.jobHandler.accountEmitter.once('completed', async () => {
+              resolveStop(StopReasons.COMPLETED);
+            });
+
+
+            /**
+             * This starts the expiry settings to monitor expiry time
+             */
+            this.expiryHandler.init<void>(
+              run,
+              job,
+              jobAddress,
+              this.jobHandler.accountEmitter,
+              async () => {
+                /**
+                 * we now use the abort controller to close the container operations
+                 */
+                const task = TaskManagerRegistry.getInstance().get(jobAddress);
+                if (task) {
+                  await task.stop(StopReasons.EXPIRED);
+                }
+
+                abortControllerSelector().abort('expired');
+                resolveStop(StopReasons.EXPIRED);
+              }
+            );
+          });
 
           /**
            * Start the job. This includes downloading the job definition, starting the flow,
@@ -286,13 +314,19 @@ export class BasicNode {
           /**
            * Wait for the job to expire before continuing if the setup was successful.
            */
-          await this.expiryHandler.waitUntilExpired();
+          // await this.expiryHandler.waitUntilExpired();
+
+          resolvedStatus = await stopReason;
         }
 
-        /**
-         * Upload the result and end the flow; also clean up flow.
-         */
-        await this.jobHandler.finish(run, resolved);
+        if (!this.exiting) {
+          /**
+           * Upload the result and end the flow; also clean up flow.
+           */
+          await this.jobHandler.finish(run, resolvedStatus);
+
+          this.jobHandler.deregister(jobAddress)
+        }
 
         // Resolve the Promise normally
         resolve();
@@ -386,7 +420,7 @@ export class BasicNode {
               );
               firstMarketCheck = false;
             }
-          } catch (error) {}
+          } catch (error) { }
         },
       );
     });
@@ -404,7 +438,7 @@ export class BasicNode {
     const run = this.runHandler.getRun();
 
     if (run) {
-      await this.jobHandler.finish(run);
+      await this.jobHandler.finish(run, StopReasons.QUIT);
     }
   }
 

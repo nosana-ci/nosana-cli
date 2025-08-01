@@ -2,7 +2,6 @@ import chalk from 'chalk';
 import { Client } from '@nosana/sdk';
 import { confirm, input } from '@inquirer/prompts';
 
-import { FlowHandler } from '../flow/flowHandler.js';
 import { clientSelector, QueryClient } from '../../../../api/client.js';
 import { configs } from '../../configs/configs.js';
 
@@ -11,10 +10,11 @@ import { Provider } from '../../provider/Provider.js';
 import { NodeRepository } from '../../repository/NodeRepository.js';
 import { applyLoggingProxyToClass } from '../../monitoring/proxy/loggingProxy.js';
 import { Flow, OpState } from '../../provider/types.js';
+import { generateRandomId } from '../../../../providers/utils/generate.js';
+import TaskManager from '../task/TaskManager.js';
 
 export class RegisterHandler {
   private nodeId: string;
-  private flowHandler: FlowHandler;
   private client: QueryClient;
   private answers:
     | {
@@ -30,7 +30,6 @@ export class RegisterHandler {
     private repository: NodeRepository,
   ) {
     this.nodeId = this.sdk.solana.provider!.wallet.publicKey.toString();
-    this.flowHandler = new FlowHandler(this.provider, this.repository);
     this.client = clientSelector();
 
     applyLoggingProxyToClass(this);
@@ -83,9 +82,12 @@ export class RegisterHandler {
   }
 
   private async runSpecs(): Promise<Flow> {
-    const flowId = this.flowHandler.generateRandomId(32);
-    this.flowHandler.start(flowId, specsAndNetworkJob);
-    const result = await this.flowHandler.run(flowId);
+    const flowId = generateRandomId(32);
+    const task = new TaskManager(this.provider, this.repository, flowId, specsAndNetworkJob)
+    task.bootstrap()
+    await task.start()
+    
+    const result = this.repository.getflow(flowId);
 
     if (!result || result.state.status !== 'success') {
       throw new Error('Registration Benchmark Failed');

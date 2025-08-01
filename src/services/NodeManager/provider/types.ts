@@ -5,6 +5,7 @@ import {
 } from '@nosana/sdk';
 
 import { type Resource } from '@nosana/sdk/dist/types/resources';
+import { Execution, TaskManagerOps } from '../node/task/TaskManager';
 
 export const validateJobDefinition =
   typia.createValidateEquals<JobDefinition>();
@@ -44,12 +45,35 @@ export interface ReceiveJobResultLogicstics {
   };
 }
 
-export type JobDefinition = JobDefinitionSDK & {
-  logistics?: JobLogistics;
-  meta?: JobDefinitionSDK['meta'] & {
-    [key: string]: unknown;
-  };
-};
+export type JobDefinition = {
+    version: string;
+    type: JobType;
+    logistics?: JobLogistics;
+    meta?: {
+        trigger?: string;
+        system_resources?: {
+            [key: string]: string | number;
+        };
+        [key: string]: unknown;
+    };
+    global?: {
+        image?: string;
+        gpu?: boolean;
+        entrypoint?: string | string[];
+        env?: {
+            [key: string]: string;
+        };
+        work_dir?: string;
+    };
+    ops: TaskManagerOps;
+}
+
+// export type JobDefinition = JobDefinitionSDK & {
+//   logistics?: JobLogistics;
+//   meta?: JobDefinitionSDK['meta'] & {
+//     [key: string]: unknown;
+//   };
+// };
 export type JobType = 'container';
 
 export type Operation<T extends OperationType> = {
@@ -57,6 +81,7 @@ export type Operation<T extends OperationType> = {
   id: string;
   args: OperationArgsMap[T];
   results?: OperationResults;
+  execution?: Execution;
 };
 export type OperationType = keyof OperationArgsMap;
 

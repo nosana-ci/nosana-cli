@@ -3,6 +3,7 @@ import { log, LogObserver, NodeLogEntry } from '../NodeLog.js';
 import { MultiBar, Presets, SingleBar } from 'cli-progress';
 import chalk from 'chalk';
 import { convertFromBytes } from '../../../../../providers/utils/convertFromBytes.js';
+import { LogMonitoringRegistry } from '../../LogMonitoringRegistry.js';
 
 export const consoleLogging = (() => {
   let instance: ConsoleLogger | null = null;
@@ -29,7 +30,7 @@ export class ConsoleLogger implements LogObserver {
 
   spinner!: Ora;
 
-  constructor(public isNode: boolean = true) {}
+  constructor(public isNode: boolean = true) { }
 
   addObserver() {
     log().addObserver(this);
@@ -40,6 +41,7 @@ export class ConsoleLogger implements LogObserver {
   }
 
   public update(log: NodeLogEntry, isNode: boolean = true) {
+
     if (!this.kill && log.type == 'kill-process') {
       if (this.pending) {
         this.spinner.stop();

@@ -10,6 +10,7 @@ import { validateCLIVersion } from '../versions.js';
 import { configs } from './configs/configs.js';
 import { getSDK } from '../sdk.js';
 import { ping } from './monitoring/ping/PingHandler.js';
+import { LogMonitoringRegistry } from './monitoring/LogMonitoringRegistry.js';
 
 export default class NodeManager {
   private node: BasicNode;
@@ -111,14 +112,14 @@ export default class NodeManager {
      *
      * if the specs fails restart the system
      */
-    if (!(await this.node.specs())) {
-      /**
-       * start
-       *
-       * recursively start the the process again by calling the restart function
-       */
-      return await this.restart(marketArg);
-    }
+    // if (!(await this.node.specs())) {
+    //   /**
+    //    * start
+    //    *
+    //    * recursively start the the process again by calling the restart function
+    //    */
+    //   return await this.restart(marketArg);
+    // }
 
     /**
      * grid
@@ -293,8 +294,11 @@ export default class NodeManager {
    */
   private handleProcessExit() {
     const exitHandler = async () => {
+      LogMonitoringRegistry.getInstance().setLoggable(true)
+      
       if (this.exiting) return;
       this.exiting = true;
+
       this.node.exit();
 
       /**
@@ -302,11 +306,11 @@ export default class NodeManager {
        * this is to only be used in voluntry exit of the node
        * ? error loop? when the user can't conculde this and it throws error and keeps restarting?
        */
-      try {
-        await this.node.conclude();
-      } catch (error) {
-        console.log(`Job Finishing Failed: ${error}`);
-      }
+      // try {
+      //   await this.node.conclude();
+      // } catch (error) {
+      //   console.log(`Job Finishing Failed: ${error}`);
+      // }
 
       await this.stop();
       process.exit();

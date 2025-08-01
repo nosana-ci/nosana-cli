@@ -20,6 +20,7 @@ import {
   waitForJobCompletion,
   waitForJobRunOrCompletion,
 } from '../../../services/jobs.js';
+import { loadJobDefinitionFromFile } from '../../../providers/utils/jobDefinitionParser.js';
 
 export async function run(
   command: Array<string>,
@@ -38,7 +39,7 @@ export async function run(
   const nosana: Client = getSDK();
   let json_flow: { [key: string]: any }; // TODO: add JSON flow type
   if (options.file) {
-    json_flow = JSON.parse(fs.readFileSync(options.file, 'utf8'));
+    json_flow = loadJobDefinitionFromFile(options.file);
   } else if (options.url) {
     try {
       const data = await fetch(options.url);

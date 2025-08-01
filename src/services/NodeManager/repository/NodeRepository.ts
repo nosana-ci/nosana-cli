@@ -6,7 +6,7 @@ import {
 import { LowSync } from 'lowdb';
 import { Flow, OpState, FlowState, Log } from '../provider/types.js';
 
-const MAX_LOGS = 10;
+const MAX_LOGS = 24999;
 
 export class NodeRepository {
   constructor(private db: LowSync<NodeDb>) {}

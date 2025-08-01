@@ -10,7 +10,6 @@ import { ResourceManager } from '../../../services/NodeManager/node/resource/res
 import { NodeRepository } from '../../../services/NodeManager/repository/NodeRepository.js';
 import { DB } from '../../../providers/modules/db/index.js';
 import { selectContainerOrchestrationProvider } from '../../../services/NodeManager/provider/containerOrchestration/selectContainerOrchestration.js';
-import { FlowHandler } from '../../../services/NodeManager/node/flow/flowHandler.js';
 import { IValidation } from 'typia';
 import { createLoggingProxy } from '../../../services/NodeManager/monitoring/proxy/loggingProxy.js';
 import { log } from '../../../services/NodeManager/monitoring/log/NodeLog.js';
@@ -21,6 +20,7 @@ import {
 import EventEmitter from 'events';
 import TaskManager, { TaskManagerOps } from '../../../services/NodeManager/node/task/TaskManager.js';
 import { sleep } from '@nosana/sdk';
+import { loadJobDefinitionFromFile } from '../../../providers/utils/jobDefinitionParser.js';
 
 export async function runJob(
   jobDefinitionFile: string,
@@ -28,7 +28,7 @@ export async function runJob(
     [key: string]: any;
   },
   ) {
-    const jobDefinition = JSON.parse(fs.readFileSync(jobDefinitionFile, 'utf8'));
+    const jobDefinition = loadJobDefinitionFromFile(jobDefinitionFile)
     // const ops = jobDefinition.ops as TaskManagerOps;
 
     const db = new DB(options.config).db;
@@ -45,26 +45,23 @@ export async function runJob(
       repository,
     );
 
-    const emitter = new EventEmitter();
-
     const provider = new Provider(
       containerOrchestration,
       repository,
       resourceManager,
-      emitter,
     );
 
-    const job = 'test-job-2'
-    const tm = new TaskManager(provider, repository, jobDefinition, job);
-    tm.buildExecutionPlan();
-    tm.init();
+    const job = `job-${Math.random().toString(36).slice(2, 10)}`;
 
-    // Schedule stop in 20 seconds
+    const tm = new TaskManager(provider, repository, job, jobDefinition);
+    tm.bootstrap();
+
+    // schedule restart
     setTimeout(() => {
-      tm.stop("expired");
-    }, 20000); // 20,000 ms = 20 seconds
+      tm.stopTaskManagerGroupOperations("run");
+    }, 60000); // 20,000 ms = 20 seconds
 
-    await tm.run(); // this blocks
+    await tm.start(); // this blocks
 
     return
 }

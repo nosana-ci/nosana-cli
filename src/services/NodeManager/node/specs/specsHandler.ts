@@ -1,7 +1,6 @@
 import { Client } from '@nosana/sdk';
 
 import { configs } from '../../configs/configs.js';
-import { FlowHandler } from '../flow/flowHandler.js';
 import { Provider } from '../../provider/Provider.js';
 import { specsAndNetworkJob } from '../../../../static/staticsImports.js';
 import { NodeRepository } from '../../repository/NodeRepository.js';
@@ -14,11 +13,12 @@ import {
 } from '../../../../types/cudaCheck.js';
 import { NetworkInfoResults, SystemInfoResults } from './type.js';
 import { clientSelector, QueryClient } from '../../../../api/client.js';
-import { Flow, OpState } from '../../provider/types.js';
+import { OpState } from '../../provider/types.js';
+import TaskManager from '../task/TaskManager.js';
+import { generateRandomId } from '../../../../providers/utils/generate.js';
 
 export class SpecsHandler {
   private client: QueryClient;
-  private flowHandler: FlowHandler;
 
   constructor(
     private provider: Provider,
@@ -26,21 +26,22 @@ export class SpecsHandler {
     private sdk: Client,
   ) {
     this.client = clientSelector();
-    this.flowHandler = new FlowHandler(this.provider, repository);
     applyLoggingProxyToClass(this);
   }
 
   async check(): Promise<boolean> {
-    const id = this.flowHandler.generateRandomId(32);
+    const id = generateRandomId(32)
+  
+    const task = new TaskManager(this.provider, this.repository, id, specsAndNetworkJob)
 
-    this.flowHandler.start(id, specsAndNetworkJob);
-
-    let result: Flow | undefined;
     try {
-      result = await this.flowHandler.run(id);
+      task.bootstrap()
+      await task.start()
     } catch (error) {
       throw error;
     }
+
+    let result = this.repository.getflow(id);
 
     if (result) {
       this.repository.deleteflow(result.id);

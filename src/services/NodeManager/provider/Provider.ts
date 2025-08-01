@@ -1,4 +1,4 @@
-import { OperationArgsMap, Ops } from '@nosana/sdk';
+import { OperationArgsMap, OperationType, Ops } from '@nosana/sdk';
 
 import { ContainerOrchestrationInterface } from './containerOrchestration/interface.js';
 import { Flow, Operation } from './types.js';
@@ -26,261 +26,206 @@ export class Provider {
     public containerOrchestration: ContainerOrchestrationInterface,
     private repository: NodeRepository,
     private resourceManager: ResourceManager,
-    private emitter?: EventEmitter,
   ) {
     applyLoggingProxyToClass(this);
   }
 
-  private exposedPortHealthCheck: ExposedPortHealthCheck | undefined;
-  private currentContainer: Dockerode.Container | undefined;
-
   public async stopReverseProxyApi(address: string): Promise<boolean> {
-    // const tunnel_name = `tunnel-api-${address}`;
-    // const frpc_name = `frpc-api-${address}`;
-    // const networkName = `api-${address}`;
+    const tunnel_name = `tunnel-api-${address}`;
+    const frpc_name = `frpc-api-${address}`;
+    const networkName = `api-${address}`;
 
-    // try {
-    //   let status, error, result;
+    try {
+      // Check if the tunnel container exists and stop/delete it
+      const doesTunnelExist = await this.containerOrchestration.doesContainerExist(tunnel_name);
+      if (doesTunnelExist) {
+        await this.containerOrchestration.stopAndDeleteContainer(
+          tunnel_name,
+        )
+      }
 
-    //   // Check if the tunnel container exists and stop/delete it
-    //   ({ status, error, result } =
-    //     await this.containerOrchestration.doesContainerExist(tunnel_name));
-    //   if (status && result) {
-    //     ({ status, error, result } =
-    //       await this.containerOrchestration.stopAndDeleteContainer(
-    //         tunnel_name,
-    //       ));
-    //     if (!status) throw error;
-    //   }
+      // Check if the frpc container exists and stop/delete it
+      const doesFrpcExist =
+        await this.containerOrchestration.doesContainerExist(frpc_name);
+      if (doesFrpcExist) {
+        await this.containerOrchestration.stopAndDeleteContainer(frpc_name);
+      }
 
-    //   // Check if the frpc container exists and stop/delete it
-    //   ({ status, error, result } =
-    //     await this.containerOrchestration.doesContainerExist(frpc_name));
-    //   if (status && result) {
-    //     ({ status, error, result } =
-    //       await this.containerOrchestration.stopAndDeleteContainer(frpc_name));
-    //     if (!status) throw error;
-    //   }
-
-    //   // check if network then delete
-    //   if (await this.containerOrchestration.hasNetwork(networkName)) {
-    //     await this.containerOrchestration.deleteNetwork(networkName);
-    //   }
-    // } catch (error) {
-    //   throw error;
-    // }
+      // check if network then delete
+      if (await this.containerOrchestration.hasNetwork(networkName)) {
+        await this.containerOrchestration.deleteNetwork(networkName);
+      }
+    } catch (error) {
+      throw error;
+    }
 
     return true;
   }
 
   // set up reverse proxy api for api handler
   public async setUpReverseProxyApi(address: string): Promise<boolean> {
-    // const tunnelImage = 'registry.hub.docker.com/nosana/tunnel:0.1.0';
-    // try {
-    //   let result;
+    const tunnelImage = 'registry.hub.docker.com/nosana/tunnel:0.1.0';
+    try {
 
-    //   const networkName = `api-${address}`;
-    //   const tunnel_port = 3000;
-    //   const tunnel_name = `tunnel-api-${address}`;
-    //   const frpc_name = `frpc-api-${address}`;
+      const networkName = `api-${address}`;
+      const tunnel_port = 3000;
+      const tunnel_name = `tunnel-api-${address}`;
+      const frpc_name = `frpc-api-${address}`;
 
-    //   let { status, error } = await this.containerOrchestration.createNetwork(
-    //     networkName,
-    //   );
-    //   if (!status) {
-    //     throw error;
-    //   }
+      await this.containerOrchestration.createNetwork(
+        networkName,
+      );
 
-    //   const networks: { [key: string]: {} } = {};
-    //   networks[networkName] = {};
+      const networks: { [key: string]: {} } = {};
+      networks[networkName] = {};
 
-    //   ({ status, error } = await this.containerOrchestration.pullImage(
-    //     frpcImage,
-    //   ));
-    //   if (!status) {
-    //     throw error;
-    //   }
+      await this.containerOrchestration.pullImage(
+        frpcImage,
+      );
 
-    //   this.resourceManager.images.setImage(frpcImage);
+      this.resourceManager.images.setImage(frpcImage);
 
-    //   ({ status, error } = await this.containerOrchestration.pullImage(
-    //     tunnelImage,
-    //   ));
-    //   if (!status) {
-    //     throw error;
-    //   }
+      await this.containerOrchestration.pullImage(
+        tunnelImage,
+      );
 
-    //   this.resourceManager.images.setImage(tunnelImage);
+      this.resourceManager.images.setImage(tunnelImage);
 
-    //   ({ status, error, result } =
-    //     await this.containerOrchestration.doesContainerExist(tunnel_name));
-    //   if (!status) {
-    //     throw error;
-    //   }
+      const doesTunnelExist = await this.containerOrchestration.doesContainerExist(tunnel_name);
 
-    //   if (!result) {
-    //     ({ status, error, result } =
-    //       await this.containerOrchestration.runFlowContainer(
-    //         tunnelImage,
-    //         {
-    //           name: tunnel_name,
-    //           networks,
-    //           requires_network_mode: true,
-    //           restart_policy: 'on-failure',
-    //           env: {
-    //             PORT: tunnel_port.toString(),
-    //           },
-    //         },
-    //         false,
-    //       ));
-    //     if (!status) {
-    //       throw error;
-    //     }
-    //   } else {
-    //     ({ status, error, result } =
-    //       await this.containerOrchestration.isContainerExited(tunnel_name));
-    //     if (!status) {
-    //       throw error;
-    //     }
+      if (!doesTunnelExist) {
+        await this.containerOrchestration.runFlowContainer(
+          tunnelImage,
+          {
+            name: tunnel_name,
+            networks,
+            requires_network_mode: true,
+            restart_policy: 'on-failure',
+            env: {
+              PORT: tunnel_port.toString(),
+            },
+          },
+        );
 
-    //     if (result) {
-    //       ({ status, error, result } =
-    //         await this.containerOrchestration.stopAndDeleteContainer(
-    //           tunnel_name,
-    //         ));
-    //       if (!status) {
-    //         throw error;
-    //       }
+      } else {
 
-    //       ({ status, error, result } =
-    //         await this.containerOrchestration.runFlowContainer(
-    //           tunnelImage,
-    //           {
-    //             name: tunnel_name,
-    //             networks,
-    //             requires_network_mode: true,
-    //             restart_policy: 'on-failure',
-    //             env: {
-    //               PORT: tunnel_port.toString(),
-    //             },
-    //           },
-    //           false,
-    //         ));
-    //       if (!status) {
-    //         throw error;
-    //       }
-    //     }
-    //   }
-    //   ({ status, error, result } =
-    //     await this.containerOrchestration.doesContainerExist(frpc_name));
-    //   if (!status) {
-    //     throw error;
-    //   }
+        const hasTunnelExited = await this.containerOrchestration.isContainerExited(tunnel_name);
 
-    //   if (!result) {
-    //     ({ status, error, result } =
-    //       await this.containerOrchestration.runFlowContainer(
-    //         frpcImage,
-    //         {
-    //           name: 'frpc-api-' + address,
-    //           cmd: ['-c', '/etc/frp/frpc.toml'],
-    //           networks,
-    //           requires_network_mode: true,
-    //           restart_policy: 'on-failure',
-    //           env: {
-    //             FRP_SERVER_ADDR: configs().frp.serverAddr,
-    //             FRP_SERVER_PORT: configs().frp.serverPort.toString(),
-    //             FRP_PROXIES: JSON.stringify([
-    //               {
-    //                 name: 'API-' + address,
-    //                 localIp: tunnel_name,
-    //                 localPort: tunnel_port.toString(),
-    //                 customDomain: address + '.' + configs().frp.serverAddr,
-    //               },
-    //             ]),
-    //           },
-    //           volumes: [
-    //             {
-    //               name: `frpc-${address}-logs`,
-    //               dest: '/data',
-    //             },
-    //           ],
-    //         },
-    //         false,
-    //       ));
-    //     if (!status) {
-    //       throw error;
-    //     }
-    //   } else {
-    //     ({ status, error, result } =
-    //       await this.containerOrchestration.isContainerExited(frpc_name));
-    //     if (!status) {
-    //       throw error;
-    //     }
+        if (hasTunnelExited) {
+          await this.containerOrchestration.stopAndDeleteContainer(
+            tunnel_name,
+          )
+          await this.containerOrchestration.runFlowContainer(
+            tunnelImage,
+            {
+              name: tunnel_name,
+              networks,
+              requires_network_mode: true,
+              restart_policy: 'on-failure',
+              env: {
+                PORT: tunnel_port.toString(),
+              },
+            });
+        }
+      }
 
-    //     if (result) {
-    //       ({ status, error, result } =
-    //         await this.containerOrchestration.stopAndDeleteContainer(
-    //           frpc_name,
-    //         ));
-    //       if (!status) {
-    //         throw error;
-    //       }
+      const doesFrpcExist =
+        await this.containerOrchestration.doesContainerExist(frpc_name);
 
-    //       ({ status, error, result } =
-    //         await this.containerOrchestration.runFlowContainer(
-    //           frpcImage,
-    //           {
-    //             name: 'frpc-api-' + address,
-    //             cmd: ['-c', '/etc/frp/frpc.toml'],
-    //             networks,
-    //             requires_network_mode: true,
-    //             restart_policy: 'on-failure',
-    //             env: {
-    //               FRP_SERVER_ADDR: configs().frp.serverAddr,
-    //               FRP_SERVER_PORT: configs().frp.serverPort.toString(),
-    //               FRP_PROXIES: JSON.stringify([
-    //                 {
-    //                   name: 'API-' + address,
-    //                   localIp: tunnel_name,
-    //                   localPort: tunnel_port.toString(),
-    //                   customDomain: address + '.' + configs().frp.serverAddr,
-    //                 },
-    //               ]),
-    //             },
-    //             volumes: [
-    //               {
-    //                 name: `frpc-${address}-logs`,
-    //                 dest: '/data',
-    //               },
-    //             ],
-    //           },
-    //           false,
-    //         ));
-    //       if (!status) {
-    //         throw error;
-    //       }
-    //     }
-    //   }
-    // } catch (error) {
-    //   throw error;
-    // }
+      if (!doesFrpcExist) {
+
+        await this.containerOrchestration.runFlowContainer(
+          frpcImage,
+          {
+            name: 'frpc-api-' + address,
+            cmd: ['-c', '/etc/frp/frpc.toml'],
+            networks,
+            requires_network_mode: true,
+            restart_policy: 'on-failure',
+            env: {
+              FRP_SERVER_ADDR: configs().frp.serverAddr,
+              FRP_SERVER_PORT: configs().frp.serverPort.toString(),
+              FRP_PROXIES: JSON.stringify([
+                {
+                  name: 'API-' + address,
+                  localIp: tunnel_name,
+                  localPort: tunnel_port.toString(),
+                  customDomain: address + '.' + configs().frp.serverAddr,
+                },
+              ]),
+            },
+            volumes: [
+              {
+                name: `frpc-${address}-logs`,
+                dest: '/data',
+              },
+            ],
+          },
+        );
+      } else {
+        const hasFrpcExited =
+          await this.containerOrchestration.isContainerExited(frpc_name);
+
+        if (hasFrpcExited) {
+          await this.containerOrchestration.stopAndDeleteContainer(
+            frpc_name,
+          );
+
+          await this.containerOrchestration.runFlowContainer(
+            frpcImage,
+            {
+              name: 'frpc-api-' + address,
+              cmd: ['-c', '/etc/frp/frpc.toml'],
+              networks,
+              requires_network_mode: true,
+              restart_policy: 'on-failure',
+              env: {
+                FRP_SERVER_ADDR: configs().frp.serverAddr,
+                FRP_SERVER_PORT: configs().frp.serverPort.toString(),
+                FRP_PROXIES: JSON.stringify([
+                  {
+                    name: 'API-' + address,
+                    localIp: tunnel_name,
+                    localPort: tunnel_port.toString(),
+                    customDomain: address + '.' + configs().frp.serverAddr,
+                  },
+                ]),
+              },
+              volumes: [
+                {
+                  name: `frpc-${address}-logs`,
+                  dest: '/data',
+                },
+              ],
+            });
+        }
+      }
+    } catch (error) {
+      throw error;
+    }
     return true;
   }
 
   async taskManagerContainerRunOperation(flow: Flow, op: Operation<'container/run'>, controller: AbortController, emitter: EventEmitter) {
+    let logStream: NodeJS.ReadableStream | undefined;
+    let exposedPortHealthCheck: ExposedPortHealthCheck | undefined;
+
+    if (controller.signal.aborted) {
+      emitter.emit('exit', { exitCode: 0 });
+      emitter.emit("end");
+      return
+    }
+
     try {
       emitter.emit('start');
-      console.log(`running ops ${op.id}`)
-
       let frpcContainer;
       let container = await this.containerOrchestration.getContainer(op.id);
 
       const exist = await this.containerOrchestration.doesContainerExist(op.id)
       const exited = await this.containerOrchestration.isContainerExited(op.id)
-      
+
       if (exist && !exited && container.id) {
-        const logStream = await container.logs({
+        logStream = await container.logs({
           stdout: true,
           stderr: true,
           follow: true,
@@ -301,7 +246,7 @@ export class Provider {
           this.resourceManager.images.setImage(op.args.image);
         }
 
-        const index = this.getOpStateIndex(flow.jobDefinition.ops, op.id);
+        const index = getOpStateIndex(flow.jobDefinition.ops, op.id);
         const name = flow.id + '-' + op.id;
         const volumes = getVolumes(op.args, flow);
         const gpu = getGpu(op.args, flow);
@@ -335,19 +280,19 @@ export class Provider {
             op.id,
           );
           idMaps = idMap;
-          
+
           frpcContainer = await this.containerOrchestration.runFlowContainer(frpcImage, {
-              name: 'frpc-' + name,
-              cmd: ['/entrypoint.sh'],
-              networks,
-              requires_network_mode: true,
-              env: {
-                FRP_SERVER_ADDR: configs().frp.serverAddr,
-                FRP_SERVER_PORT: configs().frp.serverPort.toString(),
-                NOSANA_ID: flow.id,
-                FRP_PROXIES: JSON.stringify(proxies),
-              },
-            });
+            name: 'frpc-' + name,
+            cmd: ['/entrypoint.sh'],
+            networks,
+            requires_network_mode: true,
+            env: {
+              FRP_SERVER_ADDR: configs().frp.serverAddr,
+              FRP_SERVER_PORT: configs().frp.serverPort.toString(),
+              NOSANA_ID: flow.id,
+              FRP_PROXIES: JSON.stringify(proxies),
+            },
+          });
 
           if (op.args.private) {
             this.repository.updateflowStateSecret(flow.id, {
@@ -404,8 +349,6 @@ export class Provider {
 
         emitter.emit("updateOpState", { providerId: container.id })
 
-        this.currentContainer = container;
-
         const logStream = await container.logs({
           stdout: true,
           stderr: true,
@@ -417,16 +360,19 @@ export class Provider {
           emitter.emit("log", data.toString())
         });
 
-        // if (isOpExposed(op)) {
-        //   this.exposedPortHealthCheck = new ExposedPortHealthCheck(
-        //     flow.id,
-        //     frpcContainer as Dockerode.Container,
-        //     this.emitter ?? jobEmitter,
-        //     name,
-        //   );
-        //   this.exposedPortHealthCheck.addExposedPortsMap(idMaps);
-        //   this.exposedPortHealthCheck.startServiceExposedUrlHealthCheck();
-        // }
+        if (isOpExposed(op)) {
+          exposedPortHealthCheck = new ExposedPortHealthCheck(
+            flow.id,
+            frpcContainer as Dockerode.Container,
+            emitter,
+            name,
+          );
+
+          exposedPortHealthCheck.addExposedPortsMap(idMaps);
+          exposedPortHealthCheck.startServiceExposedUrlHealthCheck();
+        } else {
+          emitter.emit('healthcheck:startup:success');
+        }
 
         await container.wait({ abortSignal: controller.signal });
       }
@@ -441,441 +387,205 @@ export class Provider {
 
       emitter.emit('exit', { exitCode: info.State.ExitCode });
     } catch (error) {
+      emitter.emit("log", error)
       emitter.emit("error", error);
     }
+
+    exposedPortHealthCheck?.stopAllHealthChecks();
+    exposedPortHealthCheck = undefined;
+
+    logStream?.removeAllListeners();
 
     emitter.emit("end");
   }
 
-  async taskManagerContainerStopRunOperation(flow: Flow, op: Operation<'container/run'>): Promise<void> {
-    const name = flow.id + '-' + op.id;
-    const index = this.getOpStateIndex(flow.jobDefinition.ops, op.id);
+  async taskManagerContainerStopRunOperation(flow: Flow, op: Operation<'container/run'>, emitter?: EventEmitter): Promise<void> {
+    try {
+      const name = flow.id + '-' + op.id;
+      const index = getOpStateIndex(flow.jobDefinition.ops, op.id);
 
-    const containers = await this.containerOrchestration.getContainersByName([
-      name,
-      'frpc-' + name,
-    ]);
+      const containers = await this.containerOrchestration.getContainersByName([
+        name,
+        'frpc-' + name,
+      ]);
 
-    for (let c of containers) {
-      await this.containerOrchestration.stopAndDeleteContainer(c.id);
-    }
-    await this.containerOrchestration.deleteNetwork(name);
+      for (let c of containers) {
+        await this.containerOrchestration.stopAndDeleteContainer(c.id);
+      }
+      await this.containerOrchestration.deleteNetwork(name);
 
-    if (
-      (flow.jobDefinition.ops[index].args as OperationArgsMap['container/run'])
-        .authentication?.docker
-    ) {
-      await this.containerOrchestration.deleteImage(
-        (
-          flow.jobDefinition.ops[index]
-            .args as OperationArgsMap['container/run']
-        ).image,
-      );
+      if (
+        (flow.jobDefinition.ops[index].args as OperationArgsMap['container/run'])
+          .authentication?.docker
+      ) {
+        await this.containerOrchestration.deleteImage(
+          (
+            flow.jobDefinition.ops[index]
+              .args as OperationArgsMap['container/run']
+          ).image,
+        );
+      }
+    } catch (error) {
+      emitter?.emit("log", error)
+      throw error
     }
   }
 
-  private getOpStateIndex(ops: Ops, opId: string): number {
-      const index = ops.findIndex(op => op.id === opId);
+  /**
+   * Runs a full container operation lifecycle:
+   * 1. Starts the container, emits lifecycle events, waits for completion or error.
+   * 2. Then stops and cleans up the container, network, and associated Docker resources.
+   * 
+   * This function ties together both the **execution** and **cleanup** stages for a containerized operation.
+   * 
+   * The steps are:
+   * - Emits 'start' → Pulls container image (if needed) → Creates volume/network (if needed)
+   * - Runs container with correct args/env/entrypoint
+   * - Follows logs and emits 'log' → Waits for completion → Emits 'exit' or 'error'
+   * - Regardless of outcome, cleans up resources (containers, networks, optional image)
+   * 
+   * Emits:
+   * - 'start': when the operation begins
+   * - 'log': every time stdout/stderr produces output
+   * - 'updateOpState': to attach container ID
+   * - 'exit': when the operation finishes successfully or with failure
+   * - 'error': when something crashes
+   * - 'end': always, after cleanup
+   * 
+   * @param flow - The job flow this operation is part of
+   * @param op - The specific container operation to run
+   * @param controller - AbortController to support cancellation
+   * @param emitter - EventEmitter to stream logs and events from the container lifecycle
+   */
+  async taskManagerContainerStartRunandStopOperation(
+    flow: Flow,
+    op: Operation<'container/run'>,
+    controller: AbortController,
+    emitter: EventEmitter
+  ) {
+    await this.taskManagerContainerRunOperation(flow, op, controller, emitter);
+    await this.taskManagerContainerStopRunOperation(flow, op, emitter);
+  }
 
-      if (index === -1) {
-          throw new Error(`Operation not found for ID: ${opId}`);
+  async taskManagerVolumeStartRunandStopOperation(
+    flow: Flow,
+    op: Operation<'container/create-volume'>,
+    controller: AbortController,
+    emitter: EventEmitter
+  ) {
+    await this.taskManagerVolumeCreateOperation(flow, op, controller, emitter);
+    /**
+     * we don't put the volume stop here because it will delete the volume that 
+     * might be used by other operations in the group, we will leave that for the 
+     * final clean up.
+     * await this.taskManagerVolumeStopOperation(flow, op, emitter)
+     */
+  }
+
+  async taskManagerVolumeCreateOperation(flow: Flow, op: Operation<'container/create-volume'>, controller: AbortController, emitter: EventEmitter) {
+    if (controller.signal.aborted) {
+      emitter.emit('exit', { exitCode: 0 });
+      emitter.emit("end");
+      return
+    }
+
+    try {
+      emitter.emit('start');
+
+      const name = flow.id + '-' + op.args.name;
+
+      const isVolume = await this.containerOrchestration.hasVolume(name)
+      if (!isVolume) {
+        const volume = await this.containerOrchestration.createVolume(name, controller);
+        emitter.emit("updateOpState", { providerId: volume.Status })
       }
 
-      return index;
+      emitter.emit('healthcheck:startup:success');
+
+      emitter.emit('exit', { exitCode: 0 });
+    } catch (error) {
+      emitter.emit("log", error)
+      emitter.emit("error", error);
+    }
+    emitter.emit("end");
   }
 
-  async containerRunOperation(id: string, index: number): Promise<boolean> {
-    // const flow = this.repository.getflow(id);
-    // const opState = this.repository.getOpState(id, index);
-    // const op = flow.jobDefinition.ops[index] as Operation<'container/run'>;
+  async taskManagerVolumeStopOperation(flow: Flow, op: Operation<'container/create-volume'>, emitter?: EventEmitter) {
+    try {
+      const name = flow.id + '-' + op.args.name;
 
-    // let frpcContainer;
-
-    // try {
-    //   this.repository.updateOpState(id, index, {
-    //     startTime: Date.now(),
-    //     status: 'running',
-    //   });
-
-    //   let container = await this.containerOrchestration.getContainer(
-    //     opState.providerId as string,
-    //   );
-
-    //   const exist = (
-    //     await this.containerOrchestration.doesContainerExist(
-    //       opState.providerId as string,
-    //     )
-    //   ).result;
-    //   const exited = (
-    //     await this.containerOrchestration.isContainerExited(
-    //       opState.providerId as string,
-    //     )
-    //   ).result;
-
-    //   if (exist && !exited && container.id) {
-    //     const logStream = await container.logs({
-    //       stdout: true,
-    //       stderr: true,
-    //       follow: true,
-    //     });
-
-    //     logStream.on('data', (data) => {
-    //       this.repository.updateOpStateLogs(id, index, data.toString());
-    //     });
-    //   } else {
-    //     let result;
-    //     let { status, error } = await this.containerOrchestration.pullImage(
-    //       op.args.image,
-    //       op.args.authentication?.docker,
-    //     );
-
-    //     if (!status) {
-    //       throw error;
-    //     }
-
-    //     if (!op.args.authentication?.docker) {
-    //       this.resourceManager.images.setImage(op.args.image);
-    //     }
-
-    //     const name = flow.id + '-' + index;
-    //     const volumes = getVolumes(op.args, flow);
-    //     const gpu = getGpu(op.args, flow);
-    //     const entrypoint = getEntrypoint(op.args, flow);
-    //     const work_dir = getWorkingDir(op.args, flow);
-    //     const cmd = parseOpArgsCmd(op.args.cmd);
-    //     const env = {
-    //       ...getGlobalEnv(flow),
-    //       ...op.args.env,
-    //       NOSANA_ID: flow.id,
-    //     };
-
-    //     const networks: { [key: string]: {} } = {};
-    //     let idMaps: Map<string, ExposedPort> = new Map();
-    //     const ports = getExposePorts(op);
-
-    //     if (isOpExposed(op as Operation<'container/run'>)) {
-    //       networks[name] = {};
-
-    //       ({ status, error } = await this.containerOrchestration.createNetwork(
-    //         name,
-    //       ));
-    //       if (!status) {
-    //         throw error;
-    //       }
-
-    //       ({ status, error } = await this.containerOrchestration.pullImage(
-    //         frpcImage,
-    //       ));
-    //       if (!status) {
-    //         throw error;
-    //       }
-
-    //       this.resourceManager.images.setImage(frpcImage);
-
-    //       const { proxies, idMap } = generateProxies(
-    //         flow.id,
-    //         op,
-    //         index,
-    //         ports,
-    //         name,
-    //         opState.operationId,
-    //       );
-    //       idMaps = idMap;
-
-    //       ({ status, error, result } =
-    //         await this.containerOrchestration.runFlowContainer(frpcImage, {
-    //           name: 'frpc-' + name,
-    //           cmd: ['/entrypoint.sh'],
-    //           networks,
-    //           requires_network_mode: true,
-    //           env: {
-    //             FRP_SERVER_ADDR: configs().frp.serverAddr,
-    //             FRP_SERVER_PORT: configs().frp.serverPort.toString(),
-    //             NOSANA_ID: flow.id,
-    //             FRP_PROXIES: JSON.stringify(proxies),
-    //           },
-    //         }));
-
-    //       if (!status) {
-    //         throw error;
-    //       }
-
-    //       frpcContainer = result;
-
-    //       if (op.args.private) {
-    //         this.repository.updateflowStateSecret(id, {
-    //           [id]: generateUrlSecretObject(idMap),
-    //           urlmode: 'private',
-    //         });
-    //       } else {
-    //         this.repository.updateflowStateSecret(id, {
-    //           [id]: generateUrlSecretObject(idMap),
-    //           urlmode: 'public',
-    //         });
-    //       }
-    //     }
-
-    //     if (op.args.resources) {
-    //       ({ status, error } = await this.containerOrchestration.pullImage(
-    //         s3HelperImage,
-    //       ));
-    //       if (!status) {
-    //         throw error;
-    //       }
-    //       this.resourceManager.images.setImage(s3HelperImage);
-
-    //       const resourceVolumes = await this.resourceManager.getResourceVolumes(
-    //         op.args.resources ?? [],
-    //       );
-
-    //       try {
-    //         volumes.push(...resourceVolumes);
-    //       } catch (error) {
-    //         throw error;
-    //       }
-    //     }
-
-    //     ({ status, error, result } =
-    //       await this.containerOrchestration.runFlowContainer(
-    //         op.args.image ?? flow.jobDefinition.global?.image!,
-    //         {
-    //           name,
-    //           cmd,
-    //           env,
-    //           networks,
-    //           requires_network_mode: isOpExposed(
-    //             op as Operation<'container/run'>,
-    //           ),
-    //           gpu,
-    //           entrypoint,
-    //           work_dir,
-    //           volumes,
-    //         },
-    //       ));
-
-    //     if (!status) {
-    //       throw error;
-    //     }
-
-    //     if (result) {
-    //       container = result;
-    //     }
-
-    //     this.repository.updateOpState(id, index, {
-    //       providerId: container.id,
-    //     });
-
-    //     if (!container) {
-    //       throw new Error('provider failed to start container');
-    //     }
-
-    //     this.currentContainer = container;
-
-    //     const logStream = await container.logs({
-    //       stdout: true,
-    //       stderr: true,
-    //       follow: true,
-    //     });
-
-    //     logStream.on('data', (data) => {
-    //       this.repository.displayLog(data.toString());
-    //     });
-
-    //     if (isOpExposed(op)) {
-    //       this.exposedPortHealthCheck = new ExposedPortHealthCheck(
-    //         flow.id,
-    //         frpcContainer as Dockerode.Container,
-    //         this.emitter ?? jobEmitter,
-    //         name,
-    //       );
-    //       this.exposedPortHealthCheck.addExposedPortsMap(idMaps);
-    //       this.exposedPortHealthCheck.startServiceExposedUrlHealthCheck();
-    //     }
-
-    //     await container.wait();
-
-    //     const controller = new AbortController();
-
-    //     const info = await promiseTimeoutWrapper(
-    //       container.inspect({
-    //         abortSignal: controller.signal,
-    //       }),
-    //       360,
-    //       controller,
-    //     );
-
-    //     const logBuffer = await promiseTimeoutWrapper(
-    //       container.logs({
-    //         stdout: true,
-    //         stderr: true,
-    //         follow: false,
-    //         tail: 24999,
-    //         abortSignal: controller.signal,
-    //       }),
-    //       360,
-    //       controller,
-    //     );
-
-    //     const { logs, results } = extractLogsAndResultsFromLogBuffer(
-    //       logBuffer,
-    //       op.results,
-    //     );
-
-    //     this.repository.updateOpState(id, index, {
-    //       logs,
-    //       results,
-    //       status: info.State.ExitCode ? 'failed' : 'success',
-    //       exitCode: info.State.ExitCode,
-    //       endTime: Math.floor(new Date(info.State.FinishedAt).getTime()),
-    //     });
-    //   }
-    // } catch (error) {
-    //   this.repository.updateOpState(id, index, {
-    //     exitCode: 2,
-    //     status: 'failed',
-    //     endTime: Date.now(),
-    //     logs: [
-    //       {
-    //         type: 'nodeerr',
-    //         log: (error as Error).message,
-    //       },
-    //     ],
-    //   });
-
-    //   this.exposedPortHealthCheck?.stopAllHealthChecks();
-    //   this.exposedPortHealthCheck = undefined;
-
-    //   return false;
-    // }
-
-    // this.exposedPortHealthCheck?.stopAllHealthChecks();
-    // this.exposedPortHealthCheck = undefined;
-
-    return true;
-  }
-
-  async finishCurrentRunningContainer() {
-    const container = this.currentContainer;
-    if (container) {
-      await this.containerOrchestration.stopContainer(container.id);
+      const isVolume = await this.containerOrchestration.hasVolume(name)
+      if (!isVolume) {
+        await this.containerOrchestration.deleteVolume(name);
+      }
+    } catch (error) {
+      emitter?.emit("log", error)
+      throw error
     }
   }
 
-  async containerRunStopOperation(id: string, index: number): Promise<boolean> {
-    const flow = this.repository.getflow(id);
-    const opState = this.repository.getOpState(id, index);
+  public runTaskManagerOperation(
+    flow: Flow,
+    op: Operation<OperationType>,
+    controller: AbortController,
+    emitter: EventEmitter
+  ): Promise<void> {
+    switch (op.type) {
+      case 'container/run':
+        return this.taskManagerContainerStartRunandStopOperation(
+          flow,
+          op as Operation<'container/run'>,
+          controller,
+          emitter
+        );
 
-    const name = flow.id + '-' + index;
+      case 'container/create-volume':
+        return this.taskManagerVolumeStartRunandStopOperation(
+          flow,
+          op as Operation<'container/create-volume'>,
+          controller,
+          emitter
+        );
 
-    const containers = await this.containerOrchestration.getContainersByName([
-      name,
-      'frpc-' + name,
-    ]);
-
-    for (let c of containers) {
-      await this.containerOrchestration.stopAndDeleteContainer(c.id);
+      default:
+        throw new Error(`operation type '${op.type}' not supported`);
     }
-    await this.containerOrchestration.deleteNetwork(name);
-
-    if (
-      (flow.jobDefinition.ops[index].args as OperationArgsMap['container/run'])
-        .authentication?.docker
-    ) {
-      await this.containerOrchestration.deleteImage(
-        (
-          flow.jobDefinition.ops[index]
-            .args as OperationArgsMap['container/run']
-        ).image,
-      );
-    }
-
-    return true;
   }
 
-  async volumeCreateOperation(id: string, index: number): Promise<boolean> {
-    // const flow = this.repository.getflow(id);
-    // const op = flow.jobDefinition.ops[
-    //   index
-    // ] as Operation<'container/create-volume'>;
+  public stopTaskManagerOperation(
+    flow: Flow,
+    op: Operation<OperationType>,
+    emitter?: EventEmitter
+  ): Promise<void> {
+    switch (op.type) {
+      case 'container/run':
+        return this.taskManagerContainerStopRunOperation(
+          flow,
+          op as Operation<'container/run'>,
+          emitter
+        );
 
-    // try {
-    //   this.repository.updateOpState(id, index, {
-    //     startTime: Date.now(),
-    //     status: 'running',
-    //   });
+      case 'container/create-volume':
+        return this.taskManagerVolumeStopOperation(
+          flow,
+          op as Operation<'container/create-volume'>,
+          emitter
+        );
 
-    //   const name = flow.id + '-' + op.args.name;
-    //   let { status, result, error } =
-    //     await this.containerOrchestration.getVolume(name);
+      default:
+        throw new Error(`operation type '${op.type}' not supported`);
+    }
+  }
+}
 
-    //   if (!status) {
-    //     let { status, result, error } =
-    //       await this.containerOrchestration.createVolume(name);
+function getOpStateIndex(ops: Ops, opId: string): number {
+  const index = ops.findIndex(op => op.id === opId);
 
-    //     if (!status) {
-    //       throw error;
-    //     }
-
-    //     this.repository.updateOpState(id, index, {
-    //       status: 'success',
-    //       endTime: Date.now(),
-    //       exitCode: 0,
-    //       providerId: result?.Name,
-    //     });
-    //   }
-    // } catch (error) {
-    //   this.repository.updateOpState(id, index, {
-    //     exitCode: 2,
-    //     status: 'failed',
-    //     endTime: Date.now(),
-    //     logs: [
-    //       {
-    //         type: 'nodeerr',
-    //         log: (error as Error).message,
-    //       },
-    //     ],
-    //   });
-    //   return false;
-    // }
-    return true;
+  if (index === -1) {
+    throw new Error(`Operation not found for ID: ${opId}`);
   }
 
-  async volumeStopOperation(id: string, index: number): Promise<boolean> {
-    // const flow = this.repository.getflow(id);
-    // const opState = this.repository.getOpState(id, index);
-
-    // const name = flow.id + '-' + opState.operationId;
-    // let { status, result, error } =
-    //   await this.containerOrchestration.deleteVolume(name);
-
-    return true;
-  }
-
-  public runOperation(
-    type: string,
-    param: { id: string; index: number; name: string },
-  ): Promise<boolean> {
-    if (type == 'container/run') {
-      return this.containerRunOperation(param.id, param.index);
-    }
-    if (type == 'container/create-volume') {
-      return this.volumeCreateOperation(param.id, param.index);
-    }
-    throw new Error('function not supported');
-  }
-
-  public stopOperation(
-    type: string,
-    param: { id: string; index: number; name: string },
-  ): Promise<boolean> {
-    if (type == 'container/run') {
-      return this.containerRunStopOperation(param.id, param.index);
-    }
-    if (type == 'container/create-volume') {
-      return this.volumeStopOperation(param.id, param.index);
-    }
-    throw new Error('function not supported');
-  }
+  return index;
 }
 
 export function parseOpArgsCmd(
