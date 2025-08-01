@@ -64,7 +64,7 @@
   "dependencies": {
     "@coral-xyz/anchor": "^0.28.1-beta.1",
     "@inquirer/prompts": "^4.3.0",
-    "@nosana/sdk": "^0.4.4",
+    "@nosana/sdk": "^0.4.9-rc.4",
     "@solana/web3.js": "^1.78.0",
     "bn.js": "^5.2.1",
     "chalk": "^5.3.0",
