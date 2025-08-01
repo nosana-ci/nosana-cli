@@ -260,7 +260,7 @@ export class JobHandler {
         this.get() as Job,
       );
 
-      const ipfsResult = await this.sdk.ipfs.pin(st as object);
+      const ipfsResult = await this.sdk.ipfs.pin(result as object);
       const bytesArray = this.sdk.ipfs.IpfsHashToByteArray(ipfsResult);
 
       if (reason == StopReasons.STOPPED) {
