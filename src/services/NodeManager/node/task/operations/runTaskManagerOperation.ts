@@ -1,7 +1,7 @@
 import { EventEmitter } from "events";
 import { Flow, Operation, OperationType } from "@nosana/sdk";
 import { extractLogsAndResultsFromLogBuffer } from "../../../../../providers/utils/extractLogsAndResultsFromLogBuffer.js";
-import { Statuses, StopReason, Status, ExecutionContext, DependencyContext, OperationProgressStatuses } from "../TaskManager.js";
+import { Statuses, StopReason, Status, ExecutionContext, DependencyContext, OperationProgressStatuses, StopReasons } from "../TaskManager.js";
 import TaskManager from "../TaskManager.js";
 
 /**
@@ -94,7 +94,7 @@ export async function runTaskManagerOperation(
      * Logs are stored in a buffer-like array, and later parsed during the `exit` or `error` phase
      * to extract structured logs and results.
      */
-    emitter.on("log", (log, type = "container") => {
+    emitter.on("log", (log, type) => {
         // add logs to the log manager
         this.addlog({
             opId: op.id,
@@ -109,6 +109,7 @@ export async function runTaskManagerOperation(
             // TODO: Format errors and insert
             if (log instanceof Error) return;
             this.repository.updateOpStateLogs(this.job, index, log);
+            this.repository.displayLog(log)
         }
     });
 
@@ -213,9 +214,7 @@ export async function runTaskManagerOperation(
      * - `exitCode: 2` is used as a standard error indicator (non-zero, but distinct from process exit).
      * - The actual `err` is not persisted currently, but could be added to logs in future.
      */
-    emitter.on("error", (err: unknown) => {
-        console.log(err)
-
+    emitter.on("error", (err: any) => {
         const wasAborted = abort.signal.aborted;
         const reason = wasAborted ? abort.signal.reason : undefined;
 
@@ -233,6 +232,7 @@ export async function runTaskManagerOperation(
         }
 
         const opState = this.repository.getOpState(this.job, index);
+   
         const logBuffer = Buffer.concat(
             opState.logs.map((log) => Buffer.from(log as unknown as string, "utf-8"))
         );
@@ -244,7 +244,7 @@ export async function runTaskManagerOperation(
 
         this.repository.updateOpState(this.job, index, {
             results,
-            logs,
+            logs: reason == "restart" ? opState.logs : logs,
             exitCode: 2,
             status,
             endTime: Date.now(),

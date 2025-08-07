@@ -18,7 +18,7 @@ import {
   consoleLogging,
 } from '../../../services/NodeManager/monitoring/log/console/ConsoleLogger.js';
 import EventEmitter from 'events';
-import TaskManager, { TaskManagerOps } from '../../../services/NodeManager/node/task/TaskManager.js';
+import TaskManager, { StopReasons, TaskManagerOps } from '../../../services/NodeManager/node/task/TaskManager.js';
 import { sleep } from '@nosana/sdk';
 import { loadJobDefinitionFromFile } from '../../../providers/utils/jobDefinitionParser.js';
 
@@ -27,9 +27,9 @@ export async function runJob(
   options: {
     [key: string]: any;
   },
-  ) {
-    const jobDefinition = loadJobDefinitionFromFile(jobDefinitionFile)
-    // const ops = jobDefinition.ops as TaskManagerOps;
+) {
+  try {
+    const jobDefinition = await resolveJobDefination(options, jobDefinitionFile)
 
     const db = new DB(options.config).db;
     const repository = new NodeRepository(db);
@@ -51,185 +51,75 @@ export async function runJob(
       resourceManager,
     );
 
+    /**
+     * set up log listening, any instance can listen to log produces from the node
+     * the logs are produces from the log proxy
+     */
+    log();
+
+    const logger = new ConsoleLogger(false);
+    logger.addObserver();
+
     const job = `job-${Math.random().toString(36).slice(2, 10)}`;
 
     const tm = new TaskManager(provider, repository, job, jobDefinition);
     tm.bootstrap();
 
-    // schedule restart
-    setTimeout(() => {
-      tm.stopTaskManagerGroupOperations("run");
-    }, 60000); // 20,000 ms = 20 seconds
+    const exitHandler = async () => {
+      await tm.stop(StopReasons.STOPPED);
+    };
 
-    await tm.start(); // this blocks
+    process.on('SIGINT', exitHandler); // Handle Ctrl+C
+    process.on('SIGTERM', exitHandler); // Handle termination signals
 
-    return
+    await tm.start();
+
+    const result = repository.getFlowState(job);
+
+    console.log(
+      '\nResult: ',
+      util.inspect(result, { showHidden: false, depth: null, colors: true }),
+    );
+  } catch (error: any) {
+    const formattedError = `
+      ========== ERROR ==========
+      Timestamp: ${new Date().toISOString()}
+      Error Name: ${error.name || 'Unknown Error'}
+      Message: ${error.message || 'No message available'}${options.verbose
+        ? `
+      Trace: ${error.stack ?? error.trace}`
+        : ''
+      }
+      ============================
+      `;
+
+    console.error(formattedError);
+  }
+  process.exit();
 }
 
-// This is still a WIP: i will still have to expose the logs and progress logs
-// export async function runJob(
-//   jobDefinitionFile: string,
-//   options: {
-//     [key: string]: any;
-//   },
-// ) {
-//   try {
-//     const jobDefinition: JobDefinition = await resolveJobDefination(
-//       options,
-//       jobDefinitionFile,
-//     );
+async function resolveJobDefination(
+  options: {
+    [key: string]: any;
+  },
+  jobDefinitionFile: string,
+): Promise<JobDefinition> {
+  let jobDefinition: JobDefinition;
 
-//     const db = new DB(options.config).db;
-//     const repository = new NodeRepository(db);
+  if (options.url) {
+    try {
+      const data = await fetch(options.url);
+      const json = await data.json();
+      jobDefinition = json;
+    } catch (e) {
+      throw new Error(`Failed to fetch remote job flow.\n${e}`);
+    }
+  } else {
+    if (!jobDefinitionFile) {
+      throw new Error('Missing Job Definition Argument');
+    }
+    jobDefinition = loadJobDefinitionFromFile(jobDefinitionFile);
+  }
 
-//     const containerOrchestration = selectContainerOrchestrationProvider(
-//       options.provider,
-//       options.podman,
-//       options.gpu,
-//     );
-
-//     const resourceManager = new ResourceManager(
-//       containerOrchestration,
-//       repository,
-//     );
-
-//     const emitter = new EventEmitter();
-
-//     const provider = new Provider(
-//       containerOrchestration,
-//       repository,
-//       resourceManager,
-//       emitter,
-//     );
-
-//     const flowHandler = createLoggingProxy(
-//       new FlowHandler(provider, repository),
-//     );
-
-//     emitter.on('run-exposed', (data) => {
-//       flowHandler.operationExposed(data, undefined);
-//     });
-
-//     emitter.on('startup-success', (data) => {
-//       flowHandler.operationExposed(data, true);
-//     });
-
-//     emitter.on('continuous-failure', (data) => {
-//       flowHandler.operationExposed(data, false);
-//     });
-
-//     /**
-//      * set up log listening, any instance can listen to log produces from the node
-//      * the logs are produces from the log proxy
-//      */
-//     log();
-
-//     const logger = new ConsoleLogger(false);
-//     logger.addObserver();
-
-//     const id = flowHandler.generateRandomId(32);
-
-//     const exitHandler = async () => {
-//       await flowHandler.stop(id);
-//       process.exit();
-//     };
-
-//     process.on('SIGINT', exitHandler); // Handle Ctrl+C
-//     process.on('SIGTERM', exitHandler); // Handle termination signals
-
-//     await runFlow(id, flowHandler, jobDefinition, repository, options);
-
-//     const result = repository.getFlowState(id);
-
-//     console.log(
-//       'result: ',
-//       util.inspect(result, { showHidden: false, depth: null, colors: true }),
-//     );
-//     process.exit();
-//   } catch (error: any) {
-//     const formattedError = `
-//       ========== ERROR ==========
-//       Timestamp: ${new Date().toISOString()}
-//       Error Name: ${error.name || 'Unknown Error'}
-//       Message: ${error.message || 'No message available'}${
-//       options.verbose
-//         ? `
-//       Trace: ${error.stack ?? error.trace}`
-//         : ''
-//     }
-//       ============================
-//       `;
-
-//     console.error(formattedError);
-//     process.exit();
-//   }
-// }
-
-// async function runFlow(
-//   id: string,
-//   flowHandler: FlowHandler,
-//   jobDefinition: JobDefinition,
-//   repository: NodeRepository,
-//   options: any,
-// ): Promise<FlowState> {
-//   try {
-//     flowHandler.init(id);
-
-//     const validation: IValidation<JobDefinition> =
-//       validateJobDefinition(jobDefinition);
-
-//     if (!validation.success) {
-//       repository.updateflowState(id, {
-//         endTime: Date.now(),
-//         status: 'failed',
-//       });
-//       repository.updateflowStateError(id, {
-//         status: 'validation-error',
-//         errors: validation.errors,
-//       });
-//       return repository.getFlowState(id);
-//     }
-
-//     flowHandler.start(id, jobDefinition);
-//     await flowHandler.run(id);
-
-//     return repository.getFlowState(id);
-//   } catch (error) {
-//     repository.updateflowState(id, {
-//       endTime: Date.now(),
-//       status: 'failed',
-//     });
-//     repository.updateflowStateError(id, {
-//       status: 'error',
-//       errors: error,
-//     });
-//     await flowHandler.stop(id);
-//     return repository.getFlowState(id);
-//   }
-// }
-
-// async function resolveJobDefination(
-//   options: {
-//     [key: string]: any;
-//   },
-//   jobDefinitionFile: string,
-// ): Promise<JobDefinition> {
-//   let jobDefinition: JobDefinition;
-
-//   if (options.url) {
-//     try {
-//       const data = await fetch(options.url);
-//       const json = await data.json();
-//       jobDefinition = json;
-//     } catch (e) {
-//       throw new Error(`Failed to fetch remote job flow.\n${e}`);
-//     }
-//   } else {
-//     if (!jobDefinitionFile) {
-//       throw new Error('Missing Job Definition Argument');
-//     }
-//     jobDefinition = JSON.parse(fs.readFileSync(jobDefinitionFile, 'utf8'));
-//   }
-
-//   return jobDefinition;
-// }
+  return jobDefinition;
+}

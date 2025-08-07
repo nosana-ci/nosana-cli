@@ -13,12 +13,12 @@ export async function restartOperationHandler(
   if (!task) {
     return res.status(400).send('invalid job id');
   }
-console.log("I CAME AND TRIED TO RESTARt")
+
   try {
     await task.restartTaskManagerOperation(group, opId);
     return res.status(200).json({ message: 'Operation restarted' });
-  } catch (error) {
-    return res.status(500).json({ error: 'Failed to restart operation' });
+  } catch (error: any) {
+    return res.status(500).json({ error: `Failed to restart operation: ${error.message}` });
   }
 }
 
@@ -74,8 +74,8 @@ export async function stopOperationHandler(
   try {
     await task.stopTaskManagerOperation(group, opId);
     return res.status(200).json({ message: 'Operation Stopped' });
-  } catch (error) {
-    return res.status(500).json({ error: 'Failed to Stop operation' });
+  } catch (error: any) {
+    return res.status(500).json({ error: `Failed to Stop operation: ${error.message}` });
   }
 }
 

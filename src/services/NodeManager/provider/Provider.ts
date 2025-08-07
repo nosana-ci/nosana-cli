@@ -5,10 +5,8 @@ import { Flow, Operation } from './types.js';
 import { applyLoggingProxyToClass } from '../monitoring/proxy/loggingProxy.js';
 import { NodeRepository } from '../repository/NodeRepository.js';
 import { promiseTimeoutWrapper } from '../../../generic/timeoutPromiseWrapper.js';
-import { extractLogsAndResultsFromLogBuffer } from '../../../providers/utils/extractLogsAndResultsFromLogBuffer.js';
 import { ResourceManager } from '../node/resource/resourceManager.js';
 import Dockerode from 'dockerode';
-import { jobEmitter } from '../node/job/jobHandler.js';
 import { configs } from '../configs/configs.js';
 import { s3HelperImage } from '../node/resource/definition/index.js';
 import {
@@ -20,6 +18,7 @@ import { ExposedPort, getExposePorts, isOpExposed } from '@nosana/sdk';
 import EventEmitter from 'events';
 
 const frpcImage = 'docker.io/nosana/frpc:multi-v0.0.4';
+const tunnelImage = 'docker.io/nosana/tunnel:0.1.0';
 
 export class Provider {
   constructor(
@@ -64,7 +63,6 @@ export class Provider {
 
   // set up reverse proxy api for api handler
   public async setUpReverseProxyApi(address: string): Promise<boolean> {
-    const tunnelImage = 'registry.hub.docker.com/nosana/tunnel:0.1.0';
     try {
 
       const networkName = `api-${address}`;
@@ -233,7 +231,7 @@ export class Provider {
         });
 
         logStream.on('data', (data) => {
-          emitter.emit("log", data.toString())
+          emitter.emit("log", data.toString(), "container")
         });
       } else {
         await this.containerOrchestration.pullImage(
@@ -357,7 +355,7 @@ export class Provider {
         });
 
         logStream.on('data', (data) => {
-          emitter.emit("log", data.toString())
+          emitter.emit("log", data.toString(), "container")
         });
 
         if (isOpExposed(op)) {
@@ -387,7 +385,7 @@ export class Provider {
 
       emitter.emit('exit', { exitCode: info.State.ExitCode });
     } catch (error) {
-      emitter.emit("log", error)
+      emitter.emit("log", error, "error")
       emitter.emit("error", error);
     }
 
@@ -426,7 +424,7 @@ export class Provider {
         );
       }
     } catch (error) {
-      emitter?.emit("log", error)
+      emitter?.emit("log", error, "error")
       throw error
     }
   }
@@ -463,8 +461,11 @@ export class Provider {
     controller: AbortController,
     emitter: EventEmitter
   ) {
-    await this.taskManagerContainerRunOperation(flow, op, controller, emitter);
-    await this.taskManagerContainerStopRunOperation(flow, op, emitter);
+    try {
+      await this.taskManagerContainerRunOperation(flow, op, controller, emitter);
+    } finally {
+      await this.taskManagerContainerStopRunOperation(flow, op, emitter);
+    }
   }
 
   async taskManagerVolumeStartRunandStopOperation(
@@ -504,7 +505,7 @@ export class Provider {
 
       emitter.emit('exit', { exitCode: 0 });
     } catch (error) {
-      emitter.emit("log", error)
+      emitter.emit("log", error, "error")
       emitter.emit("error", error);
     }
     emitter.emit("end");
@@ -519,7 +520,7 @@ export class Provider {
         await this.containerOrchestration.deleteVolume(name);
       }
     } catch (error) {
-      emitter?.emit("log", error)
+      emitter?.emit("log", error, "error")
       throw error
     }
   }

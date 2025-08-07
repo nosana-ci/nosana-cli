@@ -161,13 +161,13 @@ export class BasicNode {
   }
 
   async clean(): Promise<void> {
-    await this.marketHandler.clean();
-    await this.runHandler.clean();
-
     /**
      * we want to use stop because it functions like we want
      */
     await this.jobHandler.nodeStop();
+
+    await this.marketHandler.clean();
+    await this.runHandler.clean();
 
     // await this.jobHandler.stop();
     this.expiryHandler.stop();
@@ -326,10 +326,10 @@ export class BasicNode {
           await this.jobHandler.finish(run, resolvedStatus);
 
           this.jobHandler.deregister(jobAddress)
-        }
 
-        // Resolve the Promise normally
-        resolve();
+          // Resolve the Promise normally
+          resolve();
+        }
       } catch (error) {
         // Reject the Promise if any errors occur
         reject(error);

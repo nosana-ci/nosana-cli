@@ -55,16 +55,12 @@ export async function stopTaskManagerOperation(
      * If it's missing, something went wrong during registration or setup.
      */
     const controller = this.abortControllerMap.get(opId);
-    if (!controller) {
-        this.lockedOperations.delete(opId);
-        throw new Error(`INVALID_OPS: No abort controller found for ${opId}`);
-    }
 
     /** 
      * Abort the operation — this will trigger cleanup via its lifecycle handlers.
      * The container will be stopped and teardown will run automatically.
      */
-    controller.abort(StopReasons.STOPPED);
+    controller?.abort(StopReasons.STOPPED);
 
     /** 
      * Wait for the original promise tied to this operation to resolve.

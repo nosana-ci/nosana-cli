@@ -43,6 +43,15 @@ export class JobExternalUtil {
       job.ipfsJob,
     );
 
+    if(!result) {
+      result = {
+        status: '',
+        startTime: 0,
+        endTime: 0,
+        opStates: [],
+      };
+    }
+
     if (jobDefinition.logistics?.receive?.type) {
       const strategySelector = new ResultReturnStrategySelector();
       const strategy = strategySelector.selectStrategy(

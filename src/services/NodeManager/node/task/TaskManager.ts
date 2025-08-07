@@ -49,6 +49,7 @@ export const StopReasons = {
     STOPPED: 'stopped',
     QUIT: 'quit',
     UNKNOWN: 'unknown',
+    RESTART: 'restart',
 } as const;
 
 export type StopReason = typeof StopReasons[keyof typeof StopReasons];
@@ -354,8 +355,6 @@ export default class TaskManager {
                     endTime: Date.now()
                 });
             } finally {
-
-                console.log("i got here the end")
                 // Do a total operation clean up where we go through all the opmap and clean all operations
                 const closingOperationPromises = []
 
@@ -364,9 +363,6 @@ export default class TaskManager {
                 }
 
                 await Promise.all(closingOperationPromises);
-
-                console.log("i got here the end the end")
-
             }
         })();
 
@@ -436,6 +432,7 @@ export default class TaskManager {
             [StopReasons.COMPLETED]: { ops: Statuses.SUCCESS, flow: Statuses.SUCCESS },
             [StopReasons.EXPIRED]: { ops: Statuses.SUCCESS, flow: Statuses.SUCCESS },
             [StopReasons.STOPPED]: { ops: Statuses.STOPPED, flow: Statuses.STOPPED },
+            [StopReasons.RESTART]: { ops: Statuses.STOPPED, flow: Statuses.STOPPED },
             [StopReasons.QUIT]: { ops: Statuses.FAILED, flow: Statuses.FAILED },
             [StopReasons.UNKNOWN]: { ops: Statuses.FAILED, flow: Statuses.FAILED },
         };

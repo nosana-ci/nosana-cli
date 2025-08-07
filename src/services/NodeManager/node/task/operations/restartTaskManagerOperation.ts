@@ -51,10 +51,6 @@ export async function restartTaskManagerOperation(this: TaskManager, group: stri
      * This should have been set up when the op was first started.
      */
     const controller = this.abortControllerMap.get(opId);
-    if (!controller) {
-        this.lockedOperations.delete(opId);
-        throw new Error(`INVALID_OPS: No abort controller found for ${opId}`);
-    }
 
     /** 
      * The following block creates a "placeholder promise" that we temporarily insert into the group’s 
@@ -91,7 +87,7 @@ export async function restartTaskManagerOperation(this: TaskManager, group: stri
 
     // Abort the currently running operation
     // This should trigger container teardown, logs finalization, and state updates
-    controller.abort("stopped");
+    controller?.abort("restart");
 
     /** 
      * If the operation had already started, wait for it to finish fully (even if it failed). 
