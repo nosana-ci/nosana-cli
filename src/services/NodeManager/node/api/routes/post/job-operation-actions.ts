@@ -4,7 +4,7 @@ import { NodeAPIRequest } from '../../types/index.js';
 import { Response } from 'express';
 
 export async function restartOperationHandler(
-  req: NodeAPIRequest<{ jobId: string, opId: string, group: string }>,
+  req: NodeAPIRequest<{ jobId: string; opId: string; group: string }>,
   res: Response,
 ) {
   const { jobId, opId, group } = req.params;
@@ -18,12 +18,14 @@ export async function restartOperationHandler(
     await task.restartTaskManagerOperation(group, opId);
     return res.status(200).json({ message: 'Operation restarted' });
   } catch (error: any) {
-    return res.status(500).json({ error: `Failed to restart operation: ${error.message}` });
+    return res
+      .status(500)
+      .json({ error: `Failed to restart operation: ${error.message}` });
   }
 }
 
 export async function restartGroupOperationHandler(
-  req: NodeAPIRequest<{ jobId: string, group: string }>,
+  req: NodeAPIRequest<{ jobId: string; group: string }>,
   res: Response,
 ) {
   const { jobId, group } = req.params;
@@ -37,12 +39,14 @@ export async function restartGroupOperationHandler(
     await task.restartTaskManagerGroupOperations(group);
     return res.status(200).json({ message: 'Group Operation restarted' });
   } catch (error) {
-    return res.status(500).json({ error: 'Failed to restart group operations' });
+    return res
+      .status(500)
+      .json({ error: 'Failed to restart group operations' });
   }
 }
 
 export async function moveGroupOperationHandler(
-  req: NodeAPIRequest<{ jobId: string, group: string }>,
+  req: NodeAPIRequest<{ jobId: string; group: string }>,
   res: Response,
 ) {
   const { jobId, group } = req.params;
@@ -56,12 +60,14 @@ export async function moveGroupOperationHandler(
     await task.moveTaskManagerGroupOperations(group);
     return res.status(200).json({ message: 'Group Operation restarted' });
   } catch (error) {
-    return res.status(500).json({ error: 'Failed to restart group operations' });
+    return res
+      .status(500)
+      .json({ error: 'Failed to restart group operations' });
   }
 }
 
 export async function stopOperationHandler(
-  req: NodeAPIRequest<{ jobId: string, opId: string, group: string }>,
+  req: NodeAPIRequest<{ jobId: string; opId: string; group: string }>,
   res: Response,
 ) {
   const { jobId, opId, group } = req.params;
@@ -75,12 +81,14 @@ export async function stopOperationHandler(
     await task.stopTaskManagerOperation(group, opId);
     return res.status(200).json({ message: 'Operation Stopped' });
   } catch (error: any) {
-    return res.status(500).json({ error: `Failed to Stop operation: ${error.message}` });
+    return res
+      .status(500)
+      .json({ error: `Failed to Stop operation: ${error.message}` });
   }
 }
 
 export async function stopGroupOperationHandler(
-  req: NodeAPIRequest<{ jobId: string, group: string }>,
+  req: NodeAPIRequest<{ jobId: string; group: string }>,
   res: Response,
 ) {
   const { jobId, group } = req.params;

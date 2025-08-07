@@ -48,7 +48,7 @@ export class VolumeManager {
       await this.containerOrchestration.pullImage(s3HelperImage);
     }
 
-    const controller = new AbortController()
+    const controller = new AbortController();
 
     const savedVolumes = this.repository.getVolumesResources();
     for (const resource of this.market_required_volumes) {
@@ -58,7 +58,10 @@ export class VolumeManager {
     }
   }
 
-  public async createRemoteVolume(resource: RequiredResource, controller: AbortController): Promise<string> {
+  public async createRemoteVolume(
+    resource: RequiredResource,
+    controller: AbortController,
+  ): Promise<string> {
     const resourceName = createResourceName(resource);
 
     let volumeName: string = this.repository.getVolumeResource(
@@ -190,7 +193,10 @@ export class VolumeManager {
       } catch (error) {}
     });
 
-    const { StatusCode } = await container.wait({ condition: 'not-running', abortSignal: controller?.signal });
+    const { StatusCode } = await container.wait({
+      condition: 'not-running',
+      abortSignal: controller?.signal,
+    });
     controller?.abort();
 
     // If download failed, remove volume

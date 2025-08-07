@@ -294,8 +294,8 @@ export default class NodeManager {
    */
   private handleProcessExit() {
     const exitHandler = async () => {
-      LogMonitoringRegistry.getInstance().setLoggable(true)
-      
+      LogMonitoringRegistry.getInstance().setLoggable(true);
+
       if (this.exiting) return;
       this.exiting = true;
 

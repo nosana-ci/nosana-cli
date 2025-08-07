@@ -18,7 +18,10 @@ import {
   consoleLogging,
 } from '../../../services/NodeManager/monitoring/log/console/ConsoleLogger.js';
 import EventEmitter from 'events';
-import TaskManager, { StopReasons, TaskManagerOps } from '../../../services/NodeManager/node/task/TaskManager.js';
+import TaskManager, {
+  StopReasons,
+  TaskManagerOps,
+} from '../../../services/NodeManager/node/task/TaskManager.js';
 import { sleep } from '@nosana/sdk';
 import { loadJobDefinitionFromFile } from '../../../providers/utils/jobDefinitionParser.js';
 
@@ -29,7 +32,10 @@ export async function runJob(
   },
 ) {
   try {
-    const jobDefinition = await resolveJobDefination(options, jobDefinitionFile)
+    const jobDefinition = await resolveJobDefination(
+      options,
+      jobDefinitionFile,
+    );
 
     const db = new DB(options.config).db;
     const repository = new NodeRepository(db);
@@ -85,11 +91,12 @@ export async function runJob(
       ========== ERROR ==========
       Timestamp: ${new Date().toISOString()}
       Error Name: ${error.name || 'Unknown Error'}
-      Message: ${error.message || 'No message available'}${options.verbose
+      Message: ${error.message || 'No message available'}${
+      options.verbose
         ? `
       Trace: ${error.stack ?? error.trace}`
         : ''
-      }
+    }
       ============================
       `;
 

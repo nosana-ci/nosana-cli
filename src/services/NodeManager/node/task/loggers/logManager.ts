@@ -1,4 +1,4 @@
-import TaskManager, { LogType, TaskLog } from "../TaskManager.js";
+import TaskManager, { LogType, TaskLog } from '../TaskManager.js';
 import WebSocket from 'ws';
 
 const MAX_LOGS_PER_OP = 10000000;
@@ -16,7 +16,7 @@ export function addLog(this: TaskManager, log: TaskLog) {
     const matcher = this.logMatchers.get(ws);
     if (matcher && matcher(log)) {
       try {
-        ws.send(JSON.stringify({ path: "flog", data: JSON.stringify(log) }));
+        ws.send(JSON.stringify({ path: 'flog', data: JSON.stringify(log) }));
       } catch (_) {}
     }
   }
@@ -41,7 +41,7 @@ export function getAllLogs(this: TaskManager): TaskLog[] {
 export function subscribe(
   this: TaskManager,
   ws: WebSocket,
-  matcher: (log: TaskLog) => boolean
+  matcher: (log: TaskLog) => boolean,
 ) {
   this.subscribers.add(ws);
   this.logMatchers.set(ws, matcher);

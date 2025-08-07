@@ -211,7 +211,7 @@ export class BasicNode {
   run(): Promise<void> {
     return new Promise<void>(async (resolve, reject) => {
       try {
-        let resolvedStatus: StopReason = StopReasons.COMPLETED
+        let resolvedStatus: StopReason = StopReasons.COMPLETED;
 
         const periodicHealthcheck = async (): Promise<boolean> => {
           const { status, error } = await this.containerOrchestration.healthy();
@@ -244,17 +244,19 @@ export class BasicNode {
          */
         const job = await this.jobHandler.claim(jobAddress);
 
-        /** 
+        /**
          * register the job in the job registry
-        */
-        this.jobHandler.register(jobAddress, run, job)
+         */
+        this.jobHandler.register(jobAddress, run, job);
 
         /**
          * Check if the job is expired. If it is, quit the job;
          * otherwise, continue to start.
          */
         if (!this.expiryHandler.expired(run, job)) {
-          const stopReason = new Promise<(typeof StopReasons)[keyof typeof StopReasons]>((resolveStop) => {
+          const stopReason = new Promise<
+            (typeof StopReasons)[keyof typeof StopReasons]
+          >((resolveStop) => {
             /**
              * start monitoring for the stop signal from the smart contract
              */
@@ -275,7 +277,6 @@ export class BasicNode {
               resolveStop(StopReasons.COMPLETED);
             });
 
-
             /**
              * This starts the expiry settings to monitor expiry time
              */
@@ -295,7 +296,7 @@ export class BasicNode {
 
                 abortControllerSelector().abort('expired');
                 resolveStop(StopReasons.EXPIRED);
-              }
+              },
             );
           });
 
@@ -325,7 +326,7 @@ export class BasicNode {
            */
           await this.jobHandler.finish(run, resolvedStatus);
 
-          this.jobHandler.deregister(jobAddress)
+          this.jobHandler.deregister(jobAddress);
 
           // Resolve the Promise normally
           resolve();
@@ -420,7 +421,7 @@ export class BasicNode {
               );
               firstMarketCheck = false;
             }
-          } catch (error) { }
+          } catch (error) {}
         },
       );
     });

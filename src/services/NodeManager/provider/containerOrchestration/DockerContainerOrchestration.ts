@@ -85,10 +85,15 @@ export class DockerContainerOrchestration
     return this.docker;
   }
 
-  async pullImage(image: string, authorisation?: DockerAuth, controller?: AbortController): Promise<void> {
+  async pullImage(
+    image: string,
+    authorisation?: DockerAuth,
+    controller?: AbortController,
+  ): Promise<void> {
     if (controller?.signal.aborted) throw controller.signal.reason;
     if (await this.docker.hasImage(image)) return;
-    if (controller) await this.docker.promisePull(image, controller, authorisation);
+    if (controller)
+      await this.docker.promisePull(image, controller, authorisation);
   }
 
   async hasImage(image: string): Promise<boolean> {
@@ -103,18 +108,29 @@ export class DockerContainerOrchestration
     return this.docker.listImages();
   }
 
-  async deleteImage(image: string, controller?: AbortController): Promise<void> {
+  async deleteImage(
+    image: string,
+    controller?: AbortController,
+  ): Promise<void> {
     if (await this.docker.hasImage(image)) {
-      await this.docker.getImage(image).remove({ force: true, abortSignal: controller?.signal });
+      await this.docker
+        .getImage(image)
+        .remove({ force: true, abortSignal: controller?.signal });
     }
   }
 
-  async createNetwork(name: string, controller?: AbortController): Promise<void> {
+  async createNetwork(
+    name: string,
+    controller?: AbortController,
+  ): Promise<void> {
     if (await this.hasNetwork('NOSANA_GATEWAY')) return;
     await this.docker.createNetwork({
       Name: 'NOSANA_GATEWAY',
-      IPAM: { Driver: 'bridge', Config: [{ Subnet: '192.168.101.0/24', Gateway: '192.168.101.1' }] },
-      abortSignal: controller?.signal
+      IPAM: {
+        Driver: 'bridge',
+        Config: [{ Subnet: '192.168.101.0/24', Gateway: '192.168.101.1' }],
+      },
+      abortSignal: controller?.signal,
     });
   }
 
@@ -123,12 +139,18 @@ export class DockerContainerOrchestration
     return networks.some((network) => network.Name === name);
   }
 
-  async deleteNetwork(name: string, controller?: AbortController): Promise<void> {
+  async deleteNetwork(
+    name: string,
+    controller?: AbortController,
+  ): Promise<void> {
     // await this.docker.getNetwork(name).remove({ abortSignal: controller?.signal });
   }
 
-  async createVolume(name?: string, controller?: AbortController): Promise<VolumeCreateResponse> {
-    return this.docker.createVolume({ Name: name, });
+  async createVolume(
+    name?: string,
+    controller?: AbortController,
+  ): Promise<VolumeCreateResponse> {
+    return this.docker.createVolume({ Name: name });
   }
 
   async hasVolume(name: string): Promise<boolean> {
@@ -152,12 +174,15 @@ export class DockerContainerOrchestration
     return this.docker.getVolume(name);
   }
 
-  async deleteVolume(name: string, controller?: AbortController): Promise<void> {
+  async deleteVolume(
+    name: string,
+    controller?: AbortController,
+  ): Promise<void> {
     const volume = this.docker.getVolume(name);
 
     try {
       await volume.inspect(); // This will throw if the volume doesn't exist
-      await volume.remove({ force: true, abortSignal: controller?.signal});
+      await volume.remove({ force: true, abortSignal: controller?.signal });
     } catch (error: any) {
       if (error.statusCode === 404) {
         // Volume doesn't exist, nothing to delete
@@ -192,7 +217,10 @@ export class DockerContainerOrchestration
     return this.protocol;
   }
 
-  setupContainerAbortListener(containerId: string, controller: AbortController) {
+  setupContainerAbortListener(
+    containerId: string,
+    controller: AbortController,
+  ) {
     if (controller.signal.aborted) {
       this.stopContainer(containerId);
     }
@@ -209,32 +237,36 @@ export class DockerContainerOrchestration
 
   async runContainer(
     args: ContainerCreateOptions,
-    controller?: AbortController
+    controller?: AbortController,
   ): Promise<Container> {
     if (controller?.signal.aborted) {
       throw controller.signal.reason;
     }
 
-      const container = await this.docker.createContainer({...args, abortSignal: controller?.signal});
-      await container.start();
-      if (controller) {
-        this.setupContainerAbortListener(container.id, controller);
-      }
-      return container;
+    const container = await this.docker.createContainer({
+      ...args,
+      abortSignal: controller?.signal,
+    });
+    await container.start();
+    if (controller) {
+      this.setupContainerAbortListener(container.id, controller);
+    }
+    return container;
   }
 
   async runFlowContainer(
     image: string,
     args: RunContainerArgs,
-    controller?: AbortController
+    controller?: AbortController,
   ): Promise<Container> {
     if (controller?.signal.aborted) {
       throw controller.signal.reason;
     }
 
-    const container = await this.docker.createContainer(
-      {...mapRunContainerArgsToContainerCreateOpts(image, args, this.gpu), abortSignal: controller?.signal},
-    );
+    const container = await this.docker.createContainer({
+      ...mapRunContainerArgsToContainerCreateOpts(image, args, this.gpu),
+      abortSignal: controller?.signal,
+    });
 
     await container.start();
 
@@ -248,26 +280,36 @@ export class DockerContainerOrchestration
   async stopContainer(id: string, controller?: AbortController): Promise<void> {
     const listeners = this.listeners.get(id) || [];
     if (controller) {
-      for (const l of listeners) controller.signal.removeEventListener('abort', l);
+      for (const l of listeners)
+        controller.signal.removeEventListener('abort', l);
     }
     const container = this.docker.getContainer(id);
     try {
       const info = await container.inspect();
-      if (info.State.Status !== 'exited') await container.stop({ abortSignal: controller?.signal });
+      if (info.State.Status !== 'exited')
+        await container.stop({ abortSignal: controller?.signal });
     } catch {}
   }
 
-  async stopAndDeleteContainer(id: string, controller?: AbortController): Promise<void> {
+  async stopAndDeleteContainer(
+    id: string,
+    controller?: AbortController,
+  ): Promise<void> {
     const listeners = this.listeners.get(id) || [];
     if (controller) {
-      for (const l of listeners) controller.signal.removeEventListener('abort', l);
+      for (const l of listeners)
+        controller.signal.removeEventListener('abort', l);
     }
     const container = this.docker.getContainer(id);
     try {
       await container.stop({ abortSignal: controller?.signal });
     } catch {}
     try {
-      await container.remove({ force: true, v: true, abortSignal: controller?.signal });
+      await container.remove({
+        force: true,
+        v: true,
+        abortSignal: controller?.signal,
+      });
     } catch {}
   }
 

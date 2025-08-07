@@ -30,13 +30,18 @@ export class SpecsHandler {
   }
 
   async check(): Promise<boolean> {
-    const id = generateRandomId(32)
-  
-    const task = new TaskManager(this.provider, this.repository, id, specsAndNetworkJob)
+    const id = generateRandomId(32);
+
+    const task = new TaskManager(
+      this.provider,
+      this.repository,
+      id,
+      specsAndNetworkJob,
+    );
 
     try {
-      task.bootstrap()
-      await task.start()
+      task.bootstrap();
+      await task.start();
     } catch (error) {
       throw error;
     }

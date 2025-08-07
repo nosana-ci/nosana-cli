@@ -101,16 +101,16 @@ export class JobHandler {
   }
 
   register(jobAddress: string, run: Run, job: Job) {
-    JobRegistry.getInstance().register(jobAddress, run, job)
+    JobRegistry.getInstance().register(jobAddress, run, job);
   }
 
   deregister(jobAddress: string) {
-    JobRegistry.getInstance().remove(jobAddress)
+    JobRegistry.getInstance().remove(jobAddress);
   }
-  
+
   async nodeStop(): Promise<void> {
-    await TaskManagerRegistry.getInstance().stop()
-    await JobRegistry.getInstance().stop(this.sdk, this.repository)
+    await TaskManagerRegistry.getInstance().stop();
+    await JobRegistry.getInstance().stop(this.sdk, this.repository);
 
     this.stopListeningForAccountChanges();
     this.clearJob();
@@ -196,46 +196,43 @@ export class JobHandler {
             this.repository,
             this.jobId(),
             jobDefinition,
-          )
-        )
+          ),
+        );
 
-        const task = TaskManagerRegistry.getInstance().get(this.jobId()) as TaskManager
-        task.bootstrap()
-
+        const task = TaskManagerRegistry.getInstance().get(
+          this.jobId(),
+        ) as TaskManager;
+        task.bootstrap();
       } catch (error) {
         this.repository.updateflowStateError(this.jobId(), {
           status: 'init error',
           errors: error,
         });
 
-        TaskManagerRegistry.getInstance().remove(this.jobId())
+        TaskManagerRegistry.getInstance().remove(this.jobId());
 
-        return false
+        return false;
       }
     } else {
-
       try {
         TaskManagerRegistry.getInstance().register(
           this.jobId(),
-          new TaskManager(
-            this.provider,
-            this.repository,
-            this.jobId()
-          )
-        )
+          new TaskManager(this.provider, this.repository, this.jobId()),
+        );
 
-        const task = TaskManagerRegistry.getInstance().get(this.jobId()) as TaskManager
-        task.bootstrap()
-
+        const task = TaskManagerRegistry.getInstance().get(
+          this.jobId(),
+        ) as TaskManager;
+        task.bootstrap();
       } catch (error) {
         this.repository.updateflowStateError(this.jobId(), {
           status: 'init error',
           errors: error,
         });
 
-        TaskManagerRegistry.getInstance().remove(this.jobId())
+        TaskManagerRegistry.getInstance().remove(this.jobId());
 
-        return false
+        return false;
       }
     }
 
@@ -245,16 +242,18 @@ export class JobHandler {
   }
 
   async runWithErrorHandling(): Promise<void> {
-    const task = TaskManagerRegistry.getInstance().get(this.jobId()) as TaskManager
-    await task.start()
-    TaskManagerRegistry.getInstance().remove(this.jobId())
+    const task = TaskManagerRegistry.getInstance().get(
+      this.jobId(),
+    ) as TaskManager;
+    await task.start();
+    TaskManagerRegistry.getInstance().remove(this.jobId());
     this.accountEmitter.emit('completed');
   }
 
   async finish(run: Run, reason: StopReason): Promise<void> {
     try {
       const jobId = this.jobId();
-      
+
       let result = await this.jobExternalUtil.resolveResult(
         jobId,
         this.get() as Job,

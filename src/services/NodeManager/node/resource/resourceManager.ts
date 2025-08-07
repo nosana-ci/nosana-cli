@@ -57,7 +57,10 @@ export class ResourceManager {
     await this.volumes.pruneVolumes();
   }
 
-  public async getResourceVolumes(resources: Resource[], controller: AbortController): Promise<
+  public async getResourceVolumes(
+    resources: Resource[],
+    controller: AbortController,
+  ): Promise<
     {
       dest: string;
       name: string;

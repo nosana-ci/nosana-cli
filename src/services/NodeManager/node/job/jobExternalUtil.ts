@@ -43,7 +43,7 @@ export class JobExternalUtil {
       job.ipfsJob,
     );
 
-    if(!result) {
+    if (!result) {
       result = {
         status: '',
         startTime: 0,

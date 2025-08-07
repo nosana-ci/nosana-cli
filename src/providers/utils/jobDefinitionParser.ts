@@ -28,6 +28,8 @@ export function loadJobDefinitionFromFile(filePath: string): any {
   } else if (ext === '.json') {
     return JSON.parse(raw);
   } else {
-    throw new Error(`Unsupported file extension: ${ext}. Expected .json, .yaml or .yml`);
+    throw new Error(
+      `Unsupported file extension: ${ext}. Expected .json, .yaml or .yml`,
+    );
   }
 }

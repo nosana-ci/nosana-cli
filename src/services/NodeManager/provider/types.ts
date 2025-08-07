@@ -46,27 +46,27 @@ export interface ReceiveJobResultLogicstics {
 }
 
 export type JobDefinition = {
-    version: string;
-    type: JobType;
-    logistics?: JobLogistics;
-    meta?: {
-        trigger?: string;
-        system_resources?: {
-            [key: string]: string | number;
-        };
-        [key: string]: unknown;
+  version: string;
+  type: JobType;
+  logistics?: JobLogistics;
+  meta?: {
+    trigger?: string;
+    system_resources?: {
+      [key: string]: string | number;
     };
-    global?: {
-        image?: string;
-        gpu?: boolean;
-        entrypoint?: string | string[];
-        env?: {
-            [key: string]: string;
-        };
-        work_dir?: string;
+    [key: string]: unknown;
+  };
+  global?: {
+    image?: string;
+    gpu?: boolean;
+    entrypoint?: string | string[];
+    env?: {
+      [key: string]: string;
     };
-    ops: TaskManagerOps;
-}
+    work_dir?: string;
+  };
+  ops: TaskManagerOps;
+};
 
 // export type JobDefinition = JobDefinitionSDK & {
 //   logistics?: JobLogistics;

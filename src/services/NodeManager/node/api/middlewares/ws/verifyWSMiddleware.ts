@@ -27,13 +27,9 @@ export async function verifyWSMiddleware(
       ws.close(1007, `Could not find job with id ${jobId}`);
       return;
     }
-    
-    nextFunction(ws, headers, body);
 
+    nextFunction(ws, headers, body);
   } catch (error) {
     ws.close(3000, `Unathorized Request: ${(error as Error).message}`);
   }
 }
-
-
-

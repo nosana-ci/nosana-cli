@@ -40,12 +40,11 @@ export async function postNodeValidation(
   }
 
   const id = generateRandomId(32);
-  
 
   try {
-    const task = new TaskManager(provider, repository, id, req.body)
-    task.bootstrap()
-    await task.start()
+    const task = new TaskManager(provider, repository, id, req.body);
+    task.bootstrap();
+    await task.start();
 
     const result = repository.getflow(id);
 

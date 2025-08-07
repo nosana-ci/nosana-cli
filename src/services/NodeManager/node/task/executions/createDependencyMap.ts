@@ -1,4 +1,4 @@
-import TaskManager, { TaskManagerOps } from "../TaskManager.js";
+import TaskManager, { TaskManagerOps } from '../TaskManager.js';
 
 /**
  * Creates a dependency map for all operations.
@@ -13,11 +13,16 @@ import TaskManager, { TaskManagerOps } from "../TaskManager.js";
  * - Track dependencies and dependents efficiently during execution
  * - Use alongside the execution plan to resolve execution flow
  */
-export function createDependencyMap(this: TaskManager): Map<string, { dependencies: string[]; dependents: string[] }> {
-  const map = new Map<string, { dependencies: string[]; dependents: string[] }>();
+export function createDependencyMap(
+  this: TaskManager,
+): Map<string, { dependencies: string[]; dependents: string[] }> {
+  const map = new Map<
+    string,
+    { dependencies: string[]; dependents: string[] }
+  >();
 
   // Initialize map with declared dependencies
-  for (const op of this.operations as TaskManagerOps ) {
+  for (const op of this.operations as TaskManagerOps) {
     map.set(op.id, {
       dependencies: op.execution?.depends_on ?? [],
       dependents: [],

@@ -225,9 +225,21 @@ export class ApiHandler {
     );
 
     this.api.get('/job/:jobId/ops', express.json(), getOperationsStatusHandler);
-    this.api.get('/job/:jobId/ops/:opId', express.json(), getOperationStatusHandler);
-    this.api.get('/job/:jobId/group/current', express.json(), getCurrentGroupStatusHandler);
-    this.api.get('/job/:jobId/group/:group', express.json(), getGroupStatusHandler);
+    this.api.get(
+      '/job/:jobId/ops/:opId',
+      express.json(),
+      getOperationStatusHandler,
+    );
+    this.api.get(
+      '/job/:jobId/group/current',
+      express.json(),
+      getCurrentGroupStatusHandler,
+    );
+    this.api.get(
+      '/job/:jobId/group/:group',
+      express.json(),
+      getGroupStatusHandler,
+    );
 
     this.api.get('/node/info', getNodeInfoRoute);
     this.api.get(
@@ -260,35 +272,35 @@ export class ApiHandler {
       '/job/:jobId/group/:group/move',
       express.json(),
       // verifyJobOwnerSignatureMiddleware,
-      moveGroupOperationHandler
+      moveGroupOperationHandler,
     );
 
     this.api.post(
       '/job/:jobId/group/:group/operation/:opId/restart',
       express.json(),
       // verifyJobOwnerSignatureMiddleware,
-      restartOperationHandler
+      restartOperationHandler,
     );
 
     this.api.post(
       '/job/:jobId/group/:group/restart',
       express.json(),
       // verifyJobOwnerSignatureMiddleware,
-      restartGroupOperationHandler
+      restartGroupOperationHandler,
     );
 
     this.api.post(
       '/job/:jobId/group/:group/operation/:opId/stop',
       express.json(),
       // verifyJobOwnerSignatureMiddleware,
-      stopOperationHandler
+      stopOperationHandler,
     );
 
     this.api.post(
       '/job/:jobId/group/:group/stop',
       express.json(),
       // verifyJobOwnerSignatureMiddleware,
-      stopGroupOperationHandler
+      stopGroupOperationHandler,
     );
   }
 

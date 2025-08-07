@@ -64,9 +64,8 @@ export class PodmanContainerOrchestration extends DockerContainerOrchestration {
           return container;
         } else {
           throw new Error(
-              'Cannot start container: ' +
-                ((await start.json()) as any).message,
-            )
+            'Cannot start container: ' + ((await start.json()) as any).message,
+          );
         }
       }
 

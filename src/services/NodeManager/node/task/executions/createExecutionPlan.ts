@@ -1,5 +1,5 @@
-import TaskManager, { TaskManagerOps } from "../TaskManager.js";
-import { ExecutionContext } from "../TaskManager.js";
+import TaskManager, { TaskManagerOps } from '../TaskManager.js';
+import { ExecutionContext } from '../TaskManager.js';
 
 /**
  * Converts the list of operations into a structured execution plan.
@@ -34,7 +34,7 @@ export function createExecutionPlan(this: TaskManager): ExecutionContext[] {
   const result: ExecutionContext[] = [];
 
   for (const [group, opIds] of groups.entries()) {
-    const ops = opIds.map(id => ({ id }));
+    const ops = opIds.map((id) => ({ id }));
     result.push({ group, ops: opIds });
   }
 

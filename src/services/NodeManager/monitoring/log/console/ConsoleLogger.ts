@@ -30,7 +30,7 @@ export class ConsoleLogger implements LogObserver {
 
   spinner!: Ora;
 
-  constructor(public isNode: boolean = true) { }
+  constructor(public isNode: boolean = true) {}
 
   addObserver() {
     log().addObserver(this);
@@ -41,7 +41,6 @@ export class ConsoleLogger implements LogObserver {
   }
 
   public update(log: NodeLogEntry, isNode: boolean = true) {
-
     if (!this.kill && log.type == 'kill-process') {
       if (this.pending) {
         this.spinner.stop();

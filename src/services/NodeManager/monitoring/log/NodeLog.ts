@@ -1047,7 +1047,7 @@ class NodeLog {
   }
 
   private handleExit(data: LogEntry) {
-    LogMonitoringRegistry.getInstance().setLoggable(true)
+    LogMonitoringRegistry.getInstance().setLoggable(true);
 
     this.job = undefined;
     this.shared = {};
@@ -1063,7 +1063,7 @@ class NodeLog {
   }
 
   private handleClean(data: LogEntry) {
-    LogMonitoringRegistry.getInstance().setLoggable(true)
+    LogMonitoringRegistry.getInstance().setLoggable(true);
 
     this.job = undefined;
 
@@ -1100,7 +1100,7 @@ class NodeLog {
   }
 
   private handleStop(data: LogEntry) {
-    LogMonitoringRegistry.getInstance().setLoggable(true)
+    LogMonitoringRegistry.getInstance().setLoggable(true);
 
     // if (data.type === 'call') {
     //   this.addLog({
@@ -1136,7 +1136,7 @@ class NodeLog {
   }
 
   private handleRestart(data: LogEntry) {
-    LogMonitoringRegistry.getInstance().setLoggable(true)
+    LogMonitoringRegistry.getInstance().setLoggable(true);
 
     this.job = undefined;
 
@@ -1252,7 +1252,7 @@ class NodeLog {
           timestamp: Date.now(),
           type: 'success',
         });
-        LogMonitoringRegistry.getInstance().setLoggable(false)
+        LogMonitoringRegistry.getInstance().setLoggable(false);
       }
 
       if (data.type === 'error') {
@@ -1309,7 +1309,7 @@ class NodeLog {
     }
 
     if (data.method === 'finish') {
-      LogMonitoringRegistry.getInstance().setLoggable(false)
+      LogMonitoringRegistry.getInstance().setLoggable(false);
 
       if (data.type === 'call') {
         this.addLog({

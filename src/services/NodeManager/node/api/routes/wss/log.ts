@@ -33,11 +33,10 @@ export function wssTaskManagerLogRoute(
     group?: string;
     opId?: string;
     type?: string;
-  }
+  },
 ) {
- 
   const task = TaskManagerRegistry.getInstance().get(jobAddress);
-  if (!task) return ws.close(1008, "Invalid job address");
+  if (!task) return ws.close(1008, 'Invalid job address');
 
   task.subscribe(ws, (log: TaskLog) => {
     return (
@@ -56,7 +55,7 @@ export function wssTaskManagerLogRoute(
 
   for (const log of logs) {
     try {
-      ws.send(JSON.stringify({ path: "flog", data: JSON.stringify(log) }));
+      ws.send(JSON.stringify({ path: 'flog', data: JSON.stringify(log) }));
     } catch {}
   }
 }

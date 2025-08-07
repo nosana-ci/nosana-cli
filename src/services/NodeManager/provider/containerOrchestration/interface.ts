@@ -77,7 +77,11 @@ export type RunContainerArgs = {
 export interface ContainerOrchestrationInterface {
   getConnection(): any;
 
-  pullImage(image: string, auth?: DockerAuth, controller?: AbortController): Promise<void>;
+  pullImage(
+    image: string,
+    auth?: DockerAuth,
+    controller?: AbortController,
+  ): Promise<void>;
   hasImage(image: string): Promise<boolean>;
   getImage(image: string): Promise<Image>;
   listImages(): Promise<ImageInfo[]>;
@@ -87,7 +91,10 @@ export interface ContainerOrchestrationInterface {
   hasNetwork(name: string): Promise<boolean>;
   deleteNetwork(name: string, controller?: AbortController): Promise<void>;
 
-  createVolume(name?: string, controller?: AbortController): Promise<VolumeCreateResponse>;
+  createVolume(
+    name?: string,
+    controller?: AbortController,
+  ): Promise<VolumeCreateResponse>;
   getVolume(name: string): Promise<Volume>;
   hasVolume(name: string): Promise<boolean>;
   getRawVolume(name: string): Promise<Volume>;
@@ -99,17 +106,20 @@ export interface ContainerOrchestrationInterface {
 
   runContainer(
     args: ContainerCreateOptions,
-    controller?: AbortController
+    controller?: AbortController,
   ): Promise<Container>;
 
   runFlowContainer(
     image: string,
     args: RunContainerArgs,
-    controller?: AbortController
+    controller?: AbortController,
   ): Promise<Container>;
 
   stopContainer(id: string, controller?: AbortController): Promise<void>;
-  stopAndDeleteContainer(id: string, controller?: AbortController): Promise<void>;
+  stopAndDeleteContainer(
+    id: string,
+    controller?: AbortController,
+  ): Promise<void>;
   isContainerExited(id: string): Promise<boolean>;
   doesContainerExist(id: string): Promise<boolean>;
 

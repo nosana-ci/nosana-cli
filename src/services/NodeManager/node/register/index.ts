@@ -83,10 +83,15 @@ export class RegisterHandler {
 
   private async runSpecs(): Promise<Flow> {
     const flowId = generateRandomId(32);
-    const task = new TaskManager(this.provider, this.repository, flowId, specsAndNetworkJob)
-    task.bootstrap()
-    await task.start()
-    
+    const task = new TaskManager(
+      this.provider,
+      this.repository,
+      flowId,
+      specsAndNetworkJob,
+    );
+    task.bootstrap();
+    await task.start();
+
     const result = this.repository.getflow(flowId);
 
     if (!result || result.state.status !== 'success') {

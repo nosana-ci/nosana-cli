@@ -1,482 +1,546 @@
-import { Flow, JobDefinition, OperationArgsMap, OperationResults, OperationType } from "@nosana/sdk";
-import { NodeRepository } from "../../repository/NodeRepository.js";
-import { Provider } from "../../provider/Provider.js";
-import { runTaskManagerOperation } from "./operations/runTaskManagerOperation.js";
-import { restartTaskManagerOperation } from "./operations/restartTaskManagerOperation.js";
-import { stopTaskManagerOperation } from "./operations/stopTaskManagerOperation.js";
-import { stopTaskManagerGroupOperations } from "./operations/stopTaskManagerGroupOperation.js";
-import { restartTaskManagerGroupOperations } from "./operations/restartTaskManagerGroupOperation.js";
-import { createOperationMap } from "./executions/createOperationMap.js";
-import { createExecutionPlan } from "./executions/createExecutionPlan.js";
-import { validateExecutionPlan } from "./executions/validateExecutionPlan.js";
-import { stopAllTaskManagerOperations } from "./operations/stopAllTaskManagerOperations.js";
-import { createInitialFlow } from "./helpers/createInitialFlow.js";
-import { createDependencyMap } from "./executions/createDependencyMap.js";
-import { getCurrentGroup, getCurrentGroupStatus, getGroupStatus, getOperationsStatus, getOperationStatus } from "./operations/getOperationsInfos.js";
-import EventEmitter from "events";
+import {
+  Flow,
+  JobDefinition,
+  OperationArgsMap,
+  OperationResults,
+  OperationType,
+} from '@nosana/sdk';
+import { NodeRepository } from '../../repository/NodeRepository.js';
+import { Provider } from '../../provider/Provider.js';
+import { runTaskManagerOperation } from './operations/runTaskManagerOperation.js';
+import { restartTaskManagerOperation } from './operations/restartTaskManagerOperation.js';
+import { stopTaskManagerOperation } from './operations/stopTaskManagerOperation.js';
+import { stopTaskManagerGroupOperations } from './operations/stopTaskManagerGroupOperation.js';
+import { restartTaskManagerGroupOperations } from './operations/restartTaskManagerGroupOperation.js';
+import { createOperationMap } from './executions/createOperationMap.js';
+import { createExecutionPlan } from './executions/createExecutionPlan.js';
+import { validateExecutionPlan } from './executions/validateExecutionPlan.js';
+import { stopAllTaskManagerOperations } from './operations/stopAllTaskManagerOperations.js';
+import { createInitialFlow } from './helpers/createInitialFlow.js';
+import { createDependencyMap } from './executions/createDependencyMap.js';
+import {
+  getCurrentGroup,
+  getCurrentGroupStatus,
+  getGroupStatus,
+  getOperationsStatus,
+  getOperationStatus,
+} from './operations/getOperationsInfos.js';
+import EventEmitter from 'events';
 import type WebSocket from 'ws';
-import { addLog, getAllLogs, getLogsByGroup, getLogsByOp, subscribe, unsubscribe } from "./loggers/logManager.js";
-import { moveTaskManagerGroupOperations } from "./operations/moveTaskManagerGroupOperation.js";
+import {
+  addLog,
+  getAllLogs,
+  getLogsByGroup,
+  getLogsByOp,
+  subscribe,
+  unsubscribe,
+} from './loggers/logManager.js';
+import { moveTaskManagerGroupOperations } from './operations/moveTaskManagerGroupOperation.js';
 
 export type Operation<T extends OperationType> = {
-    type: OperationType;
-    id: string;
-    args: OperationArgsMap[T];
-    results?: OperationResults;
-    execution?: Execution;
+  type: OperationType;
+  id: string;
+  args: OperationArgsMap[T];
+  results?: OperationResults;
+  execution?: Execution;
 };
 
 export type TaskManagerOps = Array<Operation<OperationType>>;
 
 export type Execution = {
-    group?: string,
-    depends_on?: string[]
-}
+  group?: string;
+  depends_on?: string[];
+};
 
 export type ExecutionContext = {
-    group: string;
-    ops: string[];
-}
+  group: string;
+  ops: string[];
+};
 
 export type DependencyContext = {
-    dependencies: string[];
-    dependents: string[];
-}
+  dependencies: string[];
+  dependents: string[];
+};
 
 export const StopReasons = {
-    COMPLETED: 'completed',
-    EXPIRED: 'expired',
-    STOPPED: 'stopped',
-    QUIT: 'quit',
-    UNKNOWN: 'unknown',
-    RESTART: 'restart',
+  COMPLETED: 'completed',
+  EXPIRED: 'expired',
+  STOPPED: 'stopped',
+  QUIT: 'quit',
+  UNKNOWN: 'unknown',
+  RESTART: 'restart',
 } as const;
 
-export type StopReason = typeof StopReasons[keyof typeof StopReasons];
+export type StopReason = (typeof StopReasons)[keyof typeof StopReasons];
 
 export const Statuses = {
-    SUCCESS: 'success',
-    STOPPED: 'stopped',
-    FAILED: 'failed',
+  SUCCESS: 'success',
+  STOPPED: 'stopped',
+  FAILED: 'failed',
 } as const;
 
 export const OperationProgressStatuses = {
-    FINISHED: 'finished',
-    STOPPED: 'stopped',
-    FAILED: 'failed',
-    RUNNING: 'running',
-    RESTARTING: 'restarting',
-    STOPPING: 'stopping',
-    STARTING: 'starting',
-    WAITING: 'waiting',
-    PENDING: 'pending',
-    INIT: 'init',
+  FINISHED: 'finished',
+  STOPPED: 'stopped',
+  FAILED: 'failed',
+  RUNNING: 'running',
+  RESTARTING: 'restarting',
+  STOPPING: 'stopping',
+  STARTING: 'starting',
+  WAITING: 'waiting',
+  PENDING: 'pending',
+  INIT: 'init',
 } as const;
 
 export type LogType = 'container' | 'info' | 'error';
 
 export interface TaskLog {
-    opId: string;
-    group: string;
-    type: LogType;
-    timestamp: number;
-    message: any;
+  opId: string;
+  group: string;
+  type: LogType;
+  timestamp: number;
+  message: any;
 }
 
-export type Status = typeof Statuses[keyof typeof Statuses];
+export type Status = (typeof Statuses)[keyof typeof Statuses];
 
 export default class TaskManager {
-    /** 
-     * All operations defined in the Job Definition (JD).
-     */
-    protected operations: TaskManagerOps | undefined;
+  /**
+   * All operations defined in the Job Definition (JD).
+   */
+  protected operations: TaskManagerOps | undefined;
 
-    /** 
-     * The ordered execution plan built from the job definition.
-     * Each item represents a group of ops that run together horizontally.
-     */
-    protected executionPlan: ExecutionContext[] = [];
+  /**
+   * The ordered execution plan built from the job definition.
+   * Each item represents a group of ops that run together horizontally.
+   */
+  protected executionPlan: ExecutionContext[] = [];
 
-    /**
-     * this creates a map to assign the dependency
-     */
-    protected dependecyMap: Map<string, DependencyContext> = new Map();
+  /**
+   * this creates a map to assign the dependency
+   */
+  protected dependecyMap: Map<string, DependencyContext> = new Map();
 
-    /** 
-     * A map for fast lookup of operations by their ID.
-     * Useful during validation and execution.
-     */
-    protected opMap: Map<string, Operation<OperationType>> = new Map();
+  /**
+   * A map for fast lookup of operations by their ID.
+   * Useful during validation and execution.
+   */
+  protected opMap: Map<string, Operation<OperationType>> = new Map();
 
-    /** 
-     * Main controller to allow global cancellation of the entire task flow.
-     * All per-op controllers should eventually be tied to this as their parent,
-     * or fallback to this if no specific controller is assigned yet.
-     */
-    protected mainAbortController = new AbortController();
+  /**
+   * Main controller to allow global cancellation of the entire task flow.
+   * All per-op controllers should eventually be tied to this as their parent,
+   * or fallback to this if no specific controller is assigned yet.
+   */
+  protected mainAbortController = new AbortController();
 
-    /**
-     * Stores one AbortController per op.
-     * Used to signal cancellation to all ops in a group or individually if needed.
-     */
-    protected abortControllerMap: Map<string, AbortController> = new Map();
+  /**
+   * Stores one AbortController per op.
+   * Used to signal cancellation to all ops in a group or individually if needed.
+   */
+  protected abortControllerMap: Map<string, AbortController> = new Map();
 
-    /**
-     * Keeps track of the currently running group.
-     * Useful for coordinating group-level logic or logging.
-     */
-    protected currentGroup: string | undefined;
+  /**
+   * Keeps track of the currently running group.
+   * Useful for coordinating group-level logic or logging.
+   */
+  protected currentGroup: string | undefined;
 
-    /**
-     * keeps track of all promises of the current running group
-     */
-    protected currentGroupOperationsPromises: Map<string, Promise<void>> = new Map();
+  /**
+   * keeps track of all promises of the current running group
+   */
+  protected currentGroupOperationsPromises: Map<string, Promise<void>> =
+    new Map();
 
-    /**
-     * this is to create concurrency control on the operations
-     */
-    protected lockedOperations: Map<string, string> = new Map();
+  /**
+   * this is to create concurrency control on the operations
+   */
+  protected lockedOperations: Map<string, string> = new Map();
 
-    /**
-     * this is used to track the operations statuses
-     */
-    protected operationStatus: Map<string, (typeof OperationProgressStatuses)[keyof typeof OperationProgressStatuses]> = new Map();
+  /**
+   * this is used to track the operations statuses
+   */
+  protected operationStatus: Map<
+    string,
+    (typeof OperationProgressStatuses)[keyof typeof OperationProgressStatuses]
+  > = new Map();
 
-    /**
-     * this is to track event emitter to emit events
-     */
-    protected operationsEventEmitters: Map<string, EventEmitter> = new Map();
+  /**
+   * this is to track event emitter to emit events
+   */
+  protected operationsEventEmitters: Map<string, EventEmitter> = new Map();
 
-    /**
-     * save log buffer for streaming logs
-     */
-    protected opLogBuffers: Map<string, TaskLog[]> = new Map();
+  /**
+   * save log buffer for streaming logs
+   */
+  protected opLogBuffers: Map<string, TaskLog[]> = new Map();
 
-    /**
-     * this list of ws sub to the task managers events
-     */
-    protected subscribers: Set<WebSocket> = new Set();
+  /**
+   * this list of ws sub to the task managers events
+   */
+  protected subscribers: Set<WebSocket> = new Set();
 
-    /**
-     * stores filters
-     */
-    protected logMatchers: Map<WebSocket, (log: TaskLog) => boolean> = new Map();
+  /**
+   * stores filters
+   */
+  protected logMatchers: Map<WebSocket, (log: TaskLog) => boolean> = new Map();
 
-    protected TOTAL_LOGS_COUNT: number = 0;
+  protected TOTAL_LOGS_COUNT: number = 0;
 
-    /**
-     * Lifecycle status of the task manager.
-     * Can be 'init', 'running', 'stopped', or 'done'.
-     */
-    protected status: string = "init";
+  /**
+   * Lifecycle status of the task manager.
+   * Can be 'init', 'running', 'stopped', or 'done'.
+   */
+  protected status: string = 'init';
 
-    private currentRunningStartPromise?: Promise<void>;
+  private currentRunningStartPromise?: Promise<void>;
 
-    constructor(
-        protected provider: Provider,
-        protected repository: NodeRepository,
-        protected job: string,
-        protected definition?: JobDefinition,
-    ) {
-        if (definition) {
-            this.operations = definition.ops
-        }
-
-        this.runTaskManagerOperation = runTaskManagerOperation.bind(this);
-        this.restartTaskManagerOperation = restartTaskManagerOperation.bind(this);
-        this.stopTaskManagerOperation = stopTaskManagerOperation.bind(this)
-        this.stopTaskManagerGroupOperations = stopTaskManagerGroupOperations.bind(this)
-        this.restartTaskManagerGroupOperations = restartTaskManagerGroupOperations.bind(this)
-        this.moveTaskManagerGroupOperations = moveTaskManagerGroupOperations.bind(this)
-        this.stopAllTaskManagerOperations = stopAllTaskManagerOperations.bind(this)
-
-        this.createOperationMap = createOperationMap.bind(this)
-        this.createExecutionPlan = createExecutionPlan.bind(this)
-        this.createDependencyMap = createDependencyMap.bind(this)
-        this.validateExecutionPlan = validateExecutionPlan.bind(this)
-
-        this.getOperationsStatus = getOperationsStatus.bind(this)
-        this.getOperationStatus = getOperationStatus.bind(this)
-        this.getCurrentGroup = getCurrentGroup.bind(this)
-        this.getCurrentGroupStatus = getCurrentGroupStatus.bind(this)
-        this.getGroupStatus = getGroupStatus.bind(this)
-
-        this.addlog = addLog.bind(this)
-        this.getLogsByOp = getLogsByOp.bind(this)
-        this.getLogsByGroup = getLogsByGroup.bind(this)
-        this.getAllLogs = getAllLogs.bind(this)
-        this.subscribe = subscribe.bind(this)
-        this.unsubscribe = unsubscribe.bind(this)
+  constructor(
+    protected provider: Provider,
+    protected repository: NodeRepository,
+    protected job: string,
+    protected definition?: JobDefinition,
+  ) {
+    if (definition) {
+      this.operations = definition.ops;
     }
 
-    // operations methods
-    public runTaskManagerOperation: (flow: Flow, op: Operation<OperationType>, dependent: string[]) => Promise<void>;
-    public restartTaskManagerOperation: (group: string, opId: string) => Promise<void>;
-    public stopTaskManagerOperation: (group: string, opId: string) => Promise<void>;
-    public stopTaskManagerGroupOperations: (group: string) => Promise<void>;
-    public restartTaskManagerGroupOperations: (group: string) => Promise<void>;
-    public moveTaskManagerGroupOperations: (group: string) => Promise<void>;
-    public stopAllTaskManagerOperations: (reason: StopReason) => void;
+    this.runTaskManagerOperation = runTaskManagerOperation.bind(this);
+    this.restartTaskManagerOperation = restartTaskManagerOperation.bind(this);
+    this.stopTaskManagerOperation = stopTaskManagerOperation.bind(this);
+    this.stopTaskManagerGroupOperations =
+      stopTaskManagerGroupOperations.bind(this);
+    this.restartTaskManagerGroupOperations =
+      restartTaskManagerGroupOperations.bind(this);
+    this.moveTaskManagerGroupOperations =
+      moveTaskManagerGroupOperations.bind(this);
+    this.stopAllTaskManagerOperations = stopAllTaskManagerOperations.bind(this);
 
-    // executions methods
-    public createOperationMap: () => Map<string, Operation<OperationType>>;
-    public createExecutionPlan: () => ExecutionContext[];
-    public createDependencyMap: () => Map<string, DependencyContext>;
-    public validateExecutionPlan: () => void;
+    this.createOperationMap = createOperationMap.bind(this);
+    this.createExecutionPlan = createExecutionPlan.bind(this);
+    this.createDependencyMap = createDependencyMap.bind(this);
+    this.validateExecutionPlan = validateExecutionPlan.bind(this);
 
-    public getOperationsStatus: () => Record<string, string | null>;
-    public getOperationStatus: (id: string) => Record<string, string | null>;
-    public getCurrentGroup: () => string | undefined;
-    public getCurrentGroupStatus: () => Record<string, string | null>;
-    public getGroupStatus: (group: string) => Record<string, string | null>;
+    this.getOperationsStatus = getOperationsStatus.bind(this);
+    this.getOperationStatus = getOperationStatus.bind(this);
+    this.getCurrentGroup = getCurrentGroup.bind(this);
+    this.getCurrentGroupStatus = getCurrentGroupStatus.bind(this);
+    this.getGroupStatus = getGroupStatus.bind(this);
 
-    public addlog: (log: TaskLog) => void
-    public getLogsByOp: (opid: string) => TaskLog[]
-    public getLogsByGroup: (group: string) => TaskLog[]
-    public getAllLogs: () => TaskLog[]
-    public subscribe: (ws: WebSocket, matcher: (log: TaskLog) => boolean) => void
-    public unsubscribe: (ws: WebSocket) => void
+    this.addlog = addLog.bind(this);
+    this.getLogsByOp = getLogsByOp.bind(this);
+    this.getLogsByGroup = getLogsByGroup.bind(this);
+    this.getAllLogs = getAllLogs.bind(this);
+    this.subscribe = subscribe.bind(this);
+    this.unsubscribe = unsubscribe.bind(this);
+  }
 
-    /**
-     * Prepares the TaskManager for execution by performing all necessary setup steps.
-     * 
-     * This method performs two key operations:
-     * 
-     *  `build()`:
-     *    - Generates a map of all operations for fast lookup.
-     *    - Creates the execution plan based on operation groups and dependencies.
-     *    - Validates the structure of the plan to catch any misconfigurations early.
-     * 
-     *  `init()`:
-     *    - Initializes the task's persistent flow state in the repository.
-     *    - Skips initialization if the flow already exists (resumable/restartable design).
-     * 
-     * Call this once before `start()` to ensure the task manager is fully ready.
-     */
-    public bootstrap() {
-        this.build(); // Set up opMap, executionPlan, and validate
-        this.init();  // Create initial flow in the repository if it doesn't already exist
+  // operations methods
+  public runTaskManagerOperation: (
+    flow: Flow,
+    op: Operation<OperationType>,
+    dependent: string[],
+  ) => Promise<void>;
+  public restartTaskManagerOperation: (
+    group: string,
+    opId: string,
+  ) => Promise<void>;
+  public stopTaskManagerOperation: (
+    group: string,
+    opId: string,
+  ) => Promise<void>;
+  public stopTaskManagerGroupOperations: (group: string) => Promise<void>;
+  public restartTaskManagerGroupOperations: (group: string) => Promise<void>;
+  public moveTaskManagerGroupOperations: (group: string) => Promise<void>;
+  public stopAllTaskManagerOperations: (reason: StopReason) => void;
 
-        // register all operations to init status
-        [...this.opMap.keys()].forEach(op => this.operationStatus.set(op, OperationProgressStatuses.INIT))
-    }
+  // executions methods
+  public createOperationMap: () => Map<string, Operation<OperationType>>;
+  public createExecutionPlan: () => ExecutionContext[];
+  public createDependencyMap: () => Map<string, DependencyContext>;
+  public validateExecutionPlan: () => void;
 
-    /**
-     * Starts the execution of the job by processing each group in the execution plan.
-     * Tracks the full lifecycle including flow state updates and dynamic operations.
-     * 
-     * Execution Lifecycle:
-     * - If already started, returns the tracked lifecycle promise.
-     * - Sets status to 'running' and updates the repository with start time.
-     * - Iterates through execution groups and runs each op concurrently.
-     * - Uses a dynamic while-loop to ensure all ops (including restarts) finish before advancing.
-     * - After all groups finish, updates the flow state to 'success' or keeps previous status.
-     * - On any uncaught failure, marks the flow as 'failed' with end time.
-     */
-    public async start() {
-        // Return the lifecycle promise if already running
-        if (this.currentRunningStartPromise) return this.currentRunningStartPromise;
+  public getOperationsStatus: () => Record<string, string | null>;
+  public getOperationStatus: (id: string) => Record<string, string | null>;
+  public getCurrentGroup: () => string | undefined;
+  public getCurrentGroupStatus: () => Record<string, string | null>;
+  public getGroupStatus: (group: string) => Record<string, string | null>;
 
-        // Track the entire execution lifecycle in one promise
-        this.currentRunningStartPromise = (async () => {
-            // Fetch existing flow to determine whether execution should continue
-            const flow = this.repository.getflow(this.job);
+  public addlog: (log: TaskLog) => void;
+  public getLogsByOp: (opid: string) => TaskLog[];
+  public getLogsByGroup: (group: string) => TaskLog[];
+  public getAllLogs: () => TaskLog[];
+  public subscribe: (ws: WebSocket, matcher: (log: TaskLog) => boolean) => void;
+  public unsubscribe: (ws: WebSocket) => void;
 
-            try {
-                // If job already ended (either success or failure), no need to start again
-                // if (flow.state.endTime) return;
+  /**
+   * Prepares the TaskManager for execution by performing all necessary setup steps.
+   *
+   * This method performs two key operations:
+   *
+   *  `build()`:
+   *    - Generates a map of all operations for fast lookup.
+   *    - Creates the execution plan based on operation groups and dependencies.
+   *    - Validates the structure of the plan to catch any misconfigurations early.
+   *
+   *  `init()`:
+   *    - Initializes the task's persistent flow state in the repository.
+   *    - Skips initialization if the flow already exists (resumable/restartable design).
+   *
+   * Call this once before `start()` to ensure the task manager is fully ready.
+   */
+  public bootstrap() {
+    this.build(); // Set up opMap, executionPlan, and validate
+    this.init(); // Create initial flow in the repository if it doesn't already exist
 
-                // Mark as running and update DB
-                this.status = "running";
+    // register all operations to init status
+    [...this.opMap.keys()].forEach((op) =>
+      this.operationStatus.set(op, OperationProgressStatuses.INIT),
+    );
+  }
 
-                this.repository.updateflowState(this.job, {
-                    status: this.status,
-                    startTime: Date.now()
-                });
+  /**
+   * Starts the execution of the job by processing each group in the execution plan.
+   * Tracks the full lifecycle including flow state updates and dynamic operations.
+   *
+   * Execution Lifecycle:
+   * - If already started, returns the tracked lifecycle promise.
+   * - Sets status to 'running' and updates the repository with start time.
+   * - Iterates through execution groups and runs each op concurrently.
+   * - Uses a dynamic while-loop to ensure all ops (including restarts) finish before advancing.
+   * - After all groups finish, updates the flow state to 'success' or keeps previous status.
+   * - On any uncaught failure, marks the flow as 'failed' with end time.
+   */
+  public async start() {
+    // Return the lifecycle promise if already running
+    if (this.currentRunningStartPromise) return this.currentRunningStartPromise;
 
-                // update all operations status to pending since we have started
-                [...this.opMap.keys()].forEach(op => this.operationStatus.set(op, OperationProgressStatuses.PENDING))
+    // Track the entire execution lifecycle in one promise
+    this.currentRunningStartPromise = (async () => {
+      // Fetch existing flow to determine whether execution should continue
+      const flow = this.repository.getflow(this.job);
 
-                // Loop through execution plan, group by group
-                for (const p of this.executionPlan) {
-                    this.currentGroup = p.group;
+      try {
+        // If job already ended (either success or failure), no need to start again
+        // if (flow.state.endTime) return;
 
-                    // Queue each operation in the group for execution
-                    for (const id of p.ops) {
-                        const dependencyContext = this.dependecyMap.get(id) as DependencyContext
-                        if (dependencyContext.dependencies.length === 0) {
-                            this.operationStatus.set(id, OperationProgressStatuses.STARTING)
+        // Mark as running and update DB
+        this.status = 'running';
 
-                            this.currentGroupOperationsPromises.set(
-                                id,
-                                this.trackGroupOperationPromise(id, this.setUpOperationFunc(flow, id, dependencyContext.dependents))
-                            );
-                        } else {
-                            this.operationStatus.set(id, OperationProgressStatuses.WAITING)
-                        }
-                    }
-
-                    try {
-                        /**
-                         * We use a `while` loop instead of a single `await Promise.all(...)` to handle dynamic group operations.
-                         * 
-                         * Why:
-                         * - During execution, new operations (like restarted ops) can be added to `currentGroupOperationsPromises`.
-                         * - If we used a static `Promise.all(...)` outside the loop, it would only await the current snapshot,
-                         *   and any late-added promises wouldn't be awaited — leading to premature group advancement.
-                         * 
-                         * This loop ensures:
-                         * - We await all operations in the group, including those dynamically inserted (e.g. from restarts).
-                         * - The group doesn't complete until all its tracked promises are settled and removed.
-                         */
-                        while (this.currentGroupOperationsPromises.size > 0) {
-                            await Promise.all([...this.currentGroupOperationsPromises.values()]);
-                        }
-
-                    } catch (error) { } finally {
-                        // Reset group state after completion. successful or not
-                        this.currentGroup = undefined;
-                        this.currentGroupOperationsPromises.clear();
-                    }
-                }
-
-                // If status is still 'running', mark the job as successful
-                this.status = this.status === 'running' ? 'success' : this.status;
-
-                this.repository.updateflowState(this.job, {
-                    status: this.status,
-                    endTime: Date.now()
-                });
-
-            } catch (error) {
-                // Any uncaught failure sets the flow to 'failed'
-                this.repository.updateflowState(this.job, {
-                    status: 'failed',
-                    endTime: Date.now()
-                });
-            } finally {
-                // Do a total operation clean up where we go through all the opmap and clean all operations
-                const closingOperationPromises = []
-
-                for (const op of this.opMap.values()) {
-                    closingOperationPromises.push(this.provider.stopTaskManagerOperation(flow, op))
-                }
-
-                await Promise.all(closingOperationPromises);
-            }
-        })();
-
-        return this.currentRunningStartPromise;
-    }
-
-    /**
-     * Gracefully stops the task manager and all its operations.
-     * 
-     * This method:
-     * - Immediately aborts all running operations by triggering the main abort controller.
-     * - Waits for the current `start()` flow to finish, including database updates.
-     * - Ensures `stop()` logic runs only once per job to prevent race conditions.
-     * 
-     * Important:
-     * - `stopAllTaskManagerOperations()` is synchronous and triggers cancellation.
-     * - The actual cleanup and final state update (e.g., setting `endTime`) is handled
-     *   by the `start()` method’s final logic.
-     */
-    public async stop(reason: StopReason): Promise<void> {
-        const lockKey = `stop:${this.job}`;
-
-        // Ensure stop logic runs only once per job
-        if (this.lockedOperations.has(lockKey)) return;
-
-        this.lockedOperations.set(lockKey, reason);
-
-        try {
-            // Immediately abort all running operations
-            this.stopAllTaskManagerOperations(reason);
-
-            // Wait for the ongoing start logic to gracefully complete
-            if (this.currentRunningStartPromise) {
-                try {
-                    await this.currentRunningStartPromise;
-                } catch {
-                    // We ignore start errors during shutdown — cleanup should proceed regardless
-                }
-            }
-        } finally {
-            // Cleanup the lock regardless of outcome
-            this.lockedOperations.delete(lockKey);
-        }
-    }
-
-    protected setUpOperationFunc(flow: Flow, id: string, dependent: string[]): Promise<void> {
-        const op = this.opMap.get(id);
-        if (!op) {
-            throw new Error(`Invalid Op id: ${id}`);
-        }
-
-        return this.runTaskManagerOperation(flow, op, dependent);
-    }
-
-    protected trackGroupOperationPromise(opId: string, promise: Promise<void>): Promise<void> {
-        this.currentGroupOperationsPromises.set(opId, promise);
-
-        promise.finally(() => {
-            this.currentGroupOperationsPromises.delete(opId);
+        this.repository.updateflowState(this.job, {
+          status: this.status,
+          startTime: Date.now(),
         });
 
-        return promise;
-    }
+        // update all operations status to pending since we have started
+        [...this.opMap.keys()].forEach((op) =>
+          this.operationStatus.set(op, OperationProgressStatuses.PENDING),
+        );
 
-    protected getStatus(reason: StopReason, type: 'ops' | 'flow'): Status {
-        const map: Record<StopReason, { ops: Status; flow: Status }> = {
-            [StopReasons.COMPLETED]: { ops: Statuses.SUCCESS, flow: Statuses.SUCCESS },
-            [StopReasons.EXPIRED]: { ops: Statuses.SUCCESS, flow: Statuses.SUCCESS },
-            [StopReasons.STOPPED]: { ops: Statuses.STOPPED, flow: Statuses.STOPPED },
-            [StopReasons.RESTART]: { ops: Statuses.STOPPED, flow: Statuses.STOPPED },
-            [StopReasons.QUIT]: { ops: Statuses.FAILED, flow: Statuses.FAILED },
-            [StopReasons.UNKNOWN]: { ops: Statuses.FAILED, flow: Statuses.FAILED },
-        };
+        // Loop through execution plan, group by group
+        for (const p of this.executionPlan) {
+          this.currentGroup = p.group;
 
-        return map[reason][type];
-    }
+          // Queue each operation in the group for execution
+          for (const id of p.ops) {
+            const dependencyContext = this.dependecyMap.get(
+              id,
+            ) as DependencyContext;
+            if (dependencyContext.dependencies.length === 0) {
+              this.operationStatus.set(id, OperationProgressStatuses.STARTING);
 
-    protected getOpStateIndex(opId: string): number {
-        const index = (this.operations as TaskManagerOps).findIndex(op => op.id === opId);
+              this.currentGroupOperationsPromises.set(
+                id,
+                this.trackGroupOperationPromise(
+                  id,
+                  this.setUpOperationFunc(
+                    flow,
+                    id,
+                    dependencyContext.dependents,
+                  ),
+                ),
+              );
+            } else {
+              this.operationStatus.set(id, OperationProgressStatuses.WAITING);
+            }
+          }
 
-        if (index === -1) {
-            throw new Error(`Operation not found for ID: ${opId}`);
+          try {
+            /**
+             * We use a `while` loop instead of a single `await Promise.all(...)` to handle dynamic group operations.
+             *
+             * Why:
+             * - During execution, new operations (like restarted ops) can be added to `currentGroupOperationsPromises`.
+             * - If we used a static `Promise.all(...)` outside the loop, it would only await the current snapshot,
+             *   and any late-added promises wouldn't be awaited — leading to premature group advancement.
+             *
+             * This loop ensures:
+             * - We await all operations in the group, including those dynamically inserted (e.g. from restarts).
+             * - The group doesn't complete until all its tracked promises are settled and removed.
+             */
+            while (this.currentGroupOperationsPromises.size > 0) {
+              await Promise.all([
+                ...this.currentGroupOperationsPromises.values(),
+              ]);
+            }
+          } catch (error) {
+          } finally {
+            // Reset group state after completion. successful or not
+            this.currentGroup = undefined;
+            this.currentGroupOperationsPromises.clear();
+          }
         }
 
-        return index;
-    }
+        // If status is still 'running', mark the job as successful
+        this.status = this.status === 'running' ? 'success' : this.status;
 
-    private build() {
-        this.opMap = this.createOperationMap();
-        this.validateExecutionPlan()
-        this.executionPlan = this.createExecutionPlan();
-        this.dependecyMap = this.createDependencyMap();
-    }
+        this.repository.updateflowState(this.job, {
+          status: this.status,
+          endTime: Date.now(),
+        });
+      } catch (error) {
+        // Any uncaught failure sets the flow to 'failed'
+        this.repository.updateflowState(this.job, {
+          status: 'failed',
+          endTime: Date.now(),
+        });
+      } finally {
+        // Do a total operation clean up where we go through all the opmap and clean all operations
+        const closingOperationPromises = [];
 
-    private init(): void {
-        const flow = this.repository.getflow(this.job);
-        if (flow) {
-            this.definition = flow.jobDefinition
-        } else {
-            const now = Date.now();
-
-            const flow = createInitialFlow(
-                this.job,
-                this.definition as JobDefinition,
-                this.operations as TaskManagerOps,
-                this.status,
-                now
-            );
-
-            this.repository.setflow(this.job, flow);
+        for (const op of this.opMap.values()) {
+          closingOperationPromises.push(
+            this.provider.stopTaskManagerOperation(flow, op),
+          );
         }
 
-        if (!this.definition) {
-            throw new Error('Job Definition Not Specified')
+        await Promise.all(closingOperationPromises);
+      }
+    })();
+
+    return this.currentRunningStartPromise;
+  }
+
+  /**
+   * Gracefully stops the task manager and all its operations.
+   *
+   * This method:
+   * - Immediately aborts all running operations by triggering the main abort controller.
+   * - Waits for the current `start()` flow to finish, including database updates.
+   * - Ensures `stop()` logic runs only once per job to prevent race conditions.
+   *
+   * Important:
+   * - `stopAllTaskManagerOperations()` is synchronous and triggers cancellation.
+   * - The actual cleanup and final state update (e.g., setting `endTime`) is handled
+   *   by the `start()` method’s final logic.
+   */
+  public async stop(reason: StopReason): Promise<void> {
+    const lockKey = `stop:${this.job}`;
+
+    // Ensure stop logic runs only once per job
+    if (this.lockedOperations.has(lockKey)) return;
+
+    this.lockedOperations.set(lockKey, reason);
+
+    try {
+      // Immediately abort all running operations
+      this.stopAllTaskManagerOperations(reason);
+
+      // Wait for the ongoing start logic to gracefully complete
+      if (this.currentRunningStartPromise) {
+        try {
+          await this.currentRunningStartPromise;
+        } catch {
+          // We ignore start errors during shutdown — cleanup should proceed regardless
         }
+      }
+    } finally {
+      // Cleanup the lock regardless of outcome
+      this.lockedOperations.delete(lockKey);
     }
+  }
+
+  protected setUpOperationFunc(
+    flow: Flow,
+    id: string,
+    dependent: string[],
+  ): Promise<void> {
+    const op = this.opMap.get(id);
+    if (!op) {
+      throw new Error(`Invalid Op id: ${id}`);
+    }
+
+    return this.runTaskManagerOperation(flow, op, dependent);
+  }
+
+  protected trackGroupOperationPromise(
+    opId: string,
+    promise: Promise<void>,
+  ): Promise<void> {
+    this.currentGroupOperationsPromises.set(opId, promise);
+
+    promise.finally(() => {
+      this.currentGroupOperationsPromises.delete(opId);
+    });
+
+    return promise;
+  }
+
+  protected getStatus(reason: StopReason, type: 'ops' | 'flow'): Status {
+    const map: Record<StopReason, { ops: Status; flow: Status }> = {
+      [StopReasons.COMPLETED]: {
+        ops: Statuses.SUCCESS,
+        flow: Statuses.SUCCESS,
+      },
+      [StopReasons.EXPIRED]: { ops: Statuses.SUCCESS, flow: Statuses.SUCCESS },
+      [StopReasons.STOPPED]: { ops: Statuses.STOPPED, flow: Statuses.STOPPED },
+      [StopReasons.RESTART]: { ops: Statuses.STOPPED, flow: Statuses.STOPPED },
+      [StopReasons.QUIT]: { ops: Statuses.FAILED, flow: Statuses.FAILED },
+      [StopReasons.UNKNOWN]: { ops: Statuses.FAILED, flow: Statuses.FAILED },
+    };
+
+    return map[reason][type];
+  }
+
+  protected getOpStateIndex(opId: string): number {
+    const index = (this.operations as TaskManagerOps).findIndex(
+      (op) => op.id === opId,
+    );
+
+    if (index === -1) {
+      throw new Error(`Operation not found for ID: ${opId}`);
+    }
+
+    return index;
+  }
+
+  private build() {
+    this.opMap = this.createOperationMap();
+    this.validateExecutionPlan();
+    this.executionPlan = this.createExecutionPlan();
+    this.dependecyMap = this.createDependencyMap();
+  }
+
+  private init(): void {
+    const flow = this.repository.getflow(this.job);
+    if (flow) {
+      this.definition = flow.jobDefinition;
+    } else {
+      const now = Date.now();
+
+      const flow = createInitialFlow(
+        this.job,
+        this.definition as JobDefinition,
+        this.operations as TaskManagerOps,
+        this.status,
+        now,
+      );
+
+      this.repository.setflow(this.job, flow);
+    }
+
+    if (!this.definition) {
+      throw new Error('Job Definition Not Specified');
+    }
+  }
 }
