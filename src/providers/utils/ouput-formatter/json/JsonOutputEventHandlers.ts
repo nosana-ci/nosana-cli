@@ -54,6 +54,13 @@ export const jsonOutputEventHandlers: OutputEventHandlers = {
     response.keypair_path = param.keyfile;
   },
 
+  [OUTPUT_EVENTS.EMPTY_KEYFILE]: (
+    response: JsonResponseType,
+    param: KeyfileParam,
+  ) => {
+    response.keypair_path = param.keyfile;
+  },
+
   [OUTPUT_EVENTS.CREATE_KEYFILE]: (
     response: JsonResponseType,
     param: KeyfileParam,

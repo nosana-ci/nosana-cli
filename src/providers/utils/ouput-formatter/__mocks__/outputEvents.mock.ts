@@ -2,6 +2,7 @@ import { OUTPUT_EVENTS } from '../outputEvents.js';
 
 const outputEventsMock = {
   [OUTPUT_EVENTS.READ_KEYFILE]: jest.fn(),
+  [OUTPUT_EVENTS.EMPTY_KEYFILE]: jest.fn(),
   [OUTPUT_EVENTS.CREATE_KEYFILE]: jest.fn(),
   [OUTPUT_EVENTS.OUTPUT_BALANCES]: jest.fn(),
   [OUTPUT_EVENTS.OUTPUT_NETWORK]: jest.fn(),

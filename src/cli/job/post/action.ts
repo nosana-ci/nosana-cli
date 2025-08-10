@@ -114,8 +114,8 @@ export async function run(
       args: {
         image: 'docker.io/nosana/nosana-node-helper:latest',
         env: {
-          SECRETS_MANAGER: nosana.secrets.config.manager,
-          SECRETS_TOKEN: ['nosana/secrets-jwt', nosana.secrets.config.manager],
+          // SECRETS_MANAGER: nosana.secrets.config.manager,
+          // SECRETS_TOKEN: ['nosana/secrets-jwt', nosana.secrets.config.manager],
           PINATA_JWT: ['nosana/pinata-jwt'],
           RUST_BACKTRACE: '1',
           RUST_LOG: 'info',
