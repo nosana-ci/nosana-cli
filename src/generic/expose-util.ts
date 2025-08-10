@@ -59,6 +59,7 @@ export const generateProxies = (
   ports: ExposedPort[],
   name: string,
   operationId: string | null,
+  deploymentId?: string | undefined,
 ) => {
   const proxies = [];
 
@@ -77,6 +78,7 @@ export const generateProxies = (
       localIp: name,
       localPort: exosedport.port.toString(),
       customDomain: generatedId + '.' + configs().frp.serverAddr,
+      deploymentDomain: deploymentId + '.' + configs().frp.serverAddr,
     });
 
     idMap.set(generatedId, exosedport);

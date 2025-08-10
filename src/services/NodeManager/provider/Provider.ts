@@ -19,7 +19,7 @@ import { ExposedPortHealthCheck } from './ExposedPortHealthCheck.js';
 import { ExposedPort, getExposePorts, isOpExposed } from '@nosana/sdk';
 import EventEmitter from 'events';
 
-const frpcImage = 'docker.io/nosana/frpc:multi-v0.0.5';
+const frpcImage = 'docker.io/nosana/frpc:multi-v0.0.7';
 
 export class Provider {
   constructor(
@@ -364,12 +364,13 @@ export class Provider {
           const flowKey = flow.jobDefinition.deployment_id ?? flow.id;
 
           const { proxies, idMap } = generateProxies(
-            flowKey,
+            flow.id,
             op,
             index,
             ports,
             name,
             opState.operationId,
+            flow.jobDefinition.deployment_id, // TODO: Hash keys
           );
           idMaps = idMap;
 
@@ -385,7 +386,7 @@ export class Provider {
                 NOSANA_ID: flow.id,
                 FRP_PROXIES: JSON.stringify(proxies),
                 ...(isLoadBalanced && {
-                  FRP_LB_GROUP: flowKey,
+                  FRP_LB_GROUP: flow.jobDefinition.deployment_id,
                 }),
               },
             }));

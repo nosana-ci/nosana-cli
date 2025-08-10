@@ -1,7 +1,7 @@
 import EventEmitter from 'events';
 import { IValidation } from 'typia';
 import { PublicKey } from '@solana/web3.js';
-import { createHash, FlowState, Job, Run, Client as SDK } from '@nosana/sdk';
+import { Job, Run, Client as SDK } from '@nosana/sdk';
 import { JobDefinition, validateJobDefinition } from '../../provider/types.js';
 import { FlowHandler } from '../flow/flowHandler.js';
 import { Provider } from '../../provider/Provider.js';
@@ -180,12 +180,6 @@ export class JobHandler {
 
       if (!(await this.jobExternalUtil.validate(this.jobId(), jobDefinition))) {
         return false;
-      }
-
-      // we want to hash the the provided deployment id with the public key of job poster to make it unique
-      if (jobDefinition.deployment_id) {
-        const input = `${jobDefinition.deployment_id}:${job.project}`;
-        jobDefinition.deployment_id = createHash(input, 45);
       }
 
       this.flowHandler.start(this.jobId(), jobDefinition);
