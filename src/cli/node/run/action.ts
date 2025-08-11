@@ -14,11 +14,12 @@ import { FlowHandler } from '../../../services/NodeManager/node/flow/flowHandler
 import { IValidation } from 'typia';
 import { createLoggingProxy } from '../../../services/NodeManager/monitoring/proxy/loggingProxy.js';
 import { log } from '../../../services/NodeManager/monitoring/log/NodeLog.js';
-import {
-  ConsoleLogger,
-  consoleLogging,
-} from '../../../services/NodeManager/monitoring/log/console/ConsoleLogger.js';
+import { ConsoleLogger } from '../../../services/NodeManager/monitoring/log/console/ConsoleLogger.js';
 import EventEmitter from 'events';
+import { createHash } from '@nosana/sdk';
+import { getSDK } from '../../../services/sdk.js';
+import { configs } from '../../../services/NodeManager/configs/configs.js';
+import chalk from 'chalk';
 
 // This is still a WIP: i will still have to expose the logs and progress logs
 export async function runJob(
@@ -127,6 +128,7 @@ async function runFlow(
   options: any,
 ): Promise<FlowState> {
   try {
+    const sdk = getSDK();
     flowHandler.init(id);
 
     const validation: IValidation<JobDefinition> =
@@ -142,6 +144,19 @@ async function runFlow(
         errors: validation.errors,
       });
       return repository.getFlowState(id);
+    }
+
+    if (jobDefinition.deployment_id) {
+      jobDefinition.deployment_id = createHash(
+        `local-${
+          jobDefinition.deployment_id
+        }:${sdk.solana.wallet.publicKey.toString()}`,
+      );
+      console.log(
+        `${chalk.green('[Deployment Id Detected 🚀]')} ${chalk.yellow(
+          `https://${jobDefinition.deployment_id}.${configs().frp.serverAddr}`,
+        )}`,
+      );
     }
 
     flowHandler.start(id, jobDefinition);

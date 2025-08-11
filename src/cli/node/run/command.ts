@@ -3,6 +3,7 @@ import { Argument, Command, Option } from 'commander';
 import { runJob } from './action.js';
 import { gpuOption } from '../../sharedOptions/--gpu.js';
 import { verboseOption } from '../../sharedOptions/verbose.js';
+import { walletOption } from '../../sharedOptions/wallet.js';
 
 export const runNodeCommand = new Command('run')
   .description('Run Job Definition File')
@@ -30,6 +31,7 @@ export const runNodeCommand = new Command('run')
       'Podman/Docker connection URI',
     ).default('~/.nosana/podman/podman.sock'),
   )
+  .addOption(walletOption)
   .addOption(gpuOption)
   .addOption(verboseOption)
   .action(runJob);
