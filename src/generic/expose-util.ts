@@ -10,6 +10,7 @@ import {
   ExposedPort,
   getExposeIdHash,
   getExposePorts,
+  HttpHealthCheck,
   isOpExposed,
 } from '@nosana/sdk';
 
@@ -65,23 +66,42 @@ export const generateProxies = (
 
   const idMap: Map<string, ExposedPort> = new Map();
 
-  for (let exosedport of ports) {
+  for (let exposedPort of ports) {
     const generatedId = generateExposeId(
       flowId,
       opIndex,
-      exosedport.port,
+      exposedPort.port,
       op.args.private,
     );
+
+    let proxyHTTPHealthCheckPath: string | undefined = undefined;
+
+    if (exposedPort.health_checks && exposedPort.health_checks.length > 0) {
+      const http_checks = exposedPort.health_checks.filter(
+        (healthCheck) =>
+          healthCheck.type === 'http' &&
+          healthCheck.method === 'GET' &&
+          healthCheck.expected_status === 200,
+      );
+      if (http_checks.length > 0) {
+        proxyHTTPHealthCheckPath = (http_checks[0] as HttpHealthCheck).path;
+      }
+    }
 
     proxies.push({
       name: `${generatedId}-${operationId}`,
       localIp: name,
-      localPort: exosedport.port.toString(),
+      localPort: exposedPort.port.toString(),
       customDomain: generatedId + '.' + configs().frp.serverAddr,
-      deploymentDomain: deploymentId + '.' + configs().frp.serverAddr,
+      ...(deploymentId && {
+        deploymentDomain: deploymentId + '.' + configs().frp.serverAddr,
+        ...(exposedPort.health_checks && {
+          deploymentHealthCheckPath: proxyHTTPHealthCheckPath,
+        }),
+      }),
     });
 
-    idMap.set(generatedId, exosedport);
+    idMap.set(generatedId, exposedPort);
   }
 
   return { proxies, idMap };
