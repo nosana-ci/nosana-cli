@@ -1,5 +1,9 @@
 import fs from 'node:fs';
 import util from 'util';
+import { IValidation } from 'typia';
+import EventEmitter from 'events';
+import { createHash } from '@nosana/sdk';
+
 import {
   FlowState,
   JobDefinition,
@@ -11,15 +15,11 @@ import { NodeRepository } from '../../../services/NodeManager/repository/NodeRep
 import { DB } from '../../../providers/modules/db/index.js';
 import { selectContainerOrchestrationProvider } from '../../../services/NodeManager/provider/containerOrchestration/selectContainerOrchestration.js';
 import { FlowHandler } from '../../../services/NodeManager/node/flow/flowHandler.js';
-import { IValidation } from 'typia';
 import { createLoggingProxy } from '../../../services/NodeManager/monitoring/proxy/loggingProxy.js';
 import { log } from '../../../services/NodeManager/monitoring/log/NodeLog.js';
 import { ConsoleLogger } from '../../../services/NodeManager/monitoring/log/console/ConsoleLogger.js';
-import EventEmitter from 'events';
-import { createHash } from '@nosana/sdk';
 import { getSDK } from '../../../services/sdk.js';
-import { configs } from '../../../services/NodeManager/configs/configs.js';
-import chalk from 'chalk';
+import { generateDeploymentEndpointsTable } from '../../ults/generateDeploymentEndpointsTable.js';
 
 // This is still a WIP: i will still have to expose the logs and progress logs
 export async function runJob(
@@ -151,12 +151,10 @@ async function runFlow(
         `local-${
           jobDefinition.deployment_id
         }:${sdk.solana.wallet.publicKey.toString()}`,
+        45,
       );
-      console.log(
-        `${chalk.green('[Deployment Id Detected 🚀]')} ${chalk.yellow(
-          `https://${jobDefinition.deployment_id}.${configs().frp.serverAddr}`,
-        )}`,
-      );
+
+      generateDeploymentEndpointsTable(jobDefinition);
     }
 
     flowHandler.start(id, jobDefinition);

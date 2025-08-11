@@ -20,6 +20,7 @@ import {
   waitForJobCompletion,
   waitForJobRunOrCompletion,
 } from '../../../services/jobs.js';
+import { generateDeploymentEndpointsTable } from '../../ults/generateDeploymentEndpointsTable.js';
 
 export async function run(
   command: Array<string>,
@@ -258,17 +259,19 @@ export async function run(
 
   if (isExposed(json_flow as JobDefinition)) {
     if (!isPrivate(json_flow as JobDefinition)) {
-      let flowkey = response.job;
-
       if (json_flow.deployment_id) {
-        const input = `${json_flow.deployment_id}:${
-          nosana.solana.provider!.wallet.publicKey
-        }`;
-        flowkey = createHash(input, 45);
+        json_flow.deployment_id = createHash(
+          `${
+            json_flow.deployment_id
+          }:${nosana.solana.provider!.wallet.publicKey.toString()}`,
+          45,
+        );
+
+        generateDeploymentEndpointsTable(json_flow as JobDefinition);
       }
 
       formatter.output(OUTPUT_EVENTS.OUTPUT_SERVICE_URL, {
-        url: getJobUrls(json_flow as JobDefinition, flowkey).join(','),
+        url: getJobUrls(json_flow as JobDefinition, response.job).join(','),
       });
     } else {
       formatter.output(OUTPUT_EVENTS.OUTPUT_PRIVATE_URL_MESSAGE, {

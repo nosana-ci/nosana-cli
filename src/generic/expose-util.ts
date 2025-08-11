@@ -74,6 +74,15 @@ export const generateProxies = (
       op.args.private,
     );
 
+    const generatedDeploymentId = deploymentId
+      ? generateExposeId(
+          deploymentId,
+          opIndex,
+          exposedPort.port,
+          op.args.private,
+        )
+      : undefined;
+
     let proxyHTTPHealthCheckPath: string | undefined = undefined;
 
     if (exposedPort.health_checks && exposedPort.health_checks.length > 0) {
@@ -93,8 +102,9 @@ export const generateProxies = (
       localIp: name,
       localPort: exposedPort.port.toString(),
       customDomain: generatedId + '.' + configs().frp.serverAddr,
-      ...(deploymentId && {
-        deploymentDomain: deploymentId + '.' + configs().frp.serverAddr,
+      ...(generatedDeploymentId && {
+        deploymentDomain:
+          generatedDeploymentId + '.' + configs().frp.serverAddr,
         ...(exposedPort.health_checks && {
           deploymentHealthCheckPath: proxyHTTPHealthCheckPath,
         }),
