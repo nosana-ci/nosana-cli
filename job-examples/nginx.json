@@ -1,7 +1,6 @@
 {
   "version": "0.1",
   "type": "container",
-  "deployment_id": "first_deployment",
   "meta": {
     "trigger": "cli"
   },
@@ -12,9 +11,9 @@
       "args": {
         "cmd": [],
         "image": "nginx",
-        "expose": [ 
-          { 
-            "port": 80, 
+        "expose": [
+          {
+            "port": 80,
             "health_checks": [
               {
                 "type": "http",
@@ -23,7 +22,7 @@
                 "expected_status": 200,
                 "continuous": true
               }
-            ] 
+            ]
           }
         ]
       }

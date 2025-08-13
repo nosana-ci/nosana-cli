@@ -22,7 +22,7 @@ export function generateDeploymentEndpointsTable(jobDefinition: JobDefinition) {
             jobDefinition.deployment_id!,
             index,
             expose,
-            (op.args as OperationArgsMap['container/run']).private,
+            false,
           );
           table.addRow({
             OpIndex: index,
@@ -40,7 +40,7 @@ export function generateDeploymentEndpointsTable(jobDefinition: JobDefinition) {
               jobDefinition.deployment_id!,
               index,
               p,
-              (op.args as OperationArgsMap['container/run']).private,
+              false,
             );
 
             table.addRow({

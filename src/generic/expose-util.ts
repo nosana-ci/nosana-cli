@@ -75,12 +75,7 @@ export const generateProxies = (
     );
 
     const generatedDeploymentId = deploymentId
-      ? generateExposeId(
-          deploymentId,
-          opIndex,
-          exposedPort.port,
-          op.args.private,
-        )
+      ? generateExposeId(deploymentId, opIndex, exposedPort.port, false)
       : undefined;
 
     let proxyHTTPHealthCheckPath: string | undefined = undefined;
