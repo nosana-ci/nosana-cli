@@ -36,6 +36,7 @@ import {
   unsubscribe,
 } from './loggers/logManager.js';
 import { moveTaskManagerGroupOperations } from './operations/moveTaskManagerGroupOperation.js';
+import { createExposedPortMap } from './executions/createExposedPortMap.js';
 
 export type Operation<T extends OperationType> = {
   type: OperationType;
@@ -128,6 +129,11 @@ export default class TaskManager {
   protected opMap: Map<string, Operation<OperationType>> = new Map();
 
   /**
+   * A map for fast lookup of operations export urls.
+   */
+  protected exportMap: Map<string, string> = new Map();
+
+  /**
    * Main controller to allow global cancellation of the entire task flow.
    * All per-op controllers should eventually be tied to this as their parent,
    * or fallback to this if no specific controller is assigned yet.
@@ -217,6 +223,7 @@ export default class TaskManager {
     this.stopAllTaskManagerOperations = stopAllTaskManagerOperations.bind(this);
 
     this.createOperationMap = createOperationMap.bind(this);
+    this.createExposedPortMap = createExposedPortMap.bind(this)
     this.createExecutionPlan = createExecutionPlan.bind(this);
     this.createDependencyMap = createDependencyMap.bind(this);
     this.validateExecutionPlan = validateExecutionPlan.bind(this);
@@ -256,6 +263,7 @@ export default class TaskManager {
 
   // executions methods
   public createOperationMap: () => Map<string, Operation<OperationType>>;
+  public createExposedPortMap: () => Map<string, string>;
   public createExecutionPlan: () => ExecutionContext[];
   public createDependencyMap: () => Map<string, DependencyContext>;
   public validateExecutionPlan: () => void;
@@ -516,6 +524,7 @@ export default class TaskManager {
 
   private build() {
     this.opMap = this.createOperationMap();
+    this.exportMap = this.createExposedPortMap();
     this.validateExecutionPlan();
     this.executionPlan = this.createExecutionPlan();
     this.dependecyMap = this.createDependencyMap();
