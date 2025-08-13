@@ -11,7 +11,7 @@
       "dependencies": {
         "@coral-xyz/anchor": "^0.28.1-beta.1",
         "@inquirer/prompts": "^4.3.0",
-        "@nosana/sdk": "^0.4.9-rc.4",
+        "@nosana/sdk": "^0.4.15",
         "@solana/web3.js": "^1.78.0",
         "bn.js": "^5.2.1",
         "chalk": "^5.3.0",
@@ -2238,9 +2238,9 @@
       }
     },
     "node_modules/@nosana/sdk": {
-      "version": "0.4.9-rc.4",
-      "resolved": "https://registry.npmjs.org/@nosana/sdk/-/sdk-0.4.9-rc.4.tgz",
-      "integrity": "sha512-7kCk/nb47DtAqowalUhFg4YnPMZePGSiwBcmy0Cx1y+td7hU7BIor5ILerC8KOAFoqH3JtQD2vVfhXj/ZVJvYw==",
+      "version": "0.4.15",
+      "resolved": "https://registry.npmjs.org/@nosana/sdk/-/sdk-0.4.15.tgz",
+      "integrity": "sha512-/6ROOyXoyB+D1tXAssLvsCnUtiWCA/2ebURu85N5ZkyJzCC6ytzbqN+K0wl4IYi9vkbnwqX8z5DaJMq57+htqw==",
       "license": "ISC",
       "dependencies": {
         "@coral-xyz/anchor": "^0.28.1-beta.1",
@@ -2256,6 +2256,7 @@
         "bs58": "^5.0.0",
         "buffer": "^6.0.3",
         "form-data": "^4.0.0",
+        "openapi-fetch": "^0.14.0",
         "tweetnacl": "^1.0.3",
         "tweetnacl-util": "^0.15.1",
         "typia": "^7.6.4",
@@ -2397,6 +2398,21 @@
       "resolved": "https://registry.npmjs.org/mute-stream/-/mute-stream-0.0.8.tgz",
       "integrity": "sha512-nnbWWOkoWyUsTjKrhgD0dcz22mdkSnpYqbEjIm2nhwhuxlSkpywJmBo8h0ZqJdkp73mb90SssHkN4rsRaBAfAA==",
       "license": "ISC"
+    },
+    "node_modules/@nosana/sdk/node_modules/openapi-fetch": {
+      "version": "0.14.0",
+      "resolved": "https://registry.npmjs.org/openapi-fetch/-/openapi-fetch-0.14.0.tgz",
+      "integrity": "sha512-PshIdm1NgdLvb05zp8LqRQMNSKzIlPkyMxYFxwyHR+UlKD4t2nUjkDhNxeRbhRSEd3x5EUNh2w5sJYwkhOH4fg==",
+      "license": "MIT",
+      "dependencies": {
+        "openapi-typescript-helpers": "^0.0.15"
+      }
+    },
+    "node_modules/@nosana/sdk/node_modules/openapi-typescript-helpers": {
+      "version": "0.0.15",
+      "resolved": "https://registry.npmjs.org/openapi-typescript-helpers/-/openapi-typescript-helpers-0.0.15.tgz",
+      "integrity": "sha512-opyTPaunsklCBpTK8JGef6mfPhLSnyy5a0IN9vKtx3+4aExf+KxEqYwIy3hqkedXIB97u357uLMJsOnm3GVjsw==",
+      "license": "MIT"
     },
     "node_modules/@nosana/sdk/node_modules/ora": {
       "version": "5.4.1",
