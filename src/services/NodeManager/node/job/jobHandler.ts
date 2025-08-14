@@ -1,7 +1,7 @@
 import EventEmitter from 'events';
 import { IValidation } from 'typia';
 import { PublicKey } from '@solana/web3.js';
-import { FlowState, Job, Run, Client as SDK } from '@nosana/sdk';
+import { createHash, Job, Run, Client as SDK } from '@nosana/sdk';
 import { JobDefinition, validateJobDefinition } from '../../provider/types.js';
 import { FlowHandler } from '../flow/flowHandler.js';
 import { Provider } from '../../provider/Provider.js';
@@ -180,6 +180,11 @@ export class JobHandler {
 
       if (!(await this.jobExternalUtil.validate(this.jobId(), jobDefinition))) {
         return false;
+      }
+
+      if (jobDefinition.deployment_id) {
+        const input = `${jobDefinition.deployment_id}:${job.project}`;
+        jobDefinition.deployment_id = createHash(input, 45);
       }
 
       this.flowHandler.start(this.jobId(), jobDefinition);

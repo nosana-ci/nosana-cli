@@ -19,7 +19,7 @@ import { ExposedPortHealthCheck } from './ExposedPortHealthCheck.js';
 import { ExposedPort, getExposePorts, isOpExposed } from '@nosana/sdk';
 import EventEmitter from 'events';
 
-const frpcImage = 'docker.io/nosana/frpc:multi-v0.0.4';
+const frpcImage = 'docker.io/nosana/frpc:multi-v0.0.11';
 
 export class Provider {
   constructor(
@@ -356,6 +356,12 @@ export class Provider {
 
           this.resourceManager.images.setImage(frpcImage);
 
+          /**
+           * because of the introduction of deployment_id(load balancing key) instead of using flow.id we use deployment_id for more
+           * deterministic url generation
+           */
+          const isLoadBalanced = !!flow.jobDefinition.deployment_id;
+
           const { proxies, idMap } = generateProxies(
             flow.id,
             op,
@@ -363,6 +369,7 @@ export class Provider {
             ports,
             name,
             opState.operationId,
+            flow.jobDefinition.deployment_id,
           );
           idMaps = idMap;
 
@@ -377,6 +384,9 @@ export class Provider {
                 FRP_SERVER_PORT: configs().frp.serverPort.toString(),
                 NOSANA_ID: flow.id,
                 FRP_PROXIES: JSON.stringify(proxies),
+                ...(isLoadBalanced && {
+                  FRP_LB_GROUP_KEY: flow.jobDefinition.deployment_id,
+                }),
               },
             }));
 

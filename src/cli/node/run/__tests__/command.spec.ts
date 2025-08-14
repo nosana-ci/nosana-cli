@@ -25,8 +25,8 @@ describe('runNodeCommand', () => {
     expect(runNodeCommand.args[0]).toBe('job definition path');
   });
 
-  it('should have 6 options', () => {
-    expect(runNodeCommand.options.length).toBe(6);
+  it('should have 7 options', () => {
+    expect(runNodeCommand.options.length).toBe(7);
   });
 
   it.each([
@@ -36,6 +36,7 @@ describe('runNodeCommand', () => {
     ['--url', undefined, undefined],
     ['--gpu', undefined, 'all'],
     ['--verbose', undefined, undefined],
+    ['--wallet', '-w', '~/.nosana/nosana_key.json'],
   ])('should have %s option', (long, short, defaultValue) => {
     const option = runNodeCommand.options.find((i) => i.long === long);
     expect(option?.long).toBe(long);
