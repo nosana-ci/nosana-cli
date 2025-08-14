@@ -100,6 +100,7 @@ export const generateProxies = (
       ...(generatedDeploymentId && {
         deploymentDomain:
           generatedDeploymentId + '.' + configs().frp.serverAddr,
+        deploymentLoadBalancerGroup: generatedDeploymentId,
         ...(exposedPort.health_checks && {
           deploymentHealthCheckPath: proxyHTTPHealthCheckPath,
         }),
