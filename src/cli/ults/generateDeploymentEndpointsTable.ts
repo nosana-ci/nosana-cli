@@ -5,7 +5,7 @@ import { generateExposeId } from '../../generic/expose-util.js';
 import { configs } from '../../services/NodeManager/configs/configs.js';
 
 export function generateDeploymentEndpointsTable(jobDefinition: JobDefinition) {
-  jobDefinition.ops.forEach((op, index) => {
+  for (const op of jobDefinition.ops) {
     if (op.type === 'container/run') {
       const { expose } = op.args as OperationArgsMap['container/run'];
       if (expose) {
@@ -20,12 +20,11 @@ export function generateDeploymentEndpointsTable(jobDefinition: JobDefinition) {
         if (typeof expose === 'number') {
           const generatedId = generateExposeId(
             jobDefinition.deployment_id!,
-            index,
+            op.id,
             expose,
             false,
           );
           table.addRow({
-            OpIndex: index,
             OpId: op.id,
             Port: expose,
             Url: `https://${generatedId}.${configs().frp.serverAddr}`,
@@ -38,13 +37,12 @@ export function generateDeploymentEndpointsTable(jobDefinition: JobDefinition) {
 
             const generatedId = generateExposeId(
               jobDefinition.deployment_id!,
-              index,
+              op.id,
               p,
               false,
             );
 
             table.addRow({
-              OpIndex: index,
               OpId: op.id,
               Port: p,
               Url: `https://${generatedId}.${configs().frp.serverAddr}`,
@@ -55,5 +53,5 @@ export function generateDeploymentEndpointsTable(jobDefinition: JobDefinition) {
         table.printTable();
       }
     }
-  });
+  }
 }

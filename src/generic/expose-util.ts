@@ -16,7 +16,7 @@ import {
 
 export const generateExposeId = (
   flowId: string,
-  opIndex: number,
+  op: number | string,
   port: number,
   isPrivate?: boolean,
 ): string => {
@@ -26,7 +26,7 @@ export const generateExposeId = (
     const randomData = randomBytes(45).toString('hex');
     return createHash(randomData, idLength);
   } else {
-    return getExposeIdHash(flowId, opIndex, port);
+    return getExposeIdHash(flowId, op, port);
   }
 };
 
@@ -55,7 +55,7 @@ export const getJobUrls = (job: JobDefinition, flowId: string): string[] => {
 
 export const generateProxies = (
   flowId: string,
-  op: any,
+  op: Operation<'container/run'>,
   opIndex: number,
   ports: ExposedPort[],
   name: string,
@@ -75,7 +75,7 @@ export const generateProxies = (
     );
 
     const generatedDeploymentId = deploymentId
-      ? generateExposeId(deploymentId, opIndex, exposedPort.port, false)
+      ? generateExposeId(deploymentId, op.id, exposedPort.port, false)
       : undefined;
 
     let proxyHTTPHealthCheckPath: string | undefined = undefined;
