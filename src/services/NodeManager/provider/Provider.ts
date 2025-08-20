@@ -1,7 +1,7 @@
-import { OperationArgsMap, OperationType, Ops } from '@nosana/sdk';
+import { Operation, OperationArgsMap, OperationType, Ops } from '@nosana/sdk';
 
 import { ContainerOrchestrationInterface } from './containerOrchestration/interface.js';
-import { Flow, Operation } from './types.js';
+import { Flow } from './types.js';
 import { applyLoggingProxyToClass } from '../monitoring/proxy/loggingProxy.js';
 import { NodeRepository } from '../repository/NodeRepository.js';
 import { promiseTimeoutWrapper } from '../../../generic/timeoutPromiseWrapper.js';
@@ -340,6 +340,7 @@ export class Provider {
           },
         );
 
+        emitter.emit('updateOpHost', { name });
         emitter.emit('updateOpState', { providerId: container.id });
 
         const logStream = await container.logs({
@@ -512,6 +513,8 @@ export class Provider {
           name,
           controller,
         );
+
+        emitter.emit('updateOpHost', { name });
         emitter.emit('updateOpState', { providerId: volume.Status });
       }
 

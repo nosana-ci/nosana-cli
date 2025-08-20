@@ -1,10 +1,6 @@
-import { OperationArgsMap } from '@nosana/sdk';
+import { Operation, OperationArgsMap, OperationType } from '@nosana/sdk';
 
-import {
-  JobDefinition,
-  Operation,
-  OperationType,
-} from '../services/NodeManager/provider/types.js';
+import { JobDefinition } from '../services/NodeManager/provider/types.js';
 
 export const isPrivate = (job: JobDefinition): boolean => {
   return job.ops.some((op: Operation<OperationType>) => {

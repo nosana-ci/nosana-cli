@@ -1,6 +1,7 @@
 import {
   Flow,
   JobDefinition,
+  Operation,
   OperationArgsMap,
   OperationResults,
   OperationType,
@@ -38,20 +39,17 @@ import {
 import { moveTaskManagerGroupOperations } from './operations/moveTaskManagerGroupOperation.js';
 import { createExposedPortMap } from './executions/createExposedPortMap.js';
 
-export type Operation<T extends OperationType> = {
-  type: OperationType;
-  id: string;
-  args: OperationArgsMap[T];
-  results?: OperationResults;
-  execution?: Execution;
-};
+import {
+  setResult,
+  setResults,
+  setHost,
+  getByPath,
+  resolveLiteralsInString,
+  interpolate,
+  interpolateOperation,
+} from './globalStore/index.js';
 
 export type TaskManagerOps = Array<Operation<OperationType>>;
-
-export type Execution = {
-  group?: string;
-  depends_on?: string[];
-};
 
 export type ExecutionContext = {
   group: string;
@@ -103,6 +101,18 @@ export interface TaskLog {
   message: any;
 }
 
+export type OperationData = {
+  results?: Record<string, any>;
+  host?: string;
+};
+
+type InterpolateFn = <T>(value: T) => T;
+type InterpolateOpFn = <T extends OperationType>(
+  op: Operation<T>,
+) => Operation<T>;
+
+export type GlobalDataStore = Record<string, OperationData>;
+
 export type Status = (typeof Statuses)[keyof typeof Statuses];
 
 export default class TaskManager {
@@ -128,10 +138,24 @@ export default class TaskManager {
    */
   protected opMap: Map<string, Operation<OperationType>> = new Map();
 
+  // /**
+  //  * A map for fast lookup of operations export urls.
+  //  */
+  // protected exportMap: Map<string, string> = new Map();
+
   /**
-   * A map for fast lookup of operations export urls.
+   * Global data store for all operations in a job definition.
+   *
+   * This allows operations to reference data produced by others using literals like:
+   *   "%%ops.nginx-1.results.someKey%%"
+   *   "%%ops.nginx-1.host%%"
+   *
+   * Supported keys:
+   * - result: Stores the output of an operation so it can be accessed later, even if it was unknown at the start of the job.
+   * - host: Stores the reachable host/URL of the operation. Since Docker container names are dynamic,
+   *         this ensures other operations can communicate with it without needing to know the name in advance.
    */
-  protected exportMap: Map<string, string> = new Map();
+  protected globalOpStore: GlobalDataStore = {};
 
   /**
    * Main controller to allow global cancellation of the entire task flow.
@@ -223,7 +247,7 @@ export default class TaskManager {
     this.stopAllTaskManagerOperations = stopAllTaskManagerOperations.bind(this);
 
     this.createOperationMap = createOperationMap.bind(this);
-    this.createExposedPortMap = createExposedPortMap.bind(this)
+    this.createExposedPortMap = createExposedPortMap.bind(this);
     this.createExecutionPlan = createExecutionPlan.bind(this);
     this.createDependencyMap = createDependencyMap.bind(this);
     this.validateExecutionPlan = validateExecutionPlan.bind(this);
@@ -240,6 +264,16 @@ export default class TaskManager {
     this.getAllLogs = getAllLogs.bind(this);
     this.subscribe = subscribe.bind(this);
     this.unsubscribe = unsubscribe.bind(this);
+
+    this.setResult = setResult.bind(this);
+    this.setResults = setResults.bind(this);
+    this.setHost = setHost.bind(this);
+    this.getByPath = getByPath.bind(this);
+    this.resolveLiteralsInString = resolveLiteralsInString.bind(this);
+    this.interpolate = interpolate.bind(this) as InterpolateFn;
+    this.interpolateOperation = interpolateOperation.bind(
+      this,
+    ) as InterpolateOpFn;
   }
 
   // operations methods
@@ -280,6 +314,14 @@ export default class TaskManager {
   public getAllLogs: () => TaskLog[];
   public subscribe: (ws: WebSocket, matcher: (log: TaskLog) => boolean) => void;
   public unsubscribe: (ws: WebSocket) => void;
+
+  public setResult: (opId: string, key: string, value: any) => void;
+  public setResults: (opId: string, values: Record<string, any>) => void;
+  public setHost: (opId: string, host: string) => void;
+  public getByPath: (opId: string, path: string) => any;
+  public resolveLiteralsInString: (input: string) => string;
+  public interpolate: InterpolateFn;
+  public interpolateOperation: InterpolateOpFn;
 
   /**
    * Prepares the TaskManager for execution by performing all necessary setup steps.
@@ -524,7 +566,7 @@ export default class TaskManager {
 
   private build() {
     this.opMap = this.createOperationMap();
-    this.exportMap = this.createExposedPortMap();
+    // this.exportMap = this.createExposedPortMap();
     this.validateExecutionPlan();
     this.executionPlan = this.createExecutionPlan();
     this.dependecyMap = this.createDependencyMap();

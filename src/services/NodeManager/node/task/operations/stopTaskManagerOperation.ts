@@ -45,6 +45,12 @@ export async function stopTaskManagerOperation(
     throw new Error(`OPERATION_${this.lockedOperations.get(opId)}`);
   }
 
+  const currentStatus = this.operationStatus.get(opId);
+
+  if (currentStatus == OperationProgressStatuses.STOPPED) {
+    return;
+  }
+
   this.lockedOperations.set(opId, 'STOPPING');
   this.operationStatus.set(opId, OperationProgressStatuses.STOPPING);
 

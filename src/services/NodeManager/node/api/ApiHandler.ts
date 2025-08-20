@@ -271,35 +271,35 @@ export class ApiHandler {
     this.api.post(
       '/job/:jobId/group/:group/move',
       express.json(),
-      // verifyJobOwnerSignatureMiddleware,
+      verifyJobOwnerSignatureMiddleware,
       moveGroupOperationHandler,
     );
 
     this.api.post(
       '/job/:jobId/group/:group/operation/:opId/restart',
       express.json(),
-      // verifyJobOwnerSignatureMiddleware,
+      verifyJobOwnerSignatureMiddleware,
       restartOperationHandler,
     );
 
     this.api.post(
       '/job/:jobId/group/:group/restart',
       express.json(),
-      // verifyJobOwnerSignatureMiddleware,
+      verifyJobOwnerSignatureMiddleware,
       restartGroupOperationHandler,
     );
 
     this.api.post(
       '/job/:jobId/group/:group/operation/:opId/stop',
       express.json(),
-      // verifyJobOwnerSignatureMiddleware,
+      verifyJobOwnerSignatureMiddleware,
       stopOperationHandler,
     );
 
     this.api.post(
       '/job/:jobId/group/:group/stop',
       express.json(),
-      // verifyJobOwnerSignatureMiddleware,
+      verifyJobOwnerSignatureMiddleware,
       stopGroupOperationHandler,
     );
   }

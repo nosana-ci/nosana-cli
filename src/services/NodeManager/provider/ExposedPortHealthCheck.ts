@@ -141,13 +141,13 @@ export class ExposedPortHealthCheck {
       }
       if (healthCheck.type === 'http') {
         const success = await this.runHttpHealthCheck(
-          exposedPort.port,
+          exposedPort.port as number,
           healthCheck,
         );
         if (!success) return false;
       } else if (healthCheck.type === 'websocket') {
         const success = await this.runWebSocketHealthCheck(
-          exposedPort.port,
+          exposedPort.port as number,
           healthCheck,
         );
         if (!success) return false;

@@ -1,8 +1,5 @@
 import { randomBytes } from 'crypto';
-import {
-  JobDefinition,
-  Operation,
-} from '../services/NodeManager/provider/types.js';
+import { JobDefinition } from '../services/NodeManager/provider/types.js';
 import { isPrivate } from './ops-util.js';
 import { configs } from '../services/NodeManager/configs/configs.js';
 import {
@@ -11,6 +8,7 @@ import {
   getExposeIdHash,
   getExposePorts,
   isOpExposed,
+  Operation,
 } from '@nosana/sdk';
 
 export const generateExposeId = (
@@ -68,7 +66,7 @@ export const generateProxies = (
     const generatedId = generateExposeId(
       flowId,
       opIndex,
-      exosedport.port,
+      exosedport.port as number,
       op.args.private,
     );
 
@@ -91,7 +89,7 @@ export const generateUrlSecretObject = (idMap: Map<string, ExposedPort>) =>
       id,
       {
         type: port.type,
-        port: port.port,
+        port: port.port as number,
         url: `https://${id + '.' + configs().frp.serverAddr}`,
       },
     ]),
