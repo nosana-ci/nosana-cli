@@ -12,6 +12,7 @@ import TaskManager, {
 } from '../../../services/NodeManager/node/task/TaskManager.js';
 import { loadJobDefinitionFromFile } from '../../../providers/utils/jobDefinitionParser.js';
 import { generateDeploymentEndpointsTable } from '../../ults/generateDeploymentEndpointsTable.js';
+import { generateRandomId } from '../../../providers/utils/generate.js';
 
 export async function runJob(
   jobDefinitionFile: string,
@@ -56,7 +57,7 @@ export async function runJob(
     const logger = new ConsoleLogger(false);
     logger.addObserver();
 
-    const job = `job-${Math.random().toString(36).slice(2, 10)}`;
+    const job = generateRandomId(32);
 
     const tm = new TaskManager(provider, repository, job, jobDefinition);
     tm.bootstrap();

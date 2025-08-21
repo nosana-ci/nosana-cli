@@ -15,7 +15,7 @@ import {
 export const generateExposeId = (
   flowId: string,
   op: number | string,
-  port: number,
+  port: number | string,
   isPrivate?: boolean,
 ): string => {
   const idLength = 45;
@@ -111,13 +111,18 @@ export const generateProxies = (
   return { proxies, idMap };
 };
 
-export const generateUrlSecretObject = (idMap: Map<string, ExposedPort>) =>
+export const generateUrlSecretObject = (
+  idMap: Map<string, ExposedPort>,
+): Record<
+  string,
+  { type: string | undefined; port: number | string; url: string }
+> =>
   Object.fromEntries(
     Array.from(idMap, ([id, port]) => [
       id,
       {
         type: port.type,
-        port: port.port as number,
+        port: port.port,
         url: `https://${id + '.' + configs().frp.serverAddr}`,
       },
     ]),

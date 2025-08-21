@@ -33,13 +33,12 @@ export function generateDeploymentEndpointsTable(jobDefinition: JobDefinition) {
 
         if (Array.isArray(expose)) {
           expose.forEach((port) => {
-            let p =
-              typeof port === 'number' ? port : (port as ExposedPort).port;
+            let p = typeof port === 'object' ? port.port : port;
 
             const generatedId = generateExposeId(
               jobDefinition.deployment_id!,
               op.id,
-              p as number,
+              p,
               false,
             );
 
