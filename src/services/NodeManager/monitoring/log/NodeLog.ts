@@ -62,6 +62,30 @@ class NodeLog {
   }
 
   private process(data: LogEntry) {
+    if (data.class === 'TaskManager') {
+      if (data.method === 'start') {
+        if (data.type === 'call') {
+          this.addLog({
+            method: `${data.class}.${data.method}`,
+            job: this.job,
+            log: '',
+            timestamp: Date.now(),
+            type: 'process',
+          });
+        }
+
+        if (data.type === 'return') {
+          this.addLog({
+            method: `${data.class}.${data.method}`,
+            job: this.job,
+            log: '',
+            timestamp: Date.now(),
+            type: 'success',
+          });
+        }
+      }
+    }
+
     if (
       data.class === 'PodmanContainerOrchestration' ||
       data.class === 'DockerContainerOrchestration'

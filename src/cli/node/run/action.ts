@@ -7,7 +7,9 @@ import { DB } from '../../../providers/modules/db/index.js';
 import { selectContainerOrchestrationProvider } from '../../../services/NodeManager/provider/containerOrchestration/selectContainerOrchestration.js';
 import { log } from '../../../services/NodeManager/monitoring/log/NodeLog.js';
 import { ConsoleLogger } from '../../../services/NodeManager/monitoring/log/console/ConsoleLogger.js';
-import TaskManager, { StopReasons } from '../../../services/NodeManager/node/task/TaskManager.js';
+import TaskManager, {
+  StopReasons,
+} from '../../../services/NodeManager/node/task/TaskManager.js';
 import { loadJobDefinitionFromFile } from '../../../providers/utils/jobDefinitionParser.js';
 import { generateDeploymentEndpointsTable } from '../../ults/generateDeploymentEndpointsTable.js';
 

@@ -4,7 +4,10 @@ import { PublicKey } from '@solana/web3.js';
 import { Job, Run, Client as SDK } from '@nosana/sdk';
 import { JobDefinition, validateJobDefinition } from '../../provider/types.js';
 import { Provider } from '../../provider/Provider.js';
-import { applyLoggingProxyToClass } from '../../monitoring/proxy/loggingProxy.js';
+import {
+  applyLoggingProxyToClass,
+  createLoggingProxy,
+} from '../../monitoring/proxy/loggingProxy.js';
 import { NodeRepository } from '../../repository/NodeRepository.js';
 import { JobExternalUtil } from './jobExternalUtil.js';
 import { abortControllerSelector } from '../abort/abortControllerSelector.js';
@@ -190,11 +193,13 @@ export class JobHandler {
       try {
         TaskManagerRegistry.getInstance().register(
           this.jobId(),
-          new TaskManager(
-            this.provider,
-            this.repository,
-            this.jobId(),
-            jobDefinition,
+          createLoggingProxy(
+            new TaskManager(
+              this.provider,
+              this.repository,
+              this.jobId(),
+              jobDefinition,
+            ),
           ),
         );
 
