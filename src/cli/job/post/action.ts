@@ -1,4 +1,4 @@
-import { AuthorizationManager, Client, sleep } from '@nosana/sdk';
+import { AuthorizationManager, Client, createHash, sleep } from '@nosana/sdk';
 import fs from 'node:fs';
 import { randomUUID } from 'crypto';
 import { IValidation } from 'typia';
@@ -21,6 +21,7 @@ import {
   waitForJobRunOrCompletion,
 } from '../../../services/jobs.js';
 import { loadJobDefinitionFromFile } from '../../../providers/utils/jobDefinitionParser.js';
+import { generateDeploymentEndpointsTable } from '../../ults/generateDeploymentEndpointsTable.js';
 
 export async function run(
   command: Array<string>,
@@ -259,6 +260,17 @@ export async function run(
 
   if (isExposed(json_flow as JobDefinition)) {
     if (!isPrivate(json_flow as JobDefinition)) {
+      if (json_flow.deployment_id) {
+        json_flow.deployment_id = createHash(
+          `${
+            json_flow.deployment_id
+          }:${nosana.solana.provider!.wallet.publicKey.toString()}`,
+          45,
+        );
+
+        generateDeploymentEndpointsTable(json_flow as JobDefinition);
+      }
+
       formatter.output(OUTPUT_EVENTS.OUTPUT_SERVICE_URL, {
         url: getJobUrls(json_flow as JobDefinition, response.job).join(','),
       });

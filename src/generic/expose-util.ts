@@ -7,13 +7,14 @@ import {
   ExposedPort,
   getExposeIdHash,
   getExposePorts,
+  HttpHealthCheck,
   isOpExposed,
   Operation,
 } from '@nosana/sdk';
 
 export const generateExposeId = (
   flowId: string,
-  opIndex: number,
+  op: number | string,
   port: number,
   isPrivate?: boolean,
 ): string => {
@@ -23,7 +24,7 @@ export const generateExposeId = (
     const randomData = randomBytes(45).toString('hex');
     return createHash(randomData, idLength);
   } else {
-    return getExposeIdHash(flowId, opIndex, port);
+    return getExposeIdHash(flowId, op, port);
   }
 };
 
@@ -52,32 +53,59 @@ export const getJobUrls = (job: JobDefinition, flowId: string): string[] => {
 
 export const generateProxies = (
   flowId: string,
-  op: any,
+  op: Operation<'container/run'>,
   opIndex: number,
   ports: ExposedPort[],
   name: string,
   operationId: string | null,
+  deploymentId?: string | undefined,
 ) => {
   const proxies = [];
 
   const idMap: Map<string, ExposedPort> = new Map();
 
-  for (let exosedport of ports) {
+  for (let exposedPort of ports) {
     const generatedId = generateExposeId(
       flowId,
       opIndex,
-      exosedport.port as number,
+      exposedPort.port as number,
       op.args.private,
     );
+
+    const generatedDeploymentId = deploymentId
+      ? generateExposeId(deploymentId, op.id, exposedPort.port as number, false)
+      : undefined;
+
+    let proxyHTTPHealthCheckPath: string | undefined = undefined;
+
+    if (exposedPort.health_checks && exposedPort.health_checks.length > 0) {
+      const http_checks = exposedPort.health_checks.filter(
+        (healthCheck) =>
+          healthCheck.type === 'http' &&
+          healthCheck.method === 'GET' &&
+          healthCheck.expected_status === 200,
+      );
+      if (http_checks.length > 0) {
+        proxyHTTPHealthCheckPath = (http_checks[0] as HttpHealthCheck).path;
+      }
+    }
 
     proxies.push({
       name: `${generatedId}-${operationId}`,
       localIp: name,
-      localPort: exosedport.port.toString(),
+      localPort: exposedPort.port.toString(),
       customDomain: generatedId + '.' + configs().frp.serverAddr,
+      ...(generatedDeploymentId && {
+        deploymentDomain:
+          generatedDeploymentId + '.' + configs().frp.serverAddr,
+        deploymentLoadBalancerGroup: generatedDeploymentId,
+        ...(exposedPort.health_checks && {
+          deploymentHealthCheckPath: proxyHTTPHealthCheckPath,
+        }),
+      }),
     });
 
-    idMap.set(generatedId, exosedport);
+    idMap.set(generatedId, exposedPort);
   }
 
   return { proxies, idMap };

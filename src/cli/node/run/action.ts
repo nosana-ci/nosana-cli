@@ -1,29 +1,15 @@
-import fs from 'node:fs';
 import util from 'util';
-import {
-  FlowState,
-  JobDefinition,
-  validateJobDefinition,
-} from '../../../services/NodeManager/provider/types.js';
+import { JobDefinition } from '../../../services/NodeManager/provider/types.js';
 import { Provider } from '../../../services/NodeManager/provider/Provider.js';
 import { ResourceManager } from '../../../services/NodeManager/node/resource/resourceManager.js';
 import { NodeRepository } from '../../../services/NodeManager/repository/NodeRepository.js';
 import { DB } from '../../../providers/modules/db/index.js';
 import { selectContainerOrchestrationProvider } from '../../../services/NodeManager/provider/containerOrchestration/selectContainerOrchestration.js';
-import { IValidation } from 'typia';
-import { createLoggingProxy } from '../../../services/NodeManager/monitoring/proxy/loggingProxy.js';
 import { log } from '../../../services/NodeManager/monitoring/log/NodeLog.js';
-import {
-  ConsoleLogger,
-  consoleLogging,
-} from '../../../services/NodeManager/monitoring/log/console/ConsoleLogger.js';
-import EventEmitter from 'events';
-import TaskManager, {
-  StopReasons,
-  TaskManagerOps,
-} from '../../../services/NodeManager/node/task/TaskManager.js';
-import { sleep } from '@nosana/sdk';
+import { ConsoleLogger } from '../../../services/NodeManager/monitoring/log/console/ConsoleLogger.js';
+import TaskManager, { StopReasons } from '../../../services/NodeManager/node/task/TaskManager.js';
 import { loadJobDefinitionFromFile } from '../../../providers/utils/jobDefinitionParser.js';
+import { generateDeploymentEndpointsTable } from '../../ults/generateDeploymentEndpointsTable.js';
 
 export async function runJob(
   jobDefinitionFile: string,
@@ -36,6 +22,8 @@ export async function runJob(
       options,
       jobDefinitionFile,
     );
+
+    generateDeploymentEndpointsTable(jobDefinition);
 
     const db = new DB(options.config).db;
     const repository = new NodeRepository(db);

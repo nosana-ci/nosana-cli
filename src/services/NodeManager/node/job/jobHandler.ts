@@ -1,7 +1,7 @@
 import EventEmitter from 'events';
 import { IValidation } from 'typia';
 import { PublicKey } from '@solana/web3.js';
-import { FlowState, Job, Run, Client as SDK } from '@nosana/sdk';
+import { Job, Run, Client as SDK } from '@nosana/sdk';
 import { JobDefinition, validateJobDefinition } from '../../provider/types.js';
 import { Provider } from '../../provider/Provider.js';
 import { applyLoggingProxyToClass } from '../../monitoring/proxy/loggingProxy.js';
@@ -10,7 +10,6 @@ import { JobExternalUtil } from './jobExternalUtil.js';
 import { abortControllerSelector } from '../abort/abortControllerSelector.js';
 import { TaskManagerRegistry } from '../task/TaskManagerRegistry.js';
 import TaskManager, { StopReason, StopReasons } from '../task/TaskManager.js';
-import JobManager from '../../../JobManager/index.js';
 import { JobRegistry } from './JobRegistry.js';
 
 export const jobEmitter = new EventEmitter();
