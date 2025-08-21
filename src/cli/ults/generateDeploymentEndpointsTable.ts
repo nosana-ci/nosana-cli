@@ -1,5 +1,5 @@
 import { Table } from 'console-table-printer';
-import { JobDefinition, OperationArgsMap } from '@nosana/sdk';
+import { ExposedPort, JobDefinition, OperationArgsMap } from '@nosana/sdk';
 
 import { generateExposeId } from '../../generic/expose-util.js';
 import { configs } from '../../services/NodeManager/configs/configs.js';
@@ -33,12 +33,12 @@ export function generateDeploymentEndpointsTable(jobDefinition: JobDefinition) {
 
         if (Array.isArray(expose)) {
           expose.forEach((port) => {
-            let p = typeof port === 'number' ? port : port.port;
+            let p = typeof port === 'number' ? port : (port as ExposedPort).port;
 
             const generatedId = generateExposeId(
               jobDefinition.deployment_id!,
               op.id,
-              p,
+              p as number,
               false,
             );
 
