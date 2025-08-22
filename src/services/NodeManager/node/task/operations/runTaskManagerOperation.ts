@@ -185,8 +185,8 @@ export async function runTaskManagerOperation(
     const status = wasAborted
       ? this.getStatus(reason as StopReason, 'ops')
       : exitCode === 0
-        ? Statuses.SUCCESS
-        : Statuses.FAILED;
+      ? Statuses.SUCCESS
+      : Statuses.FAILED;
 
     const opState = this.repository.getOpState(this.job, index);
 
