@@ -36,6 +36,7 @@ import {
   setResult,
   setResults,
   setHost,
+  setDefaults,
   getByPath,
   resolveLiteralsInString,
   interpolate,
@@ -96,6 +97,7 @@ export interface TaskLog {
 }
 
 export type OperationData = {
+  deployment_endpoint?: string;
   results?: Record<string, any>;
   host?: string;
 };
@@ -263,6 +265,7 @@ export default class TaskManager {
     this.setResult = setResult.bind(this);
     this.setResults = setResults.bind(this);
     this.setHost = setHost.bind(this);
+    this.setDefaults = setDefaults.bind(this);
     this.getByPath = getByPath.bind(this);
     this.resolveLiteralsInString = resolveLiteralsInString.bind(this);
     this.interpolate = interpolate.bind(this) as InterpolateFn;
@@ -313,6 +316,7 @@ export default class TaskManager {
   public setResult: (opId: string, key: string, value: any) => void;
   public setResults: (opId: string, values: Record<string, any>) => void;
   public setHost: (opId: string, host: string) => void;
+  public setDefaults: (project: string, jobDefinition: JobDefinition) => void;
   public getByPath: (opId: string, path: string) => any;
   public resolveLiteralsInString: (input: string) => string;
   public interpolate: InterpolateFn;
@@ -584,6 +588,7 @@ export default class TaskManager {
       );
 
       this.repository.setflow(this.job, flow);
+      this.setDefaults(this.project, this.definition!);
     }
 
     if (!this.definition) {
