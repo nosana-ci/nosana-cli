@@ -16,6 +16,7 @@ import { loadJobDefinitionFromFile } from '../../../providers/utils/jobDefinitio
 import { generateDeploymentEndpointsTable } from '../../ults/generateDeploymentEndpointsTable.js';
 import { generateRandomId } from '../../../providers/utils/generate.js';
 import { getSDK } from '../../../services/sdk.js';
+import { createLoggingProxy } from '../../../services/NodeManager/monitoring/proxy/loggingProxy.js';
 
 export async function runJob(
   jobDefinitionFile: string,
@@ -41,8 +42,14 @@ export async function runJob(
       generateDeploymentEndpointsTable(jobDefinition);
     }
 
+    /**
+     * set up log listening, any instance can listen to log produces from the node
+     * the logs are produces from the log proxy
+     */
+    log();
+
     const db = new DB(options.config).db;
-    const repository = new NodeRepository(db);
+    const repository = createLoggingProxy(new NodeRepository(db));
 
     const containerOrchestration = selectContainerOrchestrationProvider(
       options.provider,
@@ -60,12 +67,6 @@ export async function runJob(
       repository,
       resourceManager,
     );
-
-    /**
-     * set up log listening, any instance can listen to log produces from the node
-     * the logs are produces from the log proxy
-     */
-    log();
 
     const logger = new ConsoleLogger(false);
     logger.addObserver();
