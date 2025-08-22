@@ -17,10 +17,11 @@ import { ExposedPortHealthCheck } from './ExposedPortHealthCheck.js';
 import { ExposedPort, getExposePorts, isOpExposed } from '@nosana/sdk';
 import EventEmitter from 'events';
 
-const tunnelImage = 'docker.io/nosana/tunnel:0.1.0';
-const frpcImage = 'docker.io/nosana/frpc:multi-v0.1.0';
+const tunnelImage = 'registry.hub.docker.com/nosana/tunnel:0.1.0';
+const frpcImage = 'registry.hub.docker.com/nosana/frpc:multi-v0.1.0';
 
 export class Provider {
+  private proxyStartupAbortController: AbortController | undefined = undefined;
   constructor(
     public containerOrchestration: ContainerOrchestrationInterface,
     private repository: NodeRepository,
@@ -33,6 +34,10 @@ export class Provider {
     const tunnel_name = `tunnel-api-${address}`;
     const frpc_name = `frpc-api-${address}`;
     const networkName = `api-${address}`;
+
+    if (this.proxyStartupAbortController instanceof AbortController) {
+      this.proxyStartupAbortController.abort();
+    }
 
     try {
       // Check if the tunnel container exists and stop/delete it
@@ -73,11 +78,21 @@ export class Provider {
       const networks: { [key: string]: {} } = {};
       networks[networkName] = {};
 
-      await this.containerOrchestration.pullImage(frpcImage);
+      this.proxyStartupAbortController = new AbortController();
+
+      await this.containerOrchestration.pullImage(
+        frpcImage,
+        undefined,
+        this.proxyStartupAbortController,
+      );
 
       this.resourceManager.images.setImage(frpcImage);
 
-      await this.containerOrchestration.pullImage(tunnelImage);
+      await this.containerOrchestration.pullImage(
+        tunnelImage,
+        undefined,
+        this.proxyStartupAbortController,
+      );
 
       this.resourceManager.images.setImage(tunnelImage);
 
@@ -178,6 +193,7 @@ export class Provider {
     } catch (error) {
       throw error;
     }
+    this.proxyStartupAbortController = undefined;
     return true;
   }
 

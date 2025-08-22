@@ -92,8 +92,12 @@ export class DockerContainerOrchestration
   ): Promise<void> {
     if (controller?.signal.aborted) throw controller.signal.reason;
     if (await this.docker.hasImage(image)) return;
-    if (controller)
-      await this.docker.promisePull(image, controller, authorisation);
+
+    await this.docker.promisePull(
+      image,
+      (controller = new AbortController()),
+      authorisation,
+    );
   }
 
   async hasImage(image: string): Promise<boolean> {
