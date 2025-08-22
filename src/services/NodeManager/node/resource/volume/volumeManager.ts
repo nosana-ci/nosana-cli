@@ -197,7 +197,6 @@ export class VolumeManager {
       condition: 'not-running',
       abortSignal: controller?.signal,
     });
-    controller?.abort();
 
     // If download failed, remove volume
     if (StatusCode !== 0) {
