@@ -215,31 +215,20 @@ export class ApiHandler {
       next();
     });
 
+    this.api.use(express.json());
+
     // GET Routes
     this.api.get('/', (_: Request, res: Response) => res.send(this.address));
     this.api.get(
       '/job-result/:jobId',
-      express.json(),
       verifyJobOwnerSignatureMiddleware,
       getJobResultsRoute,
     );
 
-    this.api.get('/job/:jobId/ops', express.json(), getOperationsStatusHandler);
-    this.api.get(
-      '/job/:jobId/ops/:opId',
-      express.json(),
-      getOperationStatusHandler,
-    );
-    this.api.get(
-      '/job/:jobId/group/current',
-      express.json(),
-      getCurrentGroupStatusHandler,
-    );
-    this.api.get(
-      '/job/:jobId/group/:group',
-      express.json(),
-      getGroupStatusHandler,
-    );
+    this.api.get('/job/:jobId/ops', getOperationsStatusHandler);
+    this.api.get('/job/:jobId/ops/:opId', getOperationStatusHandler);
+    this.api.get('/job/:jobId/group/current', getCurrentGroupStatusHandler);
+    this.api.get('/job/:jobId/group/:group', getGroupStatusHandler);
 
     this.api.get('/node/info', getNodeInfoRoute);
     this.api.get(
@@ -251,7 +240,6 @@ export class ApiHandler {
     // POST Routes
     this.api.post(
       '/job-definition/:jobId',
-      express.json(),
       verifyJobOwnerSignatureMiddleware,
       postJobDefinitionRoute,
     );
@@ -262,7 +250,6 @@ export class ApiHandler {
     );
     this.api.post(
       '/node/validate',
-      express.json(),
       verifyBackendSignatureMiddleware,
       postNodeValidation,
     );
@@ -270,35 +257,30 @@ export class ApiHandler {
     // this
     this.api.post(
       '/job/:jobId/group/:group/move',
-      express.json(),
       verifyJobOwnerSignatureMiddleware,
       moveGroupOperationHandler,
     );
 
     this.api.post(
       '/job/:jobId/group/:group/operation/:opId/restart',
-      express.json(),
       verifyJobOwnerSignatureMiddleware,
       restartOperationHandler,
     );
 
     this.api.post(
       '/job/:jobId/group/:group/restart',
-      express.json(),
       verifyJobOwnerSignatureMiddleware,
       restartGroupOperationHandler,
     );
 
     this.api.post(
       '/job/:jobId/group/:group/operation/:opId/stop',
-      express.json(),
       verifyJobOwnerSignatureMiddleware,
       stopOperationHandler,
     );
 
     this.api.post(
       '/job/:jobId/group/:group/stop',
-      express.json(),
       verifyJobOwnerSignatureMiddleware,
       stopGroupOperationHandler,
     );
