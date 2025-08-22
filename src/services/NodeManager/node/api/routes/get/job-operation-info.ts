@@ -33,7 +33,13 @@ export function getOperationStatusHandler(
     return res.status(400).send('invalid job id');
   }
 
-  return res.status(200).json(task.getOperationStatus(opId));
+  const operation = task.getOperationStatus(opId);
+
+  if (!operation) {
+    return res.status(404).send('operation not found');
+  }
+
+  return res.status(200).json(operation);
 }
 
 /**
@@ -67,5 +73,11 @@ export function getGroupStatusHandler(
     return res.status(400).send('invalid job id');
   }
 
-  return res.status(200).json(task.getGroupStatus(group));
+  const groupStatus = task.getGroupStatus(group);
+
+  if (!groupStatus) {
+    return res.status(404).send('group not found');
+  }
+
+  return res.status(200).json(groupStatus);
 }

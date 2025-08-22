@@ -17,7 +17,7 @@ export function generateDeploymentEndpointsTable(jobDefinition: JobDefinition) {
           },
         });
 
-        if (typeof expose === 'number') {
+        if (typeof expose === 'number' || typeof expose === 'string') {
           const generatedId = generateExposeId(
             jobDefinition.deployment_id!,
             op.id,
