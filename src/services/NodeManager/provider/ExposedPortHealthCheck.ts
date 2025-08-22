@@ -139,13 +139,16 @@ export class ExposedPortHealthCheck {
       if (!initialRun && !healthCheck.continuous) {
         return null;
       }
-      if (healthCheck.type === 'http') {
+      if (healthCheck.type === 'http' && typeof exposedPort.port === 'number') {
         const success = await this.runHttpHealthCheck(
           exposedPort.port,
           healthCheck,
         );
         if (!success) return false;
-      } else if (healthCheck.type === 'websocket') {
+      } else if (
+        healthCheck.type === 'websocket' &&
+        typeof exposedPort.port === 'number'
+      ) {
         const success = await this.runWebSocketHealthCheck(
           exposedPort.port,
           healthCheck,
@@ -158,7 +161,7 @@ export class ExposedPortHealthCheck {
   }
 
   private async runHttpHealthCheck(
-    port: number | string,
+    port: number,
     healthCheck: HttpHealthCheck,
   ): Promise<boolean> {
     const url = `http://${this.containerName}:${port}${healthCheck.path}`;
@@ -202,7 +205,7 @@ export class ExposedPortHealthCheck {
   }
 
   private async runWebSocketHealthCheck(
-    port: number | string,
+    port: number,
     healthCheck: WebSocketHealthCheck,
   ): Promise<boolean> {
     const cmd = ['curl', '--include', '--no-buffer', `ws://localhost:${port}`];
