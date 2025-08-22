@@ -31,7 +31,6 @@ import {
   unsubscribe,
 } from './loggers/logManager.js';
 import { moveTaskManagerGroupOperations } from './operations/moveTaskManagerGroupOperation.js';
-import { createExposedPortMap } from './executions/createExposedPortMap.js';
 import {
   setResult,
   setResults,
@@ -244,7 +243,6 @@ export default class TaskManager {
     this.stopAllTaskManagerOperations = stopAllTaskManagerOperations.bind(this);
 
     this.createOperationMap = createOperationMap.bind(this);
-    this.createExposedPortMap = createExposedPortMap.bind(this);
     this.createExecutionPlan = createExecutionPlan.bind(this);
     this.createDependencyMap = createDependencyMap.bind(this);
     this.validateExecutionPlan = validateExecutionPlan.bind(this);
@@ -295,7 +293,6 @@ export default class TaskManager {
 
   // executions methods
   public createOperationMap: () => Map<string, Operation<OperationType>>;
-  public createExposedPortMap: () => Map<string, string>;
   public createExecutionPlan: () => ExecutionContext[];
   public createDependencyMap: () => Map<string, DependencyContext>;
   public validateExecutionPlan: () => void;
@@ -565,7 +562,6 @@ export default class TaskManager {
 
   private build() {
     this.opMap = this.createOperationMap();
-    // this.exportMap = this.createExposedPortMap();
     this.validateExecutionPlan();
     this.executionPlan = this.createExecutionPlan();
     this.dependecyMap = this.createDependencyMap();
