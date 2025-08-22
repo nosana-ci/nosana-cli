@@ -186,6 +186,7 @@ export class JobHandler {
               this.provider,
               this.repository,
               this.jobId(),
+              job.project.toString(),
               jobDefinition,
             ),
           ),
@@ -209,7 +210,12 @@ export class JobHandler {
       try {
         TaskManagerRegistry.getInstance().register(
           this.jobId(),
-          new TaskManager(this.provider, this.repository, this.jobId()),
+          new TaskManager(
+            this.provider,
+            this.repository,
+            this.jobId(),
+            job.project.toString(),
+          ),
         );
 
         const task = TaskManagerRegistry.getInstance().get(

@@ -81,6 +81,7 @@ export type FlowState = {
 export type Flow = {
   id: string;
   jobDefinition: JobDefinition;
+  project: string;
   state: FlowState;
 };
 

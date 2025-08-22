@@ -72,7 +72,13 @@ export async function runJob(
 
     const job = generateRandomId(32);
 
-    const tm = new TaskManager(provider, repository, job, jobDefinition);
+    const tm = new TaskManager(
+      provider,
+      repository,
+      job,
+      sdk.solana.wallet.publicKey.toString(),
+      jobDefinition,
+    );
     tm.bootstrap();
 
     const exitHandler = async () => {

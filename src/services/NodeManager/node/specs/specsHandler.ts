@@ -36,6 +36,7 @@ export class SpecsHandler {
       this.provider,
       this.repository,
       id,
+      this.sdk.solana.wallet.publicKey.toString(),
       specsAndNetworkJob,
     );
 

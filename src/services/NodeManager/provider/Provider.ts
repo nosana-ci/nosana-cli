@@ -1,4 +1,10 @@
-import { Operation, OperationArgsMap, OperationType, Ops } from '@nosana/sdk';
+import {
+  createHash,
+  Operation,
+  OperationArgsMap,
+  OperationType,
+  Ops,
+} from '@nosana/sdk';
 
 import { ContainerOrchestrationInterface } from './containerOrchestration/interface.js';
 import { Flow } from './types.js';
@@ -276,6 +282,12 @@ export class Provider {
            * deterministic url generation
            */
           const isLoadBalanced = !!flow.jobDefinition.deployment_id;
+          const deploymentHash = isLoadBalanced
+            ? createHash(
+                `${flow.jobDefinition.deployment_id}:${flow.project}`,
+                45,
+              )
+            : undefined;
 
           const { proxies, idMap } = generateProxies(
             flow.id,
@@ -284,7 +296,7 @@ export class Provider {
             ports,
             name,
             op.id,
-            flow.jobDefinition.deployment_id,
+            deploymentHash,
           );
           idMaps = idMap;
           frpcContainer = await this.containerOrchestration.runFlowContainer(
@@ -300,7 +312,7 @@ export class Provider {
                 NOSANA_ID: flow.id,
                 FRP_PROXIES: JSON.stringify(proxies),
                 ...(isLoadBalanced && {
-                  FRP_LB_GROUP_KEY: flow.jobDefinition.deployment_id,
+                  FRP_LB_GROUP_KEY: deploymentHash,
                 }),
               },
             },

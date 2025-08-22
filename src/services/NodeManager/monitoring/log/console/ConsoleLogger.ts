@@ -58,7 +58,7 @@ export class ConsoleLogger implements LogObserver {
 
       if (isNode && this.taskManagerActive) {
         this.spinner.succeed(
-          chalk.yellow(`${chalk.bgYellow.bold(' TASKMANAGER ')} Exited`),
+          chalk.magenta(`${chalk.bgMagenta.bold(' TASKMANAGER ')} Exited`),
         );
       }
 
@@ -92,8 +92,8 @@ export class ConsoleLogger implements LogObserver {
         this.pending = true;
 
         this.spinner = ora(
-          chalk.yellow(
-            `${chalk.bgYellow.bold(' TASKMANAGER ')} Running ${log.job}...`,
+          chalk.magenta(
+            `${chalk.bgMagenta.bold(' TASKMANAGER ')} Running ${log.job}...`,
           ),
         ).start();
 
@@ -105,8 +105,8 @@ export class ConsoleLogger implements LogObserver {
       if (this.taskManagerActive) {
         if (log.method === 'TaskManager.start') {
           this.spinner.succeed(
-            chalk.yellow(
-              `${chalk.bgYellow.bold(' TASKMANAGER ')} Ending ${log.job}...`,
+            chalk.magenta(
+              `${chalk.bgMagenta.bold(' TASKMANAGER ')} Ending ${log.job}...`,
             ),
           );
           this.taskManagerActive = false;

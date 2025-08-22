@@ -87,6 +87,7 @@ export class RegisterHandler {
       this.provider,
       this.repository,
       flowId,
+      this.sdk.solana.wallet.publicKey.toString(),
       specsAndNetworkJob,
     );
     task.bootstrap();

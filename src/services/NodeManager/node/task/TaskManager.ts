@@ -1,11 +1,7 @@
-import {
-  Flow,
-  JobDefinition,
-  Operation,
-  OperationArgsMap,
-  OperationResults,
-  OperationType,
-} from '@nosana/sdk';
+import type WebSocket from 'ws';
+import EventEmitter from 'events';
+import { JobDefinition, Operation, OperationType } from '@nosana/sdk';
+
 import { NodeRepository } from '../../repository/NodeRepository.js';
 import { Provider } from '../../provider/Provider.js';
 import { runTaskManagerOperation } from './operations/runTaskManagerOperation.js';
@@ -26,8 +22,6 @@ import {
   getOperationsStatus,
   getOperationStatus,
 } from './operations/getOperationsInfos.js';
-import EventEmitter from 'events';
-import type WebSocket from 'ws';
 import {
   addLog,
   getAllLogs,
@@ -38,7 +32,6 @@ import {
 } from './loggers/logManager.js';
 import { moveTaskManagerGroupOperations } from './operations/moveTaskManagerGroupOperation.js';
 import { createExposedPortMap } from './executions/createExposedPortMap.js';
-
 import {
   setResult,
   setResults,
@@ -48,6 +41,7 @@ import {
   interpolate,
   interpolateOperation,
 } from './globalStore/index.js';
+import { Flow } from '../../provider/types.js';
 
 export type TaskManagerOps = Array<Operation<OperationType>>;
 
@@ -229,6 +223,7 @@ export default class TaskManager {
     protected provider: Provider,
     protected repository: NodeRepository,
     protected job: string,
+    protected project: string,
     protected definition?: JobDefinition,
   ) {
     if (definition) {
@@ -581,6 +576,7 @@ export default class TaskManager {
 
       const flow = createInitialFlow(
         this.job,
+        this.project,
         this.definition as JobDefinition,
         this.operations as TaskManagerOps,
         this.status,

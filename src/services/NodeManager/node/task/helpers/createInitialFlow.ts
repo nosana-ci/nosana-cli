@@ -1,5 +1,6 @@
-import { Flow, JobDefinition, Operation, OperationType } from '@nosana/sdk';
+import { JobDefinition, Operation, OperationType } from '@nosana/sdk';
 import { createDefaultOpState } from './createDefaultOpState.js';
+import { Flow } from '../../../provider/types.js';
 
 /**
  * Creates the initial flow structure for a given job.
@@ -8,6 +9,7 @@ import { createDefaultOpState } from './createDefaultOpState.js';
  */
 export function createInitialFlow(
   jobId: string,
+  project: string,
   definition: JobDefinition,
   operations: Operation<OperationType>[],
   status: string,
@@ -16,6 +18,7 @@ export function createInitialFlow(
   return {
     id: jobId,
     jobDefinition: definition,
+    project,
     state: {
       status,
       startTime: timestamp,

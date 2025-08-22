@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { Flow, Operation, OperationType } from '@nosana/sdk';
+import { Operation, OperationType } from '@nosana/sdk';
 import { extractLogsAndResultsFromLogBuffer } from '../../../../../providers/utils/extractLogsAndResultsFromLogBuffer.js';
 import {
   Statuses,
@@ -8,6 +8,7 @@ import {
   OperationProgressStatuses,
 } from '../TaskManager.js';
 import TaskManager from '../TaskManager.js';
+import { Flow } from '../../../provider/types.js';
 
 /**
  * Executes a full lifecycle of a container-based operation using internal class state.
@@ -190,7 +191,9 @@ export async function runTaskManagerOperation(
     const opState = this.repository.getOpState(this.job, index);
 
     const logBuffer = Buffer.concat(
-      opState.logs.map((log) => Buffer.from(log as unknown as string, 'utf-8')),
+      opState.logs.map(
+        (log) => new Uint8Array(Buffer.from(log as unknown as string, 'utf-8')),
+      ),
     );
 
     const { logs, results } = extractLogsAndResultsFromLogBuffer(
