@@ -1,4 +1,6 @@
 import util from 'util';
+import { createHash } from '@nosana/sdk';
+
 import { JobDefinition } from '../../../services/NodeManager/provider/types.js';
 import { Provider } from '../../../services/NodeManager/provider/Provider.js';
 import { ResourceManager } from '../../../services/NodeManager/node/resource/resourceManager.js';
@@ -13,6 +15,7 @@ import TaskManager, {
 import { loadJobDefinitionFromFile } from '../../../providers/utils/jobDefinitionParser.js';
 import { generateDeploymentEndpointsTable } from '../../ults/generateDeploymentEndpointsTable.js';
 import { generateRandomId } from '../../../providers/utils/generate.js';
+import { getSDK } from '../../../services/sdk.js';
 
 export async function runJob(
   jobDefinitionFile: string,
@@ -21,12 +24,22 @@ export async function runJob(
   },
 ) {
   try {
-    const jobDefinition = await resolveJobDefination(
+    const sdk = getSDK();
+    const jobDefinition = await resolveJobDefinition(
       options,
       jobDefinitionFile,
     );
 
-    generateDeploymentEndpointsTable(jobDefinition);
+    if (jobDefinition.deployment_id) {
+      jobDefinition.deployment_id = createHash(
+        `local-${
+          jobDefinition.deployment_id
+        }:${sdk.solana.wallet.publicKey.toString()}`,
+        45,
+      );
+
+      generateDeploymentEndpointsTable(jobDefinition);
+    }
 
     const db = new DB(options.config).db;
     const repository = new NodeRepository(db);
@@ -96,7 +109,7 @@ export async function runJob(
   process.exit();
 }
 
-async function resolveJobDefination(
+async function resolveJobDefinition(
   options: {
     [key: string]: any;
   },

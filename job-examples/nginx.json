@@ -4,6 +4,7 @@
   "meta": {
     "trigger": "cli"
   },
+  "deployment_id": "Deployment Id",
   "ops": [
     {
       "type": "container/run",
