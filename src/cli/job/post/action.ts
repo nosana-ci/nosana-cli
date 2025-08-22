@@ -1,7 +1,8 @@
-import { AuthorizationManager, Client, createHash, sleep } from '@nosana/sdk';
-import fs from 'node:fs';
 import { randomUUID } from 'crypto';
 import { IValidation } from 'typia';
+import { PublicKey } from '@solana/web3.js';
+import { Client, createHash, sleep } from '@nosana/sdk';
+
 import { privateBlankJobDefintion, config } from '../../../generic/config.js';
 import { getJob } from '../get/action.js';
 import { colors } from '../../../generic/utils.js';
@@ -9,17 +10,13 @@ import { getNosBalance, getSDK, getSolBalance } from '../../../services/sdk.js';
 import { OUTPUT_EVENTS } from '../../../providers/utils/ouput-formatter/outputEvents.js';
 import { outputFormatSelector } from '../../../providers/utils/ouput-formatter/outputFormatSelector.js';
 import { clientSelector } from '../../../api/client.js';
-import { PublicKey } from '@solana/web3.js';
 import { isExposed, isPrivate } from '../../../generic/ops-util.js';
 import {
   JobDefinition,
   validateJobDefinition,
 } from '../../../services/NodeManager/provider/types.js';
 import { getJobUrls } from '../../../generic/expose-util.js';
-import {
-  waitForJobCompletion,
-  waitForJobRunOrCompletion,
-} from '../../../services/jobs.js';
+import { waitForJobRunOrCompletion } from '../../../services/jobs.js';
 import { loadJobDefinitionFromFile } from '../../../providers/utils/jobDefinitionParser.js';
 import { generateDeploymentEndpointsTable } from '../../ults/generateDeploymentEndpointsTable.js';
 
