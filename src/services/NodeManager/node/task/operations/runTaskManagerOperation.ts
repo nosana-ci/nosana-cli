@@ -185,8 +185,8 @@ export async function runTaskManagerOperation(
     const status = wasAborted
       ? this.getStatus(reason as StopReason, 'ops')
       : exitCode === 0
-      ? Statuses.SUCCESS
-      : Statuses.FAILED;
+        ? Statuses.SUCCESS
+        : Statuses.FAILED;
 
     const opState = this.repository.getOpState(this.job, index);
 
@@ -354,7 +354,10 @@ export async function runTaskManagerOperation(
   try {
     interpolatedOp = this.interpolateOperation(op);
   } catch (error: any) {
-    this.repository.updateOpStateLogs(this.job, index, error.message);
+    this.repository.updateOpStateLogs(this.job, index, {
+      type: 'nodeerr',
+      log: error.message,
+    });
 
     this.repository.updateOpState(this.job, index, {
       exitCode: 0,
