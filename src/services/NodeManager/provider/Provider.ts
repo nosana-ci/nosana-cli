@@ -18,7 +18,7 @@ import { ExposedPort, getExposePorts, isOpExposed } from '@nosana/sdk';
 import EventEmitter from 'events';
 
 const tunnelImage = 'docker.io/nosana/tunnel:0.1.0';
-const frpcImage = 'docker.io/nosana/frpc:multi-v0.0.11';
+const frpcImage = 'docker.io/nosana/frpc:multi-v0.1.0';
 
 export class Provider {
   constructor(
@@ -129,7 +129,7 @@ export class Provider {
               {
                 name: 'API-' + address,
                 localIp: tunnel_name,
-                localPort: tunnel_port.toString(),
+                localPorts: tunnel_port.toString(),
                 customDomain: address + '.' + configs().frp.serverAddr,
               },
             ]),
@@ -161,7 +161,7 @@ export class Provider {
                 {
                   name: 'API-' + address,
                   localIp: tunnel_name,
-                  localPort: tunnel_port.toString(),
+                  localPorts: tunnel_port.toString(),
                   customDomain: address + '.' + configs().frp.serverAddr,
                 },
               ]),
@@ -271,7 +271,6 @@ export class Provider {
             flow.jobDefinition.deployment_id,
           );
           idMaps = idMap;
-
           frpcContainer = await this.containerOrchestration.runFlowContainer(
             frpcImage,
             {
@@ -290,7 +289,6 @@ export class Provider {
               },
             },
           );
-
           if (op.args.private) {
             this.repository.updateflowStateSecret(flow.id, {
               [flow.id]: generateUrlSecretObject(idMap),
