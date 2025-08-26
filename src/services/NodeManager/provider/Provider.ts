@@ -1,30 +1,34 @@
 import {
   createHash,
+  ExposedPort,
+  getExposePorts,
+  isOpExposed,
   Operation,
   OperationArgsMap,
   OperationType,
   Ops,
 } from '@nosana/sdk';
-
-import { ContainerOrchestrationInterface } from './containerOrchestration/interface.js';
-import { Flow } from './types.js';
-import { applyLoggingProxyToClass } from '../monitoring/proxy/loggingProxy.js';
-import { NodeRepository } from '../repository/NodeRepository.js';
-import { promiseTimeoutWrapper } from '../../../generic/timeoutPromiseWrapper.js';
-import { ResourceManager } from '../node/resource/resourceManager.js';
+import EventEmitter from 'events';
 import Dockerode from 'dockerode';
+
 import { configs } from '../configs/configs.js';
+import { NodeConfigsSingleton } from '../configs/NodeConfigs.js';
+import { NodeRepository } from '../repository/NodeRepository.js';
+import { ExposedPortHealthCheck } from './ExposedPortHealthCheck.js';
 import { s3HelperImage } from '../node/resource/definition/index.js';
+import { ResourceManager } from '../node/resource/resourceManager.js';
+import { applyLoggingProxyToClass } from '../monitoring/proxy/loggingProxy.js';
+import { promiseTimeoutWrapper } from '../../../generic/timeoutPromiseWrapper.js';
+import { ContainerOrchestrationInterface } from './containerOrchestration/interface.js';
 import {
   generateProxies,
   generateUrlSecretObject,
 } from '../../../generic/expose-util.js';
-import { ExposedPortHealthCheck } from './ExposedPortHealthCheck.js';
-import { ExposedPort, getExposePorts, isOpExposed } from '@nosana/sdk';
-import EventEmitter from 'events';
+
+import { Flow } from './types.js';
 
 const tunnelImage = 'registry.hub.docker.com/nosana/tunnel:0.1.0';
-const frpcImage = 'registry.hub.docker.com/nosana/frpc:multi-v0.1.0';
+const frpcImage = 'registry.hub.docker.com/nosana/frpc:multi-v0.1.1';
 
 export class Provider {
   private proxyStartupAbortController: AbortController | undefined = undefined;
@@ -281,12 +285,16 @@ export class Provider {
            * because of the introduction of deployment_id(load balancing key) instead of using flow.id we use deployment_id for more
            * deterministic url generation
            */
+          const config = NodeConfigsSingleton.getInstance();
           const isLoadBalanced = !!flow.jobDefinition.deployment_id;
           const deploymentHash = isLoadBalanced
-            ? createHash(
-                `${flow.jobDefinition.deployment_id}:${flow.project}`,
-                45,
-              )
+            ? // @ts-ignore
+              config.options.isNodeRun
+              ? flow.jobDefinition.deployment_id
+              : createHash(
+                  `${flow.jobDefinition.deployment_id}:${flow.project}`,
+                  45,
+                )
             : undefined;
 
           const { proxies, idMap } = generateProxies(
