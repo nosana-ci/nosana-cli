@@ -255,7 +255,9 @@ export async function runTaskManagerOperation(
     const opState = this.repository.getOpState(this.job, index);
 
     const logBuffer = Buffer.concat(
-      opState.logs.map((log) => Buffer.from(log as unknown as string, 'utf-8')),
+      opState.logs.map(
+        (log) => new Uint8Array(Buffer.from(log as unknown as string, 'utf-8')),
+      ),
     );
 
     const { logs, results } = extractLogsAndResultsFromLogBuffer(

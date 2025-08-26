@@ -376,7 +376,6 @@ export class Provider {
           },
         );
 
-        emitter.emit('updateOpHost', { name });
         emitter.emit('updateOpState', { providerId: container.id });
 
         const logStream = await container.logs({

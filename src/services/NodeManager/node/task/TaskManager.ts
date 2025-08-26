@@ -429,7 +429,6 @@ export default class TaskManager {
                 ...this.currentGroupOperationsPromises.values(),
               ]);
             }
-          } catch (error) {
           } finally {
             // Reset group state after completion. successful or not
             this.currentGroup = undefined;
