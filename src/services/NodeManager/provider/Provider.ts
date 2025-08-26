@@ -28,7 +28,7 @@ import {
 import { Flow } from './types.js';
 
 const tunnelImage = 'registry.hub.docker.com/nosana/tunnel:0.1.0';
-const frpcImage = 'registry.hub.docker.com/nosana/frpc:multi-v0.1.1';
+const frpcImage = 'registry.hub.docker.com/nosana/frpc:multi-v0.1.2';
 
 export class Provider {
   private proxyStartupAbortController: AbortController | undefined = undefined;
