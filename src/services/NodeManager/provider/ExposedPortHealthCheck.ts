@@ -55,7 +55,7 @@ export class ExposedPortHealthCheck {
 
       if (success == null) {
         clearInterval(startupCheckInterval!);
-        this.jobEmitter.emit('run-exposed', {
+        this.jobEmitter.emit('healthcheck:url:exposed', {
           id,
           flowId: this.flowId,
           port: exposedPort.port,
@@ -66,7 +66,7 @@ export class ExposedPortHealthCheck {
 
       if (success) {
         clearInterval(startupCheckInterval!);
-        this.jobEmitter.emit('startup-success', {
+        this.jobEmitter.emit('healthcheck:startup:success', {
           id,
           flowId: this.flowId,
           port: exposedPort.port,
@@ -96,7 +96,7 @@ export class ExposedPortHealthCheck {
       if (healthStatus !== previousState) {
         this.healthStatus.set(id, healthStatus);
         if (!healthStatus) {
-          this.jobEmitter.emit('continuous-failure', {
+          this.jobEmitter.emit('healthcheck:continuous:failure', {
             id,
             flowId: this.flowId,
             port: exposedPort.port,
@@ -139,13 +139,16 @@ export class ExposedPortHealthCheck {
       if (!initialRun && !healthCheck.continuous) {
         return null;
       }
-      if (healthCheck.type === 'http') {
+      if (healthCheck.type === 'http' && typeof exposedPort.port === 'number') {
         const success = await this.runHttpHealthCheck(
           exposedPort.port,
           healthCheck,
         );
         if (!success) return false;
-      } else if (healthCheck.type === 'websocket') {
+      } else if (
+        healthCheck.type === 'websocket' &&
+        typeof exposedPort.port === 'number'
+      ) {
         const success = await this.runWebSocketHealthCheck(
           exposedPort.port,
           healthCheck,

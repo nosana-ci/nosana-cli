@@ -11,51 +11,51 @@ import { DockerAuth } from '@nosana/sdk';
 
 import { ReturnedStatus } from '../types.js';
 
-export interface ContainerOrchestrationInterface {
-  getConnection(): any;
+// export interface ContainerOrchestrationInterface {
+//   getConnection(): any;
 
-  pullImage(image: string, authorisation?: DockerAuth): Promise<ReturnedStatus>;
-  hasImage(image: string): Promise<boolean>;
-  getImage(image: string): Promise<Image>;
-  listImages(): Promise<ImageInfo[]>;
-  deleteImage(image: string): Promise<ReturnedStatus>;
+//   pullImage(image: string, authorisation?: DockerAuth): Promise<ReturnedStatus>;
+//   hasImage(image: string): Promise<boolean>;
+//   getImage(image: string): Promise<Image>;
+//   listImages(): Promise<ImageInfo[]>;
+//   deleteImage(image: string): Promise<ReturnedStatus>;
 
-  createNetwork(name: string): Promise<ReturnedStatus>;
-  hasNetwork(name: string): Promise<boolean>;
-  deleteNetwork(name: string): Promise<ReturnedStatus>;
+//   createNetwork(name: string): Promise<ReturnedStatus>;
+//   hasNetwork(name: string): Promise<boolean>;
+//   deleteNetwork(name: string): Promise<ReturnedStatus>;
 
-  createVolume(name?: string): Promise<ReturnedStatus<VolumeCreateResponse>>;
-  getVolume(name: string): Promise<ReturnedStatus<Volume>>;
-  hasVolume(name: string): Promise<boolean>;
-  getRawVolume(name: string): Promise<Volume>;
-  listVolumes(): Promise<VolumeInspectInfo[]>;
-  deleteVolume(name: string): Promise<ReturnedStatus>;
+//   createVolume(name?: string): Promise<ReturnedStatus<VolumeCreateResponse>>;
+//   getVolume(name: string): Promise<ReturnedStatus<Volume>>;
+//   hasVolume(name: string): Promise<boolean>;
+//   getRawVolume(name: string): Promise<Volume>;
+//   listVolumes(): Promise<VolumeInspectInfo[]>;
+//   deleteVolume(name: string): Promise<ReturnedStatus>;
 
-  getContainersByName(names: string[]): Promise<Container[]>;
+//   getContainersByName(names: string[]): Promise<Container[]>;
 
-  getContainer(id: string): Promise<Container>;
-  runContainer(
-    args: ContainerCreateOptions,
-    addAbortListener?: boolean,
-  ): Promise<ReturnedStatus<Container>>;
-  runFlowContainer(
-    image: string,
-    args: RunContainerArgs,
-    addAbortListener?: boolean,
-  ): Promise<ReturnedStatus<Container>>;
-  stopContainer(id: string): Promise<ReturnedStatus>;
-  stopAndDeleteContainer(id: string): Promise<ReturnedStatus>;
-  isContainerExited(id: string): Promise<ReturnedStatus<boolean>>;
-  doesContainerExist(id: string): Promise<ReturnedStatus<boolean>>;
+//   getContainer(id: string): Promise<Container>;
+//   runContainer(
+//     args: ContainerCreateOptions,
+//     addAbortListener?: boolean,
+//   ): Promise<ReturnedStatus<Container>>;
+//   runFlowContainer(
+//     image: string,
+//     args: RunContainerArgs,
+//     addAbortListener?: boolean,
+//   ): Promise<ReturnedStatus<Container>>;
+//   stopContainer(id: string): Promise<ReturnedStatus>;
+//   stopAndDeleteContainer(id: string): Promise<ReturnedStatus>;
+//   isContainerExited(id: string): Promise<ReturnedStatus<boolean>>;
+//   doesContainerExist(id: string): Promise<ReturnedStatus<boolean>>;
 
-  healthy(): Promise<ReturnedStatus>;
-  check(): Promise<string>;
+//   healthy(): Promise<ReturnedStatus>;
+//   check(): Promise<string>;
 
-  healthy(): Promise<ReturnedStatus>;
-  check(): Promise<string>;
+//   healthy(): Promise<ReturnedStatus>;
+//   check(): Promise<string>;
 
-  getProtocol(): string;
-}
+//   getProtocol(): string;
+// }
 
 export type RunContainerArgs = {
   name?: string;
@@ -73,3 +73,58 @@ export type RunContainerArgs = {
   entrypoint?: string | string[];
   restart_policy?: '' | 'unless-stopped' | 'always' | 'on-failure';
 };
+
+export interface ContainerOrchestrationInterface {
+  getConnection(): any;
+
+  pullImage(
+    image: string,
+    auth?: DockerAuth,
+    controller?: AbortController,
+  ): Promise<void>;
+  hasImage(image: string): Promise<boolean>;
+  getImage(image: string): Promise<Image>;
+  listImages(): Promise<ImageInfo[]>;
+  deleteImage(image: string, controller?: AbortController): Promise<void>;
+
+  createNetwork(name: string, controller?: AbortController): Promise<void>;
+  hasNetwork(name: string): Promise<boolean>;
+  deleteNetwork(name: string, controller?: AbortController): Promise<void>;
+
+  createVolume(
+    name?: string,
+    controller?: AbortController,
+  ): Promise<VolumeCreateResponse>;
+  getVolume(name: string): Promise<Volume>;
+  hasVolume(name: string): Promise<boolean>;
+  getRawVolume(name: string): Promise<Volume>;
+  listVolumes(): Promise<VolumeInspectInfo[]>;
+  deleteVolume(name: string, controller?: AbortController): Promise<void>;
+
+  getContainersByName(names: string[]): Promise<Container[]>;
+  getContainer(id: string): Promise<Container>;
+
+  runContainer(
+    args: ContainerCreateOptions,
+    controller?: AbortController,
+  ): Promise<Container>;
+
+  runFlowContainer(
+    image: string,
+    args: RunContainerArgs,
+    controller?: AbortController,
+  ): Promise<Container>;
+
+  stopContainer(id: string, controller?: AbortController): Promise<void>;
+  stopAndDeleteContainer(
+    id: string,
+    controller?: AbortController,
+  ): Promise<void>;
+  isContainerExited(id: string): Promise<boolean>;
+  doesContainerExist(id: string): Promise<boolean>;
+
+  healthy(): Promise<ReturnedStatus>;
+  check(): Promise<string>;
+
+  getProtocol(): string;
+}

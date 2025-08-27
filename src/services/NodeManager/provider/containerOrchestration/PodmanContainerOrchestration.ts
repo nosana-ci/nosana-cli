@@ -33,8 +33,8 @@ export class PodmanContainerOrchestration extends DockerContainerOrchestration {
   async runFlowContainer(
     image: string,
     args: RunContainerArgs,
-    addAbortListener = true,
-  ): Promise<ReturnedStatus<Container>> {
+    controller?: AbortController,
+  ): Promise<Container> {
     let error: any;
     // Incase of error, retry 3 times
     for (let i = 0; i < 3; i++) {
@@ -58,18 +58,14 @@ export class PodmanContainerOrchestration extends DockerContainerOrchestration {
         );
         if (start.status === 204) {
           const container = this.docker.getContainer(createResult.Id);
-          if (addAbortListener) {
-            this.setupContainerAbortListener(container.id);
+          if (controller) {
+            this.setupContainerAbortListener(container.id, controller);
           }
-          return { status: true, result: container };
+          return container;
         } else {
-          return {
-            status: false,
-            error: new Error(
-              'Cannot start container: ' +
-                ((await start.json()) as any).message,
-            ),
-          };
+          throw new Error(
+            'Cannot start container: ' + ((await start.json()) as any).message,
+          );
         }
       }
 
@@ -77,6 +73,6 @@ export class PodmanContainerOrchestration extends DockerContainerOrchestration {
       if (error.message !== `${image}: image not known`) break;
     }
 
-    return { status: false, error };
+    throw error;
   }
 }

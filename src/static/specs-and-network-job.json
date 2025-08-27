@@ -14,6 +14,9 @@
         "env": {
           "DEBUG": "1"
         }
+      },
+      "execution": {
+        "group": "spec"
       }
     },
     {
@@ -25,6 +28,9 @@
         "env": {
           "DEBUG": "1"
         }
+      },
+      "execution": {
+        "group": "network"
       }
     },
     {
@@ -37,6 +43,9 @@
           "DEBUG": "1"
         },
         "gpu": true
+      },
+      "execution": {
+        "group": "spec"
       }
     }
   ]

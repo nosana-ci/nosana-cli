@@ -1,0 +1,55 @@
+version: "0.1"
+type: container
+meta:
+  trigger: cli
+ops:
+  - type: container/run
+    id: nginx-1
+    args:
+      cmd: []
+      image: nginx
+      expose:
+        - port: 80
+          health_checks:
+            - type: http
+              path: /
+              method: GET
+              expected_status: 200
+              continuous: true
+    execution:
+      group: run
+
+  - type: container/run
+    id: nginx-2
+    args:
+      cmd: []
+      image: nginx
+      expose:
+        - port: 80
+          health_checks:
+            - type: http
+              path: /
+              method: GET
+              expected_status: 200
+              continuous: true
+    execution:
+      group: run
+      depends_on:
+        - nginx-1
+
+  - type: container/run
+    id: nginx-3
+    args:
+      cmd: []
+      image: nginx
+      expose:
+        - port: 80
+          health_checks:
+            - type: http
+              path: /
+              method: GET
+              expected_status: 200
+              continuous: true
+    execution:
+      group: run2
+      depends_on: []

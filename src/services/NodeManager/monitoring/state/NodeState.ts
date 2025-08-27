@@ -155,14 +155,14 @@ export class NodeState {
         }
 
         if (data.type == 'return') {
-          if (data.result.status == true) {
+          if (data.result == true) {
             this.addState('pulling-image-success', {
               image: data.arguments[0],
             });
           } else {
             this.addState('pulling-image-failed', {
               image: data.arguments[0],
-              error: data.result.error,
+              error: data.error,
             });
           }
         }
@@ -174,14 +174,14 @@ export class NodeState {
         }
 
         if (data.type == 'return') {
-          if (data.result.status == true) {
+          if (!data.error) {
             this.addState('creating-network-success', {
               network: data.arguments[0],
             });
           } else {
             this.addState('creating-network-failed', {
               network: data.arguments[0],
-              error: data.result.error,
+              error: data.error,
             });
           }
         }
@@ -193,14 +193,14 @@ export class NodeState {
         }
 
         if (data.type == 'return') {
-          if (data.result.status == true) {
+          if (!data.error) {
             this.addState('deleting-network-success', {
               network: data.arguments[0],
             });
           } else {
             this.addState('deleting-network-failed', {
               network: data.arguments[0],
-              error: data.result.error,
+              error: data.error,
             });
           }
         }
@@ -214,15 +214,15 @@ export class NodeState {
         }
 
         if (data.type == 'return') {
-          if (data.result.status == true) {
+          if (!data.error) {
             this.addState('running-container-success', {
               image: data.arguments[0].Image,
-              id: data.result.result.id,
+              id: data.result.id,
             });
           } else {
             this.addState('running-container-failed', {
               image: data.arguments[0].Image,
-              error: data.result.error,
+              error: data.error,
             });
           }
         }
@@ -237,16 +237,16 @@ export class NodeState {
         }
 
         if (data.type == 'return') {
-          if (data.result.status == true) {
+          if (!data.error) {
             this.addState('running-container-success', {
               image: data.arguments[0],
               name: data.arguments[1].name,
-              id: data.result.result.id,
+              id: data.result.id,
             });
           } else {
             this.addState('running-container-failed', {
               image: data.arguments[0],
-              error: data.result.error,
+              error: data.error,
             });
           }
         }
@@ -258,14 +258,14 @@ export class NodeState {
         }
 
         if (data.type == 'return') {
-          if (data.result.status == true) {
+          if (!data.error) {
             this.addState('stopping-container-success', {
               id: data.arguments[0],
             });
           } else {
             this.addState('stopping-container-failed', {
               id: data.arguments[0],
-              error: data.result.error,
+              error: data.error,
             });
           }
         }

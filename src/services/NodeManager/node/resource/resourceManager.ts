@@ -57,7 +57,10 @@ export class ResourceManager {
     await this.volumes.pruneVolumes();
   }
 
-  public async getResourceVolumes(resources: Resource[]): Promise<
+  public async getResourceVolumes(
+    resources: Resource[],
+    controller: AbortController,
+  ): Promise<
     {
       dest: string;
       name: string;
@@ -67,7 +70,7 @@ export class ResourceManager {
     const volumes: { dest: string; name: string; readonly?: boolean }[] = [];
 
     for (const resource of resources) {
-      await this.volumes.createRemoteVolume(resource);
+      await this.volumes.createRemoteVolume(resource, controller);
       if ((await this.volumes.hasVolume(resource)) === false) {
         const error = new Error(
           `Missing required resource ${createResourceName(resource)}.`,

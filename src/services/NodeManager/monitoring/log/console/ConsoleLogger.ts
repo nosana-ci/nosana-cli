@@ -3,6 +3,7 @@ import { log, LogObserver, NodeLogEntry } from '../NodeLog.js';
 import { MultiBar, Presets, SingleBar } from 'cli-progress';
 import chalk from 'chalk';
 import { convertFromBytes } from '../../../../../providers/utils/convertFromBytes.js';
+import { LogMonitoringRegistry } from '../../LogMonitoringRegistry.js';
 
 export const consoleLogging = (() => {
   let instance: ConsoleLogger | null = null;
@@ -24,7 +25,7 @@ export class ConsoleLogger implements LogObserver {
   private multiProgressBar: MultiBar | undefined;
   private kill: boolean = false;
   private benchmarking: boolean = false;
-
+  private taskManagerActive: boolean = false;
   private running: boolean = false;
 
   spinner!: Ora;
@@ -54,6 +55,13 @@ export class ConsoleLogger implements LogObserver {
       this.kill = true;
       this.pending = true;
       this.expecting = log.pending?.expecting;
+
+      if (isNode && this.taskManagerActive) {
+        this.spinner.succeed(
+          chalk.magenta(`${chalk.bgMagenta.bold(' TASKMANAGER ')} Exited`),
+        );
+      }
+
       this.spinner = ora(log.log).start();
     }
 
@@ -72,50 +80,44 @@ export class ConsoleLogger implements LogObserver {
       return;
     }
 
-    // if (
-    //   !this.running &&
-    //   log.method == 'JobHandler.claim' &&
-    //   log.type == 'success' &&
-    //   isNode
-    // ) {
-    //   this.spinner.stop();
-    //   this.pending = true;
-    //   this.running = true;
+    if (isNode) {
+      // --- TaskManager quiet window ---
+      if (log.method === 'TaskManager.start' && log.type === 'process') {
+        // Stop anything currently animating
+        if (this.pending) this.spinner.stop();
+        if (this.progressBar) this.progressBar.stop();
+        if (this.multiProgressBar) this.multiProgressBar.stop();
 
-    //   this.spinner = ora(
-    //     chalk.yellow(
-    //       `${chalk.bgYellow.bold(' RUNNING FLOW ')} ${chalk.bold(log.job)}`,
-    //     ),
-    //   ).start();
-    //   return;
-    // }clear
+        this.taskManagerActive = true;
+        this.pending = true;
 
-    // if (this.running && log.method == 'ExpiryHandler.waitUntilExpired') {
-    //   if (log.type != 'success' && log.type != 'error') {
-    //     return;
-    //   }
-    //   this.pending = false;
-    //   this.running = false;
+        this.spinner = ora(
+          chalk.magenta(
+            `${chalk.bgMagenta.bold(' TASKMANAGER ')} Running ${log.job}...`,
+          ),
+        ).start();
 
-    //   if (log.type == 'success') {
-    //     this.spinner.succeed(
-    //       chalk.green(
-    //         `${chalk.bgGreen.bold(' COMPLETED FLOW ')} ${chalk.bold(log.job)}`,
-    //       ),
-    //     );
-    //   } else if (log.type == 'error') {
-    //     this.spinner.succeed(
-    //       chalk.red(
-    //         `${chalk.bgRed.bold(' FAILED FLOW ')} ${chalk.bold(log.job)}`,
-    //       ),
-    //     );
-    //   }
-    //   return;
-    // }
+        // Block everything else until we see TaskManager.stop
+        return;
+      }
 
-    // if (this.running) {
-    //   return;
-    // }
+      // While TaskManager is active, swallow all logs except the stop signal
+      if (this.taskManagerActive) {
+        if (log.method === 'TaskManager.start') {
+          this.spinner.succeed(
+            chalk.magenta(
+              `${chalk.bgMagenta.bold(' TASKMANAGER ')} Ending ${log.job}...`,
+            ),
+          );
+          this.taskManagerActive = false;
+          this.pending = false;
+          return;
+        }
+
+        // Still inside TaskManager window: block other logs
+        return;
+      }
+    }
 
     if (
       !this.benchmarking &&
@@ -168,15 +170,6 @@ export class ConsoleLogger implements LogObserver {
       }
       return;
     }
-
-    // if(log.type == 'pause-spinner') {
-    //   if (this.pending) {
-    //     this.spinner.clear();
-    //     console.log(log.log);
-    //     const spinnerText = this.spinner.text
-    //   }
-    //   return
-    // }
 
     if (log.type == 'process-bar-start') {
       if (this.pending) {
@@ -352,6 +345,7 @@ export class ConsoleLogger implements LogObserver {
       this.kill = false;
       this.benchmarking = false;
       this.running = false;
+      this.taskManagerActive = false;
       this.spinner.stop();
     }
   }
