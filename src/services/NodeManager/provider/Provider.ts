@@ -268,11 +268,10 @@ export class Provider {
         const networks: { [key: string]: {} } = {};
         let idMaps: Map<string, ExposedPort> = new Map();
         const ports = getExposePorts(op);
+        networks[name] = {};
+        await this.containerOrchestration.createNetwork(name, controller);
 
         if (isOpExposed(op as Operation<'container/run'>)) {
-          networks[name] = {};
-
-          await this.containerOrchestration.createNetwork(name, controller);
           await this.containerOrchestration.pullImage(
             frpcImage,
             undefined,

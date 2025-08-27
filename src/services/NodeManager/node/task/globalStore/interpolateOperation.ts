@@ -1,5 +1,5 @@
 import { Operation, OperationArgsMap, OperationType } from '@nosana/sdk';
-import TaskManager from '../TaskManager.js';
+import TaskManager, { GlobalStore } from '../TaskManager.js';
 
 export function interpolateOperation<T extends OperationType>(
   this: TaskManager,
@@ -7,6 +7,7 @@ export function interpolateOperation<T extends OperationType>(
 ): Operation<T> {
   // %%ops.<opId>.<path>%% — path supports host or nested results like results.url
   const LITERAL_RE = /%%ops\.([^.]+)\.([A-Za-z0-9._-]+)%%/g;
+  const GLOBAL_RE = /%%globals\.([^.]+)%%/g;
 
   const getByPathStrict = (opId: string, path: string): unknown => {
     const bucket = this.globalOpStore?.[opId];
@@ -22,7 +23,14 @@ export function interpolateOperation<T extends OperationType>(
   };
 
   const resolveStringStrict = (input: string): string => {
-    return input.replace(LITERAL_RE, (match, opId: string, path: string) => {
+    let result = input.replace(GLOBAL_RE, (match, key: keyof GlobalStore) => {
+      const value = this.globalStore[key];
+      if (!value) {
+        throw new Error(`Unresolved literal: "${match}" (key="${key}")`);
+      }
+      return value;
+    });
+    return result.replace(LITERAL_RE, (match, opId: string, path: string) => {
       const value = getByPathStrict(opId, path);
       if (value == null) {
         throw new Error(

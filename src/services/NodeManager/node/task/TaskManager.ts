@@ -42,6 +42,7 @@ import {
   interpolateOperation,
 } from './globalStore/index.js';
 import { Flow } from '../../provider/types.js';
+import { configs } from '../../configs/configs.js';
 
 export type TaskManagerOps = Array<Operation<OperationType>>;
 
@@ -108,6 +109,11 @@ type InterpolateOpFn = <T extends OperationType>(
 
 export type GlobalDataStore = Record<string, OperationData>;
 
+export type GlobalStore = {
+  frps_address: string;
+  project: string;
+};
+
 export type Status = (typeof Statuses)[keyof typeof Statuses];
 
 export default class TaskManager {
@@ -138,6 +144,18 @@ export default class TaskManager {
   //  */
   // protected exportMap: Map<string, string> = new Map();
 
+  /**
+   * Global data store.
+   *
+   * This allows operations to reference data produced by others using literals like:
+   *   "%%globals.frps_address%%"
+   *   "%%globals.project%%"
+   *
+   * Supported keys:
+   * - frps_address: The current FRPS address.
+   * - project: The project public key of the jobs project.
+   */
+  protected globalStore: GlobalStore;
   /**
    * Global data store for all operations in a job definition.
    *
@@ -270,6 +288,11 @@ export default class TaskManager {
     this.interpolateOperation = interpolateOperation.bind(
       this,
     ) as InterpolateOpFn;
+
+    this.globalStore = {
+      frps_address: configs().frp.serverAddr,
+      project: project,
+    };
   }
 
   // operations methods

@@ -26,7 +26,7 @@ export function setDefaults(
       if (jobDefinition.deployment_id) {
         if ((op as Operation<'container/run'>).args.expose) {
           const opStore = (this.globalOpStore[op.id] ??= {});
-          opStore.deployment_endpoint = generateExposeId(
+          opStore.deployment_endpoint = `${generateExposeId(
             // @ts-ignore
             config.options.isNodeRun
               ? jobDefinition.deployment_id
@@ -34,7 +34,7 @@ export function setDefaults(
             op.id,
             0,
             false,
-          );
+          )}.${configs().frp.serverAddr}`;
         }
       }
     }
