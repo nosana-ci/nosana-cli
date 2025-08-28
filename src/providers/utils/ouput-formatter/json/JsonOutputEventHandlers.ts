@@ -103,14 +103,14 @@ export const jsonOutputEventHandlers: OutputEventHandlers = {
     response: JsonResponseType,
     param: ServiceUrlParam,
   ) => {
-    response.service_url = param.url;
+    response.service_url = param.url.split(',');
   },
 
   [OUTPUT_EVENTS.OUTPUT_JOB_SERVICE_URL]: (
     response: JsonResponseType,
     param: JobServiceUrlParam,
   ) => {
-    response.service_url = param.url;
+    response.service_url = param.url.split(',');
   },
 
   [OUTPUT_EVENTS.OUTPUT_JOB_INVALID]: (response: JsonResponseType) => {

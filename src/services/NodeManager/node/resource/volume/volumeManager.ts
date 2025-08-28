@@ -48,15 +48,20 @@ export class VolumeManager {
       await this.containerOrchestration.pullImage(s3HelperImage);
     }
 
+    const controller = new AbortController();
+
     const savedVolumes = this.repository.getVolumesResources();
     for (const resource of this.market_required_volumes) {
       if (!savedVolumes[createResourceName(resource)]) {
-        await this.createRemoteVolume(resource);
+        await this.createRemoteVolume(resource, controller);
       }
     }
   }
 
-  public async createRemoteVolume(resource: RequiredResource): Promise<string> {
+  public async createRemoteVolume(
+    resource: RequiredResource,
+    controller: AbortController,
+  ): Promise<string> {
     const resourceName = createResourceName(resource);
 
     let volumeName: string = this.repository.getVolumeResource(
@@ -69,16 +74,12 @@ export class VolumeManager {
       sync = false;
       const response = await this.containerOrchestration.createVolume();
 
-      if (response.error || !response.result) {
-        throw response.error;
-      }
-
       // @ts-ignore **PODMAN returns name not Name**
-      if (response.result.name) {
+      if (response.name) {
         // @ts-ignore **PODMAN returns name not Name**
-        volumeName = response.result.name;
+        volumeName = response.name;
       } else {
-        volumeName = response.result.Name;
+        volumeName = response.Name;
       }
     }
 
@@ -93,6 +94,7 @@ export class VolumeManager {
               volumeName,
               resourceName,
               args,
+              controller,
               sync,
             );
           } else {
@@ -106,6 +108,7 @@ export class VolumeManager {
                 volumeName,
                 resourceName,
                 args,
+                controller,
                 sync,
               );
             }
@@ -125,6 +128,7 @@ export class VolumeManager {
             volumeName,
             resourceName,
             args,
+            controller,
             sync,
           );
           this.setVolume(resourceName, volumeName);
@@ -141,23 +145,16 @@ export class VolumeManager {
     volume: string,
     name: string,
     args: ContainerCreateOptions,
+    controller: AbortController,
     syncing = false,
   ): Promise<void> {
-    const response = await this.containerOrchestration.runContainer(args);
-
-    if (response.error || !response.result) {
-      throw Error(`container failed to start, ${response.error}`);
-    }
-
-    const controller = new AbortController();
-
-    const container = response.result;
+    const container = await this.containerOrchestration.runContainer(args);
 
     const logStream = await container.logs({
       stdout: true,
       stderr: false,
       follow: true,
-      abortSignal: controller.signal,
+      abortSignal: controller?.signal,
     });
 
     let start = false;
@@ -196,8 +193,10 @@ export class VolumeManager {
       } catch (error) {}
     });
 
-    const { StatusCode } = await container.wait({ condition: 'not-running' });
-    controller.abort();
+    const { StatusCode } = await container.wait({
+      condition: 'not-running',
+      abortSignal: controller?.signal,
+    });
 
     // If download failed, remove volume
     if (StatusCode !== 0) {

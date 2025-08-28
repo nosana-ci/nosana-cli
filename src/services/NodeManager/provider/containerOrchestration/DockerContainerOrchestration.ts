@@ -88,30 +88,20 @@ export class DockerContainerOrchestration
   async pullImage(
     image: string,
     authorisation?: DockerAuth,
-  ): Promise<ReturnedStatus> {
-    if (await this.docker.hasImage(image)) {
-      return { status: true };
-    }
+    controller?: AbortController,
+  ): Promise<void> {
+    if (controller?.signal.aborted) throw controller.signal.reason;
+    if (await this.docker.hasImage(image)) return;
 
-    const controller = abortControllerSelector() as AbortController;
-
-    if (controller.signal.aborted) {
-      return { status: false, error: controller.signal.reason };
-    }
-
-    try {
-      await this.docker.promisePull(image, controller, authorisation);
-      return { status: true };
-    } catch (error) {
-      return { status: false, error };
-    }
+    await this.docker.promisePull(
+      image,
+      (controller = new AbortController()),
+      authorisation,
+    );
   }
 
   async hasImage(image: string): Promise<boolean> {
-    if (await this.docker.hasImage(image)) {
-      return true;
-    }
-    return false;
+    return await this.docker.hasImage(image);
   }
 
   async getImage(image: string): Promise<Image> {
@@ -122,41 +112,30 @@ export class DockerContainerOrchestration
     return this.docker.listImages();
   }
 
-  async deleteImage(image: string): Promise<ReturnedStatus> {
-    try {
-      if (await this.docker.hasImage(image)) {
-        await this.docker.getImage(image).remove({ force: true });
-      }
-      return { status: true };
-    } catch (error) {
-      return { status: false, error };
+  async deleteImage(
+    image: string,
+    controller?: AbortController,
+  ): Promise<void> {
+    if (await this.docker.hasImage(image)) {
+      await this.docker
+        .getImage(image)
+        .remove({ force: true, abortSignal: controller?.signal });
     }
   }
 
-  async createNetwork(name: string): Promise<ReturnedStatus> {
-    try {
-      if (await this.hasNetwork('NOSANA_GATEWAY')) {
-        return { status: true };
-      }
-    } catch {}
-
-    try {
-      await this.docker.createNetwork({
-        Name: 'NOSANA_GATEWAY',
-        IPAM: {
-          Driver: 'bridge',
-          Config: [
-            {
-              Subnet: '192.168.101.0/24',
-              Gateway: '192.168.101.1',
-            },
-          ],
-        },
-      });
-      return { status: true };
-    } catch (error) {
-      return { status: false, error };
-    }
+  async createNetwork(
+    name: string,
+    controller?: AbortController,
+  ): Promise<void> {
+    if (await this.hasNetwork('NOSANA_GATEWAY')) return;
+    await this.docker.createNetwork({
+      Name: 'NOSANA_GATEWAY',
+      IPAM: {
+        Driver: 'bridge',
+        Config: [{ Subnet: '192.168.101.0/24', Gateway: '192.168.101.1' }],
+      },
+      abortSignal: controller?.signal,
+    });
   }
 
   async hasNetwork(name: string): Promise<boolean> {
@@ -164,24 +143,18 @@ export class DockerContainerOrchestration
     return networks.some((network) => network.Name === name);
   }
 
-  async deleteNetwork(name: string): Promise<ReturnedStatus> {
-    try {
-      // await this.docker.getNetwork(name).remove();
-      return { status: true };
-    } catch (error) {
-      return { status: false, error };
-    }
+  async deleteNetwork(
+    name: string,
+    controller?: AbortController,
+  ): Promise<void> {
+    // await this.docker.getNetwork(name).remove({ abortSignal: controller?.signal });
   }
 
   async createVolume(
     name?: string,
-  ): Promise<ReturnedStatus<VolumeCreateResponse>> {
-    try {
-      const volume = await this.docker.createVolume({ Name: name });
-      return { status: true, result: volume };
-    } catch (error) {
-      return { status: false, error };
-    }
+    controller?: AbortController,
+  ): Promise<VolumeCreateResponse> {
+    return this.docker.createVolume({ Name: name });
   }
 
   async hasVolume(name: string): Promise<boolean> {
@@ -197,28 +170,29 @@ export class DockerContainerOrchestration
     return (await this.docker.listVolumes()).Volumes;
   }
 
-  async getVolume(name: string): Promise<ReturnedStatus<Volume>> {
-    try {
-      const volume = this.docker.getVolume(name);
-      return { status: true, result: volume };
-    } catch (error) {
-      return { status: false, error };
-    }
+  async getVolume(name: string): Promise<Volume> {
+    return this.docker.getVolume(name);
   }
 
   async getRawVolume(name: string): Promise<Volume> {
     return this.docker.getVolume(name);
   }
 
-  async deleteVolume(name: string): Promise<ReturnedStatus> {
+  async deleteVolume(
+    name: string,
+    controller?: AbortController,
+  ): Promise<void> {
+    const volume = this.docker.getVolume(name);
+
     try {
-      const volume = this.docker.getVolume(name);
-      if (volume) {
-        await this.docker.getVolume(name).remove({ force: true });
+      await volume.inspect(); // This will throw if the volume doesn't exist
+      await volume.remove({ force: true, abortSignal: controller?.signal });
+    } catch (error: any) {
+      if (error.statusCode === 404) {
+        // Volume doesn't exist, nothing to delete
+        return;
       }
-      return { status: true };
-    } catch (error) {
-      return { status: false, error };
+      throw error;
     }
   }
 
@@ -247,9 +221,10 @@ export class DockerContainerOrchestration
     return this.protocol;
   }
 
-  setupContainerAbortListener(containerId: string) {
-    const controller = abortControllerSelector() as AbortController;
-
+  setupContainerAbortListener(
+    containerId: string,
+    controller: AbortController,
+  ) {
     if (controller.signal.aborted) {
       this.stopContainer(containerId);
     }
@@ -266,148 +241,98 @@ export class DockerContainerOrchestration
 
   async runContainer(
     args: ContainerCreateOptions,
-    addAbortListener = true,
-  ): Promise<ReturnedStatus<Container>> {
-    const controller = abortControllerSelector() as AbortController;
-    if (controller.signal.aborted) {
-      return { status: false, error: controller.signal.reason };
+    controller?: AbortController,
+  ): Promise<Container> {
+    if (controller?.signal.aborted) {
+      throw controller.signal.reason;
     }
 
-    try {
-      const container = await this.docker.createContainer(args);
-      await container.start();
-      if (addAbortListener) {
-        this.setupContainerAbortListener(container.id);
-      }
-      return { status: true, result: container };
-    } catch (error) {
-      return { status: false, error };
+    const container = await this.docker.createContainer({
+      ...args,
+      abortSignal: controller?.signal,
+    });
+    await container.start();
+    if (controller) {
+      this.setupContainerAbortListener(container.id, controller);
     }
+    return container;
   }
 
   async runFlowContainer(
     image: string,
     args: RunContainerArgs,
-    addAbortListener = true,
-  ): Promise<ReturnedStatus<Container>> {
-    const controller = abortControllerSelector() as AbortController;
-    if (controller.signal.aborted) {
-      return { status: false, error: controller.signal.reason };
+    controller?: AbortController,
+  ): Promise<Container> {
+    if (controller?.signal.aborted) {
+      throw controller.signal.reason;
     }
 
+    const container = await this.docker.createContainer({
+      ...mapRunContainerArgsToContainerCreateOpts(image, args, this.gpu),
+      abortSignal: controller?.signal,
+    });
+
+    await container.start();
+
+    if (controller) {
+      this.setupContainerAbortListener(container.id, controller);
+    }
+
+    return container;
+  }
+
+  async stopContainer(id: string, controller?: AbortController): Promise<void> {
+    const listeners = this.listeners.get(id) || [];
+    if (controller) {
+      for (const l of listeners)
+        controller.signal.removeEventListener('abort', l);
+    }
+    const container = this.docker.getContainer(id);
     try {
-      const container = await this.docker.createContainer(
-        mapRunContainerArgsToContainerCreateOpts(image, args, this.gpu),
-      );
+      const info = await container.inspect();
+      if (info.State.Status !== 'exited')
+        await container.stop({ abortSignal: controller?.signal });
+    } catch {}
+  }
 
-      await container.start();
+  async stopAndDeleteContainer(
+    id: string,
+    controller?: AbortController,
+  ): Promise<void> {
+    const listeners = this.listeners.get(id) || [];
+    if (controller) {
+      for (const l of listeners)
+        controller.signal.removeEventListener('abort', l);
+    }
+    const container = this.docker.getContainer(id);
+    try {
+      await container.stop({ abortSignal: controller?.signal });
+    } catch {}
+    try {
+      await container.remove({
+        force: true,
+        v: true,
+        abortSignal: controller?.signal,
+      });
+    } catch {}
+  }
 
-      if (addAbortListener) {
-        this.setupContainerAbortListener(container.id);
-      }
-
-      return { status: true, result: container };
-    } catch (error) {
-      return { status: false, error };
+  async isContainerExited(id: string): Promise<boolean> {
+    try {
+      const info = await this.docker.getContainer(id).inspect();
+      return info.State.Status === 'exited';
+    } catch {
+      return true;
     }
   }
 
-  async stopContainer(containerId: string): Promise<ReturnedStatus> {
-    const listeners = this.listeners.get(containerId) || [];
-
-    for (const listener of listeners) {
-      abortControllerSelector().signal.removeEventListener('abort', listener);
-    }
-
+  async doesContainerExist(id: string): Promise<boolean> {
     try {
-      const container = this.docker.getContainer(containerId);
-      if (container.id) {
-        let containerInfo: Dockerode.ContainerInspectInfo | undefined;
-
-        try {
-          containerInfo = await container.inspect();
-        } catch (error) {}
-
-        if (containerInfo) {
-          if (containerInfo.State.Status !== 'exited') {
-            this.docker.getContainer(containerId).stop();
-          }
-        }
-      }
-      return { status: true };
-    } catch (error) {
-      return { status: false, error };
-    }
-  }
-
-  async stopAndDeleteContainer(containerId: string): Promise<ReturnedStatus> {
-    const listeners = this.listeners.get(containerId) || [];
-
-    for (const listener of listeners) {
-      abortControllerSelector().signal.removeEventListener('abort', listener);
-    }
-
-    try {
-      const container = this.docker.getContainer(containerId);
-
-      if (container.id) {
-        let info: Dockerode.ContainerInspectInfo | undefined;
-
-        try {
-          info = await container.inspect();
-        } catch (error) {}
-
-        if (info) {
-          try {
-            await container.stop();
-          } catch (error) {}
-
-          try {
-            await container.remove({ force: true, v: true });
-          } catch (error) {}
-        }
-      }
-      return { status: true };
-    } catch (error) {
-      return { status: false, error };
-    }
-  }
-
-  async isContainerExited(
-    containerId: string,
-  ): Promise<ReturnedStatus<boolean>> {
-    try {
-      const container = this.docker.getContainer(containerId);
-
-      let containerInfo: Dockerode.ContainerInspectInfo | undefined;
-
-      try {
-        containerInfo = await container.inspect();
-      } catch (error) {}
-
-      if (containerInfo) {
-        return { status: true, result: containerInfo.State.Status == 'exited' };
-      } else {
-        return { status: true, result: true };
-      }
-    } catch (error) {
-      return { status: false, error };
-    }
-  }
-
-  async doesContainerExist(
-    containerId: string,
-  ): Promise<ReturnedStatus<boolean>> {
-    try {
-      const container = this.docker.getContainer(containerId);
-      await container.inspect();
-      return { status: true, result: true };
-    } catch (error) {
-      if ((error as any).statusCode === 404) {
-        return { status: true, result: false };
-      } else {
-        return { status: false, error };
-      }
+      await this.docker.getContainer(id).inspect();
+      return true;
+    } catch (e: any) {
+      if (e.statusCode === 404) return false;
+      throw e;
     }
   }
 

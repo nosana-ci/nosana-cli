@@ -1,27 +1,23 @@
-import fs from 'node:fs';
 import util from 'util';
-import { IValidation } from 'typia';
-import EventEmitter from 'events';
 import { createHash } from '@nosana/sdk';
 
-import {
-  FlowState,
-  JobDefinition,
-  validateJobDefinition,
-} from '../../../services/NodeManager/provider/types.js';
+import { JobDefinition } from '../../../services/NodeManager/provider/types.js';
 import { Provider } from '../../../services/NodeManager/provider/Provider.js';
 import { ResourceManager } from '../../../services/NodeManager/node/resource/resourceManager.js';
 import { NodeRepository } from '../../../services/NodeManager/repository/NodeRepository.js';
 import { DB } from '../../../providers/modules/db/index.js';
 import { selectContainerOrchestrationProvider } from '../../../services/NodeManager/provider/containerOrchestration/selectContainerOrchestration.js';
-import { FlowHandler } from '../../../services/NodeManager/node/flow/flowHandler.js';
-import { createLoggingProxy } from '../../../services/NodeManager/monitoring/proxy/loggingProxy.js';
 import { log } from '../../../services/NodeManager/monitoring/log/NodeLog.js';
 import { ConsoleLogger } from '../../../services/NodeManager/monitoring/log/console/ConsoleLogger.js';
-import { getSDK } from '../../../services/sdk.js';
+import TaskManager, {
+  StopReasons,
+} from '../../../services/NodeManager/node/task/TaskManager.js';
+import { loadJobDefinitionFromFile } from '../../../providers/utils/jobDefinitionParser.js';
 import { generateDeploymentEndpointsTable } from '../../ults/generateDeploymentEndpointsTable.js';
+import { generateRandomId } from '../../../providers/utils/generate.js';
+import { getSDK } from '../../../services/sdk.js';
+import { createLoggingProxy } from '../../../services/NodeManager/monitoring/proxy/loggingProxy.js';
 
-// This is still a WIP: i will still have to expose the logs and progress logs
 export async function runJob(
   jobDefinitionFile: string,
   options: {
@@ -29,13 +25,31 @@ export async function runJob(
   },
 ) {
   try {
-    const jobDefinition: JobDefinition = await resolveJobDefination(
+    const sdk = getSDK();
+    const jobDefinition = await resolveJobDefinition(
       options,
       jobDefinitionFile,
     );
 
+    if (jobDefinition.deployment_id) {
+      jobDefinition.deployment_id = createHash(
+        `local-${
+          jobDefinition.deployment_id
+        }:${sdk.solana.wallet.publicKey.toString()}`,
+        45,
+      );
+
+      generateDeploymentEndpointsTable(jobDefinition);
+    }
+
+    /**
+     * set up log listening, any instance can listen to log produces from the node
+     * the logs are produces from the log proxy
+     */
+    log();
+
     const db = new DB(options.config).db;
-    const repository = new NodeRepository(db);
+    const repository = createLoggingProxy(new NodeRepository(db));
 
     const containerOrchestration = selectContainerOrchestrationProvider(
       options.provider,
@@ -48,59 +62,41 @@ export async function runJob(
       repository,
     );
 
-    const emitter = new EventEmitter();
-
     const provider = new Provider(
       containerOrchestration,
       repository,
       resourceManager,
-      emitter,
     );
-
-    const flowHandler = createLoggingProxy(
-      new FlowHandler(provider, repository),
-    );
-
-    emitter.on('run-exposed', (data) => {
-      flowHandler.operationExposed(data, undefined);
-    });
-
-    emitter.on('startup-success', (data) => {
-      flowHandler.operationExposed(data, true);
-    });
-
-    emitter.on('continuous-failure', (data) => {
-      flowHandler.operationExposed(data, false);
-    });
-
-    /**
-     * set up log listening, any instance can listen to log produces from the node
-     * the logs are produces from the log proxy
-     */
-    log();
 
     const logger = new ConsoleLogger(false);
     logger.addObserver();
 
-    const id = flowHandler.generateRandomId(32);
+    const job = generateRandomId(32);
+
+    const tm = new TaskManager(
+      provider,
+      repository,
+      job,
+      sdk.solana.wallet.publicKey.toString(),
+      jobDefinition,
+    );
+    tm.bootstrap();
 
     const exitHandler = async () => {
-      await flowHandler.stop(id);
-      process.exit();
+      await tm.stop(StopReasons.STOPPED);
     };
 
     process.on('SIGINT', exitHandler); // Handle Ctrl+C
     process.on('SIGTERM', exitHandler); // Handle termination signals
 
-    await runFlow(id, flowHandler, jobDefinition, repository, options);
+    await tm.start();
 
-    const result = repository.getFlowState(id);
+    const result = repository.getFlowState(job);
 
     console.log(
-      'result: ',
+      '\nResult: ',
       util.inspect(result, { showHidden: false, depth: null, colors: true }),
     );
-    process.exit();
   } catch (error: any) {
     const formattedError = `
       ========== ERROR ==========
@@ -116,66 +112,11 @@ export async function runJob(
       `;
 
     console.error(formattedError);
-    process.exit();
   }
+  process.exit();
 }
 
-async function runFlow(
-  id: string,
-  flowHandler: FlowHandler,
-  jobDefinition: JobDefinition,
-  repository: NodeRepository,
-  options: any,
-): Promise<FlowState> {
-  try {
-    const sdk = getSDK();
-    flowHandler.init(id);
-
-    const validation: IValidation<JobDefinition> =
-      validateJobDefinition(jobDefinition);
-
-    if (!validation.success) {
-      repository.updateflowState(id, {
-        endTime: Date.now(),
-        status: 'failed',
-      });
-      repository.updateflowStateError(id, {
-        status: 'validation-error',
-        errors: validation.errors,
-      });
-      return repository.getFlowState(id);
-    }
-
-    if (jobDefinition.deployment_id) {
-      jobDefinition.deployment_id = createHash(
-        `local-${
-          jobDefinition.deployment_id
-        }:${sdk.solana.wallet.publicKey.toString()}`,
-        45,
-      );
-
-      generateDeploymentEndpointsTable(jobDefinition);
-    }
-
-    flowHandler.start(id, jobDefinition);
-    await flowHandler.run(id);
-
-    return repository.getFlowState(id);
-  } catch (error) {
-    repository.updateflowState(id, {
-      endTime: Date.now(),
-      status: 'failed',
-    });
-    repository.updateflowStateError(id, {
-      status: 'error',
-      errors: error,
-    });
-    await flowHandler.stop(id);
-    return repository.getFlowState(id);
-  }
-}
-
-async function resolveJobDefination(
+async function resolveJobDefinition(
   options: {
     [key: string]: any;
   },
@@ -195,7 +136,7 @@ async function resolveJobDefination(
     if (!jobDefinitionFile) {
       throw new Error('Missing Job Definition Argument');
     }
-    jobDefinition = JSON.parse(fs.readFileSync(jobDefinitionFile, 'utf8'));
+    jobDefinition = loadJobDefinitionFromFile(jobDefinitionFile);
   }
 
   return jobDefinition;

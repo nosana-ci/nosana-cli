@@ -5,23 +5,23 @@ import { generateExposeId } from '../../generic/expose-util.js';
 import { configs } from '../../services/NodeManager/configs/configs.js';
 
 export function generateDeploymentEndpointsTable(jobDefinition: JobDefinition) {
+  const table = new Table({
+    title: `🚀 Deployment Endpoints 🚀`,
+    defaultColumnOptions: {
+      alignment: 'left',
+      color: 'green',
+    },
+  });
+
   for (const op of jobDefinition.ops) {
     if (op.type === 'container/run') {
       const { expose } = op.args as OperationArgsMap['container/run'];
       if (expose) {
-        const table = new Table({
-          title: `🚀 Deployment Endpoints 🚀`,
-          defaultColumnOptions: {
-            alignment: 'left',
-            color: 'green',
-          },
-        });
-
-        if (typeof expose === 'number') {
+        if (typeof expose === 'number' || typeof expose === 'string') {
           const generatedId = generateExposeId(
             jobDefinition.deployment_id!,
             op.id,
-            expose,
+            0,
             false,
           );
           table.addRow({
@@ -33,12 +33,12 @@ export function generateDeploymentEndpointsTable(jobDefinition: JobDefinition) {
 
         if (Array.isArray(expose)) {
           expose.forEach((port) => {
-            let p = typeof port === 'number' ? port : port.port;
+            let p = typeof port === 'object' ? port.port : port;
 
             const generatedId = generateExposeId(
               jobDefinition.deployment_id!,
               op.id,
-              p,
+              0,
               false,
             );
 
@@ -49,9 +49,9 @@ export function generateDeploymentEndpointsTable(jobDefinition: JobDefinition) {
             });
           });
         }
-
-        table.printTable();
       }
     }
   }
+
+  table.printTable();
 }

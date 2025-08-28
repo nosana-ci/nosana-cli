@@ -1,6 +1,7 @@
 import { NodeConfigsSingleton } from './NodeConfigs.js';
 
 export type configType = {
+  isNodeRun: boolean;
   backendUrl: string;
   backendSolanaAddress: string;
   backendAuthorizationAddress: string;
@@ -14,12 +15,14 @@ export type configType = {
     port: number;
   };
   minDiskSpace: number;
+  network: 'devnet' | 'mainnet';
 };
 
 export const configs = (options?: { [key: string]: any }): configType => {
   NodeConfigsSingleton.getInstance(options);
 
   return {
+    isNodeRun: options?.isNodeRun,
     backendUrl:
       process.env.BACKEND_URL || 'https://dashboard.k8s.prd.nos.ci/api',
     backendSolanaAddress:
@@ -41,5 +44,6 @@ export const configs = (options?: { [key: string]: any }): configType => {
     minDiskSpace: process.env.MIN_DISK_SPACE
       ? parseInt(process.env.MIN_DISK_SPACE)
       : 25000,
+    network: options?.network ?? 'mainnet',
   };
 };

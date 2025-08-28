@@ -1,6 +1,8 @@
 import typia from 'typia';
 import {
   JobDefinition as JobDefinitionSDK,
+  Operation,
+  OperationType,
   type OperationArgsMap,
 } from '@nosana/sdk';
 
@@ -52,14 +54,6 @@ export type JobDefinition = JobDefinitionSDK & {
 };
 export type JobType = 'container';
 
-export type Operation<T extends OperationType> = {
-  type: OperationType;
-  id: string;
-  args: OperationArgsMap[T];
-  results?: OperationResults;
-};
-export type OperationType = keyof OperationArgsMap;
-
 export type StdOptions = 'stdin' | 'stdout' | 'stderr' | 'nodeerr';
 
 export type OperationResults = {
@@ -87,6 +81,7 @@ export type FlowState = {
 export type Flow = {
   id: string;
   jobDefinition: JobDefinition;
+  project: string;
   state: FlowState;
 };
 

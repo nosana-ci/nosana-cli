@@ -10,10 +10,13 @@
       "id": "system-info",
       "args": {
         "cmd": ["./system.sh"],
-        "image": "registry.hub.docker.com/nosana/stats:v1.1.9",
+        "image": "registry.hub.docker.com/nosana/stats:v1.2.1",
         "env": {
           "DEBUG": "1"
         }
+      },
+      "execution": {
+        "group": "spec"
       }
     },
     {
@@ -21,10 +24,13 @@
       "id": "network-info",
       "args": {
         "cmd": ["./network.sh"],
-        "image": "registry.hub.docker.com/nosana/stats:v1.1.9",
+        "image": "registry.hub.docker.com/nosana/stats:v1.2.1",
         "env": {
           "DEBUG": "1"
         }
+      },
+      "execution": {
+        "group": "network"
       }
     },
     {
@@ -32,11 +38,14 @@
       "id": "gpu-info",
       "args": {
         "cmd": ["./cuda_check"],
-        "image": "registry.hub.docker.com/nosana/stats:v1.1.9",
+        "image": "registry.hub.docker.com/nosana/stats:v1.2.1",
         "env": {
           "DEBUG": "1"
         },
         "gpu": true
+      },
+      "execution": {
+        "group": "spec"
       }
     }
   ]

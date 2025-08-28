@@ -1,6 +1,7 @@
 import chalk from 'chalk';
 import { logEmitter, LogEntry } from '../proxy/loggingProxy.js';
 import { SECONDS_PER_DAY } from '../../../../generic/utils.js';
+import { LogMonitoringRegistry } from '../LogMonitoringRegistry.js';
 
 export interface LogObserver {
   isNodeObserver(): boolean;
@@ -61,6 +62,30 @@ class NodeLog {
   }
 
   private process(data: LogEntry) {
+    if (data.class === 'TaskManager') {
+      if (data.method === 'start') {
+        if (data.type === 'call') {
+          this.addLog({
+            method: `${data.class}.${data.method}`,
+            job: this.job,
+            log: '',
+            timestamp: Date.now(),
+            type: 'process',
+          });
+        }
+
+        if (data.type === 'return') {
+          this.addLog({
+            method: `${data.class}.${data.method}`,
+            job: this.job,
+            log: '',
+            timestamp: Date.now(),
+            type: 'success',
+          });
+        }
+      }
+    }
+
     if (
       data.class === 'PodmanContainerOrchestration' ||
       data.class === 'DockerContainerOrchestration'
@@ -812,7 +837,7 @@ class NodeLog {
         type: 'process',
       };
 
-      if (data.result.status) {
+      if (!data.error) {
         log.log = chalk.green(`Provider is healthy (${chalk.bold(provider)})`);
         log.type = 'success';
       } else {
@@ -844,8 +869,8 @@ class NodeLog {
         method: `${data.class}.${data.method}`,
         job: this.job,
         timestamp: Date.now(),
-        type: data.result.status ? 'success' : 'error',
-        log: data.result.status
+        type: !data.error ? 'success' : 'error',
+        log: !data.error
           ? chalk.green(`Pulled image ${chalk.bold(data.arguments[0])}`)
           : chalk.red(`Error pulling image ${chalk.bold(data.arguments[0])}`),
       });
@@ -869,8 +894,8 @@ class NodeLog {
         method: `${data.class}.${data.method}`,
         job: this.job,
         timestamp: Date.now(),
-        type: data.result.status ? 'success' : 'error',
-        log: data.result.status
+        type: !data.error ? 'success' : 'error',
+        log: !data.error
           ? chalk.green(`Created network ${chalk.bold(data.arguments[0])}`)
           : chalk.red(
               `Error creating network ${chalk.bold(data.arguments[0])}`,
@@ -898,8 +923,8 @@ class NodeLog {
         method: `${data.class}.${data.method}`,
         job: this.job,
         timestamp: Date.now(),
-        type: data.result.status ? 'success' : 'error',
-        log: data.result.status
+        type: !data.error ? 'success' : 'error',
+        log: !data.error
           ? chalk.green(
               `Running container ${chalk.bold(data.arguments[0].Image)}`,
             )
@@ -927,8 +952,8 @@ class NodeLog {
         method: `${data.class}.${data.method}`,
         job: this.job,
         timestamp: Date.now(),
-        type: data.result.status ? 'success' : 'error',
-        log: data.result.status
+        type: !data.error ? 'success' : 'error',
+        log: !data.error
           ? chalk.green(`Running container ${chalk.bold(data.arguments[0])}`)
           : chalk.red(
               `Error starting container ${chalk.bold(data.arguments[0])}`,
@@ -1046,6 +1071,8 @@ class NodeLog {
   }
 
   private handleExit(data: LogEntry) {
+    LogMonitoringRegistry.getInstance().setLoggable(true);
+
     this.job = undefined;
     this.shared = {};
     if (data.type === 'call') {
@@ -1060,6 +1087,8 @@ class NodeLog {
   }
 
   private handleClean(data: LogEntry) {
+    LogMonitoringRegistry.getInstance().setLoggable(true);
+
     this.job = undefined;
 
     if (data.type === 'call') {
@@ -1095,6 +1124,8 @@ class NodeLog {
   }
 
   private handleStop(data: LogEntry) {
+    LogMonitoringRegistry.getInstance().setLoggable(true);
+
     // if (data.type === 'call') {
     //   this.addLog({
     //     method: `${data.class}.${data.method}`,
@@ -1129,6 +1160,8 @@ class NodeLog {
   }
 
   private handleRestart(data: LogEntry) {
+    LogMonitoringRegistry.getInstance().setLoggable(true);
+
     this.job = undefined;
 
     if (data.method === 'restartDelay') {
@@ -1243,6 +1276,7 @@ class NodeLog {
           timestamp: Date.now(),
           type: 'success',
         });
+        LogMonitoringRegistry.getInstance().setLoggable(false);
       }
 
       if (data.type === 'error') {
@@ -1299,6 +1333,8 @@ class NodeLog {
     }
 
     if (data.method === 'finish') {
+      LogMonitoringRegistry.getInstance().setLoggable(false);
+
       if (data.type === 'call') {
         this.addLog({
           method: `${data.class}.${data.method}`,

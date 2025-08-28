@@ -1,8 +1,5 @@
 import { randomBytes } from 'crypto';
-import {
-  JobDefinition,
-  Operation,
-} from '../services/NodeManager/provider/types.js';
+import { JobDefinition } from '../services/NodeManager/provider/types.js';
 import { isPrivate } from './ops-util.js';
 import { configs } from '../services/NodeManager/configs/configs.js';
 import {
@@ -12,12 +9,13 @@ import {
   getExposePorts,
   HttpHealthCheck,
   isOpExposed,
+  Operation,
 } from '@nosana/sdk';
 
 export const generateExposeId = (
   flowId: string,
   op: number | string,
-  port: number,
+  port: number | string,
   isPrivate?: boolean,
 ): string => {
   const idLength = 45;
@@ -75,7 +73,7 @@ export const generateProxies = (
     );
 
     const generatedDeploymentId = deploymentId
-      ? generateExposeId(deploymentId, op.id, exposedPort.port, false)
+      ? generateExposeId(deploymentId, op.id, 0, false)
       : undefined;
 
     let proxyHTTPHealthCheckPath: string | undefined = undefined;
@@ -95,12 +93,12 @@ export const generateProxies = (
     proxies.push({
       name: `${generatedId}-${operationId}`,
       localIp: name,
-      localPort: exposedPort.port.toString(),
+      localPorts: exposedPort.port.toString(),
       customDomain: generatedId + '.' + configs().frp.serverAddr,
       ...(generatedDeploymentId && {
         deploymentDomain:
           generatedDeploymentId + '.' + configs().frp.serverAddr,
-        deploymentLoadBalancerGroup: generatedDeploymentId,
+        deploymentLoadBalancerGroup: `${generatedDeploymentId}-${exposedPort.port}`,
         ...(exposedPort.health_checks && {
           deploymentHealthCheckPath: proxyHTTPHealthCheckPath,
         }),
@@ -113,7 +111,12 @@ export const generateProxies = (
   return { proxies, idMap };
 };
 
-export const generateUrlSecretObject = (idMap: Map<string, ExposedPort>) =>
+export const generateUrlSecretObject = (
+  idMap: Map<string, ExposedPort>,
+): Record<
+  string,
+  { type: string | undefined; port: number | string; url: string }
+> =>
   Object.fromEntries(
     Array.from(idMap, ([id, port]) => [
       id,

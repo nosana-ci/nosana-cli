@@ -6,6 +6,8 @@ import {
 import { LowSync } from 'lowdb';
 import { Flow, OpState, FlowState, Log } from '../provider/types.js';
 
+const MAX_LOGS = 24999;
+
 export class NodeRepository {
   constructor(private db: LowSync<NodeDb>) {}
 
@@ -86,11 +88,19 @@ export class NodeRepository {
     this.db.write();
   }
 
-  public updateOpStateLogs(id: string, opIndex: number, log: Log): void {
-    if (!this.db.data.flows[id].state.opStates[opIndex].logs) {
-      this.db.data.flows[id].state.opStates[opIndex].logs = [];
+  public updateOpStateLogs(id: string, opIndex: number, log: any): void {
+    const logs = this.db.data.flows[id].state.opStates[opIndex].logs;
+
+    if (!logs) {
+      this.db.data.flows[id].state.opStates[opIndex].logs = [log];
+    } else {
+      // Trim if already at max capacity
+      if (logs.length >= MAX_LOGS) {
+        logs.shift(); // Remove the oldest log
+      }
+      logs.push(log);
     }
-    this.db.data.flows[id].state.opStates[opIndex].logs.push(log);
+
     this.db.write();
   }
 

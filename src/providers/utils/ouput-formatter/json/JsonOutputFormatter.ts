@@ -26,7 +26,7 @@ export interface JsonResponseType {
   network?: string;
   wallet?: string;
   ipfs_uploaded?: string;
-  service_url?: string;
+  service_url?: string[];
   job_url?: string;
   json_flow_url?: string;
   market_url?: string;

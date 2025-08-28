@@ -7,7 +7,6 @@ import express, { Express, NextFunction, Request, Response } from 'express';
 
 import ApiEventEmitter from './ApiEventEmitter.js';
 import { configs } from '../../configs/configs.js';
-import { FlowHandler } from '../flow/flowHandler.js';
 import { sleep } from '../../../../generic/utils.js';
 import { NodeAPIRequest } from './types/index.js';
 import { stateStreaming } from '../../monitoring/streaming/StateStreamer.js';
@@ -20,6 +19,7 @@ import {
   verifyBackendSignatureMiddleware,
   verifyJobOwnerSignatureMiddleware,
   verifyWSJobOwnerSignatureMiddleware,
+  verifyWSMiddleware,
   verifyWSNodeOrJobOwnerSignatureMiddleware,
 } from './middlewares/index.js';
 
@@ -32,13 +32,22 @@ import {
   postNodeValidation,
   wssLogRoute,
   wssStatusRoute,
+  getCurrentGroupStatusHandler,
+  getGroupStatusHandler,
+  getOperationsStatusHandler,
+  getOperationStatusHandler,
+  restartGroupOperationHandler,
+  restartOperationHandler,
+  stopGroupOperationHandler,
+  stopOperationHandler,
+  wssTaskManagerLogRoute,
+  moveGroupOperationHandler,
 } from './routes/index.js';
 import { NodeAlreadyActiveError } from '../../errors/NodeAlreadyActiveError.js';
 
 export class ApiHandler {
   private api: Express;
   private address: PublicKey;
-  private flowHandler: FlowHandler;
   private server: Server | null = null;
   private wss: WebSocket.Server | null = null; // WebSocket server
   private eventEmitter = ApiEventEmitter.getInstance();
@@ -54,7 +63,6 @@ export class ApiHandler {
     this.api = express();
     this.api.use(cors());
     this.registerRoutes();
-    this.flowHandler = new FlowHandler(this.provider, repository);
 
     applyLoggingProxyToClass(this);
 
@@ -149,6 +157,14 @@ export class ApiHandler {
                 wssLogRoute,
               );
               break;
+            case '/flog':
+              await verifyWSMiddleware(
+                ws,
+                header,
+                body,
+                wssTaskManagerLogRoute,
+              );
+              break;
             case '/status':
               await verifyWSNodeOrJobOwnerSignatureMiddleware(
                 ws,
@@ -193,20 +209,27 @@ export class ApiHandler {
     // Attach require objects to routes
     this.api.use((req: NodeAPIRequest, _: Response, next: NextFunction) => {
       req.repository = this.repository;
+      req.provider = this.provider;
       req.eventEmitter = this.eventEmitter;
       req.address = this.address;
-      req.flowHandler = this.flowHandler;
       next();
     });
+
+    this.api.use(express.json());
 
     // GET Routes
     this.api.get('/', (_: Request, res: Response) => res.send(this.address));
     this.api.get(
       '/job-result/:jobId',
-      express.json(),
       verifyJobOwnerSignatureMiddleware,
       getJobResultsRoute,
     );
+
+    this.api.get('/job/:jobId/ops', getOperationsStatusHandler);
+    this.api.get('/job/:jobId/ops/:opId', getOperationStatusHandler);
+    this.api.get('/job/:jobId/group/current', getCurrentGroupStatusHandler);
+    this.api.get('/job/:jobId/group/:group', getGroupStatusHandler);
+
     this.api.get('/node/info', getNodeInfoRoute);
     this.api.get(
       '/service/url/:jobId',
@@ -217,7 +240,6 @@ export class ApiHandler {
     // POST Routes
     this.api.post(
       '/job-definition/:jobId',
-      express.json(),
       verifyJobOwnerSignatureMiddleware,
       postJobDefinitionRoute,
     );
@@ -228,9 +250,39 @@ export class ApiHandler {
     );
     this.api.post(
       '/node/validate',
-      express.json(),
       verifyBackendSignatureMiddleware,
       postNodeValidation,
+    );
+
+    // this
+    this.api.post(
+      '/job/:jobId/group/:group/move',
+      verifyJobOwnerSignatureMiddleware,
+      moveGroupOperationHandler,
+    );
+
+    this.api.post(
+      '/job/:jobId/group/:group/operation/:opId/restart',
+      verifyJobOwnerSignatureMiddleware,
+      restartOperationHandler,
+    );
+
+    this.api.post(
+      '/job/:jobId/group/:group/restart',
+      verifyJobOwnerSignatureMiddleware,
+      restartGroupOperationHandler,
+    );
+
+    this.api.post(
+      '/job/:jobId/group/:group/operation/:opId/stop',
+      verifyJobOwnerSignatureMiddleware,
+      stopOperationHandler,
+    );
+
+    this.api.post(
+      '/job/:jobId/group/:group/stop',
+      verifyJobOwnerSignatureMiddleware,
+      stopGroupOperationHandler,
     );
   }
 

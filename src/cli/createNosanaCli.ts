@@ -22,7 +22,7 @@ export const createNosanaCLI = (version: string) =>
         outputFormatArgumentParser(actionCommand.parent?.args ?? []),
       ).output(OUTPUT_EVENTS.OUTPUT_HEADER_LOGO, { text: 'Nosana' });
     })
-    .hook('preAction', async (_, actionCommand) => {
+    .hook('preAction', async (command, actionCommand) => {
       const opts = actionCommand.optsWithGlobals();
       let market = opts.market;
       if (opts.network || opts.wallet) {
@@ -34,7 +34,10 @@ export const createNosanaCLI = (version: string) =>
           actionCommand.opts(),
         );
       }
-      configs(opts);
+
+      const isNodeRun = command.args[0] === 'node' && command.args[1] === 'run';
+
+      configs({ ...opts, isNodeRun });
 
       const fullCommand = actionCommand.parent
         ? `${actionCommand.parent.name()} ${actionCommand.name()}`

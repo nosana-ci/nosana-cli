@@ -1,14 +1,19 @@
 import EventEmitter from 'events';
 import { IValidation } from 'typia';
 import { PublicKey } from '@solana/web3.js';
-import { createHash, Job, Run, Client as SDK } from '@nosana/sdk';
+import { Job, Run, Client as SDK } from '@nosana/sdk';
 import { JobDefinition, validateJobDefinition } from '../../provider/types.js';
-import { FlowHandler } from '../flow/flowHandler.js';
 import { Provider } from '../../provider/Provider.js';
-import { applyLoggingProxyToClass } from '../../monitoring/proxy/loggingProxy.js';
+import {
+  applyLoggingProxyToClass,
+  createLoggingProxy,
+} from '../../monitoring/proxy/loggingProxy.js';
 import { NodeRepository } from '../../repository/NodeRepository.js';
 import { JobExternalUtil } from './jobExternalUtil.js';
 import { abortControllerSelector } from '../abort/abortControllerSelector.js';
+import { TaskManagerRegistry } from '../task/TaskManagerRegistry.js';
+import TaskManager, { StopReason, StopReasons } from '../task/TaskManager.js';
+import { JobRegistry } from './JobRegistry.js';
 
 export const jobEmitter = new EventEmitter();
 
@@ -17,7 +22,6 @@ export class JobHandler {
   private job: Job | undefined;
   private runSubscriptionId: number | undefined;
 
-  private flowHandler: FlowHandler;
   private jobExternalUtil: JobExternalUtil;
 
   private eventEmitter: EventEmitter;
@@ -31,25 +35,12 @@ export class JobHandler {
     private provider: Provider,
     private repository: NodeRepository,
   ) {
-    this.flowHandler = new FlowHandler(this.provider, repository);
     this.jobExternalUtil = new JobExternalUtil(sdk, this.repository);
 
     applyLoggingProxyToClass(this);
 
     this.eventEmitter = new EventEmitter();
     this.accountEmitter = new EventEmitter();
-
-    jobEmitter.on('run-exposed', (data) => {
-      this.flowHandler.operationExposed(data, undefined);
-    });
-
-    jobEmitter.on('startup-success', (data) => {
-      this.flowHandler.operationExposed(data, true);
-    });
-
-    jobEmitter.on('continuous-failure', (data) => {
-      this.flowHandler.operationExposed(data, false);
-    });
   }
 
   /**
@@ -99,10 +90,17 @@ export class JobHandler {
     }
   }
 
-  async stop(): Promise<void> {
-    if (this.id) {
-      await this.flowHandler.stop(this.jobId());
-    }
+  register(jobAddress: string, run: Run, job: Job) {
+    JobRegistry.getInstance().register(jobAddress, run, job);
+  }
+
+  deregister(jobAddress: string) {
+    JobRegistry.getInstance().remove(jobAddress);
+  }
+
+  async nodeStop(): Promise<void> {
+    await TaskManagerRegistry.getInstance().stop();
+    await JobRegistry.getInstance().stop(this.sdk, this.repository);
 
     this.stopListeningForAccountChanges();
     this.clearJob();
@@ -163,8 +161,6 @@ export class JobHandler {
     const flow = this.repository.getflow(this.jobId());
 
     if (!flow) {
-      this.flowHandler.init(this.jobId());
-
       const jobDefinition: JobDefinition | null = await Promise.race([
         this.jobExternalUtil.resolveJobDefinition(this.jobId(), job),
         new Promise<JobDefinition | null>((resolve) =>
@@ -182,14 +178,60 @@ export class JobHandler {
         return false;
       }
 
-      if (jobDefinition.deployment_id) {
-        const input = `${jobDefinition.deployment_id}:${job.project}`;
-        jobDefinition.deployment_id = createHash(input, 45);
-      }
+      try {
+        TaskManagerRegistry.getInstance().register(
+          this.jobId(),
+          createLoggingProxy(
+            new TaskManager(
+              this.provider,
+              this.repository,
+              this.jobId(),
+              job.project.toString(),
+              jobDefinition,
+            ),
+          ),
+        );
 
-      this.flowHandler.start(this.jobId(), jobDefinition);
+        const task = TaskManagerRegistry.getInstance().get(
+          this.jobId(),
+        ) as TaskManager;
+        task.bootstrap();
+      } catch (error) {
+        this.repository.updateflowStateError(this.jobId(), {
+          status: 'init error',
+          errors: error,
+        });
+
+        TaskManagerRegistry.getInstance().remove(this.jobId());
+
+        return false;
+      }
     } else {
-      this.flowHandler.resume(this.jobId());
+      try {
+        TaskManagerRegistry.getInstance().register(
+          this.jobId(),
+          new TaskManager(
+            this.provider,
+            this.repository,
+            this.jobId(),
+            job.project.toString(),
+          ),
+        );
+
+        const task = TaskManagerRegistry.getInstance().get(
+          this.jobId(),
+        ) as TaskManager;
+        task.bootstrap();
+      } catch (error) {
+        this.repository.updateflowStateError(this.jobId(), {
+          status: 'init error',
+          errors: error,
+        });
+
+        TaskManagerRegistry.getInstance().remove(this.jobId());
+
+        return false;
+      }
     }
 
     this.listenForAccountChanges();
@@ -197,73 +239,28 @@ export class JobHandler {
     return true;
   }
 
-  async run(): Promise<boolean> {
-    try {
-      if (this.repository.getFlowState(this.jobId()).status == 'failed') {
-        return false;
-      }
-
-      await this.flowHandler.run(this.jobId());
-
-      if (this.repository.getFlowState(this.jobId()).status == 'failed') {
-        return false;
-      }
-
-      return true;
-    } catch (error) {
-      this.eventEmitter.emit('error', error);
-      return false;
-    }
-  }
-
   async runWithErrorHandling(): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      const errorHandler = (error: Error) => {
-        this.off('error', errorHandler);
-        reject(error);
-      };
-
-      this.on('error', errorHandler);
-
-      this.run()
-        .then(() => {
-          this.off('error', errorHandler);
-          resolve();
-        })
-        .catch((error) => {
-          this.off('error', errorHandler);
-          reject(error);
-        });
-    });
+    const task = TaskManagerRegistry.getInstance().get(
+      this.jobId(),
+    ) as TaskManager;
+    await task.start();
+    TaskManagerRegistry.getInstance().remove(this.jobId());
+    this.accountEmitter.emit('completed');
   }
 
-  async stopCurrentJob(): Promise<void> {
-    await this.flowHandler.stopCurrentFlow();
-  }
-
-  async quit(run: Run): Promise<void> {
-    await this.sdk.jobs.quit(run);
-    await this.flowHandler.stop(this.jobId());
-  }
-
-  exposed(): boolean {
-    return this.flowHandler.exposed(this.jobId());
-  }
-
-  async finish(run: Run, complete = false): Promise<void> {
-    if (!this.repository.getflow(this.jobId())) {
-      return await this.quit(run);
-    }
-
+  async finish(run: Run, reason: StopReason): Promise<void> {
     try {
       const jobId = this.jobId();
+
       let result = await this.jobExternalUtil.resolveResult(
         jobId,
         this.get() as Job,
       );
+
       const ipfsResult = await this.sdk.ipfs.pin(result as object);
       const bytesArray = this.sdk.ipfs.IpfsHashToByteArray(ipfsResult);
-      if (complete) {
+
+      if (reason == StopReasons.STOPPED) {
         await this.sdk.jobs.complete(bytesArray, jobId);
       } else {
         await this.sdk.jobs.submitResult(
@@ -278,6 +275,14 @@ export class JobHandler {
   }
 
   async clearOldJobs(): Promise<void> {
-    await this.flowHandler.clearOldFlows();
+    const date = new Date();
+    date.setDate(date.getDate() - 1);
+
+    for (const id in this.repository.getFlows()) {
+      const flow = this.repository.getflow(id);
+      if (flow.state.endTime && flow.state.endTime < date.valueOf()) {
+        this.repository.deleteflow(id);
+      }
+    }
   }
 }
