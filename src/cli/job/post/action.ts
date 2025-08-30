@@ -219,7 +219,7 @@ export async function run(
   if ((json_flow as JobDefinition).logistics) {
     formatter.output(
       OUTPUT_EVENTS.OUTPUT_JOB_POSTER_AUTH_TOKEN,
-      nosana.authorization.generate(ipfsHash, { includeTime: true }),
+      await nosana.authorization.generate(ipfsHash, { includeTime: true }),
     );
   }
 
@@ -280,7 +280,7 @@ export async function run(
 
   if (options.confidential) {
     const job = await waitForJobRunOrCompletion(new PublicKey(response.job));
-    postJobDefinitionUntilSuccess({
+    await postJobDefinitionUntilSuccess({
       id: response.job,
       node: job.node,
       hash: ipfsHash,
@@ -304,7 +304,7 @@ export async function run(
 
 let retryTimeoutId: NodeJS.Timeout | null = null;
 
-function postJobDefinitionUntilSuccess({
+async function postJobDefinitionUntilSuccess({
   id,
   node,
   hash,
@@ -318,7 +318,7 @@ function postJobDefinitionUntilSuccess({
   serverAddr: string;
 }) {
   const nosana: Client = getSDK();
-  const headers = nosana.authorization.generateHeader(hash, {
+  const headers = await nosana.authorization.generateHeader(hash, {
     includeTime: true,
   });
   headers.append('Content-Type', 'application/json');

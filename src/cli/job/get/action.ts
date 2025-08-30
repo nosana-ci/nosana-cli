@@ -101,7 +101,7 @@ export async function getJob(
         }
 
         if (options.private) {
-          getJobResultUntilSuccess({
+          await getJobResultUntilSuccess({
             job,
             jobAddress,
             options,
@@ -294,7 +294,7 @@ async function fetchServiceURLWithRetry(
   }, retryInterval);
 }
 
-function getJobResultUntilSuccess({
+async function getJobResultUntilSuccess({
   job,
   jobAddress,
   options,
@@ -307,7 +307,7 @@ function getJobResultUntilSuccess({
 }) {
   const nosana: Client = getSDK();
 
-  const headers = nosana.authorization.generateHeader(job.ipfsJob, {
+  const headers = await nosana.authorization.generateHeader(job.ipfsJob, {
     includeTime: true,
   });
   headers.append('Content-Type', 'application/json');

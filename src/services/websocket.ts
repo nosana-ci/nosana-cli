@@ -9,7 +9,7 @@ const logger = new ConsoleLogger(false);
 const getSignature = async () => {
   const nosana: Client = getSDK();
 
-  return nosana.authorization.generate(configs().signMessage);
+  return await nosana.authorization.generate(configs().signMessage);
 };
 
 const getAddress = () => {

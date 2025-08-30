@@ -344,9 +344,12 @@ const reportError = async (data: {
   const response = await fetch(`${configs().backendUrl}/errors/report`, {
     method: 'POST',
     headers: {
-      Authorization: nosana.authorization.generate(configs().signMessage, {
-        includeTime: true,
-      }),
+      Authorization: await nosana.authorization.generate(
+        configs().signMessage,
+        {
+          includeTime: true,
+        },
+      ),
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
