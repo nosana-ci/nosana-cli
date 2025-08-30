@@ -264,6 +264,7 @@ export class Provider {
           ...op.args.env,
           NOSANA_ID: flow.id,
         };
+        const aliases = getAliases(op.args);
 
         const networks: { [key: string]: {} } = {};
         let idMaps: Map<string, ExposedPort> = new Map();
@@ -380,6 +381,7 @@ export class Provider {
             entrypoint,
             work_dir,
             volumes,
+            aliases,
           },
         );
 
@@ -700,4 +702,10 @@ function getVolumes(arg: OperationArgsMap['container/run'], flow: Flow) {
     }
   }
   return volumes;
+}
+
+function getAliases(args: OperationArgsMap['container/run']) {
+  if (!args.aliases) return undefined;
+  if (typeof args.aliases === 'string') return [args.aliases];
+  return args.aliases;
 }

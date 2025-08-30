@@ -72,6 +72,7 @@ export type RunContainerArgs = {
   work_dir?: string;
   entrypoint?: string | string[];
   restart_policy?: '' | 'unless-stopped' | 'always' | 'on-failure';
+  aliases?: string[] | undefined;
 };
 
 export interface ContainerOrchestrationInterface {

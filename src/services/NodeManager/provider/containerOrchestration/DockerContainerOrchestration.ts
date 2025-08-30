@@ -1,5 +1,5 @@
 import os from 'os';
-import Dockerode, {
+import {
   Container,
   ContainerCreateOptions,
   ImageInfo,
@@ -13,7 +13,6 @@ import { DockerAuth } from '@nosana/sdk';
 
 import { DockerExtended } from '../../../../docker/index.js';
 import { createSeverObject } from '../../../../providers/utils/createServerObject.js';
-import { abortControllerSelector } from '../../node/abort/abortControllerSelector.js';
 import {
   ContainerOrchestrationInterface,
   RunContainerArgs,
@@ -351,14 +350,13 @@ function mapRunContainerArgsToContainerCreateOpts(
   image: string,
   {
     name,
-    networks,
     cmd,
     gpu,
     volumes,
     env,
     work_dir,
-    requires_network_mode,
     entrypoint,
+    aliases,
   }: RunContainerArgs,
   gpuOption: string,
 ): ContainerCreateOptions {
@@ -409,7 +407,7 @@ function mapRunContainerArgsToContainerCreateOpts(
     Entrypoint: entrypoint,
     NetworkingConfig: {
       EndpointsConfig: {
-        ...(requires_network_mode ? { NOSANA_GATEWAY: {} } : undefined),
+        NOSANA_GATEWAY: aliases ? { Aliases: aliases } : {},
       },
     },
     HostConfig: {
