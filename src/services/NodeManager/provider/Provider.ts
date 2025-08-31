@@ -706,6 +706,6 @@ function getVolumes(arg: OperationArgsMap['container/run'], flow: Flow) {
 
 function getAliases(args: OperationArgsMap['container/run']) {
   if (!args.aliases) return undefined;
-  if (typeof args.aliases === 'string') return [args.aliases];
+  if (typeof args.aliases === 'string') return args.aliases.split(',');
   return args.aliases;
 }
