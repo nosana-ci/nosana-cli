@@ -80,7 +80,7 @@ export class SpecsHandler {
         params: {
           path: { id: this.sdk.solana.provider!.wallet.publicKey.toString() },
           header: {
-            authorization: this.sdk.authorization.generate(
+            authorization: await this.sdk.authorization.generate(
               configs().signMessage,
             ),
           },

@@ -58,7 +58,7 @@ export async function postNodeValidation(
       body: result.state,
       params: {
         header: {
-          authorization: sdk.authorization.generate(sessionId, {
+          authorization: await sdk.authorization.generate(sessionId, {
             includeTime: true,
           }),
         },

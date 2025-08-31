@@ -15,14 +15,13 @@ export function createPodmanRunOptions(
 ) {
   const {
     name,
-    networks,
     cmd,
     gpu,
     volumes,
     env,
+    aliases,
     work_dir,
     entrypoint,
-    requires_network_mode,
     restart_policy,
   } = args;
 
@@ -59,7 +58,7 @@ export function createPodmanRunOptions(
     ],
     netns: { nsmode: 'bridge' },
     Networks: {
-      NOSANA_GATEWAY: {},
+      NOSANA_GATEWAY: aliases ? { aliases } : {},
     },
     create_working_dir: true,
     cgroups_mode: 'disabled',
