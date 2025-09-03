@@ -94,7 +94,7 @@ export class DockerContainerOrchestration
 
     await this.docker.promisePull(
       image,
-      (controller = new AbortController()),
+      controller ?? new AbortController(),
       authorisation,
     );
   }
