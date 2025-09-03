@@ -134,6 +134,7 @@ export class JobHandler {
             ) as Job;
 
             if ((jobAccount.state as number) >= 2) {
+              this.finishing = true;
               this.accountEmitter.emit('stopped', jobAccount);
               resolve();
               return;
@@ -245,6 +246,12 @@ export class JobHandler {
     ) as TaskManager;
     await task.start();
     TaskManagerRegistry.getInstance().remove(this.jobId());
+
+    if (this.finishing) {
+      // We’ve already emitted 'stopped' (or are otherwise finishing).
+      return;
+    }
+
     this.accountEmitter.emit('completed');
   }
 
