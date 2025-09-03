@@ -43,6 +43,7 @@ import {
 } from './globalStore/index.js';
 import { Flow } from '../../provider/types.js';
 import { configs } from '../../configs/configs.js';
+import { getSDK } from '../../../sdk.js';
 
 export type TaskManagerOps = Array<Operation<OperationType>>;
 
@@ -97,9 +98,12 @@ export interface TaskLog {
 }
 
 export type OperationData = {
+  host?: string;
+  endpoint?: {
+    [key: string]: string;
+  };
   deployment_endpoint?: string;
   results?: Record<string, any>;
-  host?: string;
 };
 
 type InterpolateFn = <T>(value: T) => T;
@@ -110,8 +114,10 @@ type InterpolateOpFn = <T extends OperationType>(
 export type GlobalDataStore = Record<string, OperationData>;
 
 export type GlobalStore = {
-  frps_address: string;
+  job: string;
+  host: string;
   project: string;
+  frps_address: string;
 };
 
 export type Status = (typeof Statuses)[keyof typeof Statuses];
@@ -289,9 +295,13 @@ export default class TaskManager {
       this,
     ) as InterpolateOpFn;
 
+    const sdk = getSDK();
+
     this.globalStore = {
+      job,
+      project,
       frps_address: configs().frp.serverAddr,
-      project: project,
+      host: sdk.solana.wallet.publicKey.toString(),
     };
   }
 
@@ -336,7 +346,11 @@ export default class TaskManager {
   public setResult: (opId: string, key: string, value: any) => void;
   public setResults: (opId: string, values: Record<string, any>) => void;
   public setHost: (opId: string, host: string) => void;
-  public setDefaults: (project: string, jobDefinition: JobDefinition) => void;
+  public setDefaults: (
+    flowId: string,
+    project: string,
+    jobDefinition: JobDefinition,
+  ) => void;
   public getByPath: (opId: string, path: string) => any;
   public resolveLiteralsInString: (input: string) => string;
   public interpolate: InterpolateFn;
@@ -606,7 +620,7 @@ export default class TaskManager {
       );
 
       this.repository.setflow(this.job, flow);
-      this.setDefaults(this.project, this.definition!);
+      this.setDefaults(flow.id, this.project, this.definition!);
     }
 
     if (!this.definition) {

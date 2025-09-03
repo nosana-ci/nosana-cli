@@ -65,6 +65,7 @@ export const generateProxies = (
   const idMap: Map<string, ExposedPort> = new Map();
 
   for (let exposedPort of ports) {
+    // TODO: use ids generated in the taskmanager to make secerts
     const generatedId = generateExposeId(
       flowId,
       opIndex,
