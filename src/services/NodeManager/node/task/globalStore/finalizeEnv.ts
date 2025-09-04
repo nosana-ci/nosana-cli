@@ -24,7 +24,10 @@ export function finalizeEnvOnOperation<T extends OperationType>(
   };
 
   const newEnv = Object.fromEntries(
-    Object.entries(env as Record<string, unknown>).map(([k, v]) => [k, toEnvString(v)]),
+    Object.entries(env as Record<string, unknown>).map(([k, v]) => [
+      k,
+      toEnvString(v),
+    ]),
   );
 
   const nextArgs: OperationArgsMap[T] = {

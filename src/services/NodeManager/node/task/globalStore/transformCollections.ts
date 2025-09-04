@@ -2,104 +2,133 @@ import { Operation, OperationArgsMap, OperationType } from '@nosana/sdk';
 import TaskManager from '../TaskManager.js';
 
 type JSONValue =
-    | string
-    | number
-    | boolean
-    | null
-    | JSONValue[]
-    | { [k: string]: JSONValue };
+  | string
+  | number
+  | boolean
+  | null
+  | JSONValue[]
+  | { [k: string]: JSONValue };
 
 interface MarkerSpec {
-    key: string;
-    arrayHandler?: (raw: JSONValue) => JSONValue[];
-    objectHandler?: (raw: JSONValue) => Record<string, JSONValue>;
+  key: string;
+  arrayHandler?: (raw: JSONValue) => JSONValue[];
+  objectHandler?: (raw: JSONValue) => Record<string, JSONValue>;
 }
 
 const SpreadMarker: MarkerSpec = {
-    key: '__spread__',
+  key: '__spread__',
 
-    objectHandler: (raw: JSONValue): Record<string, JSONValue> => {
-        const parse = (label: string, v: JSONValue): Record<string, JSONValue> => {
-            const obj = typeof v === 'string' ? (() => {
-                try { return JSON.parse(v) as JSONValue; }
-                catch (e) { throw new Error(`${label} is not valid JSON: ${e instanceof Error ? e.message : String(e)}`); }
-            })() : v;
+  objectHandler: (raw: JSONValue): Record<string, JSONValue> => {
+    const parse = (label: string, v: JSONValue): Record<string, JSONValue> => {
+      const obj =
+        typeof v === 'string'
+          ? (() => {
+              try {
+                return JSON.parse(v) as JSONValue;
+              } catch (e) {
+                throw new Error(
+                  `${label} is not valid JSON: ${
+                    e instanceof Error ? e.message : String(e)
+                  }`,
+                );
+              }
+            })()
+          : v;
 
-            if (!obj || typeof obj !== 'object' || Array.isArray(obj)) {
-                throw new Error(`${label} must be a JSON object`);
-            }
-            return obj as Record<string, JSONValue>;
-        };
+      if (!obj || typeof obj !== 'object' || Array.isArray(obj)) {
+        throw new Error(`${label} must be a JSON object`);
+      }
+      return obj as Record<string, JSONValue>;
+    };
 
-        return parse('__spread__', raw);
-    },
+    return parse('__spread__', raw);
+  },
 
-    arrayHandler: (raw: JSONValue): JSONValue[] => {
-        const parse = (label: string, v: JSONValue): JSONValue[] => {
-            const arr = typeof v === 'string' ? (() => {
-                try { return JSON.parse(v) as JSONValue; }
-                catch (e) { throw new Error(`${label} is not valid JSON: ${e instanceof Error ? e.message : String(e)}`); }
-            })() : v;
+  arrayHandler: (raw: JSONValue): JSONValue[] => {
+    const parse = (label: string, v: JSONValue): JSONValue[] => {
+      const arr =
+        typeof v === 'string'
+          ? (() => {
+              try {
+                return JSON.parse(v) as JSONValue;
+              } catch (e) {
+                throw new Error(
+                  `${label} is not valid JSON: ${
+                    e instanceof Error ? e.message : String(e)
+                  }`,
+                );
+              }
+            })()
+          : v;
 
-            if (!Array.isArray(arr)) {
-                throw new Error(`${label} must be a JSON array`);
-            }
-            return arr as JSONValue[];
-        };
+      if (!Array.isArray(arr)) {
+        throw new Error(`${label} must be a JSON array`);
+      }
+      return arr as JSONValue[];
+    };
 
-        return parse('__spread__', raw);
-    },
+    return parse('__spread__', raw);
+  },
 };
 
 const PairsMarker: MarkerSpec = {
-    key: '__pairs__',
-    objectHandler: (raw: JSONValue): Record<string, JSONValue> => {
-        const parseArray = (label: string, v: JSONValue): JSONValue[] => {
-            const parsed = typeof v === 'string'
-                ? (() => {
-                    try { return JSON.parse(v) as JSONValue; }
-                    catch (e) { throw new Error(`${label} is not valid JSON: ${e instanceof Error ? e.message : String(e)}`); }
-                })()
-                : v;
+  key: '__pairs__',
+  objectHandler: (raw: JSONValue): Record<string, JSONValue> => {
+    const parseArray = (label: string, v: JSONValue): JSONValue[] => {
+      const parsed =
+        typeof v === 'string'
+          ? (() => {
+              try {
+                return JSON.parse(v) as JSONValue;
+              } catch (e) {
+                throw new Error(
+                  `${label} is not valid JSON: ${
+                    e instanceof Error ? e.message : String(e)
+                  }`,
+                );
+              }
+            })()
+          : v;
 
-            if (!Array.isArray(parsed)) {
-                throw new Error(`${label} must be a JSON array`);
-            }
-            return parsed as JSONValue[];
-        };
+      if (!Array.isArray(parsed)) {
+        throw new Error(`${label} must be a JSON array`);
+      }
+      return parsed as JSONValue[];
+    };
 
-        const arr = parseArray('__pairs__', raw);
-        const out: Record<string, JSONValue> = {};
+    const arr = parseArray('__pairs__', raw);
+    const out: Record<string, JSONValue> = {};
 
-        for (const it of arr) {
-            if (!it || typeof it !== 'object' || Array.isArray(it)) {
-                throw new Error(`__pairs__ items must be objects`);
-            }
+    for (const it of arr) {
+      if (!it || typeof it !== 'object' || Array.isArray(it)) {
+        throw new Error(`__pairs__ items must be objects`);
+      }
 
-            const rec = it as Record<string, JSONValue>;
-            const key = rec.key;
-            const value = rec.value;
+      const rec = it as Record<string, JSONValue>;
+      const key = rec.key;
+      const value = rec.value;
 
-            if (typeof key !== 'string') {
-                throw new Error(`__pairs__ item.key must be string`);
-            }
+      if (typeof key !== 'string') {
+        throw new Error(`__pairs__ item.key must be string`);
+      }
 
-            out[key] = value ?? '';
-        }
+      out[key] = value ?? '';
+    }
 
-        return out;
-    },
+    return out;
+  },
 
-    arrayHandler: (raw: JSONValue): JSONValue[] => {
-        const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
-        if (!Array.isArray(parsed)) throw new Error(`__pairs__ must be a JSON array`);
-        return parsed as JSONValue[];
-    },
+  arrayHandler: (raw: JSONValue): JSONValue[] => {
+    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    if (!Array.isArray(parsed))
+      throw new Error(`__pairs__ must be a JSON array`);
+    return parsed as JSONValue[];
+  },
 };
 
 export const DefaultCollectionMarkers: MarkerSpec[] = [
-    SpreadMarker,
-    PairsMarker,
+  SpreadMarker,
+  PairsMarker,
 ];
 
 export function transformCollections<T extends OperationType>(
@@ -109,8 +138,8 @@ export function transformCollections<T extends OperationType>(
 ): Operation<T> {
   const markers = DefaultCollectionMarkers;
 
-  const isMarkerKey = (k: string) => markers.some(m => m.key === k);
-  const getMarker = (k: string) => markers.find(m => m.key === k)!;
+  const isMarkerKey = (k: string) => markers.some((m) => m.key === k);
+  const getMarker = (k: string) => markers.find((m) => m.key === k)!;
 
   const visit = (node: JSONValue): JSONValue => {
     if (Array.isArray(node)) {
@@ -158,7 +187,9 @@ export function transformCollections<T extends OperationType>(
     return node;
   };
 
-  const nextArgs = visit(op.args as unknown as JSONValue) as OperationArgsMap[T];
+  const nextArgs = visit(
+    op.args as unknown as JSONValue,
+  ) as OperationArgsMap[T];
 
   return { ...op, args: nextArgs };
 }
