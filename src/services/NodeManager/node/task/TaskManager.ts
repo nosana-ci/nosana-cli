@@ -40,6 +40,7 @@ import {
   resolveLiteralsInString,
   interpolate,
   interpolateOperation,
+  transformCollections,
 } from './globalStore/index.js';
 import { Flow } from '../../provider/types.js';
 import { configs } from '../../configs/configs.js';
@@ -294,6 +295,9 @@ export default class TaskManager {
     this.interpolateOperation = interpolateOperation.bind(
       this,
     ) as InterpolateOpFn;
+    this.transformCollections = transformCollections.bind(
+      this,
+    ) as InterpolateOpFn;
 
     const sdk = getSDK();
 
@@ -355,6 +359,7 @@ export default class TaskManager {
   public resolveLiteralsInString: (input: string) => string;
   public interpolate: InterpolateFn;
   public interpolateOperation: InterpolateOpFn;
+  public transformCollections: InterpolateOpFn;
 
   /**
    * Prepares the TaskManager for execution by performing all necessary setup steps.

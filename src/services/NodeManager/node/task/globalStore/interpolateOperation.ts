@@ -57,20 +57,6 @@ export function interpolateOperation<T extends OperationType>(
 
   const interpolatedArgs = interpolateAnyStrict(op.args) as OperationArgsMap[T];
 
-  const env = (interpolatedArgs as any)?.env;
-  const argsWithEnv =
-    env && typeof env === 'object'
-      ? {
-          ...(interpolatedArgs as any),
-          env: Object.fromEntries(
-            Object.entries(env).map(([k, v]) => [
-              k,
-              v == null ? '' : String(v),
-            ]),
-          ),
-        }
-      : interpolatedArgs;
-
   const containsLiteral = (v: unknown): boolean => {
     if (typeof v === 'string') return /%%ops\.[^.]+\.[A-Za-z0-9._-]+%%/.test(v);
     if (Array.isArray(v)) return v.some(containsLiteral);
@@ -81,9 +67,9 @@ export function interpolateOperation<T extends OperationType>(
     }
     return false;
   };
-  if (containsLiteral(argsWithEnv)) {
+  if (containsLiteral(interpolatedArgs)) {
     throw new Error('Unresolved literals remain in interpolated args');
   }
 
-  return { ...op, args: argsWithEnv };
+  return { ...op, args: interpolatedArgs };
 }

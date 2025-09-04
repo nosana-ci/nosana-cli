@@ -9,6 +9,7 @@ import {
 } from '../TaskManager.js';
 import TaskManager from '../TaskManager.js';
 import { Flow } from '../../../provider/types.js';
+import { finalizeEnvOnOperation } from '../globalStore/finalizeEnv.js';
 
 /**
  * Executes a full lifecycle of a container-based operation using internal class state.
@@ -355,6 +356,13 @@ export async function runTaskManagerOperation(
 
   try {
     interpolatedOp = this.interpolateOperation(op);
+
+    /**
+     * now after interpolation we want to proceed to 
+     * TransformCollections(interpolatedOp)
+     */
+    interpolatedOp = this.transformCollections(interpolatedOp)
+    interpolatedOp = finalizeEnvOnOperation(interpolatedOp)
   } catch (error: any) {
     this.repository.updateOpStateLogs(this.job, index, {
       type: 'nodeerr',

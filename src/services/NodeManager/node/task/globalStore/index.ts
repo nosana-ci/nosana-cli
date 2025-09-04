@@ -6,3 +6,4 @@ export { getByPath } from './getByPath.js';
 export { resolveLiteralsInString } from './resolveLiteralsInString.js';
 export { interpolate } from './interpolate.js';
 export { interpolateOperation } from './interpolateOperation.js';
+export { transformCollections } from './transformCollections.js';
