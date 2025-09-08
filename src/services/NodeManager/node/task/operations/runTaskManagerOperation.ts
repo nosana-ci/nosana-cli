@@ -361,7 +361,7 @@ export async function runTaskManagerOperation(
      * now after interpolation we want to proceed to
      * TransformCollections(interpolatedOp)
      */
-    interpolatedOp = this.transformCollections(interpolatedOp);
+    // interpolatedOp = this.transformCollections(interpolatedOp);
     interpolatedOp = finalizeEnvOnOperation(interpolatedOp);
   } catch (error: any) {
     this.repository.updateOpStateLogs(this.job, index, {
