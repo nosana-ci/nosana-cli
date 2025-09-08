@@ -33,7 +33,11 @@ export function interpolateOperation<T extends OperationType>(
     if (!s) return v;
     const first = s[0];
     if (first !== '[' && first !== '{') return v;
-    try { return JSON.parse(s); } catch { return v; }
+    try {
+      return JSON.parse(s);
+    } catch {
+      return v;
+    }
   };
 
   const valueToArrayTokens = (value: unknown): unknown[] => {
@@ -52,7 +56,9 @@ export function interpolateOperation<T extends OperationType>(
   };
 
   const valueToSpaceString = (value: unknown): string =>
-    valueToArrayTokens(value).map(x => String(x)).join(' ');
+    valueToArrayTokens(value)
+      .map((x) => String(x))
+      .join(' ');
 
   const resolveRawIfExact = (
     input: string,
@@ -72,7 +78,9 @@ export function interpolateOperation<T extends OperationType>(
       const path = m[2]!;
       const value = getByPathStrict(opId, path);
       if (value == null) {
-        throw new Error(`Unresolved literal: "${input}" (opId="${opId}", path="${path}")`);
+        throw new Error(
+          `Unresolved literal: "${input}" (opId="${opId}", path="${path}")`,
+        );
       }
       return { matched: true, value };
     }
@@ -94,7 +102,9 @@ export function interpolateOperation<T extends OperationType>(
     result = result.replace(LITERAL_RE, (match, opId: string, path: string) => {
       const value = getByPathStrict(opId, path);
       if (value == null) {
-        throw new Error(`Unresolved literal: "${match}" (opId="${opId}", path="${path}")`);
+        throw new Error(
+          `Unresolved literal: "${match}" (opId="${opId}", path="${path}")`,
+        );
       }
       return valueToSpaceString(value);
     });
@@ -127,7 +137,9 @@ export function interpolateOperation<T extends OperationType>(
     }
     if (Array.isArray(original)) {
       const out: unknown[] = [];
-      const pushTokens = (v: unknown) => { out.push(...valueToArrayTokens(v)); };
+      const pushTokens = (v: unknown) => {
+        out.push(...valueToArrayTokens(v));
+      };
 
       if (Array.isArray(value)) {
         for (const el of value) pushTokens(el);
@@ -138,8 +150,10 @@ export function interpolateOperation<T extends OperationType>(
     }
     if (value && typeof value === 'object') {
       const out: Record<string, unknown> = {};
-      const origObj = (original && typeof original === 'object' && !Array.isArray(original))
-        ? (original as Record<string, unknown>) : {};
+      const origObj =
+        original && typeof original === 'object' && !Array.isArray(original)
+          ? (original as Record<string, unknown>)
+          : {};
       for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
         out[k] = normalizeByOrigin(v, origObj[k]);
       }
@@ -148,11 +162,17 @@ export function interpolateOperation<T extends OperationType>(
     return value;
   };
 
-  const normalizedArgs = normalizeByOrigin(interpolatedArgs, op.args) as OperationArgsMap[T];
+  const normalizedArgs = normalizeByOrigin(
+    interpolatedArgs,
+    op.args,
+  ) as OperationArgsMap[T];
 
   const containsLiteral = (v: unknown): boolean => {
     if (typeof v === 'string') {
-      return /%%ops\.[^.]+\.[A-Za-z0-9._-]+%%/.test(v) || /%%globals\.[^.]+%%/.test(v);
+      return (
+        /%%ops\.[^.]+\.[A-Za-z0-9._-]+%%/.test(v) ||
+        /%%globals\.[^.]+%%/.test(v)
+      );
     }
     if (Array.isArray(v)) return v.some(containsLiteral);
     if (v && typeof v === 'object') {
