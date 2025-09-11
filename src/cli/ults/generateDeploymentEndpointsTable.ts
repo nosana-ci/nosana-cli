@@ -17,7 +17,15 @@ export function generateDeploymentEndpointsTable(jobDefinition: JobDefinition) {
     if (op.type === 'container/run') {
       const { expose } = op.args as OperationArgsMap['container/run'];
       if (expose) {
-        if (typeof expose === 'number' || typeof expose === 'string') {
+        const isPlaceholder = (v: unknown): v is string =>
+          typeof v === 'string' && /^%%(ops|globals)\.[^%]+%%$/.test(v);
+        const isSpreadMarker = (v: unknown): boolean =>
+          !!v && typeof v === 'object' && !Array.isArray(v) && '__spread__' in (v as any);
+
+        if (
+          typeof expose === 'number' ||
+          (typeof expose === 'string' && !isPlaceholder(expose))
+        ) {
           const generatedId = generateExposeId(
             jobDefinition.deployment_id!,
             op.id,
@@ -33,7 +41,10 @@ export function generateDeploymentEndpointsTable(jobDefinition: JobDefinition) {
 
         if (Array.isArray(expose)) {
           expose.forEach((port) => {
-            let p = typeof port === 'object' ? port.port : port;
+            if (isSpreadMarker(port)) return; // skip dynamic
+            if (typeof port === 'string' && isPlaceholder(port)) return; // skip dynamic
+
+            const p = typeof port === 'object' ? (port as any).port : port;
 
             const generatedId = generateExposeId(
               jobDefinition.deployment_id!,

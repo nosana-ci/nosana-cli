@@ -23,26 +23,34 @@ export function setDefaults(
           opStore.endpoint = {} as Record<string, string>;
         }
 
+        const isPlaceholder = (v: unknown): v is string =>
+          typeof v === 'string' && /^%%(ops|globals)\.[^%]+%%$/.test(v);
+        const isSpreadMarker = (v: unknown): boolean =>
+          !!v && typeof v === 'object' && !Array.isArray(v) && '__spread__' in (v as any);
+
         if (Array.isArray(args.expose)) {
           for (const exposedPort of args.expose) {
-            (opStore.endpoint as Record<string, string>)[
-              `${
-                typeof exposedPort === 'object' ? exposedPort.port : exposedPort
-              }`
-            ] = `${generateExposeId(
+            if (isSpreadMarker(exposedPort)) continue; // skip dynamic
+            if (typeof exposedPort === 'string' && isPlaceholder(exposedPort)) continue;
+
+            const p =
+              typeof exposedPort === 'object' ? (exposedPort as any).port : exposedPort;
+            (opStore.endpoint as Record<string, string>)[`${p}`] = `${generateExposeId(
               flowId,
               index,
-              typeof exposedPort === 'object' ? exposedPort.port : exposedPort,
+              p as any,
               args.private,
             )}.${configs().frp.serverAddr}`;
           }
         } else {
-          opStore.endpoint[`${args.expose}`] = `${generateExposeId(
-            flowId,
-            index,
-            args.expose,
-            args.private,
-          )}.${configs().frp.serverAddr}`;
+          if (!(typeof args.expose === 'string' && isPlaceholder(args.expose))) {
+            opStore.endpoint[`${args.expose}`] = `${generateExposeId(
+              flowId,
+              index,
+              args.expose as any,
+              args.private,
+            )}.${configs().frp.serverAddr}`;
+          }
         }
 
         if (jobDefinition.deployment_id) {
