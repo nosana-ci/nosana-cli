@@ -569,13 +569,11 @@ export default class TaskManager {
     promise.finally(() => {
       this.currentGroupOperationsPromises.delete(opId);
       
-      const dependencyContext = this.dependecyMap.get(opId);
-      if (dependencyContext?.dependencies) {
-        for (const dependencyId of dependencyContext.dependencies) {
-          const dependencyOp = this.opMap.get(dependencyId);
-          if (dependencyOp?.execution?.stop_if_dependent_stops && this.currentGroup) {
-            this.stopTaskManagerOperation(this.currentGroup, dependencyId);
-          }
+      for (const [otherOpId, otherOp] of this.opMap) {
+        if (otherOp.execution?.depends_on?.includes(opId) && 
+            otherOp.execution?.stop_if_dependent_stops && 
+            this.currentGroup) {
+          this.stopTaskManagerOperation(this.currentGroup, otherOpId);
         }
       }
     });
