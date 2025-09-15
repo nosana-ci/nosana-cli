@@ -568,6 +568,11 @@ export default class TaskManager {
 
     promise.finally(() => {
       this.currentGroupOperationsPromises.delete(opId);
+      
+      const op = this.opMap.get(opId);
+      if (op?.execution?.stop_group_on === 'finish' && this.currentGroup) {
+        this.stopTaskManagerGroupOperations(this.currentGroup);
+      }
     });
 
     return promise;
