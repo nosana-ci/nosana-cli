@@ -49,7 +49,7 @@ export function interpolateOperation<T extends OperationType>(
       return out;
     }
     if (isPlainObject(v)) {
-      return [JSON.stringify(v)];
+      return [v];
     }
     if (v == null) return [];
     return [v]; // preserve primitive type
