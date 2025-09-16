@@ -1,4 +1,11 @@
-import { createHash, JobDefinition, Operation } from '@nosana/sdk';
+import {
+  createHash,
+  JobDefinition,
+  Operation,
+  isOperator,
+  isSpreadMarker,
+  ExposedPort,
+} from '@nosana/sdk';
 
 import TaskManager from '../TaskManager.js';
 import { configs } from '../../../configs/configs.js';
@@ -11,9 +18,41 @@ export function setDefaults(
   project: string,
   jobDefinition: JobDefinition,
 ): void {
+  processOperationsForEndpoints.call(
+    this,
+    flowId,
+    project,
+    jobDefinition,
+    jobDefinition.ops,
+  );
+}
+
+export function rehydrateEndpointsForOperation(
+  this: TaskManager,
+  flowId: string,
+  project: string,
+  jobDefinition: JobDefinition,
+  opId: string,
+): void {
+  const op = jobDefinition.ops.find((o) => o.id === opId);
+  if (!op) return;
+
+  processOperationsForEndpoints.call(this, flowId, project, jobDefinition, [
+    op,
+  ]);
+}
+
+function processOperationsForEndpoints(
+  this: TaskManager,
+  flowId: string,
+  project: string,
+  jobDefinition: JobDefinition,
+  ops: JobDefinition['ops'],
+): void {
   const config = NodeConfigsSingleton.getInstance();
 
-  for (const [index, op] of jobDefinition.ops.entries()) {
+  for (const op of ops) {
+    const index = jobDefinition.ops.findIndex((o) => o.id === op.id);
     if (op.type === 'container/run') {
       const { args } = op as Operation<'container/run'>;
       if (args.expose) {
@@ -25,24 +64,32 @@ export function setDefaults(
 
         if (Array.isArray(args.expose)) {
           for (const exposedPort of args.expose) {
+            if (isSpreadMarker(exposedPort)) continue; // skip dynamic
+            if (typeof exposedPort === 'string' && isOperator(exposedPort))
+              continue;
+
+            const p =
+              typeof exposedPort === 'object'
+                ? (exposedPort as ExposedPort).port
+                : exposedPort;
             (opStore.endpoint as Record<string, string>)[
-              `${
-                typeof exposedPort === 'object' ? exposedPort.port : exposedPort
-              }`
-            ] = `${generateExposeId(
+              `${p}`
+            ] = `${generateExposeId(flowId, index, p, args.private)}.${
+              configs().frp.serverAddr
+            }`;
+          }
+        } else {
+          if (
+            !isSpreadMarker(args.expose) &&
+            !(typeof args.expose === 'string' && isOperator(args.expose))
+          ) {
+            opStore.endpoint[`${args.expose}`] = `${generateExposeId(
               flowId,
               index,
-              typeof exposedPort === 'object' ? exposedPort.port : exposedPort,
+              args.expose as string | number,
               args.private,
             )}.${configs().frp.serverAddr}`;
           }
-        } else {
-          opStore.endpoint[`${args.expose}`] = `${generateExposeId(
-            flowId,
-            index,
-            args.expose,
-            args.private,
-          )}.${configs().frp.serverAddr}`;
         }
 
         if (jobDefinition.deployment_id) {
