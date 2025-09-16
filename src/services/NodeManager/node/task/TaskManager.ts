@@ -290,9 +290,8 @@ export default class TaskManager {
     this.setResults = setResults.bind(this);
     this.setHost = setHost.bind(this);
     this.setDefaults = setDefaults.bind(this);
-    this.rehydrateEndpointsForOperation = rehydrateEndpointsForOperation.bind(
-      this,
-    );
+    this.rehydrateEndpointsForOperation =
+      rehydrateEndpointsForOperation.bind(this);
     this.getByPath = getByPath.bind(this);
     this.resolveLiteralsInString = resolveLiteralsInString.bind(this);
     this.interpolate = interpolate.bind(this) as InterpolateFn;

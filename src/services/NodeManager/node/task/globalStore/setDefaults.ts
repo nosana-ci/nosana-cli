@@ -1,4 +1,11 @@
-import { createHash, JobDefinition, Operation, isOperator, isSpreadMarker, ExposedPort } from '@nosana/sdk';
+import {
+  createHash,
+  JobDefinition,
+  Operation,
+  isOperator,
+  isSpreadMarker,
+  ExposedPort,
+} from '@nosana/sdk';
 
 import TaskManager from '../TaskManager.js';
 import { configs } from '../../../configs/configs.js';
@@ -30,7 +37,9 @@ export function rehydrateEndpointsForOperation(
   const op = jobDefinition.ops.find((o) => o.id === opId);
   if (!op) return;
 
-  processOperationsForEndpoints.call(this, flowId, project, jobDefinition, [op]);
+  processOperationsForEndpoints.call(this, flowId, project, jobDefinition, [
+    op,
+  ]);
 }
 
 function processOperationsForEndpoints(
@@ -55,16 +64,18 @@ function processOperationsForEndpoints(
         if (Array.isArray(args.expose)) {
           for (const exposedPort of args.expose) {
             if (isSpreadMarker(exposedPort)) continue; // skip dynamic
-            if (typeof exposedPort === 'string' && isOperator(exposedPort)) continue;
+            if (typeof exposedPort === 'string' && isOperator(exposedPort))
+              continue;
 
             const p =
-              typeof exposedPort === 'object' ? (exposedPort as ExposedPort).port : exposedPort;
-            (opStore.endpoint as Record<string, string>)[`${p}`] = `${generateExposeId(
-              flowId,
-              index,
-              p,
-              args.private,
-            )}.${configs().frp.serverAddr}`;
+              typeof exposedPort === 'object'
+                ? (exposedPort as ExposedPort).port
+                : exposedPort;
+            (opStore.endpoint as Record<string, string>)[
+              `${p}`
+            ] = `${generateExposeId(flowId, index, p, args.private)}.${
+              configs().frp.serverAddr
+            }`;
           }
         } else {
           if (
