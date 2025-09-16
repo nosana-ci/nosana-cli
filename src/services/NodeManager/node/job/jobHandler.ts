@@ -77,7 +77,7 @@ export class JobHandler {
 
   public clearJob() {
     this.job = undefined;
-    this.finishing = false
+    this.finishing = false;
   }
 
   async claim(jobAddress: string): Promise<Job> {
