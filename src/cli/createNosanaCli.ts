@@ -8,7 +8,6 @@ import { OUTPUT_EVENTS } from '../providers/utils/ouput-formatter/outputEvents.j
 import { outputFormatArgumentParser } from '../providers/utils/ouput-formatter/outputFormatArgumentParser.js';
 import { outputFormatSelector } from '../providers/utils/ouput-formatter/outputFormatSelector.js';
 import { configs } from '../services/NodeManager/configs/configs.js';
-import { migrateWalletCommand } from './node/migrate/action/index.js';
 import { startNode } from './node/start/action.js';
 
 export const createNosanaCLI = (version: string) =>
@@ -42,28 +41,6 @@ export const createNosanaCLI = (version: string) =>
       const fullCommand = actionCommand.parent
         ? `${actionCommand.parent.name()} ${actionCommand.name()}`
         : actionCommand.name();
-
-      if (fullCommand !== 'node migrate') {
-        const migrated = await migrateWalletCommand(opts.wallet, true);
-
-        if (migrated) {
-          // reset with the new Wallet
-          if (opts.network || opts.wallet) {
-            await setSDK(
-              opts.network,
-              opts.rpc,
-              market,
-              opts.wallet,
-              actionCommand.opts(),
-            );
-          }
-
-          // if node command was `node start` then rejoin grid
-          if (fullCommand == 'node start') {
-            await startNode('', opts);
-          }
-        }
-      }
     })
     .addOption(
       new Option('--log <logLevel>', 'Log level')
