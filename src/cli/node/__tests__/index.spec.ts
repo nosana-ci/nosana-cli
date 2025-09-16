@@ -2,10 +2,10 @@ import { nodeCommand } from '../';
 
 describe('nodeCommand', () => {
   it('should have only two commands', () => {
-    expect(nodeCommand.commands.length).toBe(6);
+    expect(nodeCommand.commands.length).toBe(5);
   });
 
-  it.each([['join'], ['run'], ['start'], ['view'], ['prune'], ['migrate']])(
+  it.each([['join'], ['run'], ['start'], ['view'], ['prune']])(
     'should contain %s command',
     (command) => {
       // @ts-ignore
