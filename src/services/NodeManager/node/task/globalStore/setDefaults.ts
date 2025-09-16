@@ -64,3 +64,69 @@ export function setDefaults(
     }
   }
 }
+
+export function rehydrateEndpointsForOperation(
+  this: TaskManager,
+  flowId: string,
+  project: string,
+  jobDefinition: JobDefinition,
+  opId: string,
+): void {
+  const config = NodeConfigsSingleton.getInstance();
+
+  const op = jobDefinition.ops.find((o) => o.id === opId);
+  if (!op) return;
+
+  const index = jobDefinition.ops.findIndex((o) => o.id === opId);
+
+  if (op.type === 'container/run') {
+    const { args } = op as Operation<'container/run'>;
+    if (args.expose) {
+      const opStore = (this.globalOpStore[op.id] ??= {});
+
+      if (!opStore.endpoint) {
+        opStore.endpoint = {} as Record<string, string>;
+      }
+
+      if (Array.isArray(args.expose)) {
+        for (const exposedPort of args.expose) {
+          if (isSpreadMarker(exposedPort)) continue; // skip dynamic
+          if (typeof exposedPort === 'string' && isOperator(exposedPort)) continue;
+
+          const p =
+            typeof exposedPort === 'object' ? (exposedPort as ExposedPort).port : exposedPort;
+          (opStore.endpoint as Record<string, string>)[`${p}`] = `${generateExposeId(
+            flowId,
+            index,
+            p,
+            args.private,
+          )}.${configs().frp.serverAddr}`;
+        }
+      } else {
+        if (
+          !isSpreadMarker(args.expose) &&
+          !(typeof args.expose === 'string' && isOperator(args.expose))
+        ) {
+          opStore.endpoint[`${args.expose}`] = `${generateExposeId(
+            flowId,
+            index,
+            args.expose as string | number,
+            args.private,
+          )}.${configs().frp.serverAddr}`;
+        }
+      }
+
+      if (jobDefinition.deployment_id) {
+        opStore.deployment_endpoint = `${generateExposeId(
+          // @ts-ignore
+          config.options.isNodeRun
+            ? jobDefinition.deployment_id
+            : createHash(`${jobDefinition.deployment_id}:${project}`, 45),
+          op.id,
+          0,
+          false,
+        )}.${configs().frp.serverAddr}`;
+      }
+    }
+  }
+}
