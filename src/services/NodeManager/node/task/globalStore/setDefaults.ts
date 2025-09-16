@@ -42,8 +42,7 @@ function processOperationsForEndpoints(
 ): void {
   const config = NodeConfigsSingleton.getInstance();
 
-  for (const op of ops) {
-    const index = jobDefinition.ops.findIndex((o) => o.id === op.id);
+  for (const [index, op] of ops.entries()) {
     if (op.type === 'container/run') {
       const { args } = op as Operation<'container/run'>;
       if (args.expose) {
