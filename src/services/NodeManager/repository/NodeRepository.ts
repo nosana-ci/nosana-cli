@@ -5,7 +5,6 @@ import {
 } from '../../../providers/modules/db/index.js';
 import { LowSync } from 'lowdb';
 import { Flow, OpState, FlowState, Log } from '../provider/types.js';
-import { createInitialFlow } from '../node/task/helpers/createInitialFlow.js';
 
 const MAX_LOGS = 24999;
 
