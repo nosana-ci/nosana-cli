@@ -633,7 +633,7 @@ export default class TaskManager {
 
   private init(): void {
     const flow = this.repository.getflow(this.job);
-    if (flow) {
+    if (flow && flow.state.status !== 'waiting-for-job-defination') {
       this.definition = flow.jobDefinition;
     } else {
       const now = Date.now();
