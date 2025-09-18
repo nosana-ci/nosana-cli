@@ -8,6 +8,7 @@ import {
 import { JobDefinitionStrategySelector } from './defination/JobDefinitionStrategy.js';
 import { ResultReturnStrategySelector } from './result/ResultReturnStrategy.js';
 import { IValidation } from 'typia';
+import { createInitialFlow } from '../task/helpers/createInitialFlow.js';
 
 export class JobExternalUtil {
   constructor(private sdk: SDK, private repository: NodeRepository) {}
@@ -26,9 +27,17 @@ export class JobExternalUtil {
         jobDefinition.logistics?.send?.type,
       );
 
-      this.repository.updateflowState(id, {
-        status: 'waiting-for-job-defination',
-      });
+      this.repository.setflow(
+        id,
+        createInitialFlow(
+          id,
+          job.project.toString(),
+          jobDefinition,
+          [],
+          'waiting-for-job-definition',
+          Date.now(),
+        ),
+      );
 
       jobDefinition = await strategy.load(id);
     }

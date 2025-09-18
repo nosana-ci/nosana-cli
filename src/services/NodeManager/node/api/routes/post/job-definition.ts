@@ -18,9 +18,9 @@ export function postJobDefinitionRoute(
   }
 
   if (
-    req.repository!.getFlowState(id).status !== 'waiting-for-job-defination'
+    req.repository!.getFlowState(id).status !== 'waiting-for-job-definition'
   ) {
-    return res.status(400).send('cannot send job defination at this time');
+    return res.status(400).send('cannot send job definition at this time');
   }
 
   req.eventEmitter!.emit('job-definition', { jobDefinition, id });
