@@ -25,10 +25,21 @@ import {
   generateUrlSecretObject,
 } from '../../../generic/expose-util.js';
 
-import { Flow } from './types.js';
+import { Flow, Log, StdOptions } from './types.js';
 
 const tunnelImage = 'registry.hub.docker.com/nosana/tunnel:0.1.0';
 const frpcImage = 'registry.hub.docker.com/nosana/frpc:multi-v0.1.3';
+
+function parseBuffer(buffer: Buffer): Log {
+  const head = buffer.subarray(0, 8);
+  const chunkType = head.readUInt8(0);
+  const chunkLength = head.readUInt32BE(4);
+  const content = buffer.subarray(8, 8 + chunkLength);
+  return {
+    log: content.toString('utf-8'),
+    type: chunkType === 1 ? 'stdout' : ('stderr' as StdOptions),
+  } as Log;
+}
 
 export class Provider {
   private proxyStartupAbortController: AbortController | undefined = undefined;
@@ -239,7 +250,8 @@ export class Provider {
         });
 
         logStream.on('data', (data) => {
-          emitter.emit('log', data.toString(), 'container');
+          const { log, type } = parseBuffer(data);
+          emitter.emit('log', log, type, 'container');
         });
       } else {
         await this.containerOrchestration.pullImage(
@@ -395,7 +407,8 @@ export class Provider {
         });
 
         logStream.on('data', (data) => {
-          emitter.emit('log', data.toString(), 'container');
+          const { log, type } = parseBuffer(data);
+          emitter.emit('log', log, type, 'container');
         });
 
         if (isOpExposed(op)) {

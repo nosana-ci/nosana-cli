@@ -10,6 +10,10 @@ import {
 import TaskManager from '../TaskManager.js';
 import { Flow } from '../../../provider/types.js';
 import { finalizeEnvOnOperation } from '../globalStore/finalizeEnv.js';
+import {
+  createResultsObject,
+  extractResultFromLog,
+} from '../../../../../providers/utils/extractResultsFromLogs.js';
 
 /**
  * Executes a full lifecycle of a container-based operation using internal class state.
@@ -100,7 +104,7 @@ export async function runTaskManagerOperation(
    * Logs are stored in a buffer-like array, and later parsed during the `exit` or `error` phase
    * to extract structured logs and results.
    */
-  emitter.on('log', (log, type) => {
+  emitter.on('log', (log, logType, type) => {
     // add logs to the log manager
     this.addlog({
       opId: op.id,
@@ -114,7 +118,10 @@ export async function runTaskManagerOperation(
       // FOR NOW Skip if it's an actual Error object
       // TODO: Format errors and insert
       if (log instanceof Error) return;
-      this.repository.updateOpStateLogs(this.job, index, log);
+      this.repository.updateOpStateLogs(this.job, index, {
+        log,
+        type: logType || 'stdout',
+      });
       this.repository.displayLog(log);
     }
   });
@@ -191,19 +198,18 @@ export async function runTaskManagerOperation(
 
     const opState = this.repository.getOpState(this.job, index);
 
-    const logBuffer = Buffer.concat(
-      opState.logs.map(
-        (log) => new Uint8Array(Buffer.from(log as unknown as string, 'utf-8')),
-      ),
-    );
+    const results: {} | undefined = op.results
+      ? createResultsObject(op.results)
+      : undefined;
 
-    const { logs, results } = extractLogsAndResultsFromLogBuffer(
-      logBuffer,
-      op.results,
-    );
+    if (results && op.results) {
+      for (const logObj of opState.logs) {
+        extractResultFromLog(results, logObj, op.results);
+      }
+    }
 
     this.repository.updateOpState(this.job, index, {
-      logs,
+      logs: opState.logs,
       results,
       exitCode,
       endTime: Date.now(),
