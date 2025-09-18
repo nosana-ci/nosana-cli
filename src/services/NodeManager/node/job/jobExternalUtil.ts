@@ -53,7 +53,7 @@ export class JobExternalUtil {
     );
 
     if (!result) {
-      result = {
+      return {
         status: '',
         startTime: 0,
         endTime: 0,
