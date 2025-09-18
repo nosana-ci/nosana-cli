@@ -34,7 +34,7 @@ export class JobExternalUtil {
           job.project.toString(),
           jobDefinition,
           [],
-          'waiting-for-job-defination',
+          'waiting-for-job-definition',
           Date.now(),
         ),
       );
