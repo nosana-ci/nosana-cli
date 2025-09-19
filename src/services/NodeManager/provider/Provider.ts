@@ -265,7 +265,7 @@ export class Provider {
         }
 
         const index = getOpStateIndex(flow.jobDefinition.ops, op.id);
-        const name = flow.id + '-' + op.id;
+        const name = flow.id + '-' + index;
         const volumes = getVolumes(op.args, flow);
         const gpu = getGpu(op.args, flow);
         const entrypoint = getEntrypoint(op.args, flow);
