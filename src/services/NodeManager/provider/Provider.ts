@@ -456,8 +456,8 @@ export class Provider {
     emitter?: EventEmitter,
   ): Promise<void> {
     try {
-      const name = flow.id + '-' + op.id;
       const index = getOpStateIndex(flow.jobDefinition.ops, op.id);
+      const name = flow.id + '-' + index;
 
       const containers = await this.containerOrchestration.getContainersByName([
         name,
