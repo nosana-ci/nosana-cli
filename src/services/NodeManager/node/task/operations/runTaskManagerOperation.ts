@@ -261,20 +261,19 @@ export async function runTaskManagerOperation(
 
     const opState = this.repository.getOpState(this.job, index);
 
-    const logBuffer = Buffer.concat(
-      opState.logs.map(
-        (log) => new Uint8Array(Buffer.from(log as unknown as string, 'utf-8')),
-      ),
-    );
+    const results: {} | undefined = op.results
+      ? createResultsObject(op.results)
+      : undefined;
 
-    const { logs, results } = extractLogsAndResultsFromLogBuffer(
-      logBuffer,
-      op.results,
-    );
+    if (results && op.results) {
+      for (const logObj of opState.logs) {
+        extractResultFromLog(results, logObj, op.results);
+      }
+    }
 
     this.repository.updateOpState(this.job, index, {
       results,
-      logs: reason == 'restart' ? opState.logs : logs,
+      logs: opState.logs,
       exitCode: 2,
       status,
       endTime: Date.now(),
