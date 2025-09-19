@@ -14,8 +14,9 @@ export function createInitialFlow(
   operations: Operation<OperationType>[],
   status: string,
   timestamp: number,
+  error?: Error | unknown,
 ): Flow {
-  return {
+  const flow: Flow = {
     id: jobId,
     jobDefinition: definition,
     project,
@@ -27,4 +28,10 @@ export function createInitialFlow(
       opStates: operations.map(createDefaultOpState),
     },
   };
+
+  if (error) {
+    flow.state.errors = [error instanceof Error ? error.message : error];
+  }
+
+  return flow;
 }

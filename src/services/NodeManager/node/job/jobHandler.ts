@@ -14,6 +14,7 @@ import { abortControllerSelector } from '../abort/abortControllerSelector.js';
 import { TaskManagerRegistry } from '../task/TaskManagerRegistry.js';
 import TaskManager, { StopReason, StopReasons } from '../task/TaskManager.js';
 import { JobRegistry } from './JobRegistry.js';
+import { createInitialFlow } from '../task/helpers/createInitialFlow.js';
 
 export const jobEmitter = new EventEmitter();
 
@@ -199,10 +200,18 @@ export class JobHandler {
         ) as TaskManager;
         task.bootstrap();
       } catch (error) {
-        this.repository.updateflowStateError(this.jobId(), {
-          status: 'init error',
-          errors: error,
-        });
+        this.repository.setflow(
+          this.jobId(),
+          createInitialFlow(
+            this.jobId(),
+            job.project.toString(),
+            jobDefinition,
+            [],
+            'init error',
+            Date.now(),
+            error,
+          ),
+        );
 
         TaskManagerRegistry.getInstance().remove(this.jobId());
 

@@ -304,20 +304,22 @@ export class BasicNode {
            * Start the job. This includes downloading the job definition, starting the flow,
            * checking if the flow exists, and quitting the job if it fails to start.
            */
-          await this.jobHandler.start(job);
+          const shouldStart = await this.jobHandler.start(job);
 
-          /**
-           * Run the flow asynchronously and handle errors via a Promise.
-           * This lets us run the job in the background (async) and still get an error in this main process.
-           */
-          await this.jobHandler.runWithErrorHandling();
+          if (shouldStart) {
+            /**
+             * Run the flow asynchronously and handle errors via a Promise.
+             * This lets us run the job in the background (async) and still get an error in this main process.
+             */
+            await this.jobHandler.runWithErrorHandling();
 
-          /**
-           * Wait for the job to expire before continuing if the setup was successful.
-           */
-          // await this.expiryHandler.waitUntilExpired();
+            /**
+             * Wait for the job to expire before continuing if the setup was successful.
+             */
+            // await this.expiryHandler.waitUntilExpired();
 
-          resolvedStatus = await stopReason;
+            resolvedStatus = await stopReason;
+          }
         }
 
         if (!this.exiting) {
