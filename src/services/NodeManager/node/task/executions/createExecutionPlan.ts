@@ -21,7 +21,7 @@ export function createExecutionPlan(this: TaskManager): ExecutionContext[] {
 
   // Build group structure
   for (const op of this.operations as TaskManagerOps) {
-    this.setHost(op.id, `${this.job}-${op.id}`);
+    this.setHost(op.id, this.job);
 
     const group = op.execution?.group ?? op.id;
 
