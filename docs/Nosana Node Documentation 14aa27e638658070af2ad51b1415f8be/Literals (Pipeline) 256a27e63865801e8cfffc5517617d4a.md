@@ -2,16 +2,34 @@
 
 # Pipelines and Literals
 
-Pipelines let you wire outputs from earlier ops into the inputs of later ones without hardcoding values. You do this by placing string literals inside any `args` field. At runtime, the TaskManager interpolates those literals against its global store and returns a new `Operation<T>` with `args` fully substituted. Only `args` are modified; `type`, `id`, and `results` are preserved.
+Pipelines allow you to wire outputs from earlier ops into the inputs of later ones without hardcoding values. You do this by placing string literals inside any `args` field. At runtime, the TaskManager interpolates those literals against its global store and returns a new `Operation<T>` with `args` fully substituted. Only `args` are modified; `type`, `id`, and `results` are preserved.
 
 A literal is any substring wrapped in double percent markers that points to a value in the TaskManager store. The two most common forms are:
 
-- `%%ops.<opId>.results.<key>%%` → fetches a key from the `results` map of another op.
-- `%%ops.<opId>.host%%` → resolves the runtime hostname of another op.
+- `%%ops.<opId>.results.<key>%%` → fetches a key from the `results` map of another op
+- `%%ops.<opId>.host%%` → resolves the runtime hostname of another op
+
+## Default Template Literals
+
+The following table shows the available default template literals:
+
+| Category | Literal | Description |
+|----------|---------|-------------|
+| **Globals** | `%%globals.job%%` | Job ID |
+| | `%%globals.host%%` | Host ID |
+| | `%%globals.project%%` | Project ID |
+| | `%%globals.frps_address%%` | FRPS address |
+| **Ops** | `%%ops.OP_ID.host%%` | Op container hostname |
+| | `%%ops.OP_ID.deployment_endpoint%%` | Op deployment endpoint |
+| | `%%ops.OP_ID.endpoint.PORT_NUMBER%%` | Op endpoint for specific port |
+| | `%%ops.OP_ID.results.RESULT_KEY%%` | Op results |
+| **Operators** | `__spread__` | Spreads results arrays or objects across existing values |
+| | `__remove-if-empty__` | Remove property if array is empty |
+| | `__pairs__` | Converts an array of `{key, value}` objects into direct object properties |
 
 Interpolation happens when an operation is hydrated, just before it is scheduled to run. Unresolved literals throw errors.
 
-This is the key rule: **a literal is only guaranteed to resolve if the producing op is in the same group and is listed in `depends_on` or has ran and completed successfully.**
+This is the key rule: **a literal is only guaranteed to resolve if the producing op is in the same group and is listed in `depends_on` or has run and completed successfully.**
 
 # Results, Resources, and Dynamic Interpolation
 
@@ -120,15 +138,15 @@ Since interpolation happens at hydration time, the op won’t start until all it
 
 ## Putting It All Together
 
-Here’s a pipeline that turns a generated story into a cover image and a short video, then ships everything to S3 .
+Here's a pipeline that turns a generated story into a cover image and a short video, then ships everything to S3.
 
-It starts with the story stage. That stage has a single op that actually generates the story. When it finishes, it writes three results: a title, a body, and a slug. Because groups are stages and only one stage runs at a time, the next stage doesn’t begin until this story stage is done.
+It starts with the story stage. This stage has a single op that generates the story. When it finishes, it writes three results: a title, a body, and a slug. Because groups are stages and only one stage runs at a time, the next stage doesn't begin until the story stage is complete.
 
-The media stage comes next and runs two ops in parallel: one creates a cover image, the other renders a short video. Neither declares a dependency on the story op, because dependencies are only allowed within the same group. They don’t need to anyway. The story stage has already finished, so both media ops can safely pull `%%ops.story.results.title%%` and `%%ops.story.results.body%%` as literals at hydration time.
+The media stage comes next and runs two ops in parallel: one creates a cover image, the other renders a short video. Neither declares a dependency on the story op because dependencies are only allowed within the same group. They don't need to anyway. The story stage has already finished, so both media ops can safely pull `%%ops.story.results.title%%` and `%%ops.story.results.body%%` as literals at hydration time.
 
-Once both media ops complete, the download stage runs. It has one op that mounts your target S3 path for example `s3://my-bucket/stories/%%ops.story.results.slug%%` and uploads three things: the story payload (built from the title and body), the cover image produced by the image op, and the video produced by the video op. All three are wired by literals reading each producer’s `results` .
+Once both media ops complete, the download stage runs. It has one op that mounts your target S3 path (for example `s3://my-bucket/stories/%%ops.story.results.slug%%`) and uploads three things: the story payload (built from the title and body), the cover image produced by the image op, and the video produced by the video op. All three are wired by literals reading each producer's `results`.
 
-That’s the flow: one stage per group, strict stage ordering, parallelism inside the media stage, and all cross-stage data passed by results and resolved with literals. If you need to retry a flaky render, restart the specific media op. If you need a clean re-run of media, restart the media group. If you stop a media op, its producers are unaffected, and the download stage won’t begin until the media stage has fully finished.
+That's the flow: one stage per group, strict stage ordering, parallelism inside the media stage, and all cross-stage data passed by results and resolved with literals. If you need to retry a flaky render, restart the specific media op. If you need a clean re-run of media, restart the media group. If you stop a media op, its producers are unaffected, and the download stage won't begin until the media stage is fully finished.
 
 ```json
 {
@@ -196,8 +214,8 @@ That’s the flow: one stage per group, strict stage ordering, parallelism insid
         "entrypoint": ["sh"],
         "cmd": [
           "-c",
-          "echo Uploading story=%%ops.story.results.title%%; " ,
-          "echo Uploading cover=%%ops.image.results.cover_path%%; " ,
+          "echo Uploading story=%%ops.story.results.title%%;",
+          "echo Uploading cover=%%ops.image.results.cover_path%%;",
           "echo Uploading video=%%ops.video.results.video_path%%"
         ],
         "resources": [
@@ -288,7 +306,16 @@ Expands the contents of an array or object inline.
 
 ## `__pairs__`
 
-Converts an array of `{ key, value }` objects into direct fields on the parent.
+Converts an array of `{ key, value }` objects into direct fields on the parent object.
+
+This operator takes an array where each item is an object with `key` and `value` properties, and transforms it into a flat object where each `key` becomes a property name and each `value` becomes the property value.
+
+**Key behaviors:**
+- Each array item must be an object (not a primitive or array)
+- Each object must have a `key` property that is a string
+- Each object should have a `value` property (defaults to empty string if missing)
+- The `key` becomes the property name in the resulting object
+- The `value` becomes the property value in the resulting object
 
 **Before**
 
