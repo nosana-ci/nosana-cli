@@ -14,6 +14,7 @@ import {
   createResultsObject,
   extractResultFromLog,
 } from '../../../../../providers/utils/extractResultsFromLogs.js';
+import { stanatizeArrays } from '../globalStore/stanatizeArrays.js';
 
 /**
  * Executes a full lifecycle of a container-based operation using internal class state.
@@ -368,6 +369,7 @@ export async function runTaskManagerOperation(
      */
     // interpolatedOp = this.transformCollections(interpolatedOp);
     interpolatedOp = finalizeEnvOnOperation(interpolatedOp);
+    interpolatedOp = stanatizeArrays(interpolatedOp);
   } catch (error: any) {
     this.repository.updateOpStateLogs(this.job, index, {
       type: 'nodeerr',
