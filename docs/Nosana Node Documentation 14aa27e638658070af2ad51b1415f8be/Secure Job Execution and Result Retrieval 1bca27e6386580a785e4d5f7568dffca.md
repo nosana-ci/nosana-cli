@@ -134,8 +134,8 @@ To ensure that results are retrieved privately, we specify a `receive` method in
 ```
 
 - The `receive` object specifies that results will be retrieved securely using `api-listen`.
-- The job runs like any public job and is only different when it’s done running and wants to process results
-- the host waits and listens for the client to make a HTTP protected GET Request to retrieve the results before ending the Job.
+- The job runs like any public job and is only different when it's done running and wants to process results.
+- The host waits and listens for the client to make an HTTP protected GET request to retrieve the results before ending the job.
 
 ### **Step 2: Retrieving the Secure Job Result**
 
@@ -153,13 +153,13 @@ curl -X GET "http://${NODE_ID}.node.k8s.prd.nos.ci/job-result/${JOB_ID}" \
 
 - The host verifies authentication before returning results.
 - The results are transmitted securely.
-- then an empty result (only running information) is posted to IPFS without any logs or result
+- Then an empty result (only running information) is posted to IPFS without any logs or results.
 
-NT:
+Note:
 
 - `send` ensures private job submission.
 - `receive` ensures private result retrieval.
-- These functionalities can be used separately or together like below
+- These functionalities can be used separately or together as shown below:
 
 ```json
 {
@@ -184,7 +184,7 @@ NT:
 
 # **Private Exposed URL**
 
-To prevent the host from generating deterministic URL, it needs to be specified in the `ops` , since exposed URL are tied to specific ops, any ops the client wants to be private can be set like below:
+To prevent the host from generating a deterministic URL, it needs to be specified in the `ops`. Since exposed URLs are tied to specific operations, any operations the client wants to be private can be set as shown below:
 
 ```json
 {
@@ -209,7 +209,7 @@ To prevent the host from generating deterministic URL, it needs to be specified 
 
 ```
 
-If this is set to fault the job can be posted as normal and then the private exposed URL can be gotten from a secure endpoint from the host.
+If this is set to true, the job can be posted as normal and then the private exposed URL can be obtained from a secure endpoint from the host.
 
 ```
 NODE_ID="${NODE_ID}"  # The host that picked up the job
@@ -221,7 +221,7 @@ curl -X GET "http://${NODE_ID}.node.k8s.prd.nos.ci/service/url/${JOB_ID}" \
      -H "Accept: application/json"
 ```
 
-Then a response containing all URLS for the jobs securely
+Then a response containing all URLs for the job is returned securely:
 
 ```json
 {

@@ -1,6 +1,6 @@
 # Job Health Check Example
 
-In this write up i will go through the steps of creating an image with the sole intent of using the job health check functionality, the health check functionality is trigger by specifying a process of liveness  (for exposed operations) check in the Job Definition file as show below
+In this write-up, we will go through the steps of creating an image with the sole intent of using the job health check functionality. The health check functionality is triggered by specifying a process of liveness (for exposed operations) check in the Job Definition file as shown below:
 
 ```jsx
 {
@@ -36,7 +36,7 @@ In this write up i will go through the steps of creating an image with the sole 
 
 ```
 
-the health check is per port and can have multiple health checks per port.
+The health check is per port and can have multiple health checks per port.
 
 ## Setting Up a Project Folder to use to show health check functionality
 
@@ -65,7 +65,7 @@ server.listen(8080, () => {
 });
 ```
 
-this is the index file we pretty much just create a server that exposes the `/health` endpoint to be used of the health check.
+This is the index file where we create a server that exposes the `/health` endpoint to be used for the health check.
 
 ```docker
 FROM node:18-alpine
@@ -78,15 +78,15 @@ EXPOSE 8080
 CMD ["node", "index.js"]
 ```
 
-this is the Dockerfile and this will be used to build the image that will be used in the Job Definition.
+This is the Dockerfile that will be used to build the image for use in the Job Definition.
 
 ```docker
 docker build -t my-local-image .
 ```
 
-this will build the image and that image will be used in the Job definition
+This will build the image, and that image will be used in the Job Definition.
 
-So after creating the image and building it, it can now be used in the Job Definition.
+After creating and building the image, it can now be used in the Job Definition.
 
 ```json
 {
@@ -122,4 +122,4 @@ So after creating the image and building it, it can now be used in the Job Defin
 
 ```
 
-so this will be the Job definition on running this image, the health check goes to path `/health`  and uses `hhtp` and `GET` method, so now after every interval this endpoint is called and liveliness is confirmed
+This will be the Job Definition for running this image. The health check goes to path `/health` and uses `http` and `GET` method, so now after every interval this endpoint is called and liveness is confirmed.
