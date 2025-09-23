@@ -46,6 +46,16 @@ Individual pages for each module:
 
 [Node API](Nosana%20Node%20Documentation%2014aa27e638658070af2ad51b1415f8be/Node%20API%2014ba27e63865809fa3a3e9bc0c191979.md)
 
+[**Secure Job Execution and Result Retrieval**](Nosana%20Node%20Documentation%2014aa27e638658070af2ad51b1415f8be/Secure%20Job%20Execution%20and%20Result%20Retrieval%201bca27e6386580a785e4d5f7568dffca.md)
+
+[Getting Service URL](Nosana%20Node%20Documentation%2014aa27e638658070af2ad51b1415f8be/Getting%20Service%20URL%201d0a27e63865804fa07ff66312c9e20f.md)
+
+[Job Health Check Example](Nosana%20Node%20Documentation%2014aa27e638658070af2ad51b1415f8be/Job%20Health%20Check%20Example%201e4a27e6386580b2ae4ac32897b79ed0.md)
+
+[Multi Operations](Nosana%20Node%20Documentation%2014aa27e638658070af2ad51b1415f8be/Multi%20Operations%20256a27e6386580b88e13e23518f8e4f8.md)
+
+[Literals (Pipeline)](Nosana%20Node%20Documentation%2014aa27e638658070af2ad51b1415f8be/Literals%20(Pipeline)%20256a27e63865801e8cfffc5517617d4a.md)
+
 ### Purpose
 
 This documentation serves as a comprehensive guide to understanding the Node's architecture, facilitating development, debugging, and future enhancements. Each section is designed to provide clarity and actionable insights into the Node system's workings.
