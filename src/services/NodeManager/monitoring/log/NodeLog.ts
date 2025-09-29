@@ -3,6 +3,7 @@ import { logEmitter, LogEntry } from '../proxy/loggingProxy.js';
 import { SECONDS_PER_DAY } from '../../../../generic/utils.js';
 import { LogMonitoringRegistry } from '../LogMonitoringRegistry.js';
 import { TaskManagerRegistry } from '../../node/task/TaskManagerRegistry.js';
+import { LogType } from '../../node/task/TaskManager.js';
 
 export interface LogObserver {
   isNodeObserver(): boolean;
@@ -62,17 +63,19 @@ class NodeLog {
     this.notifyObservers(log);
   }
 
-  private flog(job: string | undefined, type: string, timestamp: number, message: any) {
-    if (!job) return;
-    const task = TaskManagerRegistry.getInstance().get(job);
-    if (!task) return;
-    task.addlog({
-      opId: 'system',
-      group: 'system',
-      type: type === 'error' ? 'error' : 'info',
-      timestamp,
-      message,
-    });
+  private addFlog(type: LogType, timestamp: number, message: string) {
+    if (!this.job) return;
+
+    const task = TaskManagerRegistry.getInstance().get(this.job);
+    if (task) {
+      task.addlog({
+        opId: 'system',
+        group: 'system',
+        type,
+        timestamp,
+        message,
+      });
+    }
   }
 
   private process(data: LogEntry) {
@@ -856,8 +859,7 @@ class NodeLog {
         log.type = 'success';
       } else {
         log.log = chalk.red(
-          `Provider is not healthy (${chalk.bold(provider)}): ${
-            data.result.error
+          `Provider is not healthy (${chalk.bold(provider)}): ${data.result.error
           }`,
         );
         log.type = 'error';
@@ -876,7 +878,7 @@ class NodeLog {
         type: 'process',
         pending: { isPending: true, expecting: `${data.class}.${data.method}` },
       });
-      this.flog(this.job, 'info', Date.now(), `Pulling image ${data.arguments[0]}`);
+      this.addFlog('info', Date.now(), `Pulling image ${data.arguments[0]}`);
     }
 
     if (data.type === 'return') {
@@ -889,8 +891,7 @@ class NodeLog {
           ? chalk.green(`Pulled image ${chalk.bold(data.arguments[0])}`)
           : chalk.red(`Error pulling image ${chalk.bold(data.arguments[0])}`),
       });
-      this.flog(
-        this.job,
+      this.addFlog(
         !data.error ? 'info' : 'error',
         Date.now(),
         !data.error
@@ -910,7 +911,7 @@ class NodeLog {
         type: 'process',
         pending: { isPending: true, expecting: `${data.class}.${data.method}` },
       });
-      this.flog(this.job, 'info', Date.now(), `Creating network ${data.arguments[0]}`);
+      this.addFlog('info', Date.now(), `Creating network ${data.arguments[0]}`);
     }
 
     if (data.type === 'return') {
@@ -922,11 +923,10 @@ class NodeLog {
         log: !data.error
           ? chalk.green(`Created network ${chalk.bold(data.arguments[0])}`)
           : chalk.red(
-              `Error creating network ${chalk.bold(data.arguments[0])}`,
-            ),
+            `Error creating network ${chalk.bold(data.arguments[0])}`,
+          ),
       });
-      this.flog(
-        this.job,
+      this.addFlog(
         !data.error ? 'info' : 'error',
         Date.now(),
         !data.error
@@ -948,7 +948,7 @@ class NodeLog {
         type: 'process',
         pending: { isPending: true, expecting: `${data.class}.${data.method}` },
       });
-      this.flog(this.job, 'info', Date.now(), `Starting container ${data.arguments[0].Image}`);
+      this.addFlog('info', Date.now(), `Starting container ${data.arguments[0].Image}`);
     }
 
     if (data.type === 'return') {
@@ -959,14 +959,13 @@ class NodeLog {
         type: !data.error ? 'success' : 'error',
         log: !data.error
           ? chalk.green(
-              `Running container ${chalk.bold(data.arguments[0].Image)}`,
-            )
+            `Running container ${chalk.bold(data.arguments[0].Image)}`,
+          )
           : chalk.red(
-              `Error starting container ${chalk.bold(data.arguments[0].Image)}`,
-            ),
+            `Error starting container ${chalk.bold(data.arguments[0].Image)}`,
+          ),
       });
-      this.flog(
-        this.job,
+      this.addFlog(
         !data.error ? 'info' : 'error',
         Date.now(),
         !data.error
@@ -986,7 +985,7 @@ class NodeLog {
         type: 'process',
         pending: { isPending: true, expecting: `${data.class}.${data.method}` },
       });
-      this.flog(this.job, 'info', Date.now(), `Starting container ${data.arguments[0]}`);
+      this.addFlog('info', Date.now(), `Starting container ${data.arguments[0]}`);
     }
 
     if (data.type === 'return') {
@@ -998,11 +997,10 @@ class NodeLog {
         log: !data.error
           ? chalk.green(`Running container ${chalk.bold(data.arguments[0])}`)
           : chalk.red(
-              `Error starting container ${chalk.bold(data.arguments[0])}`,
-            ),
+            `Error starting container ${chalk.bold(data.arguments[0])}`,
+          ),
       });
-      this.flog(
-        this.job,
+      this.addFlog(
         !data.error ? 'info' : 'error',
         Date.now(),
         !data.error
@@ -1314,8 +1312,8 @@ class NodeLog {
             expecting: `${data.class}.${data.method}`,
           },
         });
-        this.flog(this.job, 'info', Date.now(), `Node has found job ${data.arguments[0]}`);
-        this.flog(this.job, 'info', Date.now(), `Node is claiming job ${data.arguments[0]}`);
+        this.addFlog('info', Date.now(), `Node has found job ${data.arguments[0]}`);
+        this.addFlog('info', Date.now(), `Node is claiming job ${data.arguments[0]}`);
       }
 
       if (data.type === 'return') {
@@ -1328,7 +1326,7 @@ class NodeLog {
           timestamp: Date.now(),
           type: 'success',
         });
-        this.flog(this.job, 'info', Date.now(), `Node has claimed job ${data.arguments[0]}`);
+        this.addFlog('info', Date.now(), `Node has claimed job ${data.arguments[0]}`);
         LogMonitoringRegistry.getInstance().setLoggable(false);
       }
 
@@ -1340,7 +1338,7 @@ class NodeLog {
           timestamp: Date.now(),
           type: 'error',
         });
-        this.flog(this.job, 'error', Date.now(), `Error claiming job ${data.arguments[0]}`);
+        this.addFlog('error', Date.now(), `Error claiming job ${data.arguments[0]}`);
       }
     }
 
@@ -1365,7 +1363,7 @@ class NodeLog {
           timestamp: Date.now(),
           type: 'info',
         });
-        this.flog(this.job, 'info', Date.now(), `Job ${this.job} is starting`);
+        this.addFlog('info', Date.now(), `Job ${this.job} is starting`);
       }
       if (data.type === 'return') {
         this.addLog({
@@ -1375,7 +1373,7 @@ class NodeLog {
           timestamp: Date.now(),
           type: 'success',
         });
-        this.flog(this.job, 'info', Date.now(), `Job ${this.job} started successfully`);
+        this.addFlog('info', Date.now(), `Job ${this.job} started successfully`);
       }
       if (data.type === 'error') {
         this.addLog({
@@ -1385,7 +1383,7 @@ class NodeLog {
           timestamp: Date.now(),
           type: 'error',
         });
-        this.flog(this.job, 'error', Date.now(), `Error starting job ${this.job}`);
+        this.addFlog('error', Date.now(), `Error starting job ${this.job}`);
       }
     }
 
@@ -1581,8 +1579,7 @@ class NodeLog {
             method: `${data.class}.${data.method}`,
             job: this.job,
             log: chalk.green(
-              `[ ${healtcheckstring} ] Job ${chalk.bold(this.job)} (Port ${
-                data.arguments[0].port
+              `[ ${healtcheckstring} ] Job ${chalk.bold(this.job)} (Port ${data.arguments[0].port
               }) is now exposed (${chalk.bold(data.result)})`,
             ),
             timestamp: Date.now(),
@@ -1593,8 +1590,7 @@ class NodeLog {
             method: `${data.class}.${data.method}`,
             job: this.job,
             log: chalk.green(
-              `Job ${chalk.bold(this.job)} (Port${
-                data.arguments[0].port
+              `Job ${chalk.bold(this.job)} (Port${data.arguments[0].port
               }) failed healthchecks (${chalk.bold(data.result)})`,
             ),
             timestamp: Date.now(),
