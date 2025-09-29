@@ -7,6 +7,7 @@ import { NodeAPIRequest } from '../../types/index.js';
 import { clientSelector } from '../../../../../../api/client.js';
 import { generateRandomId } from '../../../../../../providers/utils/generate.js';
 import TaskManager from '../../../task/TaskManager.js';
+import { configs } from '../../../../configs/configs.js';
 
 export async function postNodeValidation(
   req: NodeAPIRequest<{}, JobDefinition>,
@@ -53,16 +54,15 @@ export async function postNodeValidation(
       return;
     }
 
-    await client.POST('/api/benchmarks/submit', {
-      // @ts-ignore WAITING ON ENDPOINT CREATION + DEFINING THE RESPONSE OBJECT
-      body: result.state,
-      params: {
-        header: {
-          authorization: await sdk.authorization.generate(sessionId, {
-            includeTime: true,
-          }),
-        },
+    await fetch(`${configs().backendUrl}/benchmarks/submit`, {
+      method: 'POST',
+      headers: {
+        Authorization: await sdk.authorization.generate(sessionId, {
+          includeTime: true,
+        }),
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify(result.state),
     });
   } catch (error) {
     throw error;
