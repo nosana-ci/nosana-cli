@@ -2,7 +2,6 @@ import chalk from 'chalk';
 import { Client } from '@nosana/sdk';
 import { confirm, input } from '@inquirer/prompts';
 
-import { clientSelector, QueryClient } from '../../../../api/client.js';
 import { configs } from '../../configs/configs.js';
 
 import { specsAndNetworkJob } from '../../../../static/staticsImports.js';
@@ -15,7 +14,6 @@ import TaskManager from '../task/TaskManager.js';
 
 export class RegisterHandler {
   private nodeId: string;
-  private client: QueryClient;
   private answers:
     | {
         email: string;
@@ -30,7 +28,6 @@ export class RegisterHandler {
     private repository: NodeRepository,
   ) {
     this.nodeId = this.sdk.solana.provider!.wallet.publicKey.toString();
-    this.client = clientSelector();
 
     applyLoggingProxyToClass(this);
   }

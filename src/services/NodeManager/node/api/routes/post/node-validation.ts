@@ -4,7 +4,6 @@ import { JobDefinition } from '@nosana/sdk';
 
 import { getSDK } from '../../../../../sdk.js';
 import { NodeAPIRequest } from '../../types/index.js';
-import { clientSelector } from '../../../../../../api/client.js';
 import { generateRandomId } from '../../../../../../providers/utils/generate.js';
 import TaskManager from '../../../task/TaskManager.js';
 import { configs } from '../../../../configs/configs.js';
@@ -14,7 +13,6 @@ export async function postNodeValidation(
   res: Response,
 ) {
   const sdk = getSDK();
-  const client = clientSelector();
   const provider = req.provider!;
   const repository = req.repository!;
   const validator = typia.createValidateEquals<JobDefinition>();

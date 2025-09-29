@@ -12,20 +12,16 @@ import {
   CudaCheckSuccessResponse,
 } from '../../../../types/cudaCheck.js';
 import { NetworkInfoResults, SystemInfoResults } from './type.js';
-import { clientSelector, QueryClient } from '../../../../api/client.js';
 import { OpState } from '../../provider/types.js';
 import TaskManager from '../task/TaskManager.js';
 import { generateRandomId } from '../../../../providers/utils/generate.js';
 
 export class SpecsHandler {
-  private client: QueryClient;
-
   constructor(
     private provider: Provider,
     private repository: NodeRepository,
     private sdk: Client,
   ) {
-    this.client = clientSelector();
     applyLoggingProxyToClass(this);
   }
 

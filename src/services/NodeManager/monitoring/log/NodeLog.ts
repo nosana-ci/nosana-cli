@@ -63,7 +63,11 @@ class NodeLog {
     this.notifyObservers(log);
   }
 
-  private addFlog(type: LogType, timestamp: number, message: string | { type: string; payload?: unknown }) {
+  private addFlog(
+    type: LogType,
+    timestamp: number,
+    message: string | { type: string; payload?: unknown },
+  ) {
     if (!this.job) return;
 
     const task = TaskManagerRegistry.getInstance().get(this.job);
