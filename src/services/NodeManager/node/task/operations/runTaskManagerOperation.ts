@@ -162,7 +162,14 @@ export async function runTaskManagerOperation(
    * This is crucial for analytics, timeout enforcement, and auditing purposes.
    */
   emitter.on('start', () => {
-    emitter.emit('log', 'Operation Started', 'info');
+    const opName = (op as any).name || op.id;
+    this.addlog({
+      opId: op.id,
+      group: this.currentGroup ?? '',
+      type: 'info',
+      message: `Operation Started: ${opName}`,
+      timestamp: Date.now(),
+    });
 
     this.operationStatus.set(op.id, OperationProgressStatuses.RUNNING);
 
@@ -184,7 +191,14 @@ export async function runTaskManagerOperation(
    * - Updates the operation's state in the repository with logs, results, exit code, status, and end time.
    */
   emitter.on('exit', ({ exitCode }: { exitCode: number }) => {
-    emitter.emit('log', 'Operation Completed', 'info');
+    const opName = (op as any).name || op.id;
+    this.addlog({
+      opId: op.id,
+      group: this.currentGroup ?? '',
+      type: 'info',
+      message: `Operation Completed: ${opName}`,
+      timestamp: Date.now(),
+    });
 
     this.operationStatus.set(op.id, OperationProgressStatuses.FINISHED);
 

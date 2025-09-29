@@ -2,8 +2,8 @@ import chalk from 'chalk';
 import { logEmitter, LogEntry } from '../proxy/loggingProxy.js';
 import { SECONDS_PER_DAY } from '../../../../generic/utils.js';
 import { LogMonitoringRegistry } from '../LogMonitoringRegistry.js';
+import type { LogType } from '../../node/task/TaskManager.js';
 import { TaskManagerRegistry } from '../../node/task/TaskManagerRegistry.js';
-import { LogType } from '../../node/task/TaskManager.js';
 
 export interface LogObserver {
   isNodeObserver(): boolean;
@@ -63,7 +63,7 @@ class NodeLog {
     this.notifyObservers(log);
   }
 
-  private addFlog(type: LogType, timestamp: number, message: string) {
+  private addFlog(type: LogType, timestamp: number, message: string | { type: string; payload?: unknown }) {
     if (!this.job) return;
 
     const task = TaskManagerRegistry.getInstance().get(this.job);
@@ -242,6 +242,10 @@ class NodeLog {
             optProgressBar: data.arguments[1],
           },
         });
+        this.addFlog('info', Date.now(), {
+          type: 'multi-process-bar-start',
+          payload: { optProgressBar: data.arguments[1] },
+        });
       }
 
       if (data.method === 'update' && data.type == 'call') {
@@ -255,6 +259,10 @@ class NodeLog {
             event: data.arguments[0],
           },
         });
+        this.addFlog('info', Date.now(), {
+          type: 'multi-process-bar-update',
+          payload: { event: data.arguments[0] },
+        });
       }
 
       if (data.method === 'stop' && data.type == 'call') {
@@ -265,6 +273,7 @@ class NodeLog {
           type: 'multi-process-bar-stop',
           log: '', // Remains empty
         });
+        this.addFlog('info', Date.now(), { type: 'multi-process-bar-stop' });
       }
     }
 
@@ -293,6 +302,16 @@ class NodeLog {
             progressBarPreset: data.arguments[5],
           },
         });
+        this.addFlog('info', Date.now(), {
+          type: 'process-bar-start',
+          payload: {
+            optProgressBar: data.arguments[1],
+            total: data.arguments[2],
+            startValue: data.arguments[3],
+            payload: data.arguments[4],
+            progressBarPreset: data.arguments[5],
+          },
+        });
       }
 
       if (data.method === 'update' && data.type == 'call') {
@@ -306,6 +325,10 @@ class NodeLog {
             current: data.arguments[0],
             payload: data.arguments[1],
           },
+        });
+        this.addFlog('info', Date.now(), {
+          type: 'process-bar-update',
+          payload: { current: data.arguments[0], payload: data.arguments[1] },
         });
       }
 
@@ -326,6 +349,8 @@ class NodeLog {
           timestamp: Date.now(),
           type: 'info',
         });
+        this.addFlog('info', Date.now(), { type: 'process-bar-stop' });
+        this.addFlog('info', Date.now(), data.arguments[0]);
       }
     }
 
