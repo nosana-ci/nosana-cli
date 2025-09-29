@@ -2,6 +2,7 @@ import chalk from 'chalk';
 import { logEmitter, LogEntry } from '../proxy/loggingProxy.js';
 import { SECONDS_PER_DAY } from '../../../../generic/utils.js';
 import { LogMonitoringRegistry } from '../LogMonitoringRegistry.js';
+import { TaskManagerRegistry } from '../../node/task/TaskManagerRegistry.js';
 
 export interface LogObserver {
   isNodeObserver(): boolean;
@@ -59,6 +60,19 @@ class NodeLog {
 
   private addLog(log: NodeLogEntry) {
     this.notifyObservers(log);
+  }
+
+  private flog(job: string | undefined, type: string, timestamp: number, message: any) {
+    if (!job) return;
+    const task = TaskManagerRegistry.getInstance().get(job);
+    if (!task) return;
+    task.addlog({
+      opId: 'system',
+      group: 'system',
+      type: type === 'error' ? 'error' : 'info',
+      timestamp,
+      message,
+    });
   }
 
   private process(data: LogEntry) {
@@ -862,6 +876,7 @@ class NodeLog {
         type: 'process',
         pending: { isPending: true, expecting: `${data.class}.${data.method}` },
       });
+      this.flog(this.job, 'info', Date.now(), `Pulling image ${data.arguments[0]}`);
     }
 
     if (data.type === 'return') {
@@ -874,6 +889,14 @@ class NodeLog {
           ? chalk.green(`Pulled image ${chalk.bold(data.arguments[0])}`)
           : chalk.red(`Error pulling image ${chalk.bold(data.arguments[0])}`),
       });
+      this.flog(
+        this.job,
+        !data.error ? 'info' : 'error',
+        Date.now(),
+        !data.error
+          ? `Pulled image ${data.arguments[0]}`
+          : `Error pulling image ${data.arguments[0]}`,
+      );
     }
   }
 
@@ -887,6 +910,7 @@ class NodeLog {
         type: 'process',
         pending: { isPending: true, expecting: `${data.class}.${data.method}` },
       });
+      this.flog(this.job, 'info', Date.now(), `Creating network ${data.arguments[0]}`);
     }
 
     if (data.type === 'return') {
@@ -901,6 +925,14 @@ class NodeLog {
               `Error creating network ${chalk.bold(data.arguments[0])}`,
             ),
       });
+      this.flog(
+        this.job,
+        !data.error ? 'info' : 'error',
+        Date.now(),
+        !data.error
+          ? `Created network ${data.arguments[0]}`
+          : `Error creating network ${data.arguments[0]}`,
+      );
     }
   }
 
@@ -916,6 +948,7 @@ class NodeLog {
         type: 'process',
         pending: { isPending: true, expecting: `${data.class}.${data.method}` },
       });
+      this.flog(this.job, 'info', Date.now(), `Starting container ${data.arguments[0].Image}`);
     }
 
     if (data.type === 'return') {
@@ -932,6 +965,14 @@ class NodeLog {
               `Error starting container ${chalk.bold(data.arguments[0].Image)}`,
             ),
       });
+      this.flog(
+        this.job,
+        !data.error ? 'info' : 'error',
+        Date.now(),
+        !data.error
+          ? `Running container ${data.arguments[0].Image}`
+          : `Error starting container ${data.arguments[0].Image}`,
+      );
     }
   }
 
@@ -945,6 +986,7 @@ class NodeLog {
         type: 'process',
         pending: { isPending: true, expecting: `${data.class}.${data.method}` },
       });
+      this.flog(this.job, 'info', Date.now(), `Starting container ${data.arguments[0]}`);
     }
 
     if (data.type === 'return') {
@@ -959,6 +1001,14 @@ class NodeLog {
               `Error starting container ${chalk.bold(data.arguments[0])}`,
             ),
       });
+      this.flog(
+        this.job,
+        !data.error ? 'info' : 'error',
+        Date.now(),
+        !data.error
+          ? `Running container ${data.arguments[0]}`
+          : `Error starting container ${data.arguments[0]}`,
+      );
     }
   }
 
@@ -1264,6 +1314,8 @@ class NodeLog {
             expecting: `${data.class}.${data.method}`,
           },
         });
+        this.flog(this.job, 'info', Date.now(), `Node has found job ${data.arguments[0]}`);
+        this.flog(this.job, 'info', Date.now(), `Node is claiming job ${data.arguments[0]}`);
       }
 
       if (data.type === 'return') {
@@ -1276,6 +1328,7 @@ class NodeLog {
           timestamp: Date.now(),
           type: 'success',
         });
+        this.flog(this.job, 'info', Date.now(), `Node has claimed job ${data.arguments[0]}`);
         LogMonitoringRegistry.getInstance().setLoggable(false);
       }
 
@@ -1287,6 +1340,7 @@ class NodeLog {
           timestamp: Date.now(),
           type: 'error',
         });
+        this.flog(this.job, 'error', Date.now(), `Error claiming job ${data.arguments[0]}`);
       }
     }
 
@@ -1311,6 +1365,7 @@ class NodeLog {
           timestamp: Date.now(),
           type: 'info',
         });
+        this.flog(this.job, 'info', Date.now(), `Job ${this.job} is starting`);
       }
       if (data.type === 'return') {
         this.addLog({
@@ -1320,6 +1375,7 @@ class NodeLog {
           timestamp: Date.now(),
           type: 'success',
         });
+        this.flog(this.job, 'info', Date.now(), `Job ${this.job} started successfully`);
       }
       if (data.type === 'error') {
         this.addLog({
@@ -1329,6 +1385,7 @@ class NodeLog {
           timestamp: Date.now(),
           type: 'error',
         });
+        this.flog(this.job, 'error', Date.now(), `Error starting job ${this.job}`);
       }
     }
 
