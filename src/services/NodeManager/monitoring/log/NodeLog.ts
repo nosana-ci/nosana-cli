@@ -2,6 +2,8 @@ import chalk from 'chalk';
 import { logEmitter, LogEntry } from '../proxy/loggingProxy.js';
 import { SECONDS_PER_DAY } from '../../../../generic/utils.js';
 import { LogMonitoringRegistry } from '../LogMonitoringRegistry.js';
+import type { LogType } from '../../node/task/TaskManager.js';
+import { TaskManagerRegistry } from '../../node/task/TaskManagerRegistry.js';
 
 export interface LogObserver {
   isNodeObserver(): boolean;
@@ -59,6 +61,25 @@ class NodeLog {
 
   private addLog(log: NodeLogEntry) {
     this.notifyObservers(log);
+  }
+
+  private addFlog(
+    type: LogType,
+    timestamp: number,
+    message: string | { type: string; payload?: unknown },
+  ) {
+    if (!this.job) return;
+
+    const task = TaskManagerRegistry.getInstance().get(this.job);
+    if (task) {
+      task.addlog({
+        opId: 'system',
+        group: 'system',
+        type,
+        timestamp,
+        message,
+      });
+    }
   }
 
   private process(data: LogEntry) {
@@ -225,6 +246,10 @@ class NodeLog {
             optProgressBar: data.arguments[1],
           },
         });
+        this.addFlog('info', Date.now(), {
+          type: 'multi-process-bar-start',
+          payload: { optProgressBar: data.arguments[1] },
+        });
       }
 
       if (data.method === 'update' && data.type == 'call') {
@@ -238,6 +263,10 @@ class NodeLog {
             event: data.arguments[0],
           },
         });
+        this.addFlog('info', Date.now(), {
+          type: 'multi-process-bar-update',
+          payload: { event: data.arguments[0] },
+        });
       }
 
       if (data.method === 'stop' && data.type == 'call') {
@@ -248,6 +277,7 @@ class NodeLog {
           type: 'multi-process-bar-stop',
           log: '', // Remains empty
         });
+        this.addFlog('info', Date.now(), { type: 'multi-process-bar-stop' });
       }
     }
 
@@ -276,6 +306,16 @@ class NodeLog {
             progressBarPreset: data.arguments[5],
           },
         });
+        this.addFlog('info', Date.now(), {
+          type: 'process-bar-start',
+          payload: {
+            optProgressBar: data.arguments[1],
+            total: data.arguments[2],
+            startValue: data.arguments[3],
+            payload: data.arguments[4],
+            progressBarPreset: data.arguments[5],
+          },
+        });
       }
 
       if (data.method === 'update' && data.type == 'call') {
@@ -289,6 +329,10 @@ class NodeLog {
             current: data.arguments[0],
             payload: data.arguments[1],
           },
+        });
+        this.addFlog('info', Date.now(), {
+          type: 'process-bar-update',
+          payload: { current: data.arguments[0], payload: data.arguments[1] },
         });
       }
 
@@ -309,6 +353,8 @@ class NodeLog {
           timestamp: Date.now(),
           type: 'info',
         });
+        this.addFlog('info', Date.now(), { type: 'process-bar-stop' });
+        this.addFlog('info', Date.now(), data.arguments[0]);
       }
     }
 
@@ -862,6 +908,7 @@ class NodeLog {
         type: 'process',
         pending: { isPending: true, expecting: `${data.class}.${data.method}` },
       });
+      this.addFlog('info', Date.now(), `Pulling image ${data.arguments[0]}`);
     }
 
     if (data.type === 'return') {
@@ -874,6 +921,13 @@ class NodeLog {
           ? chalk.green(`Pulled image ${chalk.bold(data.arguments[0])}`)
           : chalk.red(`Error pulling image ${chalk.bold(data.arguments[0])}`),
       });
+      this.addFlog(
+        !data.error ? 'info' : 'error',
+        Date.now(),
+        !data.error
+          ? `Pulled image ${data.arguments[0]}`
+          : `Error pulling image ${data.arguments[0]}`,
+      );
     }
   }
 
@@ -887,6 +941,7 @@ class NodeLog {
         type: 'process',
         pending: { isPending: true, expecting: `${data.class}.${data.method}` },
       });
+      this.addFlog('info', Date.now(), `Creating network ${data.arguments[0]}`);
     }
 
     if (data.type === 'return') {
@@ -901,6 +956,13 @@ class NodeLog {
               `Error creating network ${chalk.bold(data.arguments[0])}`,
             ),
       });
+      this.addFlog(
+        !data.error ? 'info' : 'error',
+        Date.now(),
+        !data.error
+          ? `Created network ${data.arguments[0]}`
+          : `Error creating network ${data.arguments[0]}`,
+      );
     }
   }
 
@@ -916,6 +978,11 @@ class NodeLog {
         type: 'process',
         pending: { isPending: true, expecting: `${data.class}.${data.method}` },
       });
+      this.addFlog(
+        'info',
+        Date.now(),
+        `Starting container ${data.arguments[0].Image}`,
+      );
     }
 
     if (data.type === 'return') {
@@ -932,6 +999,13 @@ class NodeLog {
               `Error starting container ${chalk.bold(data.arguments[0].Image)}`,
             ),
       });
+      this.addFlog(
+        !data.error ? 'info' : 'error',
+        Date.now(),
+        !data.error
+          ? `Running container ${data.arguments[0].Image}`
+          : `Error starting container ${data.arguments[0].Image}`,
+      );
     }
   }
 
@@ -945,6 +1019,11 @@ class NodeLog {
         type: 'process',
         pending: { isPending: true, expecting: `${data.class}.${data.method}` },
       });
+      this.addFlog(
+        'info',
+        Date.now(),
+        `Starting container ${data.arguments[0]}`,
+      );
     }
 
     if (data.type === 'return') {
@@ -959,6 +1038,13 @@ class NodeLog {
               `Error starting container ${chalk.bold(data.arguments[0])}`,
             ),
       });
+      this.addFlog(
+        !data.error ? 'info' : 'error',
+        Date.now(),
+        !data.error
+          ? `Running container ${data.arguments[0]}`
+          : `Error starting container ${data.arguments[0]}`,
+      );
     }
   }
 
@@ -1264,6 +1350,16 @@ class NodeLog {
             expecting: `${data.class}.${data.method}`,
           },
         });
+        this.addFlog(
+          'info',
+          Date.now(),
+          `Node has found job ${data.arguments[0]}`,
+        );
+        this.addFlog(
+          'info',
+          Date.now(),
+          `Node is claiming job ${data.arguments[0]}`,
+        );
       }
 
       if (data.type === 'return') {
@@ -1276,6 +1372,11 @@ class NodeLog {
           timestamp: Date.now(),
           type: 'success',
         });
+        this.addFlog(
+          'info',
+          Date.now(),
+          `Node has claimed job ${data.arguments[0]}`,
+        );
         LogMonitoringRegistry.getInstance().setLoggable(false);
       }
 
@@ -1287,6 +1388,11 @@ class NodeLog {
           timestamp: Date.now(),
           type: 'error',
         });
+        this.addFlog(
+          'error',
+          Date.now(),
+          `Error claiming job ${data.arguments[0]}`,
+        );
       }
     }
 
@@ -1311,6 +1417,7 @@ class NodeLog {
           timestamp: Date.now(),
           type: 'info',
         });
+        this.addFlog('info', Date.now(), `Job ${this.job} is starting`);
       }
       if (data.type === 'return') {
         this.addLog({
@@ -1320,6 +1427,11 @@ class NodeLog {
           timestamp: Date.now(),
           type: 'success',
         });
+        this.addFlog(
+          'info',
+          Date.now(),
+          `Job ${this.job} started successfully`,
+        );
       }
       if (data.type === 'error') {
         this.addLog({
@@ -1329,6 +1441,7 @@ class NodeLog {
           timestamp: Date.now(),
           type: 'error',
         });
+        this.addFlog('error', Date.now(), `Error starting job ${this.job}`);
       }
     }
 

@@ -3,7 +3,19 @@ import WebSocket from 'ws';
 
 const MAX_LOGS_PER_OP = 10000000;
 
+// Ensure strictly increasing timestamps per TaskManager to avoid mis-ordered logs
+const lastTimestampByTask = new WeakMap<TaskManager, number>();
+
 export function addLog(this: TaskManager, log: TaskLog) {
+  // Normalize timestamp to be strictly increasing per TaskManager instance
+  const prev = lastTimestampByTask.get(this) || 0;
+  if (typeof log.timestamp !== 'number' || !isFinite(log.timestamp)) {
+    log.timestamp = prev + 1;
+  } else if (log.timestamp <= prev) {
+    log.timestamp = prev + 1;
+  }
+  lastTimestampByTask.set(this, log.timestamp);
+
   if (!this.opLogBuffers.has(log.opId)) {
     this.opLogBuffers.set(log.opId, []);
   }

@@ -12,20 +12,16 @@ import {
   CudaCheckSuccessResponse,
 } from '../../../../types/cudaCheck.js';
 import { NetworkInfoResults, SystemInfoResults } from './type.js';
-import { clientSelector, QueryClient } from '../../../../api/client.js';
 import { OpState } from '../../provider/types.js';
 import TaskManager from '../task/TaskManager.js';
 import { generateRandomId } from '../../../../providers/utils/generate.js';
 
 export class SpecsHandler {
-  private client: QueryClient;
-
   constructor(
     private provider: Provider,
     private repository: NodeRepository,
     private sdk: Client,
   ) {
-    this.client = clientSelector();
     applyLoggingProxyToClass(this);
   }
 
@@ -75,21 +71,24 @@ export class SpecsHandler {
   private async submitSystemSpecs(): Promise<void> {
     const nodeInfo = this.repository.getNodeInfo();
 
-    await this.client
-      .POST('/api/nodes/{id}/submit-system-specs', {
-        params: {
-          path: { id: this.sdk.solana.provider!.wallet.publicKey.toString() },
-          header: {
-            authorization: await this.sdk.authorization.generate(
-              configs().signMessage,
-            ),
-          },
-        },
-        body: nodeInfo,
-      })
-      .catch((error) => {
-        console.error(error);
-      });
+    const headers = new Headers();
+    headers.append(
+      'Authorization',
+      await await this.sdk.authorization.generate(configs().signMessage),
+    );
+
+    await fetch(
+      `${
+        configs().backendUrl
+      }/nodes/${this.sdk.solana.provider!.wallet.publicKey.toString()}/submit-system-specs`,
+      {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(nodeInfo),
+      },
+    ).catch((error) => {
+      console.error(error);
+    });
   }
 
   private processSuccess(opStates: OpState[]): void {

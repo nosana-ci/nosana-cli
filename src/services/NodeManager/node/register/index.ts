@@ -2,7 +2,6 @@ import chalk from 'chalk';
 import { Client } from '@nosana/sdk';
 import { confirm, input } from '@inquirer/prompts';
 
-import { clientSelector, QueryClient } from '../../../../api/client.js';
 import { configs } from '../../configs/configs.js';
 
 import { specsAndNetworkJob } from '../../../../static/staticsImports.js';
@@ -15,7 +14,6 @@ import TaskManager from '../task/TaskManager.js';
 
 export class RegisterHandler {
   private nodeId: string;
-  private client: QueryClient;
   private answers:
     | {
         email: string;
@@ -30,7 +28,6 @@ export class RegisterHandler {
     private repository: NodeRepository,
   ) {
     this.nodeId = this.sdk.solana.provider!.wallet.publicKey.toString();
-    this.client = clientSelector();
 
     applyLoggingProxyToClass(this);
   }
@@ -103,22 +100,29 @@ export class RegisterHandler {
   }
 
   private async submitOnboarding(results: OpState[]) {
-    const { error } = await this.client.POST('/api/nodes/join-test-grid', {
-      body: {
-        ...this.answers!,
-        nodeAddress: this.nodeId,
-        // @ts-ignore
-        results, // TODO: Investigate type mismatch
-      },
-      params: {
-        header: {
-          authorization: await this.generateHeaders(),
-        },
-      },
-    });
+    try {
+      const headers = new Headers();
+      headers.append('Authorization', await this.generateHeaders());
 
-    if (error) {
-      console.error('Error whilst submiting onboarding request.');
+      const joinTestGridResult = await fetch(
+        `${configs().backendUrl}/nodes/join-test-grid`,
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            ...this.answers!,
+            nodeAddress: this.nodeId,
+            results,
+          }),
+        },
+      );
+
+      if (!joinTestGridResult.ok) {
+        console.error('Error whilst submiting onboarding request.');
+        process.exit();
+      }
+    } catch (error) {
+      console.error('Error whilst submiting onboarding request.', error);
       process.exit();
     }
   }
