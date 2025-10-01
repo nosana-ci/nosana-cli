@@ -74,8 +74,9 @@ export class SpecsHandler {
     const headers = new Headers();
     headers.append(
       'Authorization',
-      await await this.sdk.authorization.generate(configs().signMessage),
+      await this.sdk.authorization.generate(configs().signMessage),
     );
+    headers.append('Content-Type', 'application/json');
 
     await fetch(
       `${

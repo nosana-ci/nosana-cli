@@ -103,6 +103,7 @@ export class RegisterHandler {
     try {
       const headers = new Headers();
       headers.append('Authorization', await this.generateHeaders());
+      headers.append('Content-Type', 'application/json');
 
       const joinTestGridResult = await fetch(
         `${configs().backendUrl}/nodes/join-test-grid`,

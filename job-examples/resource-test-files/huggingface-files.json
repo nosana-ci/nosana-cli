@@ -1,0 +1,32 @@
+{
+  "version": "0.1",
+  "meta": {
+    "trigger": "cli"
+  },
+  "type": "container",
+  "ops": [
+    {
+      "id": "huggingface",
+      "args": {
+        "cmd": [
+          "ls",
+          "-lh",
+          "/data-models/"
+        ],
+        "gpu": true,
+        "image": "ubuntu",
+        "resources": [
+          {
+            "type": "HF",
+            "repo": "jinggu/jing-model",
+            "files": [
+              "vit_g_ps14_ak_ft_ckpt_7_clean.pth",
+            ],
+            "target": "/data-models/"
+          }
+        ]
+      },
+      "type": "container/run"
+    }
+  ]
+}

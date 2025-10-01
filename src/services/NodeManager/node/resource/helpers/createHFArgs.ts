@@ -7,6 +7,7 @@ export const createHFArgs = (
   hf: {
     repo: string;
     revision?: string;
+    files?: string[];
   },
   accessToken?: string | undefined,
 ): ContainerCreateOptions => ({
@@ -16,7 +17,12 @@ export const createHFArgs = (
   Tty: false,
   OpenStdin: false,
   StdinOnce: false,
-  Cmd: ['HF', hf.repo, hf.revision ?? ''],
+  Cmd: [
+    'HF',
+    hf.repo,
+    hf.revision ?? (hf.files ? 'main' : ''),
+    hf.files ? hf.files.join(',') : '',
+  ],
   Image: s3HelperImage,
   Env: accessToken ? [`HUGGING_FACE_TOKEN=${accessToken}`] : undefined,
   HostConfig: {

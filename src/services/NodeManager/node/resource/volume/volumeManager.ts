@@ -120,8 +120,17 @@ export class VolumeManager {
         }
         break;
       case 'HF':
-        const { repo, revision, accessToken } = resource as HFResource;
-        const args = createHFArgs(volumeName, { repo, revision }, accessToken);
+        const {
+          repo,
+          revision,
+          files: hfFiles,
+          accessToken,
+        } = resource as HFResource;
+        const args = createHFArgs(
+          volumeName,
+          { repo, revision, files: hfFiles },
+          accessToken,
+        );
 
         try {
           await this.runResourceManagerContainer(
