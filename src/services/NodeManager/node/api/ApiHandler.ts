@@ -218,77 +218,43 @@ export class ApiHandler {
 
     this.api.use(express.json());
 
+    this.api.use('/job/:jobId/*', verifyJobOwnerSignatureMiddleware);
+
     // GET Routes
+    this.api.get('/node/info', getNodeInfoRoute);
+
     this.api.get('/', (_: Request, res: Response) => res.send(this.address));
-    this.api.get(
-      '/job-result/:jobId',
-      verifyJobOwnerSignatureMiddleware,
-      getJobResultsRoute,
-    );
-    this.api.get(
-      '/job/:jobId/job-definition',
-      verifyJobOwnerSignatureMiddleware,
-      getJobDefinitionRoute,
-    );
+    this.api.get('/job/:jobId/results', getJobResultsRoute);
+    this.api.get('/job/:jobId/job-definition', getJobDefinitionRoute);
     this.api.get('/job/:jobId/ops', getOperationsStatusHandler);
     this.api.get('/job/:jobId/ops/:opId', getOperationStatusHandler);
     this.api.get('/job/:jobId/group/current', getCurrentGroupStatusHandler);
     this.api.get('/job/:jobId/group/:group', getGroupStatusHandler);
-
-    this.api.get('/node/info', getNodeInfoRoute);
-    this.api.get(
-      '/service/url/:jobId',
-      verifyJobOwnerSignatureMiddleware,
-      getServiceUrlRoute,
-    );
+    this.api.get('/job/:jobId/endpoints', getServiceUrlRoute);
 
     // POST Routes
-    this.api.post(
-      '/job-definition/:jobId',
-      verifyJobOwnerSignatureMiddleware,
-      postJobDefinitionRoute,
-    );
-    this.api.post(
-      '/service/stop/:jobId',
-      verifyJobOwnerSignatureMiddleware,
-      postServiceStopRoute,
-    );
     this.api.post(
       '/node/validate',
       verifyBackendSignatureMiddleware,
       postNodeValidation,
     );
 
-    // this
-    this.api.post(
-      '/job/:jobId/group/:group/move',
-      verifyJobOwnerSignatureMiddleware,
-      moveGroupOperationHandler,
-    );
-
+    this.api.post('/job/:jobId/job-definition', postJobDefinitionRoute);
+    this.api.post('/job/:jobId/group/:group/move', moveGroupOperationHandler);
     this.api.post(
       '/job/:jobId/group/:group/operation/:opId/restart',
-      verifyJobOwnerSignatureMiddleware,
       restartOperationHandler,
     );
-
     this.api.post(
       '/job/:jobId/group/:group/restart',
-      verifyJobOwnerSignatureMiddleware,
       restartGroupOperationHandler,
     );
-
     this.api.post(
       '/job/:jobId/group/:group/operation/:opId/stop',
-      verifyJobOwnerSignatureMiddleware,
       stopOperationHandler,
     );
-
-    this.api.post(
-      '/job/:jobId/group/:group/stop',
-      verifyJobOwnerSignatureMiddleware,
-      stopGroupOperationHandler,
-    );
+    this.api.post('/job/:jobId/group/:group/stop', stopGroupOperationHandler);
+    this.api.post('/job/:jobId/stop', postServiceStopRoute);
   }
 
   private async listen(): Promise<number> {
