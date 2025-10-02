@@ -43,7 +43,7 @@ export class SpecsHandler {
       throw error;
     }
 
-    let result = this.repository.getflow(id);
+    let result = this.repository.getFlow(id);
 
     if (result) {
       this.repository.deleteflow(result.id);

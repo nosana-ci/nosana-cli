@@ -161,7 +161,7 @@ export class JobHandler {
   }
 
   async start(job: Job): Promise<boolean> {
-    const flow = this.repository.getflow(this.jobId());
+    const flow = this.repository.getFlow(this.jobId());
 
     if (!flow) {
       const jobDefinition: JobDefinition | null = await Promise.race([
@@ -296,7 +296,7 @@ export class JobHandler {
     date.setDate(date.getDate() - 1);
 
     for (const id in this.repository.getFlows()) {
-      const flow = this.repository.getflow(id);
+      const flow = this.repository.getFlow(id);
       if (flow.state.endTime && flow.state.endTime < date.valueOf()) {
         this.repository.deleteflow(id);
       }

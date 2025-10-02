@@ -42,6 +42,7 @@ import {
   stopOperationHandler,
   wssTaskManagerLogRoute,
   moveGroupOperationHandler,
+  getJobDefinitionRoute,
 } from './routes/index.js';
 import { NodeAlreadyActiveError } from '../../errors/NodeAlreadyActiveError.js';
 
@@ -224,7 +225,11 @@ export class ApiHandler {
       verifyJobOwnerSignatureMiddleware,
       getJobResultsRoute,
     );
-
+    this.api.get(
+      '/job/:jobId/job-definition',
+      verifyJobOwnerSignatureMiddleware,
+      getJobDefinitionRoute,
+    );
     this.api.get('/job/:jobId/ops', getOperationsStatusHandler);
     this.api.get('/job/:jobId/ops/:opId', getOperationStatusHandler);
     this.api.get('/job/:jobId/group/current', getCurrentGroupStatusHandler);

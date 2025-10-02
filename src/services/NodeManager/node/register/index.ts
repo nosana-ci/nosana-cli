@@ -90,7 +90,7 @@ export class RegisterHandler {
     task.bootstrap();
     await task.start();
 
-    const result = this.repository.getflow(flowId);
+    const result = this.repository.getFlow(flowId);
 
     if (!result || result.state.status !== 'success') {
       throw new Error('Registration Benchmark Failed');

@@ -11,7 +11,7 @@ export function setResult(
   results[key] = value;
 
   // Now that results changed for opId, rehydrate any non-dynamic endpoints for this op
-  const flow = this.repository.getflow(this.job);
+  const flow = this.repository.getFlow(this.job);
   if (flow) {
     this.rehydrateEndpointsForOperation(
       flow.id,
