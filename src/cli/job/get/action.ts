@@ -270,7 +270,7 @@ async function fetchServiceURLWithRetry(
       const response = await fetch(
         `https://${job.node}.${
           configs().frp.serverAddr
-        }/service/url/${jobAddress}`,
+        }/job/${jobAddress}/endpoints`,
         { method: 'GET', headers },
       );
 
@@ -314,7 +314,7 @@ async function getJobResultUntilSuccess({
 
   const url = `https://${job.node}.${
     options.network === 'devnet' ? 'node.k8s.dev.nos.ci' : config.frp.serverAddr
-  }/job-result/${jobAddress}`;
+  }/job/${jobAddress}/results`;
 
   async function attemptFetch() {
     try {
