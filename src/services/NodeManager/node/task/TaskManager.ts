@@ -415,7 +415,7 @@ export default class TaskManager {
     // Track the entire execution lifecycle in one promise
     this.currentRunningStartPromise = (async () => {
       // Fetch existing flow to determine whether execution should continue
-      const flow = this.repository.getflow(this.job);
+      const flow = this.repository.getFlow(this.job);
 
       try {
         // If job already ended (either success or failure), no need to start again
@@ -632,7 +632,7 @@ export default class TaskManager {
   }
 
   private init(): void {
-    const flow = this.repository.getflow(this.job);
+    const flow = this.repository.getFlow(this.job);
     if (flow && flow.state.status !== 'waiting-for-job-definition') {
       this.definition = flow.jobDefinition;
     } else {
