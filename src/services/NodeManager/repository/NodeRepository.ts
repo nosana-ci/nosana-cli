@@ -11,7 +11,7 @@ const MAX_LOGS = 24999;
 export class NodeRepository {
   constructor(private db: LowSync<NodeDb>) {}
 
-  public getflow(id: string): Flow {
+  public getFlow(id: string): Flow {
     return this.db.data.flows[id];
   }
 

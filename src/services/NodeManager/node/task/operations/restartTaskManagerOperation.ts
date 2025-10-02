@@ -119,7 +119,7 @@ export async function restartTaskManagerOperation(
    * Now that the original op has been stopped, we need to restart it.
    * Get the latest flow data from storage — this could’ve been updated elsewhere in the meantime.
    */
-  const flow = this.repository.getflow(this.job);
+  const flow = this.repository.getFlow(this.job);
 
   /**
    * Look up the original operation details.

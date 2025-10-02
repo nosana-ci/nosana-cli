@@ -45,7 +45,7 @@ export async function postNodeValidation(
     task.bootstrap();
     await task.start();
 
-    const result = repository.getflow(id);
+    const result = repository.getFlow(id);
 
     if (sessionId === 'ADMIN') {
       res.status(200).send(result.state.opStates[0].results!['prediction'][0]);
