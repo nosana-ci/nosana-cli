@@ -1,0 +1,27 @@
+  {
+    "version": "0.1",
+    "meta": {
+      "trigger": "cli"
+    },
+    "type": "container",
+    "ops": [
+      {
+        "id": "huggingface",
+        "type": "container/run",
+        "args": {
+          "cmd": [
+            "ls",
+            "/root/.ollama/models"
+          ],
+          "gpu": true,
+          "image": "ubuntu",
+          "resources": [
+            {
+              "type": "Ollama",
+              "model": "tinyllama"
+            }
+          ]
+        }
+      }
+    ]
+  }

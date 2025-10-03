@@ -2,6 +2,7 @@ import { Presets } from 'cli-progress';
 import { ContainerCreateOptions } from 'dockerode';
 import {
   HFResource,
+  OllamaResource,
   Resource,
   S3Resource,
 } from '@nosana/sdk/dist/types/resources.js';
@@ -19,6 +20,7 @@ import { nosanaBucket, s3HelperImage } from '../definition/index.js';
 import { convertFromBytes } from '../../../../../providers/utils/convertFromBytes.js';
 import { createHFArgs } from '../helpers/createHFArgs.js';
 import { createS3Args } from '../helpers/createS3Args.js';
+import { createOllamaArgs } from '../helpers/createOllamaArgs.js';
 
 export class VolumeManager {
   private fetched: boolean = false;
@@ -120,19 +122,36 @@ export class VolumeManager {
         }
         break;
       case 'HF':
-        const {
-          repo,
-          revision,
-          files: hfFiles,
-          accessToken,
-        } = resource as HFResource;
-        const args = createHFArgs(
-          volumeName,
-          { repo, revision, files: hfFiles },
-          accessToken,
-        );
-
         try {
+          const {
+            repo,
+            revision,
+            files: hfFiles,
+            accessToken,
+          } = resource as HFResource;
+          const args = createHFArgs(
+            volumeName,
+            { repo, revision, files: hfFiles },
+            accessToken,
+          );
+
+          await this.runResourceManagerContainer(
+            volumeName,
+            resourceName,
+            args,
+            controller,
+            sync,
+          );
+          this.setVolume(resourceName, volumeName);
+        } catch (err) {
+          throw new Error((err as Error).message);
+        }
+        break;
+      case 'Ollama':
+        try {
+          const { model } = resource as OllamaResource;
+          const args = createOllamaArgs(volumeName, model);
+
           await this.runResourceManagerContainer(
             volumeName,
             resourceName,
