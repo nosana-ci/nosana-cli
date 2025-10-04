@@ -66,9 +66,8 @@ export class VolumeManager {
   ): Promise<string> {
     const resourceName = createResourceName(resource);
 
-    let volumeName: string = this.repository.getVolumeResource(
-      createResourceName(resource),
-    )?.volume;
+    let volumeName: string =
+      this.repository.getVolumeResource(resourceName)?.volume;
 
     let sync = true;
 
