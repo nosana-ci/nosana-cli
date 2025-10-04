@@ -8,8 +8,8 @@ export function interpolateOperation<T extends OperationType>(
   // %%ops.<opId>.<path>%% and %%global.<key>%%
   const LITERAL_RE = /%%ops|%%global\.([^.]+)\.([A-Za-z0-9._-]+)%%/g;
   const LITERAL_RE_EXACT = /^%%ops|%%global\.([^.]+)\.([A-Za-z0-9._-]+)%%$/;
-  const GLOBAL_RE = /%%global\.([^.]+)%%/g;
-  const GLOBAL_RE_EXACT = /^%%global\.([^.]+)%%$/;
+  const GLOBAL_RE = /%%global|%%globals\.([^.]+)%%/g;
+  const GLOBAL_RE_EXACT = /^%%global|%%globals\.([^.]+)%%$/;
 
   const getByPathStrict = (opId: string, path: string): unknown => {
     const bucket = this.globalOpStore?.[opId];
