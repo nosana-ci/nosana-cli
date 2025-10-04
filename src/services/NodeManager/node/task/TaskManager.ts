@@ -120,6 +120,7 @@ export type GlobalStore = {
   host: string;
   project: string;
   frps_address: string;
+  variables?: Record<string, string>;
 };
 
 export type Status = (typeof Statuses)[keyof typeof Statuses];

@@ -23,6 +23,10 @@ export function setDefaults(
       ...this.globalOpStore.variables,
       ...jobDefinition.global.variables,
     };
+    this.globalStore.variables = {
+      ...this.globalStore.variables,
+      ...jobDefinition.global.variables,
+    };
   }
 
   processOperationsForEndpoints.call(

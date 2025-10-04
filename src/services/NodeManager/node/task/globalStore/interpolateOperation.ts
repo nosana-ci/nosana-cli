@@ -6,23 +6,10 @@ export function interpolateOperation<T extends OperationType>(
   op: Operation<T>,
 ): Operation<T> {
   // %%ops.<opId>.<path>%% and %%global.<key>%%
-  const LITERAL_RE = /%%ops|%%global\.([^.]+)\.([A-Za-z0-9._-]+)%%/g;
-  const LITERAL_RE_EXACT = /^%%ops|%%global\.([^.]+)\.([A-Za-z0-9._-]+)%%$/;
-  const GLOBAL_RE = /%%global|%%globals\.([^.]+)%%/g;
-  const GLOBAL_RE_EXACT = /^%%global|%%globals\.([^.]+)%%$/;
-
-  const getByPathStrict = (opId: string, path: string): unknown => {
-    const bucket = this.globalOpStore?.[opId];
-    if (!bucket) return undefined;
-    if (path === 'host') return bucket.host;
-
-    let cur: any = bucket;
-    for (const seg of path.split('.')) {
-      cur = cur?.[seg];
-      if (cur == null) return undefined; // treat null/undefined as unresolved
-    }
-    return cur;
-  };
+  const LITERAL_RE = /%%(ops|global)\.([^.]+)\.([A-Za-z0-9._-]+)%%/g;
+  const LITERAL_RE_EXACT = /^%%(ops|global)\.([^.]+)\.([A-Za-z0-9._-]+)%%$/;
+  const GLOBAL_RE = /%%(global|globals)\.([^.]+)%%/g;
+  const GLOBAL_RE_EXACT = /^%%(global|globals)\.([^.]+)%%$/;
 
   const isPlainObject = (v: unknown): v is Record<string, unknown> =>
     !!v && typeof v === 'object' && !Array.isArray(v);
@@ -60,30 +47,73 @@ export function interpolateOperation<T extends OperationType>(
       .map((x) => String(x))
       .join(' ');
 
+  const getByPathStrict = (opId: string, path: string): unknown => {
+    const bucket = this.globalOpStore?.[opId];
+    if (!bucket) return undefined;
+    if (path === 'host') return bucket.host;
+
+    let cur: any = bucket;
+    for (const seg of path.split('.')) {
+      cur = cur?.[seg];
+      if (cur == null) return undefined; // treat null/undefined as unresolved
+    }
+    return cur;
+  };
+
+  const getGlobalByPath = (key: string, path?: string): unknown => {
+    const value = this.globalStore[key as keyof GlobalStore];
+    if (!path) return value;
+
+    let cur: any = value;
+    for (const seg of path.split('.')) {
+      cur = cur?.[seg];
+      if (cur == null) return undefined;
+    }
+    return cur;
+  };
+
   const resolveRawIfExact = (
     input: string,
   ): { matched: true; value: unknown } | { matched: false } => {
-    let m = input.match(GLOBAL_RE_EXACT);
+    // Check 3-part pattern first (%%global.key.path%% or %%ops.opId.path%%)
+    let m = input.match(LITERAL_RE_EXACT);
     if (m) {
-      const key = m[1] as keyof GlobalStore;
+      const type = m[1]!; // "ops" or "global"
+      const opId = m[2]!;
+      const path = m[3]!;
+
+      if (type === 'global') {
+        // Handle %%global.key.subpath%% format
+        const value = getGlobalByPath(opId, path);
+        if (value == null || value === '') {
+          throw new Error(
+            `Unresolved literal: "${input}" (key="${opId}.${path}")`,
+          );
+        }
+        return { matched: true, value };
+      } else {
+        // Handle %%ops.opId.path%% format
+        const value = getByPathStrict(opId, path);
+        if (value == null) {
+          throw new Error(
+            `Unresolved literal: "${input}" (opId="${opId}", path="${path}")`,
+          );
+        }
+        return { matched: true, value };
+      }
+    }
+
+    // Check 2-part pattern (%%global.key%%)
+    m = input.match(GLOBAL_RE_EXACT);
+    if (m) {
+      const key = m[2] as keyof GlobalStore;
       const value = this.globalStore[key];
       if (value == null || value === '') {
         throw new Error(`Unresolved literal: "${input}" (key="${key}")`);
       }
       return { matched: true, value };
     }
-    m = input.match(LITERAL_RE_EXACT);
-    if (m) {
-      const opId = m[1]!;
-      const path = m[2]!;
-      const value = getByPathStrict(opId, path);
-      if (value == null) {
-        throw new Error(
-          `Unresolved literal: "${input}" (opId="${opId}", path="${path}")`,
-        );
-      }
-      return { matched: true, value };
-    }
+
     return { matched: false };
   };
 
@@ -91,23 +121,41 @@ export function interpolateOperation<T extends OperationType>(
     const exact = resolveRawIfExact(input);
     if (exact.matched) return valueToSpaceString(exact.value);
 
-    let result = input.replace(GLOBAL_RE, (match, key: keyof GlobalStore) => {
-      const value = this.globalStore[key];
-      if (value == null || value === '') {
-        throw new Error(`Unresolved literal: "${match}" (key="${key}")`);
-      }
-      return valueToSpaceString(value);
-    });
+    // Handle 3-part patterns first
+    let result = input.replace(
+      LITERAL_RE,
+      (match, type: string, opId: string, path: string) => {
+        if (type === 'global') {
+          const value = getGlobalByPath(opId, path);
+          if (value == null || value === '') {
+            throw new Error(
+              `Unresolved literal: "${match}" (key="${opId}.${path}")`,
+            );
+          }
+          return valueToSpaceString(value);
+        } else {
+          const value = getByPathStrict(opId, path);
+          if (value == null) {
+            throw new Error(
+              `Unresolved literal: "${match}" (opId="${opId}", path="${path}")`,
+            );
+          }
+          return valueToSpaceString(value);
+        }
+      },
+    );
 
-    result = result.replace(LITERAL_RE, (match, opId: string, path: string) => {
-      const value = getByPathStrict(opId, path);
-      if (value == null) {
-        throw new Error(
-          `Unresolved literal: "${match}" (opId="${opId}", path="${path}")`,
-        );
-      }
-      return valueToSpaceString(value);
-    });
+    // Handle 2-part patterns
+    result = result.replace(
+      GLOBAL_RE,
+      (match, prefix, key: keyof GlobalStore) => {
+        const value = this.globalStore[key];
+        if (value == null || value === '') {
+          throw new Error(`Unresolved literal: "${match}" (key="${key}")`);
+        }
+        return valueToSpaceString(value);
+      },
+    );
 
     return result;
   };
@@ -169,9 +217,7 @@ export function interpolateOperation<T extends OperationType>(
 
   const containsLiteral = (v: unknown): boolean => {
     if (typeof v === 'string') {
-      return (
-        /%%ops\.[^.]+\.[A-Za-z0-9._-]+%%/.test(v) || /%%global\.[^.]+%%/.test(v)
-      );
+      return LITERAL_RE.test(v) || GLOBAL_RE.test(v);
     }
     if (Array.isArray(v)) return v.some(containsLiteral);
     if (v && typeof v === 'object') {
