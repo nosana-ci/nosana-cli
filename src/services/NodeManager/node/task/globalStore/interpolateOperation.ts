@@ -5,11 +5,11 @@ export function interpolateOperation<T extends OperationType>(
   this: TaskManager,
   op: Operation<T>,
 ): Operation<T> {
-  // %%ops.<opId>.<path>%% and %%globals.<key>%%
-  const LITERAL_RE = /%%ops\.([^.]+)\.([A-Za-z0-9._-]+)%%/g;
-  const LITERAL_RE_EXACT = /^%%ops\.([^.]+)\.([A-Za-z0-9._-]+)%%$/;
-  const GLOBAL_RE = /%%globals\.([^.]+)%%/g;
-  const GLOBAL_RE_EXACT = /^%%globals\.([^.]+)%%$/;
+  // %%ops.<opId>.<path>%% and %%global.<key>%%
+  const LITERAL_RE = /%%ops|%%global\.([^.]+)\.([A-Za-z0-9._-]+)%%/g;
+  const LITERAL_RE_EXACT = /^%%ops|%%global\.([^.]+)\.([A-Za-z0-9._-]+)%%$/;
+  const GLOBAL_RE = /%%global|%%globals\.([^.]+)%%/g;
+  const GLOBAL_RE_EXACT = /^%%global|%%globals\.([^.]+)%%$/;
 
   const getByPathStrict = (opId: string, path: string): unknown => {
     const bucket = this.globalOpStore?.[opId];
@@ -170,8 +170,7 @@ export function interpolateOperation<T extends OperationType>(
   const containsLiteral = (v: unknown): boolean => {
     if (typeof v === 'string') {
       return (
-        /%%ops\.[^.]+\.[A-Za-z0-9._-]+%%/.test(v) ||
-        /%%globals\.[^.]+%%/.test(v)
+        /%%ops\.[^.]+\.[A-Za-z0-9._-]+%%/.test(v) || /%%global\.[^.]+%%/.test(v)
       );
     }
     if (Array.isArray(v)) return v.some(containsLiteral);

@@ -18,9 +18,9 @@
         "resources": [
           {
             "type": "HF",
-            "repo": "jinggu/jing-model",
+            "repo": "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
             "files": [
-              "vit_g_ps14_ak_ft_ckpt_7_clean.pth",
+              "model.safetensors"
             ],
             "target": "/data-models/"
           }

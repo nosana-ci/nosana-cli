@@ -79,7 +79,12 @@ export class ResourceManager {
       }
 
       volumes.push({
-        dest: resource.target,
+        dest:
+          resource.type === 'Ollama'
+            ? resource.target === undefined
+              ? '/root/.ollama/models'
+              : resource.target
+            : resource.target,
         name: await this.volumes.getVolume(resource)!,
         readonly: resource.type === 'S3' && resource.allowWrite ? false : true,
       });

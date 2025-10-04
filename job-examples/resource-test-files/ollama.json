@@ -1,0 +1,21 @@
+{
+  "version": "0.1",
+  "type": "container",
+  "ops": [
+    {
+      "id": "ollama",
+      "type": "container/run",
+      "args": {
+        "gpu": true,
+        "image": "docker.io/ollama/ollama:0.12.0",
+        "expose": 11434,
+        "resources": [
+          {
+            "type": "Ollama",
+            "model": "tinyllama"
+          }
+        ]
+      }
+    }
+  ]
+}

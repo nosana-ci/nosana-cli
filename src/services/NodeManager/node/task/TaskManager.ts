@@ -156,8 +156,8 @@ export default class TaskManager {
    * Global data store.
    *
    * This allows operations to reference data produced by others using literals like:
-   *   "%%globals.frps_address%%"
-   *   "%%globals.project%%"
+   *   "%%global.frps_address%%"
+   *   "%%global.project%%"
    *
    * Supported keys:
    * - frps_address: The current FRPS address.
