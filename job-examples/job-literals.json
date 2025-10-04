@@ -1,0 +1,63 @@
+{
+  "global": {
+    "variables": {
+      "MODEL": "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
+    }
+  },
+  "ops": [
+    {
+      "type": "container/run",
+      "id": "literal-setter",
+      "args": {
+        "cmd": [
+          "echo 'host: %%global.host%%' && echo 'image: docker.io/vllm/vllm-openai:v0.10.2' && echo 'cmd: --model' && echo 'cmd: %%global.variables.MODEL%%' && echo 'cmd: --served-model-name' && echo 'cmd: DeepSeek-R1-Distill-Qwen-1.5B' && echo 'cmd: --port' && echo 'cmd: 9000' && echo 'cmd: --max-model-len' && echo 'cmd: 30000' && echo 'env: {}' && echo 'expose: \"[{\"port\": 9000, \"health_checks\": [{\"body\": \"{\\\"model\\\":\\\"DeepSeek-R1-Distill-Qwen-1.5B\\\",\\\"messages\\\":[{\\\"role\\\":\\\"user\\\",\\\"content\\\":\\\"Respond with a single word: Ready\\\"}],\\\"stream\\\":false}\", \"path\": \"/v1/chat/completions\", \"type\": \"http\", \"method\": \"POST\", \"headers\": {\"Content-Type\": \"application/json\"}, \"continuous\": false, \"expected_status\": 200}]}]\"' && echo 'port: 9000' && echo 'template_id: deepseek-r1-qwen-1.5b'"
+        ],
+        "image": "ubuntu",
+        "entrypoint": [
+          "bash",
+          "-c"
+        ]
+      },
+      "results": {
+        "cmd": "(?<=cmd: ).*",
+        "port": "(?<=port: ).*",
+        "image": "(?<=image: ).*",
+        "env_json": "(?<=env: ).*",
+        "entrypoint": "(?<=entrypoint: ).*",
+        "expose_json": "(?<=expose: ).*",
+        "template_id": "(?<=template_id: ).*"
+      },
+      "execution": {
+        "group": "pre"
+      }
+    },
+    {
+      "id": "run-selected-job",
+      "args": {
+        "cmd": [
+          "%%ops.literal-setter.results.cmd%%"
+        ],
+        "env": {
+          "__spread__": "%%ops.literal-setter.results.env_json%%"
+        },
+        "gpu": true,
+        "image": "%%ops.literal-setter.results.image%%",
+        "expose": [
+          {
+            "__spread__": "%%ops.literal-setter.results.expose_json%%"
+          }
+        ],
+        "entrypoint": [
+          "__remove-if-empty__",
+          "%%ops.literal-setter.results.entrypoint%%"
+        ]
+      },
+      "type": "container/run",
+      "execution": {
+        "group": "main"
+      }
+    }
+  ],
+  "version": "0.1",
+  "type": "container"
+}
