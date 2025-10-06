@@ -64,9 +64,8 @@ const SpreadMarker: MarkerSpec = {
       if (!Array.isArray(arr)) {
         throw new Error(`${label} must be a JSON array`);
       }
-      return arr as JSONValue[];
+      return arr.flat() as JSONValue[];
     };
-
     return parse('__spread__', raw);
   },
 };

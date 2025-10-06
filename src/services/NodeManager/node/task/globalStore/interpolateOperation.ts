@@ -84,20 +84,32 @@ export function interpolateOperation<T extends OperationType>(
 
       if (type === 'global') {
         // Handle %%global.key.subpath%% format
-        const value = getGlobalByPath(opId, path);
+        let value = getGlobalByPath(opId, path);
         if (value == null || value === '') {
           throw new Error(
             `Unresolved literal: "${input}" (key="${opId}.${path}")`,
           );
         }
+        // Parse JSON strings in arrays but don't convert to string
+        if (Array.isArray(value)) {
+          value = value.map((item) => parseJsonIfLooksLike(item));
+        } else {
+          value = parseJsonIfLooksLike(value);
+        }
         return { matched: true, value };
       } else {
         // Handle %%ops.opId.path%% format
-        const value = getByPathStrict(opId, path);
+        let value = getByPathStrict(opId, path);
         if (value == null) {
           throw new Error(
             `Unresolved literal: "${input}" (opId="${opId}", path="${path}")`,
           );
+        }
+        // Parse JSON strings in arrays but don't convert to string
+        if (Array.isArray(value)) {
+          value = value.map((item) => parseJsonIfLooksLike(item));
+        } else {
+          value = parseJsonIfLooksLike(value);
         }
         return { matched: true, value };
       }
@@ -181,6 +193,10 @@ export function interpolateOperation<T extends OperationType>(
 
   const normalizeByOrigin = (value: unknown, original: unknown): unknown => {
     if (typeof original === 'string') {
+      // If the resolved value is an array with a single item, return that item directly
+      if (Array.isArray(value) && value.length === 1) {
+        return value[0];
+      }
       return valueToSpaceString(value);
     }
     if (Array.isArray(original)) {
