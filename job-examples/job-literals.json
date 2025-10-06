@@ -36,7 +36,9 @@
       "id": "run-selected-job",
       "args": {
         "cmd": [
-          "%%ops.literal-setter.results.cmd%%"
+          "hello",
+          "%%ops.literal-setter.results.cmd%%",
+          "test test"
         ],
         "env": {
           "Random_Var": "static_value",
@@ -46,6 +48,7 @@
         "gpu": true,
         "image": "ubuntu",
         "expose": [
+          1000,
           {
             "__spread__": "%%ops.literal-setter.results.expose_json%%"
           }
