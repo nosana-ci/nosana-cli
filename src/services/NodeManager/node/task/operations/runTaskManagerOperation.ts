@@ -15,6 +15,7 @@ import {
   extractResultFromLog,
 } from '../../../../../providers/utils/extractResultsFromLogs.js';
 import { stanatizeArrays } from '../globalStore/stanatizeArrays.js';
+import { logEmitter } from '../../../monitoring/proxy/loggingProxy.js';
 
 /**
  * Executes a full lifecycle of a container-based operation using internal class state.
@@ -59,7 +60,7 @@ export async function runTaskManagerOperation(
    */
   const emitter = new EventEmitter();
 
-  // register and relay the emitter to the unified task-level emitter
+  // register the emitter
   this.registerAndRelayOpEmitter(op.id, emitter);
 
   /**
@@ -327,8 +328,39 @@ export async function runTaskManagerOperation(
    * This mechanism allows dynamic chaining of operations based on runtime readiness,
    * ensuring ops start only after their declared dependencies are healthy and active.
    */
-  emitter.on('healthcheck:startup:success', () => {
+  emitter.on('healthcheck:startup:success', (payload: any) => {
     emitter.emit('log', 'Operation StartUp Success', 'info');
+
+    try {
+      const port = payload?.port;
+      if (typeof port === 'number' || typeof port === 'string') {
+        const portKey = String(port);
+        const precomputed = this.getByPath(op.id, `endpoint.${portKey}`) as
+          | string
+          | undefined;
+        if (!precomputed) return;
+
+        const url = precomputed.startsWith('http')
+          ? precomputed
+          : `https://${precomputed}`;
+
+        logEmitter.emit('log', {
+          class: 'FlowHandler',
+          method: 'operationExposed',
+          arguments: [
+            {
+              port,
+              opId: op.id,
+            },
+            true,
+          ],
+          timestamp: new Date().toISOString(),
+          type: 'return',
+          result: url,
+        });
+      }
+    } catch (_) {
+    }
 
     // Loop through each operation that depends on this one
     for (const id of dependent) {
