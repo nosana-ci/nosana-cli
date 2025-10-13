@@ -343,6 +343,7 @@ export class Provider {
               [flow.id]: generateUrlSecretObject(idMap),
               urlmode: 'private',
             });
+            emitter.emit('flow:secrets-updated', { flowId: flow.id, opId: op.id });
           } else {
             const newSecret = generateUrlSecretObject(idMap);
 
@@ -357,6 +358,7 @@ export class Provider {
               [flow.id]: mergedSecrets,
               urlmode: 'public',
             });
+            emitter.emit('flow:secrets-updated', { flowId: flow.id, opId: op.id });
           }
         }
 

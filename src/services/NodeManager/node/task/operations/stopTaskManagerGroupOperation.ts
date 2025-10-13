@@ -1,4 +1,4 @@
-import TaskManager from '../TaskManager.js';
+import TaskManager, { OperationProgressStatuses } from '../TaskManager.js';
 
 /**
  * Stops all operations currently running in the given group.
@@ -22,22 +22,18 @@ export async function stopTaskManagerGroupOperations(
   }
 
   /**
-   * Ensure we're currently within the provided group context before proceeding.
-   * Prevents stopping inactive or completed groups.
-   */
-  if (this.currentGroup !== group) {
-    throw new Error('GROUP_NOT_ACTIVE');
-  }
-
-  /**
    * Attempt to stop each operation in parallel.
    * If any individual stop fails, we catch it and continue the rest.
    */
-  const stopPromises = groupContext.ops.map((id) =>
-    this.stopTaskManagerOperation(group, id).catch((err) => {
+  const nowStopping = new Set<string>();
+  const stopPromises = groupContext.ops.map((id) => {
+    nowStopping.add(id);
+    this.operationStatus.set(id, OperationProgressStatuses.STOPPING);
+    this.events?.emit('flow:updated', { jobId: this.job, opId: id, type: 'status:stopping' });
+    return this.stopTaskManagerOperation(group, id).catch((err) => {
       console.warn(`Failed to stop operation ${id}:`, err.message);
-    }),
-  );
+    });
+  });
 
   // Await all stop promises before resolving
   await Promise.all(stopPromises);

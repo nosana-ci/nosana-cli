@@ -59,8 +59,8 @@ export async function runTaskManagerOperation(
    */
   const emitter = new EventEmitter();
 
-  // register the emitter
-  this.operationsEventEmitters.set(op.id, emitter);
+  // register and relay the emitter to the unified task-level emitter
+  this.registerAndRelayOpEmitter(op.id, emitter);
 
   /**
    * Initializes and registers an AbortController specific to this operation ID.

@@ -38,6 +38,7 @@ export function getJobInfoRoute(
   });
 
   let lastSentData: string | null = null;
+  let debounceTimer: NodeJS.Timeout | null = null;
 
   const sendJobInfoIfChanged = () => {
     try {
@@ -59,6 +60,14 @@ export function getJobInfoRoute(
     } catch (error: any) {
       console.error('Error building job info:', error);
     }
+  };
+
+  const scheduleSend = (delay = 50) => {
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      debounceTimer = null;
+      sendJobInfoIfChanged();
+    }, delay);
   };
 
   const buildJobInfoResponse = (flowData: any, task: any) => {
@@ -200,43 +209,19 @@ export function getJobInfoRoute(
 
   if (task) {
     const cleanupFunctions: Array<() => void> = [];
-    const emitterRegistry: Map<string, { emitter: any; updateListener: () => void }> = new Map();
 
-    const subscribeToEmitter = (opId: string, emitter: any) => {
-      const existing = emitterRegistry.get(opId);
-      if (existing && existing.emitter === emitter) return;
+    const tmEmitter = (task as any).getEventsEmitter?.() || (task as any).events;
+    const onFlowUpdated = () => scheduleSend(50);
+    const onOpEmitterRegistered = () => scheduleSend(50);
 
-      if (existing && existing.emitter !== emitter) {
-        existing.emitter.off('start', existing.updateListener);
-        existing.emitter.off('exit', existing.updateListener);
-        existing.emitter.off('error', existing.updateListener);
-        existing.emitter.off('updateOpState', existing.updateListener);
-      }
-
-      emitter.setMaxListeners(50);
-
-      const updateListener = () => sendJobInfoIfChanged();
-
-      emitter.on('start', updateListener);
-      emitter.on('exit', updateListener);
-      emitter.on('error', updateListener);
-      emitter.on('updateOpState', updateListener);
-
-      emitterRegistry.set(opId, { emitter, updateListener });
-    };
-
-    for (const [opId, emitter] of (task as any).operationsEventEmitters.entries()) {
-      subscribeToEmitter(opId, emitter);
+    if (tmEmitter && tmEmitter.on) {
+      tmEmitter.on('flow:updated', onFlowUpdated);
+      tmEmitter.on('op:emitter-registered', onOpEmitterRegistered);
+      cleanupFunctions.push(() => {
+        tmEmitter.off('flow:updated', onFlowUpdated);
+        tmEmitter.off('op:emitter-registered', onOpEmitterRegistered);
+      });
     }
-
-    const emitterPollInterval = setInterval(() => {
-      for (const [opId, emitter] of (task as any).operationsEventEmitters.entries()) {
-        subscribeToEmitter(opId, emitter);
-      }
-      sendJobInfoIfChanged();
-    }, 2000);
-
-    cleanupFunctions.push(() => clearInterval(emitterPollInterval));
 
     const keepaliveInterval = setInterval(() => {
       res.write(': keepalive\n\n');
@@ -245,12 +230,7 @@ export function getJobInfoRoute(
     cleanupFunctions.push(() => clearInterval(keepaliveInterval));
 
     const cleanup = () => {
-      for (const { emitter, updateListener } of emitterRegistry.values()) {
-        emitter.off('start', updateListener);
-        emitter.off('exit', updateListener);
-        emitter.off('error', updateListener);
-        emitter.off('updateOpState', updateListener);
-      }
+      if (debounceTimer) clearTimeout(debounceTimer);
       cleanupFunctions.forEach((fn) => fn());
     };
 

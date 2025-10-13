@@ -44,12 +44,12 @@ export function stopAllTaskManagerOperations(
 
     const now = Date.now();
     for (const [opId] of this.opMap) {
-      const hasEmitter = this.operationsEventEmitters.has(opId);
-      if (hasEmitter) continue;
+      const index = this.getOpStateIndex(opId);
+      const opState = flow.state.opStates[index];
+      if (opState?.startTime) continue;
 
       this.operationStatus.set(opId, OperationProgressStatuses.STOPPED);
 
-      const index = this.getOpStateIndex(opId);
       this.repository.updateOpState(this.job, index, {
         status: this.getStatus(reason, 'ops'),
         endTime: now,

@@ -247,6 +247,11 @@ export default class TaskManager {
 
   private currentRunningStartPromise?: Promise<void>;
 
+  /**
+   * Event emitter for task- and op-level lifecycle events.
+   */
+  protected events: EventEmitter = new EventEmitter();
+
   constructor(
     protected provider: Provider,
     protected repository: NodeRepository,
@@ -311,6 +316,9 @@ export default class TaskManager {
       frps_address: configs().frp.serverAddr,
       host: sdk.solana.wallet.publicKey.toString(),
     };
+
+    // Allow more listeners to account for many ops without warnings
+    this.events.setMaxListeners(100);
   }
 
   // operations methods
@@ -372,6 +380,62 @@ export default class TaskManager {
   public transformCollections: InterpolateOpFn;
 
   /**
+   * Returns the unified event emitter for this task manager.
+   */
+  public getEventsEmitter(): EventEmitter {
+    return this.events;
+  }
+
+  /**
+   * Registers an op-level emitter and relays its relevant events to the
+   * task-level unified emitter. Also tracks the emitter in operationsEventEmitters.
+   */
+  protected registerAndRelayOpEmitter(opId: string, emitter: EventEmitter): void {
+    const existing = this.operationsEventEmitters.get(opId);
+    if (existing && existing === emitter) return;
+
+    if (existing && existing !== emitter) {
+      existing.removeAllListeners('start');
+      existing.removeAllListeners('exit');
+      existing.removeAllListeners('error');
+      existing.removeAllListeners('updateOpState');
+      existing.removeAllListeners('healthcheck:startup:success');
+      existing.removeAllListeners('flow:secrets-updated');
+      // We do not relay raw 'log' events to flow:updated to avoid chatty SSE,
+      // but still forward them through 'op:event' for consumers that need them.
+      existing.removeAllListeners('log');
+    }
+
+    emitter.setMaxListeners(50);
+
+    const relay = (type: string) => (payload?: any) => {
+      this.events.emit('op:event', { opId, type, payload });
+      // For events that impact job-info payload, also emit flow:updated
+      if (
+        type === 'start' ||
+        type === 'exit' ||
+        type === 'error' ||
+        type === 'updateOpState' ||
+        type === 'healthcheck:startup:success' ||
+        type === 'flow:secrets-updated'
+      ) {
+        this.events.emit('flow:updated', { jobId: this.job, opId, type });
+      }
+    };
+
+    emitter.on('start', relay('start'));
+    emitter.on('exit', relay('exit'));
+    emitter.on('error', relay('error'));
+    emitter.on('updateOpState', relay('updateOpState'));
+    emitter.on('healthcheck:startup:success', relay('healthcheck:startup:success'));
+    emitter.on('flow:secrets-updated', relay('flow:secrets-updated'));
+    emitter.on('log', relay('log'));
+
+    this.operationsEventEmitters.set(opId, emitter);
+    this.events.emit('op:emitter-registered', { opId });
+  }
+
+  /**
    * Prepares the TaskManager for execution by performing all necessary setup steps.
    *
    * This method performs two key operations:
@@ -429,6 +493,7 @@ export default class TaskManager {
           status: this.status,
           startTime: Date.now(),
         });
+        this.events.emit('flow:updated', { jobId: this.job, type: 'status:start' });
 
         // update all operations status to pending since we have started
         [...this.opMap.keys()].forEach((op) =>
@@ -438,13 +503,25 @@ export default class TaskManager {
         // Loop through execution plan, group by group
         for (const p of this.executionPlan) {
           this.currentGroup = p.group;
+          this.events.emit('flow:updated', { jobId: this.job, type: 'group:start', group: this.currentGroup });
 
           // Queue each operation in the group for execution
           for (const id of p.ops) {
             const dependencyContext = this.dependecyMap.get(
               id,
             ) as DependencyContext;
-            if (dependencyContext.dependencies.length === 0) {
+            const dependencies = dependencyContext.dependencies || [];
+            const depsSatisfied =
+              dependencies.length === 0 ||
+              dependencies.every((depId) => {
+                const depStatus = this.operationStatus.get(depId);
+                return (
+                  depStatus === OperationProgressStatuses.FINISHED ||
+                  depStatus === OperationProgressStatuses.STOPPED
+                );
+              });
+
+            if (depsSatisfied) {
               this.operationStatus.set(id, OperationProgressStatuses.STARTING);
 
               this.currentGroupOperationsPromises.set(
@@ -462,6 +539,9 @@ export default class TaskManager {
               this.operationStatus.set(id, OperationProgressStatuses.WAITING);
             }
           }
+
+          // push updated STARTING/WAITING statuses to listeners
+          this.events.emit('flow:updated', { jobId: this.job, type: 'group:schedule', group: this.currentGroup });
 
           try {
             /**
@@ -483,8 +563,10 @@ export default class TaskManager {
             }
           } finally {
             // Reset group state after completion. successful or not
+            const finishedGroup = this.currentGroup;
             this.currentGroup = undefined;
             this.currentGroupOperationsPromises.clear();
+            this.events.emit('flow:updated', { jobId: this.job, type: 'group:end', group: finishedGroup });
           }
         }
 
@@ -495,12 +577,14 @@ export default class TaskManager {
           status: this.status,
           endTime: Date.now(),
         });
+        this.events.emit('flow:updated', { jobId: this.job, type: 'status:end' });
       } catch (error) {
         // Any uncaught failure sets the flow to 'failed'
         this.repository.updateflowState(this.job, {
           status: 'failed',
           endTime: Date.now(),
         });
+        this.events.emit('flow:updated', { jobId: this.job, type: 'status:failed' });
       } finally {
         // Do a total operation clean up where we go through all the opmap and clean all operations
         const closingOperationPromises = [];

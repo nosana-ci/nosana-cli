@@ -30,11 +30,12 @@ export async function stopTaskManagerOperation(
   }
 
   /**
-   * Ensure the provided group is the one currently running.
-   * Operations in inactive or completed groups cannot be stopped.
+   * If the provided group is not currently active, we still allow a stop attempt
    */
-  if (this.currentGroup !== group) {
-    throw new Error('GROUP_NOT_ACTIVE');
+  const inProvidedGroup = this.executionPlan
+    .find((ctx) => ctx.group === group)?.ops.includes(opId);
+  if (!inProvidedGroup) {
+    throw new Error('GROUP_NOT_FOUND');
   }
 
   /**
@@ -58,6 +59,9 @@ export async function stopTaskManagerOperation(
   if (emitter) {
     emitter.emit('log', 'Stopping Operation', 'info');
   }
+
+  // notify listeners that flow state changed to reflect STOPPING
+  this.events?.emit('flow:updated', { jobId: this.job, opId, type: 'status:stopping' });
 
   /**
    * Retrieve the AbortController for this op.
@@ -93,4 +97,20 @@ export async function stopTaskManagerOperation(
 
   // Unlock the operation so it can be restarted or reused later
   this.lockedOperations.delete(opId);
+
+  // Ensure final STOPPED state is reflected in memory and repository, and notify
+  this.operationStatus.set(opId, OperationProgressStatuses.STOPPED);
+  try {
+    const index = this.getOpStateIndex(opId);
+    const opState = this.repository.getOpState(this.job, index);
+    const alreadyEnded = !!opState.endTime;
+    if (!alreadyEnded) {
+      this.repository.updateOpState(this.job, index, {
+        status: this.getStatus(StopReasons.STOPPED, 'ops'),
+        endTime: Date.now(),
+      });
+    }
+  } finally {
+    this.events?.emit('flow:updated', { jobId: this.job, opId, type: 'status:stopped' });
+  }
 }
