@@ -176,6 +176,8 @@ export async function runTaskManagerOperation(
     this.repository.updateOpState(this.job, index, {
       status: 'running',
       startTime: Date.now(),
+      endTime: null,
+      exitCode: null,
     });
   });
 

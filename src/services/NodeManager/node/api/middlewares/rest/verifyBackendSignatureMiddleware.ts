@@ -20,7 +20,7 @@ export async function verifyBackendSignatureMiddleware(
         publicKey: new PublicKey(configs().backendAuthorizationAddress),
       })
     ) {
-      return res.status(401).send('Unathorized Request');
+      return res.status(401).send('Unauthorized Request');
     }
     res.locals['session_id'] = (req.headers['x-session-id'] as string).split(
       ':',
@@ -28,6 +28,6 @@ export async function verifyBackendSignatureMiddleware(
 
     next();
   } catch (error) {
-    res.status(401).send(`Unathorized Request: ${(error as Error).message}`);
+    res.status(401).send(`Unauthorized Request: ${(error as Error).message}`);
   }
 }

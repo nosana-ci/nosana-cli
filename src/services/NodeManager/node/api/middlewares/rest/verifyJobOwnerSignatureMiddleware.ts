@@ -32,11 +32,11 @@ export async function verifyJobOwnerSignatureMiddleware(
         publicKey: new PublicKey(job.project),
       })
     ) {
-      return res.status(401).send('Unathorized Request');
+      return res.status(401).send('Unauthorized Request');
     }
 
     next();
   } catch (error) {
-    res.status(401).send(`Unathorized Request: ${(error as Error).message}`);
+    res.status(401).send(`Unauthorized Request: ${(error as Error).message}`);
   }
 }
