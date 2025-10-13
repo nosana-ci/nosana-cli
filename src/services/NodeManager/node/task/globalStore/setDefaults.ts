@@ -18,6 +18,17 @@ export function setDefaults(
   project: string,
   jobDefinition: JobDefinition,
 ): void {
+  if (jobDefinition.global?.variables) {
+    this.globalOpStore.variables = {
+      ...this.globalOpStore.variables,
+      ...jobDefinition.global.variables,
+    };
+    this.globalStore.variables = {
+      ...this.globalStore.variables,
+      ...jobDefinition.global.variables,
+    };
+  }
+
   processOperationsForEndpoints.call(
     this,
     flowId,

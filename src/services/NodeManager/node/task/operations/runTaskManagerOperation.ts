@@ -383,7 +383,7 @@ export async function runTaskManagerOperation(
      * now after interpolation we want to proceed to
      * TransformCollections(interpolatedOp)
      */
-    // interpolatedOp = this.transformCollections(interpolatedOp);
+    interpolatedOp = this.transformCollections(interpolatedOp);
     interpolatedOp = finalizeEnvOnOperation(interpolatedOp);
     interpolatedOp = stanatizeArrays(interpolatedOp);
   } catch (error: any) {
