@@ -335,14 +335,14 @@ export async function runTaskManagerOperation(
       const port = payload?.port;
       if (typeof port === 'number' || typeof port === 'string') {
         const portKey = String(port);
-        const precomputed = this.getByPath(op.id, `endpoint.${portKey}`) as
+        const stored_url = this.getByPath(op.id, `endpoint.${portKey}`) as
           | string
           | undefined;
-        if (!precomputed) return;
+        if (!stored_url) return;
 
-        const url = precomputed.startsWith('http')
-          ? precomputed
-          : `https://${precomputed}`;
+        const url = stored_url.startsWith('http')
+          ? stored_url
+          : `https://${stored_url}`;
 
         logEmitter.emit('log', {
           class: 'FlowHandler',
