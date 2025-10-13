@@ -13,7 +13,6 @@ import { state } from '../../../../monitoring/state/NodeState.js';
 
 /**
  * SSE endpoint for real-time job information streaming.
- * Clients receive automatic updates whenever operation status or job state changes.
  */
 export function getJobInfoRoute(
   req: NodeAPIRequest<{ jobId: string }>,
