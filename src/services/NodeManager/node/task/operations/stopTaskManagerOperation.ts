@@ -98,7 +98,7 @@ export async function stopTaskManagerOperation(
   // Unlock the operation so it can be restarted or reused later
   this.lockedOperations.delete(opId);
 
-  // Ensure final STOPPED state is reflected in memory and repository, and notify
+  // Ensure final STOPPED state is reflected in memory and repository
   this.operationStatus.set(opId, OperationProgressStatuses.STOPPED);
   const index = this.getOpStateIndex(opId);
   const opState = this.repository.getOpState(this.job, index);
