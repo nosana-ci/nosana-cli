@@ -393,43 +393,35 @@ export default class TaskManager {
   protected registerAndRelayOpEmitter(opId: string, emitter: EventEmitter): void {
     const existing = this.operationsEventEmitters.get(opId);
     if (existing && existing === emitter) return;
+    const lifecycleEvents = new Set<string>([
+      'start',
+      'exit',
+      'error',
+      'updateOpState',
+      'healthcheck:startup:success',
+      'flow:secrets-updated',
+    ]);
+    const eventsToRegister: string[] = [...lifecycleEvents, 'log'];
 
     if (existing && existing !== emitter) {
-      existing.removeAllListeners('start');
-      existing.removeAllListeners('exit');
-      existing.removeAllListeners('error');
-      existing.removeAllListeners('updateOpState');
-      existing.removeAllListeners('healthcheck:startup:success');
-      existing.removeAllListeners('flow:secrets-updated');
-      // We do not relay raw 'log' events to flow:updated to avoid chatty SSE,
-      // but still forward them through 'op:event' for consumers that need them.
-      existing.removeAllListeners('log');
+      for (const eventName of eventsToRegister) {
+        existing.removeAllListeners(eventName);
+      }
     }
 
     emitter.setMaxListeners(50);
 
-    const relay = (type: string) => (payload?: any) => {
-      this.events.emit('op:event', { opId, type, payload });
+    const relay = (eventType: string) => (payload?: any) => {
+      this.events.emit('op:event', { opId, type: eventType, payload });
       // For events that impact job-info payload, also emit flow:updated
-      if (
-        type === 'start' ||
-        type === 'exit' ||
-        type === 'error' ||
-        type === 'updateOpState' ||
-        type === 'healthcheck:startup:success' ||
-        type === 'flow:secrets-updated'
-      ) {
-        this.events.emit('flow:updated', { jobId: this.job, opId, type });
+      if (lifecycleEvents.has(eventType)) {
+        this.events.emit('flow:updated', { jobId: this.job, opId, type: eventType });
       }
     };
 
-    emitter.on('start', relay('start'));
-    emitter.on('exit', relay('exit'));
-    emitter.on('error', relay('error'));
-    emitter.on('updateOpState', relay('updateOpState'));
-    emitter.on('healthcheck:startup:success', relay('healthcheck:startup:success'));
-    emitter.on('flow:secrets-updated', relay('flow:secrets-updated'));
-    emitter.on('log', relay('log'));
+    for (const eventName of eventsToRegister) {
+      emitter.on(eventName, relay(eventName));
+    }
 
     this.operationsEventEmitters.set(opId, emitter);
     this.events.emit('op:emitter-registered', { opId });

@@ -22,18 +22,27 @@ export async function stopTaskManagerGroupOperations(
   }
 
   /**
-   * Attempt to stop each operation in parallel.
-   * If any individual stop fails, we catch it and continue the rest.
+ * Ensure we're currently within the provided group context before proceeding.
+ * Prevents stopping inactive or completed groups.
+ */
+  if (this.currentGroup !== group) {
+    throw new Error('GROUP_NOT_ACTIVE');
+  }  
+
+  /**
+   * Stop each operation in parallel.
    */
-  const nowStopping = new Set<string>();
-  const stopPromises = groupContext.ops.map((id) => {
-    nowStopping.add(id);
+  for (const id of groupContext.ops) {
     this.operationStatus.set(id, OperationProgressStatuses.STOPPING);
-    this.events?.emit('flow:updated', { jobId: this.job, opId: id, type: 'status:stopping' });
-    return this.stopTaskManagerOperation(group, id).catch((err) => {
+  }
+  // Emit once after all statuses are updated to avoid interleaving state reads
+  this.events?.emit('flow:updated', { jobId: this.job, group, type: 'group:stopping' });
+
+  const stopPromises = groupContext.ops.map((id) =>
+    this.stopTaskManagerOperation(group, id).catch((err) => {
       console.warn(`Failed to stop operation ${id}:`, err.message);
-    });
-  });
+    }),
+  );
 
   // Await all stop promises before resolving
   await Promise.all(stopPromises);

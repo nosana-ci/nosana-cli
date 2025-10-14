@@ -257,6 +257,13 @@ export class ApiHandler {
     );
     this.api.post('/job/:jobId/group/:group/stop', stopGroupOperationHandler);
     this.api.post('/job/:jobId/stop', postServiceStopRoute);
+
+    // Deprecated routes
+    this.api.get('/job-result/:jobId', getJobResultsRoute);
+    this.api.get('/service/url/:jobId', getServiceUrlRoute);
+    this.api.post('/job-definition/:jobId', postJobDefinitionRoute);
+    this.api.post('/service/stop/:jobId', postServiceStopRoute);
+    
   }
 
   private async listen(): Promise<number> {

@@ -61,7 +61,7 @@ export async function stopTaskManagerOperation(
   }
 
   // notify listeners that flow state changed to reflect STOPPING
-  this.events?.emit('flow:updated', { jobId: this.job, opId, type: 'status:stopping' });
+  this.events.emit('flow:updated', { jobId: this.job, opId, type: 'status:stopping' });
 
   /**
    * Retrieve the AbortController for this op.
@@ -100,17 +100,14 @@ export async function stopTaskManagerOperation(
 
   // Ensure final STOPPED state is reflected in memory and repository, and notify
   this.operationStatus.set(opId, OperationProgressStatuses.STOPPED);
-  try {
-    const index = this.getOpStateIndex(opId);
-    const opState = this.repository.getOpState(this.job, index);
-    const alreadyEnded = !!opState.endTime;
-    if (!alreadyEnded) {
-      this.repository.updateOpState(this.job, index, {
-        status: this.getStatus(StopReasons.STOPPED, 'ops'),
-        endTime: Date.now(),
-      });
-    }
-  } finally {
-    this.events?.emit('flow:updated', { jobId: this.job, opId, type: 'status:stopped' });
+  const index = this.getOpStateIndex(opId);
+  const opState = this.repository.getOpState(this.job, index);
+  const alreadyEnded = !!opState.endTime;
+  if (!alreadyEnded) {
+    this.repository.updateOpState(this.job, index, {
+      status: this.getStatus(StopReasons.STOPPED, 'ops'),
+      endTime: Date.now(),
+    });
   }
+  this.events.emit('flow:updated', { jobId: this.job, opId, type: 'status:stopped' });
 }

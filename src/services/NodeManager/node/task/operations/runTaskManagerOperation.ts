@@ -16,6 +16,7 @@ import {
 } from '../../../../../providers/utils/extractResultsFromLogs.js';
 import { stanatizeArrays } from '../globalStore/stanatizeArrays.js';
 import { logEmitter } from '../../../monitoring/proxy/loggingProxy.js';
+import { HealthcheckPayload } from '../../../../../types/healthCheckPayload.js';
 
 /**
  * Executes a full lifecycle of a container-based operation using internal class state.
@@ -328,38 +329,35 @@ export async function runTaskManagerOperation(
    * This mechanism allows dynamic chaining of operations based on runtime readiness,
    * ensuring ops start only after their declared dependencies are healthy and active.
    */
-  emitter.on('healthcheck:startup:success', (payload: any) => {
+  emitter.on('healthcheck:startup:success', (payload: HealthcheckPayload) => {
     emitter.emit('log', 'Operation StartUp Success', 'info');
 
-    try {
-      const port = payload?.port;
-      if (typeof port === 'number' || typeof port === 'string') {
-        const portKey = String(port);
-        const stored_url = this.getByPath(op.id, `endpoint.${portKey}`) as
-          | string
-          | undefined;
-        if (!stored_url) return;
+    const port = payload?.port;
+    if (typeof port === 'number' || typeof port === 'string') {
+      const portKey = String(port);
+      const stored_url = this.getByPath(op.id, `endpoint.${portKey}`) as
+        | string
+        | undefined;
+      if (!stored_url) return;
 
-        const url = stored_url.startsWith('http')
-          ? stored_url
-          : `https://${stored_url}`;
+      const url = stored_url.startsWith('http')
+        ? stored_url
+        : `https://${stored_url}`;
 
-        logEmitter.emit('log', {
-          class: 'FlowHandler',
-          method: 'operationExposed',
-          arguments: [
-            {
-              port,
-              opId: op.id,
-            },
-            true,
-          ],
-          timestamp: new Date().toISOString(),
-          type: 'return',
-          result: url,
-        });
-      }
-    } catch (_) {
+      logEmitter.emit('log', {
+        class: 'FlowHandler',
+        method: 'operationExposed',
+        arguments: [
+          {
+            port,
+            opId: op.id,
+          },
+          true,
+        ],
+        timestamp: new Date().toISOString(),
+        type: 'return',
+        result: url,
+      });
     }
 
     // Loop through each operation that depends on this one
