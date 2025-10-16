@@ -33,7 +33,8 @@ export async function stopTaskManagerOperation(
    * If the provided group is not currently active, we still allow a stop attempt
    */
   const inProvidedGroup = this.executionPlan
-    .find((ctx) => ctx.group === group)?.ops.includes(opId);
+    .find((ctx) => ctx.group === group)
+    ?.ops.includes(opId);
   if (!inProvidedGroup) {
     throw new Error('GROUP_NOT_FOUND');
   }
@@ -61,7 +62,11 @@ export async function stopTaskManagerOperation(
   }
 
   // notify listeners that flow state changed to reflect STOPPING
-  this.events.emit('flow:updated', { jobId: this.job, opId, type: 'status:stopping' });
+  this.events.emit('flow:updated', {
+    jobId: this.job,
+    opId,
+    type: 'status:stopping',
+  });
 
   /**
    * Retrieve the AbortController for this op.
@@ -109,5 +114,9 @@ export async function stopTaskManagerOperation(
       endTime: Date.now(),
     });
   }
-  this.events.emit('flow:updated', { jobId: this.job, opId, type: 'status:stopped' });
+  this.events.emit('flow:updated', {
+    jobId: this.job,
+    opId,
+    type: 'status:stopped',
+  });
 }

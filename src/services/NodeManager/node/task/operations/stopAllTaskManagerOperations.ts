@@ -1,4 +1,7 @@
-import TaskManager, { OperationProgressStatuses, StopReason } from '../TaskManager.js';
+import TaskManager, {
+  OperationProgressStatuses,
+  StopReason,
+} from '../TaskManager.js';
 
 /**
  * Immediately stops the current task flow with the given reason.
@@ -56,6 +59,5 @@ export function stopAllTaskManagerOperations(
         exitCode: 0,
       });
     }
-  } catch {
-  }
+  } catch {}
 }

@@ -49,12 +49,12 @@ export function getJobInfoRoute(
         console.error('Flow not found:', jobId);
         return;
       }
-      
+
       const task = TaskManagerRegistry.getInstance().get(jobId);
       const response: any = buildJobInfoResponse(currentFlow, task);
-      
+
       const currentData = JSON.stringify(response);
-      
+
       if (currentData !== lastSentData) {
         res.write(`data: ${currentData}\n\n`);
         lastSentData = currentData;
@@ -116,9 +116,7 @@ export function getJobInfoRoute(
     const secrets = flowData.state.secrets;
     if (secrets && secrets[jobId]) {
       const sdk = getSDK();
-      const nodeState = state(
-        sdk.solana.provider!.wallet.publicKey.toString(),
-      );
+      const nodeState = state(sdk.solana.provider!.wallet.publicKey.toString());
 
       const exposeIdToOpMap: Map<
         string,
@@ -254,4 +252,3 @@ export function getJobInfoRoute(
     });
   }
 }
-

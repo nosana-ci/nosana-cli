@@ -22,12 +22,12 @@ export async function stopTaskManagerGroupOperations(
   }
 
   /**
- * Ensure we're currently within the provided group context before proceeding.
- * Prevents stopping inactive or completed groups.
- */
+   * Ensure we're currently within the provided group context before proceeding.
+   * Prevents stopping inactive or completed groups.
+   */
   if (this.currentGroup !== group) {
     throw new Error('GROUP_NOT_ACTIVE');
-  }  
+  }
 
   /**
    * Stop each operation in parallel.
@@ -36,7 +36,11 @@ export async function stopTaskManagerGroupOperations(
     this.operationStatus.set(id, OperationProgressStatuses.STOPPING);
   }
   // Emit once after all statuses are updated to avoid interleaving state reads
-  this.events?.emit('flow:updated', { jobId: this.job, group, type: 'group:stopping' });
+  this.events?.emit('flow:updated', {
+    jobId: this.job,
+    group,
+    type: 'group:stopping',
+  });
 
   const stopPromises = groupContext.ops.map((id) =>
     this.stopTaskManagerOperation(group, id).catch((err) => {

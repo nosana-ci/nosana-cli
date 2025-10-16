@@ -390,7 +390,10 @@ export default class TaskManager {
    * Registers an op-level emitter and relays its relevant events to the
    * task-level unified emitter. Also tracks the emitter in operationsEventEmitters.
    */
-  protected registerAndRelayOpEmitter(opId: string, emitter: EventEmitter): void {
+  protected registerAndRelayOpEmitter(
+    opId: string,
+    emitter: EventEmitter,
+  ): void {
     const existing = this.operationsEventEmitters.get(opId);
     if (existing && existing === emitter) return;
     const lifecycleEvents = new Set<string>([
@@ -415,7 +418,11 @@ export default class TaskManager {
       this.events.emit('op:event', { opId, type: eventType, payload });
       // For events that impact job-info payload, also emit flow:updated
       if (lifecycleEvents.has(eventType)) {
-        this.events.emit('flow:updated', { jobId: this.job, opId, type: eventType });
+        this.events.emit('flow:updated', {
+          jobId: this.job,
+          opId,
+          type: eventType,
+        });
       }
     };
 
@@ -485,7 +492,10 @@ export default class TaskManager {
           status: this.status,
           startTime: Date.now(),
         });
-        this.events.emit('flow:updated', { jobId: this.job, type: 'status:start' });
+        this.events.emit('flow:updated', {
+          jobId: this.job,
+          type: 'status:start',
+        });
 
         // update all operations status to pending since we have started
         [...this.opMap.keys()].forEach((op) =>
@@ -495,7 +505,11 @@ export default class TaskManager {
         // Loop through execution plan, group by group
         for (const p of this.executionPlan) {
           this.currentGroup = p.group;
-          this.events.emit('flow:updated', { jobId: this.job, type: 'group:start', group: this.currentGroup });
+          this.events.emit('flow:updated', {
+            jobId: this.job,
+            type: 'group:start',
+            group: this.currentGroup,
+          });
 
           // Queue each operation in the group for execution
           for (const id of p.ops) {
@@ -533,7 +547,11 @@ export default class TaskManager {
           }
 
           // push updated STARTING/WAITING statuses to listeners
-          this.events.emit('flow:updated', { jobId: this.job, type: 'group:schedule', group: this.currentGroup });
+          this.events.emit('flow:updated', {
+            jobId: this.job,
+            type: 'group:schedule',
+            group: this.currentGroup,
+          });
 
           try {
             /**
@@ -558,7 +576,11 @@ export default class TaskManager {
             const finishedGroup = this.currentGroup;
             this.currentGroup = undefined;
             this.currentGroupOperationsPromises.clear();
-            this.events.emit('flow:updated', { jobId: this.job, type: 'group:end', group: finishedGroup });
+            this.events.emit('flow:updated', {
+              jobId: this.job,
+              type: 'group:end',
+              group: finishedGroup,
+            });
           }
         }
 
@@ -569,14 +591,20 @@ export default class TaskManager {
           status: this.status,
           endTime: Date.now(),
         });
-        this.events.emit('flow:updated', { jobId: this.job, type: 'status:end' });
+        this.events.emit('flow:updated', {
+          jobId: this.job,
+          type: 'status:end',
+        });
       } catch (error) {
         // Any uncaught failure sets the flow to 'failed'
         this.repository.updateflowState(this.job, {
           status: 'failed',
           endTime: Date.now(),
         });
-        this.events.emit('flow:updated', { jobId: this.job, type: 'status:failed' });
+        this.events.emit('flow:updated', {
+          jobId: this.job,
+          type: 'status:failed',
+        });
       } finally {
         // Do a total operation clean up where we go through all the opmap and clean all operations
         const closingOperationPromises = [];

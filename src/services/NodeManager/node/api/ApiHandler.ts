@@ -263,7 +263,6 @@ export class ApiHandler {
     this.api.get('/service/url/:jobId', getServiceUrlRoute);
     this.api.post('/job-definition/:jobId', postJobDefinitionRoute);
     this.api.post('/service/stop/:jobId', postServiceStopRoute);
-    
   }
 
   private async listen(): Promise<number> {
