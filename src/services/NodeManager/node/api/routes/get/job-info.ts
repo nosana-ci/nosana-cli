@@ -8,6 +8,8 @@ import {
 
 import { NodeAPIRequest } from '../../types/index.js';
 import { TaskManagerRegistry } from '../../../task/TaskManagerRegistry.js';
+import TaskManager from '../../../task/TaskManager.js';
+import { Flow, OpState } from '../../../../provider/types.js';
 import { getSDK } from '../../../../../sdk.js';
 import { state } from '../../../../monitoring/state/NodeState.js';
 
@@ -70,7 +72,10 @@ export function getJobInfoRoute(
     }, delay);
   };
 
-  const buildJobInfoResponse = (flowData: any, task: any) => {
+  const buildJobInfoResponse = (
+    flowData: Flow,
+    task: TaskManager | undefined,
+  ) => {
     const response: any = {
       jobId,
       status: flowData.state.status,
@@ -83,16 +88,12 @@ export function getJobInfoRoute(
       response.errors = flowData.state.errors;
     }
 
-    if (flowData.state.status !== 'waiting-for-job-definition') {
-      response.jobDefinition = flowData.jobDefinition;
-    }
-
     if (task) {
       response.operations = {
         all: task.getOperationsStatus(),
         currentGroup: task.getCurrentGroup(),
         currentGroupStatus: task.getCurrentGroupStatus(),
-        opStates: flowData.state.opStates.map((opState: any) => ({
+        opStates: flowData.state.opStates.map((opState: OpState) => ({
           operationId: opState.operationId,
           status: opState.status,
           startTime: opState.startTime,
@@ -102,7 +103,7 @@ export function getJobInfoRoute(
       };
     } else {
       response.operations = {
-        opStates: flowData.state.opStates.map((opState: any) => ({
+        opStates: flowData.state.opStates.map((opState: OpState) => ({
           operationId: opState.operationId,
           status: opState.status,
           startTime: opState.startTime,
@@ -185,17 +186,16 @@ export function getJobInfoRoute(
     }
 
     const completedOps = flowData.state.opStates.filter(
-      (opState: any) => opState.endTime,
+      (opState: OpState) => opState.endTime,
     );
 
     if (completedOps.length > 0) {
       response.results = {
-        opStates: completedOps.map((opState: any) => ({
+        opStates: completedOps.map((opState: OpState) => ({
           operationId: opState.operationId,
           status: opState.status,
           exitCode: opState.exitCode,
           results: opState.results,
-          logs: opState.logs?.slice(-10),
         })),
       };
     }
@@ -210,7 +210,7 @@ export function getJobInfoRoute(
   if (task) {
     const cleanupFunctions: Array<() => void> = [];
 
-    const tmEmitter = (task as any).getEventsEmitter?.() || (task as any).events;
+    const tmEmitter = task.getEventsEmitter();
     const onFlowUpdated = () => scheduleSend(50);
     const onOpEmitterRegistered = () => scheduleSend(50);
 
