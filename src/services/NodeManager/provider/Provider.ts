@@ -7,6 +7,7 @@ import {
   OperationArgsMap,
   OperationType,
   Ops,
+  Resource,
 } from '@nosana/sdk';
 import EventEmitter from 'events';
 import Dockerode from 'dockerode';
@@ -368,7 +369,7 @@ export class Provider {
           this.resourceManager.images.setImage(s3HelperImage);
 
           const resourceVolumes = await this.resourceManager.getResourceVolumes(
-            op.args.resources ?? [],
+            (op.args.resources as Resource[]) ?? [],
             controller,
           );
 

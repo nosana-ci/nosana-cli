@@ -1,9 +1,14 @@
+import { SendJobDefinationLogicstics } from '@nosana/sdk';
 import { JobDefinition } from '../../../provider/types.js';
 import ApiEventEmitter from '../../api/ApiEventEmitter.js';
-import { ApiListenJobDefinitionStrategy } from './startegy/ApiListenJobDefinitionStrategy.js';
+import { ApiListenJobDefinitionStrategy } from './strategy/ApiListenJobDefinitionStrategy.js';
+import { ApiJobDefinitionStrategy } from './strategy/ApiJobDefinitionStrategy.js';
 
 export interface JobDefinitionStrategy {
-  load(jobId: string): Promise<JobDefinition>;
+  load(
+    jobId: string,
+    args: SendJobDefinationLogicstics['args'],
+  ): Promise<JobDefinition>;
 }
 
 export class JobDefinitionStrategySelector {
@@ -20,8 +25,8 @@ export class JobDefinitionStrategySelector {
         return new ApiListenJobDefinitionStrategy(
           ApiEventEmitter.getInstance(),
         );
-      // case 'api':
-      //     return new ApiJobDefinitionStrategy(this.eventEmitter); // assuming you have an ApiJobDefinitionStrategy
+      case 'api':
+        return new ApiJobDefinitionStrategy(); // assuming you have an ApiJobDefinitionStrategy
       default:
         throw new Error(`Unsupported strategy: ${name}`);
     }

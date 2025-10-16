@@ -16,15 +16,15 @@ export class JobExternalUtil {
   public async resolveJobDefinition(
     id: string,
     job: Job,
-  ): Promise<JobDefinition> {
-    let jobDefinition: JobDefinition = await this.sdk.ipfs.retrieve(
+  ): Promise<JobDefinition | null> {
+    let jobDefinition: JobDefinition | null = await this.sdk.ipfs.retrieve(
       job.ipfsJob,
     );
 
-    if (jobDefinition.logistics?.send?.type) {
+    if (jobDefinition && jobDefinition.logistics?.send?.type) {
       const strategySelector = new JobDefinitionStrategySelector();
       const strategy = strategySelector.selectStrategy(
-        jobDefinition.logistics?.send?.type,
+        jobDefinition.logistics.send.type,
       );
 
       this.repository.setflow(
@@ -39,7 +39,19 @@ export class JobExternalUtil {
         ),
       );
 
-      jobDefinition = await strategy.load(id);
+      try {
+        jobDefinition = await strategy.load(
+          id,
+          jobDefinition.logistics.send.args,
+        );
+      } catch (error) {
+        console.log(error);
+        jobDefinition = null;
+        this.repository.updateflowStateError(id, {
+          status: 'logistics-error',
+          error: error,
+        });
+      }
     }
 
     return jobDefinition;
@@ -47,6 +59,9 @@ export class JobExternalUtil {
 
   public async resolveResult(id: string, job: Job): Promise<FlowState> {
     let result = this.repository.getFlowState(id);
+    const orginalStatus = result.status;
+
+    console.log(result);
 
     let jobDefinition: JobDefinition = await this.sdk.ipfs.retrieve(
       job.ipfsJob,
@@ -64,21 +79,38 @@ export class JobExternalUtil {
     if (jobDefinition.logistics?.receive?.type) {
       const strategySelector = new ResultReturnStrategySelector();
       const strategy = strategySelector.selectStrategy(
-        jobDefinition.logistics?.receive?.type,
+        jobDefinition.logistics.receive.type,
       );
 
       this.repository.updateflowState(id, {
         status: 'waiting-for-result',
       });
 
-      await strategy.load(id);
-
-      result = {
-        status: result.status,
+      const blankResult: FlowState = {
+        status: orginalStatus,
         startTime: result.startTime,
         endTime: result.endTime,
         opStates: [],
+        errors: result.errors ?? [],
       };
+
+      try {
+        await strategy.load(
+          id,
+          jobDefinition.logistics.receive.args,
+          result,
+          orginalStatus,
+        );
+      } catch (error) {
+        this.repository.updateflowStateError(id, {
+          error: error,
+        });
+        // blankResult.errors!.push(
+        //   error instanceof Error ? error.message : error,
+        // );
+      }
+
+      result = blankResult;
     }
 
     return result;
@@ -95,7 +127,7 @@ export class JobExternalUtil {
       });
       this.repository.updateflowStateError(id, {
         status: 'validation-error',
-        errors: validation.errors,
+        error: validation.errors,
       });
       return false;
     }
