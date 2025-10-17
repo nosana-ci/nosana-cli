@@ -2,6 +2,7 @@ import TaskManager, {
   OperationProgressStatuses,
   StopReasons,
 } from '../TaskManager.js';
+import { type FlowSecrets, type JobExposeSecrets, type EndpointSecret } from '../../../provider/types.js';
 
 /**
  * Publicly exposed method to stop a running operation within the active group.
@@ -119,4 +120,43 @@ export async function stopTaskManagerOperation(
     opId,
     type: 'status:stopped',
   });
+
+  try {
+    const flow = this.repository.getFlow(this.job);
+    const secrets = flow?.state?.secrets as FlowSecrets | undefined;
+    let jobSecrets: JobExposeSecrets = {};
+    if (
+      secrets &&
+      typeof secrets[this.job] === 'object' &&
+      secrets[this.job] !== 'private' &&
+      secrets[this.job] !== 'public' &&
+      secrets[this.job]
+    ) {
+      jobSecrets = secrets[this.job] as JobExposeSecrets;
+    }
+
+    let updated = false;
+    const newJobSecrets: JobExposeSecrets = {};
+
+    for (const [exposeId, value] of Object.entries(jobSecrets)) {
+      const v = value as EndpointSecret;
+      if (v && typeof v === 'object' && v.opID === opId) {
+        newJobSecrets[exposeId] = { ...v, status: 'OFFLINE' };
+        updated = true;
+      } else {
+        newJobSecrets[exposeId] = v;
+      }
+    }
+
+    if (updated) {
+      this.repository.updateflowStateSecret(this.job, {
+        [this.job]: newJobSecrets,
+      });
+      this.events.emit('flow:updated', {
+        jobId: this.job,
+        opId,
+        type: 'flow:secrets-updated',
+      });
+    }
+  } catch {}
 }

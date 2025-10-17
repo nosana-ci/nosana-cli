@@ -8,7 +8,7 @@ import {
   OperationProgressStatuses,
 } from '../TaskManager.js';
 import TaskManager from '../TaskManager.js';
-import { Flow } from '../../../provider/types.js';
+import { Flow, type FlowSecrets, type JobExposeSecrets, type EndpointSecret } from '../../../provider/types.js';
 import { finalizeEnvOnOperation } from '../globalStore/finalizeEnv.js';
 import {
   createResultsObject,
@@ -359,35 +359,44 @@ export async function runTaskManagerOperation(
         result: url,
       });
 
-      try {
-        const flow = this.repository.getFlow(this.job);
-        const secrets = flow?.state?.secrets || {};
-        const jobSecrets = (secrets && secrets[this.job]) || {};
+    try {
+      const flow = this.repository.getFlow(this.job);
+      const secrets = flow?.state?.secrets as FlowSecrets | undefined;
+      let jobSecrets: JobExposeSecrets = {};
+      if (
+        secrets &&
+        typeof secrets[this.job] === 'object' &&
+        secrets[this.job] !== 'private' &&
+        secrets[this.job] !== 'public' &&
+        secrets[this.job]
+      ) {
+        jobSecrets = secrets[this.job] as JobExposeSecrets;
+      }
 
-        const targetHost = url.replace(/^https?:\/\//, '');
-        let updated = false;
-        const newJobSecrets: Record<string, any> = { ...jobSecrets };
-        for (const [exposeId, value] of Object.entries(jobSecrets)) {
-          const v = value as { url?: string; status?: string };
-          if (v && typeof v === 'object' && v.url) {
-            const host = v.url.replace(/^https?:\/\//, '');
-            if (host === targetHost) {
-              newJobSecrets[exposeId] = { ...v, status: 'ONLINE' };
-              updated = true;
-            }
+      const targetHost = url.replace(/^https?:\/\//, '');
+      let updated = false;
+      const newJobSecrets: JobExposeSecrets = { ...jobSecrets };
+      for (const [exposeId, value] of Object.entries(jobSecrets)) {
+        const v = value as EndpointSecret;
+        if (v && typeof v === 'object' && v.url) {
+          const host = v.url.replace(/^https?:\/\//, '');
+          if (host === targetHost) {
+            newJobSecrets[exposeId] = { ...v, status: 'ONLINE' };
+            updated = true;
           }
         }
+      }
 
-        if (updated) {
-          this.repository.updateflowStateSecret(this.job, {
-            [this.job]: newJobSecrets,
-          });
-          emitter.emit('flow:secrets-updated', {
-            flowId: this.job,
-            opId: op.id,
-          });
-        }
-      } catch {}
+      if (updated) {
+        this.repository.updateflowStateSecret(this.job, {
+          [this.job]: newJobSecrets,
+        });
+        emitter.emit('flow:secrets-updated', {
+          flowId: this.job,
+          opId: op.id,
+        });
+      }
+    } catch {}
     }
 
     // Loop through each operation that depends on this one
@@ -405,7 +414,53 @@ export async function runTaskManagerOperation(
     }
   });
 
-  // emitter.on("healthcheck:continuous:failure", (data) => {});
+  emitter.on('healthcheck:continuous:failure', (payload: HealthcheckPayload) => {
+    const port = payload?.port;
+    if (typeof port !== 'number' && typeof port !== 'string') return;
+
+    try {
+      const flow = this.repository.getFlow(this.job);
+      const secrets = flow?.state?.secrets as FlowSecrets | undefined;
+      let jobSecrets: JobExposeSecrets = {};
+      if (
+        secrets &&
+        typeof secrets[this.job] === 'object' &&
+        secrets[this.job] !== 'private' &&
+        secrets[this.job] !== 'public' &&
+        secrets[this.job]
+      ) {
+        jobSecrets = secrets[this.job] as JobExposeSecrets;
+      }
+
+      let updated = false;
+      const newJobSecrets: JobExposeSecrets = {};
+
+      for (const [exposeId, value] of Object.entries(jobSecrets)) {
+        const v = value as EndpointSecret;
+        if (
+          v &&
+          typeof v === 'object' &&
+          v.opID === op.id &&
+          String(v.port) === String(port)
+        ) {
+          newJobSecrets[exposeId] = { ...v, status: 'OFFLINE' };
+          updated = true;
+        } else {
+          newJobSecrets[exposeId] = v;
+        }
+      }
+
+      if (updated) {
+        this.repository.updateflowStateSecret(this.job, {
+          [this.job]: newJobSecrets,
+        });
+        emitter.emit('flow:secrets-updated', {
+          flowId: this.job,
+          opId: op.id,
+        });
+      }
+    } catch {}
+  });
 
   emitter.on('healthcheck:url:exposed', () => {
     emitter.emit('log', 'Operation Service URL exposed', 'info');
