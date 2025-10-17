@@ -115,7 +115,7 @@ export class JobHandler {
     if (!validation.success) {
       this.repository.updateflowStateError(this.jobId(), {
         status: 'validation-error',
-        errors: validation.errors,
+        error: validation.errors,
       });
       return false;
     }
@@ -236,7 +236,7 @@ export class JobHandler {
       } catch (error) {
         this.repository.updateflowStateError(this.jobId(), {
           status: 'init error',
-          errors: error,
+          error: error,
         });
 
         TaskManagerRegistry.getInstance().remove(this.jobId());

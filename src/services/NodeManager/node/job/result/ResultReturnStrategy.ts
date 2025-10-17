@@ -1,8 +1,16 @@
+import { FlowState, ReceiveJobResultLogicstics } from '@nosana/sdk';
+
 import ApiEventEmitter from '../../api/ApiEventEmitter.js';
+import { ApiResultReturnStrategy } from './startegy/ApiResultReturnStrategy.js';
 import { ApiListenResultReturnStrategy } from './startegy/ApiListenResultReturnStrategy.js';
 
 export interface ResultReturnStrategy {
-  load(jobId: string): Promise<boolean>;
+  load(
+    jobId: string,
+    args: ReceiveJobResultLogicstics['args'],
+    results: FlowState,
+    orginalState: string,
+  ): Promise<boolean>;
 }
 
 export class ResultReturnStrategySelector {
@@ -17,6 +25,8 @@ export class ResultReturnStrategySelector {
     switch (name) {
       case 'api-listen':
         return new ApiListenResultReturnStrategy(ApiEventEmitter.getInstance());
+      case 'api':
+        return new ApiResultReturnStrategy();
       default:
         throw new Error(`Unsupported strategy: ${name}`);
     }
