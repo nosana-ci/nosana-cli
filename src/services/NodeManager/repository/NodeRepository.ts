@@ -63,12 +63,31 @@ export class NodeRepository {
     return secrets[key];
   }
 
-  public updateflowStateError(id: string, error: Error | unknown): void {
-    if (!this.db.data.flows[id]?.state?.errors) {
+  public updateflowStateError(
+    id: string,
+    {
+      status,
+      error,
+    }: {
+      status?: string;
+      error: Error | unknown;
+    },
+  ): void {
+    if (!this.db.data.flows[id]?.state)
+      throw new Error('Failed to find flow state.');
+
+    if (status) {
+      this.db.data.flows[id].state.status = status;
+    }
+
+    if (!this.db.data.flows[id].state.errors) {
       this.db.data.flows[id].state.errors = [];
     }
 
-    (this.db.data.flows[id].state.errors as any[]).push(error);
+    (this.db.data.flows[id].state.errors as any[]).push(
+      error instanceof Error ? error.message : error,
+    );
+
     this.db.write();
   }
 

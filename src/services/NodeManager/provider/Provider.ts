@@ -370,7 +370,7 @@ export class Provider {
 
           // transformCollections has already resolved any SpreadMarker objects by this point
           const resourceVolumes = await this.resourceManager.getResourceVolumes(
-            (op.args.resources ?? []) as Resource[],
+            (op.args.resources as Resource[]) ?? [],
             controller,
           );
 

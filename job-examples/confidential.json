@@ -6,8 +6,10 @@
   },
   "logistics": {
     "send": {
-      "type": "api-listen",
-      "args": {}
+      "type": "api",
+      "args": {
+        "endpoint": "https://nosana.mypinata.cloud/ipfs/QmeKbLG32Dps9RuEndWFCeYfW1zYnB7dZMvDEPY6mvwLyu"
+      }
     },
     "receive": {
       "type": "api-listen",

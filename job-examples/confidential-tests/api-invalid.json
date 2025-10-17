@@ -1,0 +1,19 @@
+{
+  "version": "0.1",
+  "type": "container",
+  "logistics": {
+    "send": {
+      "type": "api",
+      "args": {
+        "endpoint": "http://localhost/invalid-job-definition-path"
+      }
+    },
+    "receive": {
+      "type": "api",
+      "args": {
+        "endpoint": "http://localhost/invalid-job-results-path"
+      }
+    }
+  },
+  "ops": []
+}
