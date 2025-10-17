@@ -375,10 +375,55 @@ export async function runTaskManagerOperation(
     }
   });
 
+  // Update endpoint statuses based on continuous health checks
+  this.getEventsEmitter().on('op:event', ({ opId, type, payload }) => {
+    if (opId !== op.id) return;
+    if (
+      type === 'healthcheck:continuous:success' ||
+      type === 'healthcheck:continuous:failure'
+    ) {
+      try {
+        const exposeId = payload?.id;
+        if (exposeId) {
+          this.repository.updateOpState(this.job, index, {
+            endpoints: {
+              ...(this.repository.getOpState(this.job, index).endpoints || {}),
+              [exposeId]: {
+                ...(this.repository.getOpState(this.job, index).endpoints?.[
+                  exposeId
+                ] || {}),
+                status:
+                  type === 'healthcheck:continuous:success'
+                    ? 'ONLINE'
+                    : 'OFFLINE',
+              },
+            },
+          });
+        }
+      } catch {}
+    }
+  });
+
   // emitter.on("healthcheck:continuous:failure", (data) => {});
 
-  emitter.on('healthcheck:url:exposed', () => {
+  emitter.on('healthcheck:url:exposed', (payload: any) => {
     emitter.emit('log', 'Operation Service URL exposed', 'info');
+    try {
+      const exposeId = payload?.id;
+      if (exposeId) {
+        this.repository.updateOpState(this.job, index, {
+          endpoints: {
+            ...(this.repository.getOpState(this.job, index).endpoints || {}),
+            [exposeId]: {
+              ...(this.repository.getOpState(this.job, index).endpoints?.[
+                exposeId
+              ] || {}),
+              status: 'UNKNOWN',
+            },
+          },
+        });
+      }
+    } catch {}
   });
 
   /**

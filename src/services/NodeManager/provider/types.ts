@@ -101,6 +101,14 @@ export type OpState = {
   results?: {
     [key: string]: string | string[];
   };
+  endpoints?: {
+    [exposeId: string]: {
+      opId: string;
+      url: string;
+      port: number | string;
+      status: 'ONLINE' | 'OFFLINE' | 'UNKNOWN';
+    };
+  };
 };
 
 export type ReturnedStatus<T = undefined> =

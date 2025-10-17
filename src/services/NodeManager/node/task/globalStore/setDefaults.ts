@@ -73,34 +73,26 @@ function processOperationsForEndpoints(
           opStore.endpoint = {} as Record<string, string>;
         }
 
-        if (Array.isArray(args.expose)) {
-          for (const exposedPort of args.expose) {
-            if (isSpreadMarker(exposedPort)) continue; // skip dynamic
-            if (typeof exposedPort === 'string' && isOperator(exposedPort))
-              continue;
-
-            const p =
-              typeof exposedPort === 'object'
-                ? (exposedPort as ExposedPort).port
-                : exposedPort;
-            (opStore.endpoint as Record<string, string>)[
-              `${p}`
-            ] = `${generateExposeId(flowId, index, p, args.private)}.${
-              configs().frp.serverAddr
-            }`;
-          }
-        } else {
-          if (
-            !isSpreadMarker(args.expose) &&
-            !(typeof args.expose === 'string' && isOperator(args.expose))
-          ) {
-            opStore.endpoint[`${args.expose}`] = `${generateExposeId(
-              flowId,
-              index,
-              args.expose as string | number,
-              args.private,
-            )}.${configs().frp.serverAddr}`;
-          }
+        const ports = getExposePorts(op as Operation<'container/run'>);
+        for (const exposedPort of ports) {
+          const p = (exposedPort as ExposedPort).port;
+          const exposeId = generateExposeId(flowId, index, p, args.private);
+          const url = `${exposeId}.${configs().frp.serverAddr}`;
+          (opStore.endpoint as Record<string, string>)[`${p}`] = url;
+          try {
+            this.repository.updateOpState(this.job, index, {
+              endpoints: {
+                ...(this.repository.getOpState(this.job, index).endpoints ||
+                  {}),
+                [exposeId]: {
+                  opId: op.id,
+                  url,
+                  port: p,
+                  status: 'UNKNOWN',
+                },
+              },
+            });
+          } catch {}
         }
 
         if (jobDefinition.deployment_id) {

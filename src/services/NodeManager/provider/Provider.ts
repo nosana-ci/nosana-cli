@@ -343,6 +343,28 @@ export class Provider {
               [flow.id]: generateUrlSecretObject(idMap),
               urlmode: 'private',
             });
+            try {
+              const index = getOpStateIndex(flow.jobDefinition.ops, op.id);
+              const secretsObj = generateUrlSecretObject(idMap);
+              const endpoints: NonNullable<OpState['endpoints']> = Object.fromEntries(
+                Object.entries(secretsObj).map(([exposeId, meta]) => [
+                  exposeId,
+                  {
+                    opId: op.id,
+                    url: meta.url,
+                    port: meta.port,
+                    status: 'UNKNOWN',
+                  },
+                ]),
+              );
+              this.repository.updateOpState(flow.id, index, {
+                endpoints: {
+                  ...(this.repository.getOpState(flow.id, index).endpoints ||
+                    {}),
+                  ...endpoints,
+                },
+              });
+            } catch {}
             emitter.emit('flow:secrets-updated', {
               flowId: flow.id,
               opId: op.id,
@@ -361,6 +383,27 @@ export class Provider {
               [flow.id]: mergedSecrets,
               urlmode: 'public',
             });
+            try {
+              const index = getOpStateIndex(flow.jobDefinition.ops, op.id);
+              const endpoints: NonNullable<OpState['endpoints']> = Object.fromEntries(
+                Object.entries(mergedSecrets).map(([exposeId, meta]: any) => [
+                  exposeId,
+                  {
+                    opId: op.id,
+                    url: meta.url,
+                    port: meta.port,
+                    status: 'UNKNOWN',
+                  },
+                ]),
+              );
+              this.repository.updateOpState(flow.id, index, {
+                endpoints: {
+                  ...(this.repository.getOpState(flow.id, index).endpoints ||
+                    {}),
+                  ...endpoints,
+                },
+              });
+            } catch {}
             emitter.emit('flow:secrets-updated', {
               flowId: flow.id,
               opId: op.id,

@@ -43,6 +43,11 @@ export async function restartTaskManagerOperation(
   // Mark this op as "RESTARTING" so no one else touches it mid-process
   this.lockedOperations.set(opId, 'RESTARTING');
   this.operationStatus.set(opId, OperationProgressStatuses.RESTARTING);
+  // reflect restarting in OpState
+  try {
+    const idx = this.getOpStateIndex(opId);
+    this.repository.updateOpState(this.job, idx, { status: 'restarting' });
+  } catch {}
 
   const emitter = this.operationsEventEmitters.get(opId);
   if (emitter) {

@@ -501,6 +501,20 @@ export default class TaskManager {
         [...this.opMap.keys()].forEach((op) =>
           this.operationStatus.set(op, OperationProgressStatuses.PENDING),
         );
+        // reflect pending in persisted OpState for all ops
+        try {
+          const flowForPending = this.repository.getFlow(this.job);
+          for (const id of this.opMap.keys()) {
+            const idx = (this.operations as TaskManagerOps).findIndex(
+              (o) => o.id === id,
+            );
+            if (idx !== -1) {
+              this.repository.updateOpState(this.job, idx, {
+                status: 'pending',
+              });
+            }
+          }
+        } catch {}
 
         // Loop through execution plan, group by group
         for (const p of this.executionPlan) {
@@ -529,6 +543,13 @@ export default class TaskManager {
 
             if (depsSatisfied) {
               this.operationStatus.set(id, OperationProgressStatuses.STARTING);
+              // reflect starting in OpState
+              try {
+                const idx = this.getOpStateIndex(id);
+                this.repository.updateOpState(this.job, idx, {
+                  status: 'starting',
+                });
+              } catch {}
 
               this.currentGroupOperationsPromises.set(
                 id,
@@ -543,6 +564,13 @@ export default class TaskManager {
               );
             } else {
               this.operationStatus.set(id, OperationProgressStatuses.WAITING);
+              // reflect waiting in OpState
+              try {
+                const idx = this.getOpStateIndex(id);
+                this.repository.updateOpState(this.job, idx, {
+                  status: 'waiting',
+                });
+              } catch {}
             }
           }
 

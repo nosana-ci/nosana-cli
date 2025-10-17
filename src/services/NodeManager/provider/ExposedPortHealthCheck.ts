@@ -95,14 +95,17 @@ export class ExposedPortHealthCheck {
 
       if (healthStatus !== previousState) {
         this.healthStatus.set(id, healthStatus);
-        if (!healthStatus) {
-          this.jobEmitter.emit('healthcheck:continuous:failure', {
+        this.jobEmitter.emit(
+          healthStatus
+            ? 'healthcheck:continuous:success'
+            : 'healthcheck:continuous:failure',
+          {
             id,
             flowId: this.flowId,
             port: exposedPort.port,
             service: exposedPort.type,
-          });
-        }
+          },
+        );
       }
     }, this.continuousIntervalMs);
 
