@@ -21,10 +21,6 @@ export function getJobInfoRoute(
     return res.status(404).send('Failed to find job for provided job id.');
   }
 
-  if (flowState.endTime) {
-    return res.status(400).send('Job has already completed.');
-  }
-
   const { sendIfChanged, closeEventSource } =
     createEventSource<JobInfoResponse>(req, res);
 
