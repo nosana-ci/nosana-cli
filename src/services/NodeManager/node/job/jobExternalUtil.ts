@@ -45,7 +45,6 @@ export class JobExternalUtil {
           jobDefinition.logistics.send.args,
         );
       } catch (error) {
-        console.log(error);
         jobDefinition = null;
         this.repository.updateflowStateError(id, {
           status: 'logistics-error',
@@ -60,8 +59,6 @@ export class JobExternalUtil {
   public async resolveResult(id: string, job: Job): Promise<FlowState> {
     let result = this.repository.getFlowState(id);
     const orginalStatus = result.status;
-
-    console.log(result);
 
     let jobDefinition: JobDefinition = await this.sdk.ipfs.retrieve(
       job.ipfsJob,
@@ -105,9 +102,6 @@ export class JobExternalUtil {
         this.repository.updateflowStateError(id, {
           error: error,
         });
-        // blankResult.errors!.push(
-        //   error instanceof Error ? error.message : error,
-        // );
       }
 
       result = blankResult;
