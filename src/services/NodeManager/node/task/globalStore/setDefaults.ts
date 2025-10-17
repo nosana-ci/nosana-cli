@@ -2,8 +2,9 @@ import {
   createHash,
   JobDefinition,
   Operation,
+  isOperator,
+  isSpreadMarker,
   ExposedPort,
-  getExposePorts,
 } from '@nosana/sdk';
 
 import TaskManager from '../TaskManager.js';
@@ -17,29 +18,15 @@ export function setDefaults(
   project: string,
   jobDefinition: JobDefinition,
 ): void {
-  const maybeGlobal = jobDefinition.global as unknown;
-  if (maybeGlobal && typeof maybeGlobal === 'object') {
-    const maybeVars = (maybeGlobal as { variables?: unknown }).variables;
-    if (
-      maybeVars &&
-      typeof maybeVars === 'object' &&
-      !Array.isArray(maybeVars)
-    ) {
-      const vars = Object.fromEntries(
-        Object.entries(maybeVars as Record<string, unknown>).filter(
-          ([, v]) => typeof v === 'string',
-        ) as [string, string][],
-      ) as Record<string, string>;
-
-      this.globalOpStore.variables = {
-        ...this.globalOpStore.variables,
-        ...vars,
-      };
-      this.globalStore.variables = {
-        ...this.globalStore.variables,
-        ...vars,
-      };
-    }
+  if (jobDefinition.global?.variables) {
+    this.globalOpStore.variables = {
+      ...this.globalOpStore.variables,
+      ...jobDefinition.global.variables,
+    };
+    this.globalStore.variables = {
+      ...this.globalStore.variables,
+      ...jobDefinition.global.variables,
+    };
   }
 
   processOperationsForEndpoints.call(
@@ -86,26 +73,34 @@ function processOperationsForEndpoints(
           opStore.endpoint = {} as Record<string, string>;
         }
 
-        const ports = getExposePorts(op as Operation<'container/run'>);
-        for (const exposedPort of ports) {
-          const p = (exposedPort as ExposedPort).port;
-          const exposeId = generateExposeId(flowId, index, p, args.private);
-          const url = `${exposeId}.${configs().frp.serverAddr}`;
-          (opStore.endpoint as Record<string, string>)[`${p}`] = url;
-          try {
-            this.repository.updateOpState(this.job, index, {
-              endpoints: {
-                ...(this.repository.getOpState(this.job, index).endpoints ||
-                  {}),
-                [exposeId]: {
-                  opId: op.id,
-                  url,
-                  port: p,
-                  status: 'UNKNOWN',
-                },
-              },
-            });
-          } catch {}
+        if (Array.isArray(args.expose)) {
+          for (const exposedPort of args.expose) {
+            if (isSpreadMarker(exposedPort)) continue; // skip dynamic
+            if (typeof exposedPort === 'string' && isOperator(exposedPort))
+              continue;
+
+            const p =
+              typeof exposedPort === 'object'
+                ? (exposedPort as ExposedPort).port
+                : exposedPort;
+            (opStore.endpoint as Record<string, string>)[
+              `${p}`
+            ] = `${generateExposeId(flowId, index, p, args.private)}.${
+              configs().frp.serverAddr
+            }`;
+          }
+        } else {
+          if (
+            !isSpreadMarker(args.expose) &&
+            !(typeof args.expose === 'string' && isOperator(args.expose))
+          ) {
+            opStore.endpoint[`${args.expose}`] = `${generateExposeId(
+              flowId,
+              index,
+              args.expose as string | number,
+              args.private,
+            )}.${configs().frp.serverAddr}`;
+          }
         }
 
         if (jobDefinition.deployment_id) {

@@ -34,10 +34,6 @@ export async function stopTaskManagerGroupOperations(
    */
   for (const id of groupContext.ops) {
     this.operationStatus.set(id, OperationProgressStatuses.STOPPING);
-    try {
-      const idx = this.getOpStateIndex(id);
-      this.repository.updateOpState(this.job, idx, { status: 'stopping' });
-    } catch {}
   }
   // Emit once after all statuses are updated to avoid interleaving state reads
   this.events?.emit('flow:updated', {

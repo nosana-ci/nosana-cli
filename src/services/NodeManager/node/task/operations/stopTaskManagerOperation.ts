@@ -55,10 +55,6 @@ export async function stopTaskManagerOperation(
 
   this.lockedOperations.set(opId, 'STOPPING');
   this.operationStatus.set(opId, OperationProgressStatuses.STOPPING);
-  try {
-    const idx = this.getOpStateIndex(opId);
-    this.repository.updateOpState(this.job, idx, { status: 'stopping' });
-  } catch {}
 
   const emitter = this.operationsEventEmitters.get(opId);
   if (emitter) {

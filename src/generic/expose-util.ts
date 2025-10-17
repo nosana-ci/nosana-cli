@@ -114,17 +114,33 @@ export const generateProxies = (
 
 export const generateUrlSecretObject = (
   idMap: Map<string, ExposedPort>,
+  operationId: string,
 ): Record<
   string,
-  { type: string | undefined; port: number | string; url: string }
+  {
+    opID: string;
+    port: number | string;
+    url: string;
+    status: 'ONLINE' | 'OFFLINE' | 'UNKNOWN';
+  }
 > =>
   Object.fromEntries(
-    Array.from(idMap, ([id, port]) => [
-      id,
-      {
-        type: port.type,
-        port: port.port,
-        url: `https://${id + '.' + configs().frp.serverAddr}`,
-      },
-    ]),
+    Array.from(idMap, ([id, exposedPort]) => {
+      const hasHealthChecks = Array.isArray(exposedPort.health_checks)
+        ? exposedPort.health_checks.length > 0
+        : false;
+      const initialStatus: 'OFFLINE' | 'UNKNOWN' = hasHealthChecks
+        ? 'OFFLINE'
+        : 'UNKNOWN';
+
+      return [
+        id,
+        {
+          opID: operationId,
+          port: exposedPort.port,
+          url: `https://${id + '.' + configs().frp.serverAddr}`,
+          status: initialStatus,
+        },
+      ];
+    }),
   );

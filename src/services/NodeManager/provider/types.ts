@@ -74,9 +74,7 @@ export type FlowState = {
   endTime: number | null;
   errors?: Array<any>;
   opStates: Array<OpState>;
-  secrets?: {
-    [key: string]: string;
-  };
+  secrets?: Record<string, any>;
 };
 export type Flow = {
   id: string;
@@ -100,14 +98,6 @@ export type OpState = {
   logs: Array<Log>;
   results?: {
     [key: string]: string | string[];
-  };
-  endpoints?: {
-    [exposeId: string]: {
-      opId: string;
-      url: string;
-      port: number | string;
-      status: 'ONLINE' | 'OFFLINE' | 'UNKNOWN';
-    };
   };
 };
 

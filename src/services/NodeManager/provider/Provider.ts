@@ -7,6 +7,7 @@ import {
   OperationArgsMap,
   OperationType,
   Ops,
+  Resource,
 } from '@nosana/sdk';
 import EventEmitter from 'events';
 import Dockerode from 'dockerode';
@@ -25,8 +26,7 @@ import {
   generateUrlSecretObject,
 } from '../../../generic/expose-util.js';
 
-import { Flow, Log, StdOptions, OpState } from './types.js';
-import type { Resource } from '@nosana/sdk/dist/types/resources.js';
+import { Flow, Log, StdOptions } from './types.js';
 
 const tunnelImage = 'registry.hub.docker.com/nosana/tunnel:0.1.0';
 const frpcImage = 'registry.hub.docker.com/nosana/frpc:multi-v0.1.3';
@@ -340,38 +340,15 @@ export class Provider {
           );
           if (op.args.private) {
             this.repository.updateflowStateSecret(flow.id, {
-              [flow.id]: generateUrlSecretObject(idMap),
+              [flow.id]: generateUrlSecretObject(idMap, op.id),
               urlmode: 'private',
             });
-            try {
-              const index = getOpStateIndex(flow.jobDefinition.ops, op.id);
-              const secretsObj = generateUrlSecretObject(idMap);
-              const endpoints: NonNullable<OpState['endpoints']> =
-                Object.fromEntries(
-                  Object.entries(secretsObj).map(([exposeId, meta]) => [
-                    exposeId,
-                    {
-                      opId: op.id,
-                      url: meta.url,
-                      port: meta.port,
-                      status: 'UNKNOWN',
-                    },
-                  ]),
-                );
-              this.repository.updateOpState(flow.id, index, {
-                endpoints: {
-                  ...(this.repository.getOpState(flow.id, index).endpoints ||
-                    {}),
-                  ...endpoints,
-                },
-              });
-            } catch {}
             emitter.emit('flow:secrets-updated', {
               flowId: flow.id,
               opId: op.id,
             });
           } else {
-            const newSecret = generateUrlSecretObject(idMap);
+            const newSecret = generateUrlSecretObject(idMap, op.id);
 
             const currentSecrets =
               this.repository.getFlowSecret(flow.id, flow.id) || {};
@@ -384,28 +361,6 @@ export class Provider {
               [flow.id]: mergedSecrets,
               urlmode: 'public',
             });
-            try {
-              const index = getOpStateIndex(flow.jobDefinition.ops, op.id);
-              const endpoints: NonNullable<OpState['endpoints']> =
-                Object.fromEntries(
-                  Object.entries(mergedSecrets).map(([exposeId, meta]: any) => [
-                    exposeId,
-                    {
-                      opId: op.id,
-                      url: meta.url,
-                      port: meta.port,
-                      status: 'UNKNOWN',
-                    },
-                  ]),
-                );
-              this.repository.updateOpState(flow.id, index, {
-                endpoints: {
-                  ...(this.repository.getOpState(flow.id, index).endpoints ||
-                    {}),
-                  ...endpoints,
-                },
-              });
-            } catch {}
             emitter.emit('flow:secrets-updated', {
               flowId: flow.id,
               opId: op.id,
@@ -773,9 +728,7 @@ function getVolumes(arg: OperationArgsMap['container/run'], flow: Flow) {
 }
 
 function getAliases(args: OperationArgsMap['container/run']) {
-  const candidate = (args as { aliases?: unknown }).aliases;
-  if (typeof candidate === 'string') return candidate.split(',');
-  if (Array.isArray(candidate) && candidate.every((v) => typeof v === 'string'))
-    return candidate as string[];
-  return undefined;
+  if (!args.aliases) return undefined;
+  if (typeof args.aliases === 'string') return args.aliases.split(',');
+  return args.aliases;
 }

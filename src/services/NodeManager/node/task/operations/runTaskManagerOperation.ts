@@ -358,6 +358,36 @@ export async function runTaskManagerOperation(
         type: 'return',
         result: url,
       });
+
+      try {
+        const flow = this.repository.getFlow(this.job);
+        const secrets = flow?.state?.secrets || {};
+        const jobSecrets = (secrets && secrets[this.job]) || {};
+
+        const targetHost = url.replace(/^https?:\/\//, '');
+        let updated = false;
+        const newJobSecrets: Record<string, any> = { ...jobSecrets };
+        for (const [exposeId, value] of Object.entries(jobSecrets)) {
+          const v = value as { url?: string; status?: string };
+          if (v && typeof v === 'object' && v.url) {
+            const host = v.url.replace(/^https?:\/\//, '');
+            if (host === targetHost) {
+              newJobSecrets[exposeId] = { ...v, status: 'ONLINE' };
+              updated = true;
+            }
+          }
+        }
+
+        if (updated) {
+          this.repository.updateflowStateSecret(this.job, {
+            [this.job]: newJobSecrets,
+          });
+          emitter.emit('flow:secrets-updated', {
+            flowId: this.job,
+            opId: op.id,
+          });
+        }
+      } catch {}
     }
 
     // Loop through each operation that depends on this one
@@ -375,55 +405,10 @@ export async function runTaskManagerOperation(
     }
   });
 
-  // Update endpoint statuses based on continuous health checks
-  this.getEventsEmitter().on('op:event', ({ opId, type, payload }) => {
-    if (opId !== op.id) return;
-    if (
-      type === 'healthcheck:continuous:success' ||
-      type === 'healthcheck:continuous:failure'
-    ) {
-      try {
-        const exposeId = payload?.id;
-        if (exposeId) {
-          this.repository.updateOpState(this.job, index, {
-            endpoints: {
-              ...(this.repository.getOpState(this.job, index).endpoints || {}),
-              [exposeId]: {
-                ...(this.repository.getOpState(this.job, index).endpoints?.[
-                  exposeId
-                ] || {}),
-                status:
-                  type === 'healthcheck:continuous:success'
-                    ? 'ONLINE'
-                    : 'OFFLINE',
-              },
-            },
-          });
-        }
-      } catch {}
-    }
-  });
-
   // emitter.on("healthcheck:continuous:failure", (data) => {});
 
-  emitter.on('healthcheck:url:exposed', (payload: any) => {
+  emitter.on('healthcheck:url:exposed', () => {
     emitter.emit('log', 'Operation Service URL exposed', 'info');
-    try {
-      const exposeId = payload?.id;
-      if (exposeId) {
-        this.repository.updateOpState(this.job, index, {
-          endpoints: {
-            ...(this.repository.getOpState(this.job, index).endpoints || {}),
-            [exposeId]: {
-              ...(this.repository.getOpState(this.job, index).endpoints?.[
-                exposeId
-              ] || {}),
-              status: 'UNKNOWN',
-            },
-          },
-        });
-      }
-    } catch {}
   });
 
   /**
