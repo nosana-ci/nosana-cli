@@ -74,7 +74,7 @@ export type FlowState = {
   endTime: number | null;
   errors?: Array<any>;
   opStates: Array<OpState>;
-  secrets?: Record<string, any>;
+  secrets?: FlowSecrets;
 };
 export type Flow = {
   id: string;
@@ -86,6 +86,24 @@ export type Flow = {
 export type Log = {
   type: StdOptions;
   log: string | undefined;
+};
+
+export type EndpointStatus = 'ONLINE' | 'OFFLINE' | 'UNKNOWN';
+
+export type EndpointSecret = {
+  opID: string;
+  port: number | string;
+  url: string;
+  status: EndpointStatus;
+};
+
+export interface JobExposeSecrets {
+  [exposeId: string]: EndpointSecret;
+}
+
+export type FlowSecrets = {
+  urlmode?: 'private' | 'public';
+  [jobId: string]: JobExposeSecrets | 'private' | 'public' | undefined;
 };
 
 export type OpState = {
