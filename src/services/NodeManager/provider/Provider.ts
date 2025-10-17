@@ -368,6 +368,7 @@ export class Provider {
           );
           this.resourceManager.images.setImage(s3HelperImage);
 
+          // transformCollections has already resolved any SpreadMarker objects by this point
           const resourceVolumes = await this.resourceManager.getResourceVolumes(
             (op.args.resources as Resource[]) ?? [],
             controller,
