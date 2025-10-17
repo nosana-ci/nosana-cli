@@ -1,7 +1,7 @@
 import { EventSource } from '../../../eventsource/index.js';
-import { buildInfoObject, JobInfoResponse } from './buildInfoObject';
-import { NodeRepository } from '../../../../../repository/NodeRepository';
-import { TaskManagerRegistry } from '../../../../task/TaskManagerRegistry';
+import { buildInfoObject, JobInfoResponse } from './buildInfoObject.js';
+import { NodeRepository } from '../../../../../repository/NodeRepository.js';
+import { TaskManagerRegistry } from '../../../../task/TaskManagerRegistry.js';
 
 const INTERVAL_MS = 1000;
 

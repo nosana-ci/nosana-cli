@@ -1,5 +1,5 @@
 import { FlowState, OpState } from '@nosana/sdk';
-import TaskManager from '../../../../task/TaskManager';
+import TaskManager from '../../../../task/TaskManager.js';
 
 type TaskStatus = Record<string, string | null>;
 type RedactedFlowState = Omit<OpState, 'logs' | 'providerId'>;
