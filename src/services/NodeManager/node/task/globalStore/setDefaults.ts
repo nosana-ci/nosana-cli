@@ -2,9 +2,8 @@ import {
   createHash,
   JobDefinition,
   Operation,
-  isOperator,
-  isSpreadMarker,
   ExposedPort,
+  getExposePorts,
 } from '@nosana/sdk';
 
 import TaskManager from '../TaskManager.js';
@@ -18,15 +17,29 @@ export function setDefaults(
   project: string,
   jobDefinition: JobDefinition,
 ): void {
-  if (jobDefinition.global?.variables) {
-    this.globalOpStore.variables = {
-      ...this.globalOpStore.variables,
-      ...jobDefinition.global.variables,
-    };
-    this.globalStore.variables = {
-      ...this.globalStore.variables,
-      ...jobDefinition.global.variables,
-    };
+  const maybeGlobal = jobDefinition.global as unknown;
+  if (maybeGlobal && typeof maybeGlobal === 'object') {
+    const maybeVars = (maybeGlobal as { variables?: unknown }).variables;
+    if (
+      maybeVars &&
+      typeof maybeVars === 'object' &&
+      !Array.isArray(maybeVars)
+    ) {
+      const vars = Object.fromEntries(
+        Object.entries(maybeVars as Record<string, unknown>).filter(
+          ([, v]) => typeof v === 'string',
+        ) as [string, string][],
+      ) as Record<string, string>;
+
+      this.globalOpStore.variables = {
+        ...this.globalOpStore.variables,
+        ...vars,
+      };
+      this.globalStore.variables = {
+        ...this.globalStore.variables,
+        ...vars,
+      };
+    }
   }
 
   processOperationsForEndpoints.call(

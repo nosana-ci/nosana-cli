@@ -1,11 +1,5 @@
 import { Table } from 'console-table-printer';
-import {
-  JobDefinition,
-  OperationArgsMap,
-  isOperator,
-  isSpreadMarker,
-  ExposedPort,
-} from '@nosana/sdk';
+import { JobDefinition, OperationArgsMap, ExposedPort } from '@nosana/sdk';
 
 import { generateExposeId } from '../../generic/expose-util.js';
 import { configs } from '../../services/NodeManager/configs/configs.js';
@@ -23,10 +17,7 @@ export function generateDeploymentEndpointsTable(jobDefinition: JobDefinition) {
     if (op.type === 'container/run') {
       const { expose } = op.args as OperationArgsMap['container/run'];
       if (expose) {
-        if (
-          typeof expose === 'number' ||
-          (typeof expose === 'string' && !isOperator(expose))
-        ) {
+        if (typeof expose === 'number' || typeof expose === 'string') {
           const generatedId = generateExposeId(
             jobDefinition.deployment_id!,
             op.id,
@@ -42,9 +33,6 @@ export function generateDeploymentEndpointsTable(jobDefinition: JobDefinition) {
 
         if (Array.isArray(expose)) {
           expose.forEach((port) => {
-            if (isSpreadMarker(port)) return; // skip dynamic
-            if (typeof port === 'string' && isOperator(port)) return; // skip dynamic
-
             const p =
               typeof port === 'object' ? (port as ExposedPort).port : port;
 
