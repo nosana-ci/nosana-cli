@@ -8,7 +8,7 @@ import { specsAndNetworkJob } from '../../../../static/staticsImports.js';
 import { Provider } from '../../provider/Provider.js';
 import { NodeRepository } from '../../repository/NodeRepository.js';
 import { applyLoggingProxyToClass } from '../../monitoring/proxy/loggingProxy.js';
-import { Flow, OpState } from '../../provider/types.js';
+import { Flow, OpState } from '@nosana/sdk';
 import { generateRandomId } from '../../../../providers/utils/generate.js';
 import TaskManager from '../task/TaskManager.js';
 

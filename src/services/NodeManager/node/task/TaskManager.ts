@@ -43,7 +43,7 @@ import {
   interpolateOperation,
   transformCollections,
 } from './globalStore/index.js';
-import { Flow } from '../../provider/types.js';
+import { Flow } from '@nosana/sdk';
 import { configs } from '../../configs/configs.js';
 import { getSDK } from '../../../sdk.js';
 

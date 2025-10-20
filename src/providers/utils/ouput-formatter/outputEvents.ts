@@ -1,5 +1,5 @@
 import { IValidation } from 'typia';
-import { OpState } from '../../../services/NodeManager/provider/types.js';
+import { OpState } from '@nosana/sdk';
 
 /**
  * Adding a new Output/Throw Event

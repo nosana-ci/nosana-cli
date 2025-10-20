@@ -2,7 +2,7 @@ import TaskManager, {
   OperationProgressStatuses,
   StopReasons,
 } from '../TaskManager.js';
-import { type FlowSecrets, type JobExposeSecrets, type EndpointSecret } from '../../../provider/types.js';
+import { type FlowSecrets, type JobExposeSecrets, type EndpointSecret } from '@nosana/sdk';
 
 /**
  * Publicly exposed method to stop a running operation within the active group.

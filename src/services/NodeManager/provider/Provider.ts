@@ -26,7 +26,7 @@ import {
   generateUrlSecretObject,
 } from '../../../generic/expose-util.js';
 
-import { Flow, Log, StdOptions } from './types.js';
+import { Flow, Log, StdOptions } from '@nosana/sdk';
 
 const tunnelImage = 'registry.hub.docker.com/nosana/tunnel:0.1.0';
 const frpcImage = 'registry.hub.docker.com/nosana/frpc:multi-v0.1.3';

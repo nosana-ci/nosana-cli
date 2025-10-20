@@ -1,6 +1,5 @@
-import { Client as SDK } from '@nosana/sdk';
+import { Client as SDK, JobDefinition } from '@nosana/sdk';
 import { JobDefinitionStrategy } from '../JobDefinitionStrategy.js';
-import { JobDefinition } from '../../../../provider/types.js';
 
 export class IpfsJobDefinitionStrategy implements JobDefinitionStrategy {
   constructor(private sdk: SDK) {}

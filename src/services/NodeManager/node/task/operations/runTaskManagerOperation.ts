@@ -8,7 +8,8 @@ import {
   OperationProgressStatuses,
 } from '../TaskManager.js';
 import TaskManager from '../TaskManager.js';
-import { Flow, type FlowSecrets, type JobExposeSecrets, type EndpointSecret } from '../../../provider/types.js';
+import { Flow, type FlowSecrets, type JobExposeSecrets, type EndpointSecret } from '@nosana/sdk';
+
 import { finalizeEnvOnOperation } from '../globalStore/finalizeEnv.js';
 import {
   createResultsObject,

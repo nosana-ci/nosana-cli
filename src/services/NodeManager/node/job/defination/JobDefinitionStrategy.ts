@@ -1,5 +1,4 @@
-import { SendJobDefinationLogicstics } from '@nosana/sdk';
-import { JobDefinition } from '../../../provider/types.js';
+import { SendJobDefinationLogicstics, JobDefinition } from '@nosana/sdk';
 import ApiEventEmitter from '../../api/ApiEventEmitter.js';
 import { ApiListenJobDefinitionStrategy } from './strategy/ApiListenJobDefinitionStrategy.js';
 import { ApiJobDefinitionStrategy } from './strategy/ApiJobDefinitionStrategy.js';

@@ -2,9 +2,9 @@ import { Job, Client as SDK } from '@nosana/sdk';
 import { NodeRepository } from '../../repository/NodeRepository.js';
 import {
   JobDefinition,
-  FlowState,
   validateJobDefinition,
 } from '../../provider/types.js';
+import { FlowState } from '@nosana/sdk';
 import { JobDefinitionStrategySelector } from './defination/JobDefinitionStrategy.js';
 import { ResultReturnStrategySelector } from './result/ResultReturnStrategy.js';
 import { IValidation } from 'typia';

@@ -18,7 +18,7 @@ import { OutputFormatter } from '../../../providers/utils/ouput-formatter/Output
 import { isPrivate } from '../../../generic/ops-util.js';
 import { listenToWebSocketLogs } from '../../../services/websocket.js';
 import { configs } from '../../../services/NodeManager/configs/configs.js';
-import { OpState } from '../../../services/NodeManager/provider/types.js';
+import { OpState } from '@nosana/sdk';
 
 // clear these timeouts
 let retryTimeoutId: NodeJS.Timeout | null = null;

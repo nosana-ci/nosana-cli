@@ -11,11 +11,36 @@ export function pollActiveJob(
   sendIfChanged: EventSource<JobInfoResponse>['sendIfChanged'],
   closeEventSource: EventSource<JobInfoResponse>['closeEventSource'],
 ) {
-  let debounceTimer: NodeJS.Timeout = setInterval(() => {
+  let debounceTimer: NodeJS.Timeout | null = null;
+
+  const stopPolling = () => {
+    if (debounceTimer) clearInterval(debounceTimer);
+    closeEventSource();
+  };
+
+  const initialFlowState = repository.getFlowState(jobId);
+  const initialTask = TaskManagerRegistry.getInstance().get(jobId);
+
+  if (!initialFlowState) {
+    stopPolling();
+    return {
+      stopPolling,
+    };
+  }
+
+  sendIfChanged(buildInfoObject(initialFlowState, initialTask));
+
+  if (initialFlowState.endTime) {
+    stopPolling();
+    return {
+      stopPolling,
+    };
+  }
+
+  debounceTimer = setInterval(() => {
     const flowState = repository.getFlowState(jobId);
     const task = TaskManagerRegistry.getInstance().get(jobId);
 
-    // Job might have been deleted, stop polling
     if (!flowState) {
       stopPolling();
       return;
@@ -28,11 +53,6 @@ export function pollActiveJob(
       return;
     }
   }, INTERVAL_MS);
-
-  const stopPolling = () => {
-    clearInterval(debounceTimer);
-    closeEventSource();
-  };
 
   return {
     stopPolling,

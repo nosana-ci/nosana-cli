@@ -12,7 +12,7 @@ import {
   CudaCheckSuccessResponse,
 } from '../../../../types/cudaCheck.js';
 import { NetworkInfoResults, SystemInfoResults } from './type.js';
-import { OpState } from '../../provider/types.js';
+import { OpState } from '@nosana/sdk';
 import TaskManager from '../task/TaskManager.js';
 import { generateRandomId } from '../../../../providers/utils/generate.js';
 
