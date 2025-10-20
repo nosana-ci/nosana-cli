@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { JobDefinitionStrategy } from '../JobDefinitionStrategy.js';
-import { JobDefinition } from '@nosana/sdk'
+import { JobDefinition } from '@nosana/sdk';
 
 export class ApiListenJobDefinitionStrategy implements JobDefinitionStrategy {
   constructor(private eventEmitter: EventEmitter) {}

@@ -3,7 +3,7 @@ import {
   OllamaResource,
   S3Resource,
 } from '@nosana/sdk/dist/types/resources.js';
-import { RequiredResource } from '@nosana/sdk'
+import { RequiredResource } from '@nosana/sdk';
 import { nosanaBucket } from '../definition/index.js';
 
 export function createResourceName(resource: RequiredResource) {

@@ -7,7 +7,7 @@ import {
   S3Resource,
 } from '@nosana/sdk/dist/types/resources.js';
 
-import { RequiredResource } from '@nosana/sdk'
+import { RequiredResource } from '@nosana/sdk';
 import { extractLogsAndResultsFromLogBuffer } from '../../../../../providers/utils/extractLogsAndResultsFromLogBuffer.js';
 import { applyLoggingProxyToClass } from '../../../monitoring/proxy/loggingProxy.js';
 import { ContainerOrchestrationInterface } from '../../../provider/containerOrchestration/interface.js';

@@ -9,7 +9,13 @@ import {
 import { NodeAPIRequest } from '../../types/index.js';
 import { TaskManagerRegistry } from '../../../task/TaskManagerRegistry.js';
 import TaskManager from '../../../task/TaskManager.js';
-import { Flow, OpState, EndpointSecret, JobExposeSecrets, EndpointStatus } from '@nosana/sdk';
+import {
+  Flow,
+  OpState,
+  EndpointSecret,
+  JobExposeSecrets,
+  EndpointStatus,
+} from '@nosana/sdk';
 import { getSDK } from '../../../../../sdk.js';
 import { state } from '../../../../monitoring/state/NodeState.js';
 
@@ -143,7 +149,8 @@ export function getJobInfoRoute(
         });
       }
 
-      const enhancedUrls: Record<string, EndpointSecret & { opId: string }> = {};
+      const enhancedUrls: Record<string, EndpointSecret & { opId: string }> =
+        {};
       const urlsDataCandidate = secrets[jobId];
 
       if (typeof urlsDataCandidate === 'object' && urlsDataCandidate !== null) {
