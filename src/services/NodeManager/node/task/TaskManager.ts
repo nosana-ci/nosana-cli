@@ -590,6 +590,7 @@ export default class TaskManager {
         this.repository.updateflowState(this.job, {
           status: this.status,
           endTime: Date.now(),
+          secrets: {},
         });
         this.events.emit('flow:updated', {
           jobId: this.job,
@@ -600,6 +601,7 @@ export default class TaskManager {
         this.repository.updateflowState(this.job, {
           status: 'failed',
           endTime: Date.now(),
+          secrets: {},
         });
         this.events.emit('flow:updated', {
           jobId: this.job,
