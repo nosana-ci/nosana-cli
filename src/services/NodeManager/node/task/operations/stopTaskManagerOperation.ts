@@ -2,6 +2,11 @@ import TaskManager, {
   OperationProgressStatuses,
   StopReasons,
 } from '../TaskManager.js';
+import {
+  type FlowSecrets,
+  type JobExposeSecrets,
+  type EndpointSecret,
+} from '@nosana/sdk';
 
 /**
  * Publicly exposed method to stop a running operation within the active group.
@@ -30,11 +35,13 @@ export async function stopTaskManagerOperation(
   }
 
   /**
-   * Ensure the provided group is the one currently running.
-   * Operations in inactive or completed groups cannot be stopped.
+   * If the provided group is not currently active, we still allow a stop attempt
    */
-  if (this.currentGroup !== group) {
-    throw new Error('GROUP_NOT_ACTIVE');
+  const inProvidedGroup = this.executionPlan
+    .find((ctx) => ctx.group === group)
+    ?.ops.includes(opId);
+  if (!inProvidedGroup) {
+    throw new Error('GROUP_NOT_FOUND');
   }
 
   /**
@@ -58,6 +65,13 @@ export async function stopTaskManagerOperation(
   if (emitter) {
     emitter.emit('log', 'Stopping Operation', 'info');
   }
+
+  // notify listeners that flow state changed to reflect STOPPING
+  this.events.emit('flow:updated', {
+    jobId: this.job,
+    opId,
+    type: 'status:stopping',
+  });
 
   /**
    * Retrieve the AbortController for this op.
@@ -93,4 +107,60 @@ export async function stopTaskManagerOperation(
 
   // Unlock the operation so it can be restarted or reused later
   this.lockedOperations.delete(opId);
+
+  // Ensure final STOPPED state is reflected in memory and repository
+  this.operationStatus.set(opId, OperationProgressStatuses.STOPPED);
+  const index = this.getOpStateIndex(opId);
+  const opState = this.repository.getOpState(this.job, index);
+  const alreadyEnded = !!opState.endTime;
+  if (!alreadyEnded) {
+    this.repository.updateOpState(this.job, index, {
+      status: this.getStatus(StopReasons.STOPPED, 'ops'),
+      endTime: Date.now(),
+    });
+  }
+  this.events.emit('flow:updated', {
+    jobId: this.job,
+    opId,
+    type: 'status:stopped',
+  });
+
+  try {
+    const flow = this.repository.getFlow(this.job);
+    const secrets = flow?.state?.secrets as FlowSecrets | undefined;
+    let jobSecrets: JobExposeSecrets = {};
+    if (
+      secrets &&
+      typeof secrets[this.job] === 'object' &&
+      secrets[this.job] !== 'private' &&
+      secrets[this.job] !== 'public' &&
+      secrets[this.job]
+    ) {
+      jobSecrets = secrets[this.job] as JobExposeSecrets;
+    }
+
+    let updated = false;
+    const newJobSecrets: JobExposeSecrets = {};
+
+    for (const [exposeId, value] of Object.entries(jobSecrets)) {
+      const v = value as EndpointSecret;
+      if (v && typeof v === 'object' && v.opID === opId) {
+        newJobSecrets[exposeId] = { ...v, status: 'OFFLINE' };
+        updated = true;
+      } else {
+        newJobSecrets[exposeId] = v;
+      }
+    }
+
+    if (updated) {
+      this.repository.updateflowStateSecret(this.job, {
+        [this.job]: newJobSecrets,
+      });
+      this.events.emit('flow:updated', {
+        jobId: this.job,
+        opId,
+        type: 'flow:secrets-updated',
+      });
+    }
+  } catch {}
 }

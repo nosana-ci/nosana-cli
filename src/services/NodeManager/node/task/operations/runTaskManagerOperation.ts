@@ -8,13 +8,21 @@ import {
   OperationProgressStatuses,
 } from '../TaskManager.js';
 import TaskManager from '../TaskManager.js';
-import { Flow } from '../../../provider/types.js';
+import {
+  Flow,
+  type FlowSecrets,
+  type JobExposeSecrets,
+  type EndpointSecret,
+} from '@nosana/sdk';
+
 import { finalizeEnvOnOperation } from '../globalStore/finalizeEnv.js';
 import {
   createResultsObject,
   extractResultFromLog,
 } from '../../../../../providers/utils/extractResultsFromLogs.js';
 import { stanatizeArrays } from '../globalStore/stanatizeArrays.js';
+import { logEmitter } from '../../../monitoring/proxy/loggingProxy.js';
+import { HealthcheckPayload } from '../../../../../types/healthCheckPayload.js';
 
 /**
  * Executes a full lifecycle of a container-based operation using internal class state.
@@ -60,7 +68,7 @@ export async function runTaskManagerOperation(
   const emitter = new EventEmitter();
 
   // register the emitter
-  this.operationsEventEmitters.set(op.id, emitter);
+  this.registerAndRelayOpEmitter(op.id, emitter);
 
   /**
    * Initializes and registers an AbortController specific to this operation ID.
@@ -176,6 +184,8 @@ export async function runTaskManagerOperation(
     this.repository.updateOpState(this.job, index, {
       status: 'running',
       startTime: Date.now(),
+      endTime: null,
+      exitCode: null,
     });
   });
 
@@ -325,8 +335,75 @@ export async function runTaskManagerOperation(
    * This mechanism allows dynamic chaining of operations based on runtime readiness,
    * ensuring ops start only after their declared dependencies are healthy and active.
    */
-  emitter.on('healthcheck:startup:success', () => {
+  emitter.on('healthcheck:startup:success', (payload: HealthcheckPayload) => {
     emitter.emit('log', 'Operation StartUp Success', 'info');
+
+    const port = payload?.port;
+    if (typeof port === 'number' || typeof port === 'string') {
+      const portKey = String(port);
+      const stored_url = this.getByPath(op.id, `endpoint.${portKey}`) as
+        | string
+        | undefined;
+      if (!stored_url) return;
+
+      const url = stored_url.startsWith('http')
+        ? stored_url
+        : `https://${stored_url}`;
+
+      logEmitter.emit('log', {
+        class: 'FlowHandler',
+        method: 'operationExposed',
+        arguments: [
+          {
+            port,
+            opId: op.id,
+          },
+          true,
+        ],
+        timestamp: new Date().toISOString(),
+        type: 'return',
+        result: url,
+      });
+
+      try {
+        const flow = this.repository.getFlow(this.job);
+        const secrets = flow?.state?.secrets as FlowSecrets | undefined;
+        let jobSecrets: JobExposeSecrets = {};
+        if (
+          secrets &&
+          typeof secrets[this.job] === 'object' &&
+          secrets[this.job] !== 'private' &&
+          secrets[this.job] !== 'public' &&
+          secrets[this.job]
+        ) {
+          jobSecrets = secrets[this.job] as JobExposeSecrets;
+        }
+
+        const targetHost = url.replace(/^https?:\/\//, '');
+        let updated = false;
+        const newJobSecrets: JobExposeSecrets = { ...jobSecrets };
+        for (const [exposeId, value] of Object.entries(jobSecrets)) {
+          const v = value as EndpointSecret;
+          if (v && typeof v === 'object' && v.url) {
+            const host = v.url.replace(/^https?:\/\//, '');
+            if (host === targetHost) {
+              newJobSecrets[exposeId] = { ...v, status: 'ONLINE' };
+              updated = true;
+            }
+          }
+        }
+
+        if (updated) {
+          this.repository.updateflowStateSecret(this.job, {
+            [this.job]: newJobSecrets,
+          });
+          emitter.emit('flow:secrets-updated', {
+            flowId: this.job,
+            opId: op.id,
+          });
+        }
+      } catch {}
+    }
 
     // Loop through each operation that depends on this one
     for (const id of dependent) {
@@ -343,7 +420,56 @@ export async function runTaskManagerOperation(
     }
   });
 
-  // emitter.on("healthcheck:continuous:failure", (data) => {});
+  emitter.on(
+    'healthcheck:continuous:failure',
+    (payload: HealthcheckPayload) => {
+      const port = payload?.port;
+      if (typeof port !== 'number' && typeof port !== 'string') return;
+
+      try {
+        const flow = this.repository.getFlow(this.job);
+        const secrets = flow?.state?.secrets as FlowSecrets | undefined;
+        let jobSecrets: JobExposeSecrets = {};
+        if (
+          secrets &&
+          typeof secrets[this.job] === 'object' &&
+          secrets[this.job] !== 'private' &&
+          secrets[this.job] !== 'public' &&
+          secrets[this.job]
+        ) {
+          jobSecrets = secrets[this.job] as JobExposeSecrets;
+        }
+
+        let updated = false;
+        const newJobSecrets: JobExposeSecrets = {};
+
+        for (const [exposeId, value] of Object.entries(jobSecrets)) {
+          const v = value as EndpointSecret;
+          if (
+            v &&
+            typeof v === 'object' &&
+            v.opID === op.id &&
+            String(v.port) === String(port)
+          ) {
+            newJobSecrets[exposeId] = { ...v, status: 'OFFLINE' };
+            updated = true;
+          } else {
+            newJobSecrets[exposeId] = v;
+          }
+        }
+
+        if (updated) {
+          this.repository.updateflowStateSecret(this.job, {
+            [this.job]: newJobSecrets,
+          });
+          emitter.emit('flow:secrets-updated', {
+            flowId: this.job,
+            opId: op.id,
+          });
+        }
+      } catch {}
+    },
+  );
 
   emitter.on('healthcheck:url:exposed', () => {
     emitter.emit('log', 'Operation Service URL exposed', 'info');

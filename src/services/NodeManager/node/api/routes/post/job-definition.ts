@@ -1,6 +1,6 @@
 import { Response } from 'express';
 
-import { JobDefinition } from '../../../../provider/types.js';
+import { JobDefinition } from '@nosana/sdk';
 import { NodeAPIRequest } from '../../types/index.js';
 
 export function postJobDefinitionRoute(

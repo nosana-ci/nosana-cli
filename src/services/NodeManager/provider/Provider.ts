@@ -26,7 +26,7 @@ import {
   generateUrlSecretObject,
 } from '../../../generic/expose-util.js';
 
-import { Flow, Log, StdOptions } from './types.js';
+import { Flow, Log, StdOptions } from '@nosana/sdk';
 
 const tunnelImage = 'registry.hub.docker.com/nosana/tunnel:0.1.0';
 const frpcImage = 'registry.hub.docker.com/nosana/frpc:multi-v0.1.3';
@@ -340,11 +340,15 @@ export class Provider {
           );
           if (op.args.private) {
             this.repository.updateflowStateSecret(flow.id, {
-              [flow.id]: generateUrlSecretObject(idMap),
+              [flow.id]: generateUrlSecretObject(idMap, op.id),
               urlmode: 'private',
             });
+            emitter.emit('flow:secrets-updated', {
+              flowId: flow.id,
+              opId: op.id,
+            });
           } else {
-            const newSecret = generateUrlSecretObject(idMap);
+            const newSecret = generateUrlSecretObject(idMap, op.id);
 
             const currentSecrets =
               this.repository.getFlowSecret(flow.id, flow.id) || {};
@@ -356,6 +360,10 @@ export class Provider {
             this.repository.updateflowStateSecret(flow.id, {
               [flow.id]: mergedSecrets,
               urlmode: 'public',
+            });
+            emitter.emit('flow:secrets-updated', {
+              flowId: flow.id,
+              opId: op.id,
             });
           }
         }

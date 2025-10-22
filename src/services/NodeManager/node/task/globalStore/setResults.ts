@@ -9,7 +9,7 @@ export function setResults(
   op.results = { ...(op.results ?? {}), ...values };
 
   // Results updated for opId; attempt endpoint rehydration for this op
-  const flow = this.repository.getflow(this.job);
+  const flow = this.repository.getFlow(this.job);
   if (flow) {
     this.rehydrateEndpointsForOperation(
       flow.id,

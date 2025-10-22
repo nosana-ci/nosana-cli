@@ -323,7 +323,7 @@ async function postJobDefinitionUntilSuccess({
   });
   headers.append('Content-Type', 'application/json');
 
-  const url = `https://${node}.${serverAddr}/job-definition/${id}`;
+  const url = `https://${node}.${serverAddr}/job/${id}/job-definition`;
 
   async function attemptPost() {
     try {

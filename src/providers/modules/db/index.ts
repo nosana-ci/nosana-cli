@@ -3,7 +3,7 @@ import os from 'os';
 import { LowSync } from 'lowdb/lib';
 import { JSONFileSyncPreset } from 'lowdb/node';
 
-import { Flow } from '../../../services/NodeManager/provider/types.js';
+import { Flow } from '@nosana/sdk';
 import { CudaCheckSuccessResponse } from '../../../types/cudaCheck.js';
 
 import { pkg } from '../../../static/staticsImports.js';

@@ -26,7 +26,7 @@ export async function postStopJobServiceURLWithRetry(
       const response = await fetch(
         `https://${nodeAddress}.${
           configs().frp.serverAddr
-        }/service/stop/${jobAddress}`,
+        }/job/${jobAddress}/stop`,
         {
           method: 'POST',
           headers,

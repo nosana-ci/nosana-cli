@@ -65,44 +65,6 @@ export type OperationResult = {
   logType: [StdOptions, StdOptions?, StdOptions?, StdOptions?];
 };
 
-/************************
- *   Job Result Types   *
- ************************/
-export type FlowState = {
-  status: string;
-  startTime: number;
-  endTime: number | null;
-  errors?: Array<any>;
-  opStates: Array<OpState>;
-  secrets?: {
-    [key: string]: string;
-  };
-};
-export type Flow = {
-  id: string;
-  jobDefinition: JobDefinition;
-  project: string;
-  state: FlowState;
-};
-
-export type Log = {
-  type: StdOptions;
-  log: string | undefined;
-};
-
-export type OpState = {
-  providerId: string | null;
-  operationId: string | null;
-  status: string | null;
-  startTime: number | null;
-  endTime: number | null;
-  exitCode: number | null;
-  logs: Array<Log>;
-  results?: {
-    [key: string]: string | string[];
-  };
-};
-
 export type ReturnedStatus<T = undefined> =
   | { status: true; result?: T; error?: never } // If status is true, result is optional
   | { status: false; error: Error | unknown; result?: never }; // If status is false, error is required and result is not allowed

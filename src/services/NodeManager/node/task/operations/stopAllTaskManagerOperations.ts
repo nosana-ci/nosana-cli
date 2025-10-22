@@ -1,5 +1,7 @@
-import TaskManager from '../TaskManager.js';
-import { StopReason } from '../TaskManager.js';
+import TaskManager, {
+  OperationProgressStatuses,
+  StopReason,
+} from '../TaskManager.js';
 
 /**
  * Immediately stops the current task flow with the given reason.
@@ -35,4 +37,27 @@ export function stopAllTaskManagerOperations(
    * down to any op-level AbortControllers that are still active.
    */
   this.mainAbortController.abort(reason);
+
+  /**
+   * Mark any operations that have NOT started yet as stopped in the repository.
+   */
+  try {
+    const flow = this.repository.getFlow(this.job);
+    if (!flow) return;
+
+    const now = Date.now();
+    for (const [opId] of this.opMap) {
+      const index = this.getOpStateIndex(opId);
+      const opState = flow.state.opStates[index];
+      if (opState?.startTime) continue;
+
+      this.operationStatus.set(opId, OperationProgressStatuses.STOPPED);
+
+      this.repository.updateOpState(this.job, index, {
+        status: this.getStatus(reason, 'ops'),
+        endTime: now,
+        exitCode: 0,
+      });
+    }
+  } catch {}
 }

@@ -12,7 +12,7 @@ import {
   CudaCheckSuccessResponse,
 } from '../../../../types/cudaCheck.js';
 import { NetworkInfoResults, SystemInfoResults } from './type.js';
-import { OpState } from '../../provider/types.js';
+import { OpState } from '@nosana/sdk';
 import TaskManager from '../task/TaskManager.js';
 import { generateRandomId } from '../../../../providers/utils/generate.js';
 
@@ -43,7 +43,7 @@ export class SpecsHandler {
       throw error;
     }
 
-    let result = this.repository.getflow(id);
+    let result = this.repository.getFlow(id);
 
     if (result) {
       this.repository.deleteflow(result.id);

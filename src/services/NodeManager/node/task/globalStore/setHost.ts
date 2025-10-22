@@ -5,7 +5,7 @@ export function setHost(this: TaskManager, opId: string, flowId: string): void {
   op.host = flowId + '-' + this.getOpStateIndex(opId);
 
   // Host updated; attempt endpoint rehydration for this op
-  const flow = this.repository.getflow(this.job);
+  const flow = this.repository.getFlow(this.job);
   if (flow) {
     this.rehydrateEndpointsForOperation(
       flow.id,

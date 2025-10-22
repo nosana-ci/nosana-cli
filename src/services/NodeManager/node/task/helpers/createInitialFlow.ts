@@ -1,6 +1,6 @@
 import { JobDefinition, Operation, OperationType } from '@nosana/sdk';
 import { createDefaultOpState } from './createDefaultOpState.js';
-import { Flow } from '../../../provider/types.js';
+import { Flow } from '@nosana/sdk';
 
 /**
  * Creates the initial flow structure for a given job.

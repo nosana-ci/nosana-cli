@@ -12,7 +12,7 @@ export function getServiceUrlRoute(
   try {
     const jobId = req.params.jobId;
 
-    const flow = req.repository!.getflow(jobId);
+    const flow = req.repository!.getFlow(jobId);
     const secrets = flow?.state.secrets;
 
     let status = 'OFFLINE';

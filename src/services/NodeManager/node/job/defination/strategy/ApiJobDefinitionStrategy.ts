@@ -1,6 +1,5 @@
 import { JobDefinitionStrategy } from '../JobDefinitionStrategy.js';
-import { JobDefinition } from '../../../../provider/types.js';
-import { SendJobDefinationLogicstics, sleep } from '@nosana/sdk';
+import { SendJobDefinationLogicstics, sleep, JobDefinition } from '@nosana/sdk';
 import { getSDK } from '../../../../../sdk.js';
 
 export class ApiJobDefinitionStrategy implements JobDefinitionStrategy {
