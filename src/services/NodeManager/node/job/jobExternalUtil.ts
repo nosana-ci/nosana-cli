@@ -55,56 +55,56 @@ export class JobExternalUtil {
 
   public async resolveResult(id: string, job: Job): Promise<FlowState> {
     let result = this.repository.getFlowState(id);
-    const orginalStatus = result.status;
 
     let jobDefinition: JobDefinition = await this.sdk.ipfs.retrieve(
       job.ipfsJob,
     );
 
-    if (!result) {
-      return {
-        status: '',
-        startTime: 0,
-        endTime: 0,
-        opStates: [],
-      };
-    }
-
-    if (jobDefinition.logistics?.receive?.type) {
-      const strategySelector = new ResultReturnStrategySelector();
-      const strategy = strategySelector.selectStrategy(
-        jobDefinition.logistics.receive.type,
-      );
-
-      this.repository.updateflowState(id, {
-        status: 'waiting-for-result',
-      });
-
-      const blankResult: FlowState = {
-        status: orginalStatus,
-        startTime: result.startTime,
-        endTime: result.endTime,
-        opStates: [],
-        errors: result.errors ?? [],
-      };
-
-      try {
-        await strategy.load(
-          id,
-          jobDefinition.logistics.receive.args,
-          result,
-          orginalStatus,
+    if (result) {
+      const orginalStatus = result.status;
+      if (jobDefinition.logistics?.receive?.type) {
+        const strategySelector = new ResultReturnStrategySelector();
+        const strategy = strategySelector.selectStrategy(
+          jobDefinition.logistics.receive.type,
         );
-      } catch (error) {
-        this.repository.updateflowStateError(id, {
-          error: error,
+
+        this.repository.updateflowState(id, {
+          status: 'waiting-for-result',
         });
+
+        const blankResult: FlowState = {
+          status: orginalStatus,
+          startTime: result.startTime,
+          endTime: result.endTime,
+          opStates: [],
+          errors: result.errors ?? [],
+        };
+
+        try {
+          await strategy.load(
+            id,
+            jobDefinition.logistics.receive.args,
+            result,
+            orginalStatus,
+          );
+        } catch (error) {
+          this.repository.updateflowStateError(id, {
+            error: error,
+          });
+        }
+
+        result = blankResult;
       }
 
-      result = blankResult;
+      return result;
     }
 
-    return result;
+    return {
+      status: '',
+      startTime: 0,
+      endTime: 0,
+      opStates: [],
+    };
   }
 
   async validate(id: string, jobDefinition: JobDefinition): Promise<boolean> {
