@@ -91,6 +91,7 @@ export class JobExternalUtil {
           this.repository.updateflowStateError(id, {
             error: error,
           });
+          blankResult.errors?.push(error as string);
         }
 
         result = blankResult;
