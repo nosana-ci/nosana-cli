@@ -4,7 +4,11 @@ import {
   HFResource,
   OllamaResource,
   Resource,
+  S3Base,
   S3Resource,
+  S3Unsecure,
+  S3WithBucket,
+  S3WithBuckets,
 } from '@nosana/sdk/dist/types/resources.js';
 
 import { RequiredResource } from '@nosana/sdk';
@@ -86,10 +90,18 @@ export class VolumeManager {
 
     switch (resource.type) {
       case 'S3':
-        const { url, files, bucket, buckets, IAM } = resource as S3Resource;
+        const s3Resource = resource as S3Resource;
         try {
-          if (url) {
-            const args = createS3Args(volumeName, { url, files, bucket }, IAM);
+          if (s3Resource.url) {
+            const args = createS3Args(
+              volumeName,
+              {
+                url: s3Resource.url,
+                files: (s3Resource as S3Base).files,
+                bucket: (s3Resource as S3WithBucket).bucket,
+              },
+              s3Resource.IAM,
+            );
 
             await this.runResourceManagerContainer(
               volumeName,
@@ -99,11 +111,11 @@ export class VolumeManager {
               sync,
             );
           } else {
-            for (const bucket of buckets!) {
+            for (const bucket of (s3Resource as S3WithBuckets).buckets!) {
               const args = createS3Args(
                 volumeName,
                 { url: bucket.url, files: bucket.files },
-                IAM,
+                s3Resource.IAM,
               );
               await this.runResourceManagerContainer(
                 volumeName,

@@ -53,7 +53,14 @@ export async function extendJob(
     if (job.state !== 'COMPLETED' && job.state !== 'STOPPED') {
       const spinner = ora(chalk.cyan(`Extending job ${jobAddress}`)).start();
       try {
-        await nosana.jobs.extend(jobAddress, options.timeout);
+        if (options.api) {
+          await nosana.api.jobs.extend({
+            jobAddress,
+            extensionSeconds: options.timeout,
+          });
+        } else {
+          await nosana.jobs.extend(jobAddress, options.timeout);
+        }
 
         spinner.succeed();
 

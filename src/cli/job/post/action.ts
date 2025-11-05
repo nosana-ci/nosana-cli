@@ -227,18 +227,37 @@ export async function run(
   if (market.jobPrice == 0) {
     nosana.jobs.accounts!.user = nosana.jobs.accounts!.vault;
   }
-  let response;
+  let response: {
+    tx: string;
+    job: string;
+    run: string;
+  };
   try {
-    response = (await nosana.jobs.list(
-      ipfsHash,
-      options.timeout,
-      market.address,
-      options.host,
-    )) as {
-      tx: string;
-      job: string;
-      run: string;
-    };
+    if (options.api) {
+      const res = await nosana.api.jobs.list({
+        ipfsHash,
+        timeout: options.timeout,
+        market: market.address.toString(),
+        host: options.host,
+      });
+
+      response = {
+        tx: res.reservationId,
+        job: res.jobAddress,
+        run: '',
+      };
+    } else {
+      response = (await nosana.jobs.list(
+        ipfsHash,
+        options.timeout,
+        market.address,
+        options.host,
+      )) as {
+        tx: string;
+        job: string;
+        run: string;
+      };
+    }
   } catch (e: any) {
     if (e.error) {
       return formatter.throw(OUTPUT_EVENTS.OUTPUT_JOB_POSTED_ERROR, {

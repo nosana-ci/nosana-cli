@@ -1,5 +1,6 @@
 import { Command, Option } from 'commander';
 
+import { stopJob } from './action.js';
 import {
   networkOption,
   rpcOption,
@@ -7,7 +8,7 @@ import {
 } from '../../sharedOptions/index.js';
 import { formatOption } from '../../sharedOptions/format.js';
 import { verboseOption } from '../../sharedOptions/verbose.js';
-import { stopJob } from './action.js';
+import { apiOption } from '../../sharedOptions/--api.js';
 
 export const stopJobCommand = new Command('stop')
   .description('stop a job')
@@ -18,6 +19,7 @@ export const stopJobCommand = new Command('stop')
   .addOption(networkOption)
   .addOption(walletOption)
   .addOption(rpcOption)
+  .addOption(apiOption)
   .addOption(formatOption)
   .addOption(verboseOption)
   .action(stopJob);

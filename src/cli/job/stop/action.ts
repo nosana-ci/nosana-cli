@@ -54,12 +54,17 @@ export async function stopJob(
     if (job.state !== 'COMPLETED' && job.state !== 'STOPPED') {
       const spinner = ora(chalk.cyan(`Stopping job ${jobAddress}`)).start();
       try {
-        if (job.state === 'QUEUED') {
-          await nosana.jobs.delist(jobAddress);
-        }
+        if (options.api) {
+          await nosana.api.jobs.stop({ jobAddress });
+        } else {
+          // proceed based on job state
+          if (job.state === 'QUEUED') {
+            await nosana.jobs.delist(jobAddress);
+          }
 
-        if (job.state === 'RUNNING') {
-          await nosana.jobs.end(jobAddress);
+          if (job.state === 'RUNNING') {
+            await nosana.jobs.end(jobAddress);
+          }
         }
 
         spinner.succeed();

@@ -6,7 +6,7 @@ import { PublicKey } from '@solana/web3.js';
 import 'rpc-websockets/dist/lib/client.js';
 import { download } from '../download/action.js';
 import { clearLine, colors } from '../../../generic/utils.js';
-import { getSDK } from '../../../services/sdk.js';
+import { getSDK, setSDK } from '../../../services/sdk.js';
 import {
   waitForJobCompletion,
   waitForJobRunOrCompletion,
@@ -38,7 +38,7 @@ export async function getJob(
   const nosana: Client = getSDK();
   const formatter = outputFormatSelector(options.format);
 
-  const headers = await createSignature();
+  const headers = await generateHeaders(config.signMessage);
 
   let ws;
 
@@ -294,6 +294,17 @@ async function fetchServiceURLWithRetry(
   }, retryInterval);
 }
 
+async function generateHeaders(
+  message: string,
+  apiKey?: string,
+): Promise<Headers> {
+  const nosana: Client = getSDK();
+
+  if (apiKey) return await nosana.api.authorization.generateHeader(message);
+
+  return nosana.authorization.generateHeader(message, { includeTime: true });
+}
+
 async function getJobResultUntilSuccess({
   job,
   jobAddress,
@@ -305,11 +316,7 @@ async function getJobResultUntilSuccess({
   options: any;
   config: any;
 }) {
-  const nosana: Client = getSDK();
-
-  const headers = await nosana.authorization.generateHeader(job.ipfsJob, {
-    includeTime: true,
-  });
+  const headers = await generateHeaders(job.ipfsJob);
   headers.append('Content-Type', 'application/json');
 
   const url = `https://${job.node}.${

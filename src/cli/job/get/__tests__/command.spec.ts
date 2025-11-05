@@ -25,8 +25,8 @@ describe('getJobCommand', () => {
     expect(getJobCommand.args[0]).toBe('address');
   });
 
-  it('should have 6 options', () => {
-    expect(getJobCommand.options.length).toBe(7);
+  it('should have 8 options', () => {
+    expect(getJobCommand.options.length).toBe(8);
   });
 
   it.each([
@@ -34,6 +34,7 @@ describe('getJobCommand', () => {
     ['--wait', undefined],
     ['--format', undefined],
     ['--rpc', undefined],
+    ['--api', undefined],
     ['--download', undefined],
     ['--wallet', '-w'],
   ])('should have %s option', (long, short) => {
