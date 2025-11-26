@@ -38,6 +38,8 @@ export async function setSDK(
   };
   if (market) config.solana!.market_address = market;
 
+  if (options.api) config.apiKey = options.api;
+
   const createNewKeyPair = (filePath: string): Keypair => {
     formatter.output(OUTPUT_EVENTS.CREATE_KEYFILE, { keyfile: keyfile });
     const keypair = Keypair.generate();

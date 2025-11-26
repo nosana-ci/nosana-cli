@@ -9,6 +9,7 @@ import { formatOption } from '../../sharedOptions/format.js';
 import { verboseOption } from '../../sharedOptions/verbose.js';
 import { extendJob } from './action.js';
 import { timeoutOption } from '../../sharedOptions/timeout.js';
+import { apiOption } from '../../sharedOptions/--api.js';
 
 export const extendJobCommand = new Command('extend')
   .description('extend a job timeout')
@@ -20,6 +21,7 @@ export const extendJobCommand = new Command('extend')
   .addOption(networkOption)
   .addOption(walletOption)
   .addOption(rpcOption)
+  .addOption(apiOption)
   .addOption(formatOption)
   .addOption(verboseOption)
   .action(extendJob);

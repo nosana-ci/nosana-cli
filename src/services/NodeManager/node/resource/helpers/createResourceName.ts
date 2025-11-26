@@ -2,6 +2,7 @@ import {
   HFResource,
   OllamaResource,
   S3Resource,
+  S3WithBuckets,
 } from '@nosana/sdk/dist/types/resources.js';
 import { RequiredResource } from '@nosana/sdk';
 import { nosanaBucket } from '../definition/index.js';
@@ -16,7 +17,9 @@ export function createResourceName(resource: RequiredResource) {
           nosanaBucket,
         );
       }
-      return s3Resource.buckets!.map((bucket) => bucket.url).join('-');
+      return (s3Resource as S3WithBuckets)
+        .buckets!.map((bucket) => bucket.url)
+        .join('-');
     case 'HF':
       const hfResource = resource as HFResource;
       return `${hfResource.repo}${

@@ -37,10 +37,6 @@ export const createNosanaCLI = (version: string) =>
       const isNodeRun = command.args[0] === 'node' && command.args[1] === 'run';
 
       configs({ ...opts, isNodeRun });
-
-      const fullCommand = actionCommand.parent
-        ? `${actionCommand.parent.name()} ${actionCommand.name()}`
-        : actionCommand.name();
     })
     .addOption(
       new Option('--log <logLevel>', 'Log level')

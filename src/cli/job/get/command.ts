@@ -8,6 +8,7 @@ import {
 } from '../../sharedOptions/index.js';
 import { formatOption } from '../../sharedOptions/format.js';
 import { verboseOption } from '../../sharedOptions/verbose.js';
+import { apiOption } from '../../sharedOptions/--api.js';
 
 export const getJobCommand = new Command('get')
   .description('Get a job and display result')
@@ -18,6 +19,7 @@ export const getJobCommand = new Command('get')
   .addOption(networkOption)
   .addOption(walletOption)
   .addOption(rpcOption)
+  .addOption(apiOption)
   .addOption(
     new Option(
       '--download [path]',

@@ -9,6 +9,7 @@ import {
 import { formatOption } from '../../sharedOptions/format.js';
 import { verboseOption } from '../../sharedOptions/verbose.js';
 import { timeoutOption } from '../../sharedOptions/timeout.js';
+import { apiOption } from '../../sharedOptions/--api.js';
 
 export const postJobCommand = new Command('post')
   .description('Create a job to run by Nosana Runners')
@@ -66,6 +67,7 @@ export const postJobCommand = new Command('post')
   .addOption(
     new Option('--confidential', 'posts a confidential job peer to peer.'),
   )
+  .addOption(apiOption)
   .addOption(timeoutOption)
   .addOption(formatOption)
   .addOption(verboseOption)
