@@ -1,6 +1,8 @@
 import { defineConfig } from 'vitest/config';
+import UnpluginTypia from '@ryoppippi/unplugin-typia/vite';
 
 export default defineConfig({
+  plugins: [UnpluginTypia()],
   test: {
     // Test file patterns
     include: ['src/**/*.{test,spec}.{js,ts}'],
