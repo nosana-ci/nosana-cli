@@ -39,18 +39,18 @@ export class DockerodeMock extends DockerExtended {
     return {
       modem: undefined,
       id: name,
-      inspect: jest.fn(),
-      history: jest.fn(),
-      push: jest.fn(),
+      inspect: vi.fn(),
+      history: vi.fn(),
+      push: vi.fn(),
       remove: (_: {}) => {
         return new Promise((resolve) => {
           this.images = this.images.filter((x) => !x.Names.includes(name));
           resolve(true);
         });
       },
-      get: jest.fn(),
-      tag: jest.fn(),
-      distribution: jest.fn(),
+      get: vi.fn(),
+      tag: vi.fn(),
+      distribution: vi.fn(),
     };
   }
 }

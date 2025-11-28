@@ -5,8 +5,8 @@ import { OutputFormatterFactory } from '../OutputFormatterFactory.js';
 import { TextOutputFormatter } from '../text/TextOutputFormatter.js';
 
 beforeEach(() => {
-  jest.clearAllMocks();
-  jest.resetModules();
+  vi.clearAllMocks();
+  vi.resetModules();
 });
 
 describe('OutputFormatterFactory', () => {

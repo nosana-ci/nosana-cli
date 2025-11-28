@@ -2,21 +2,23 @@ import fs from 'fs';
 
 import { DB } from '../';
 
-jest.mock('fs');
-jest.mock('os', () => ({
-  homedir: () => 'homedir',
+vi.mock('fs');
+vi.mock('os', () => ({
+  default: {
+    homedir: () => 'homedir',
+  },
 }));
-jest.mock('../../../../static/staticsImports.js', () => ({
+vi.mock('../../../../static/staticsImports.js', () => ({
   pkg: {
     version: '0.0.0_TEST',
   },
 }));
 
 describe('DB', () => {
-  const mock_mkdirSync = jest.fn();
+  const mock_mkdirSync = vi.fn();
 
   beforeEach(() => {
-    (fs.mkdirSync as jest.Mock).mockImplementation((args1, args2) =>
+    (fs.mkdirSync as any).mockImplementation((args1, args2) =>
       mock_mkdirSync(args1, args2),
     );
   });

@@ -2,17 +2,17 @@ import { startNodeCommand } from '../command';
 
 import { startNode } from '../action';
 
-jest.mock('../action', () => ({
-  startNode: jest.fn(),
+vi.mock('../action', () => ({
+  startNode: vi.fn(),
 }));
 
 describe('startNodeCommand', () => {
-  const mock_start_node_action = jest.fn();
+  const mock_start_node_action = vi.fn();
   const parseArgs = ['node', 'start', 'market address'];
 
   beforeEach(() => {
     mock_start_node_action.mockReset();
-    (startNode as jest.Mock).mockImplementation(mock_start_node_action);
+    (startNode as any).mockImplementation(mock_start_node_action);
   });
 
   it('should call startNode action', () => {

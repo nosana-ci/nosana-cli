@@ -2,17 +2,17 @@ import { getJobCommand } from '../command';
 
 import { getJob } from '../action';
 
-jest.mock('../action', () => ({
-  getJob: jest.fn(),
+vi.mock('../action', () => ({
+  getJob: vi.fn(),
 }));
 
 describe('getJobCommand', () => {
-  const mock_get_action = jest.fn();
+  const mock_get_action = vi.fn();
   const parseArgs = ['node', 'get', 'address'];
 
   beforeEach(() => {
     mock_get_action.mockReset();
-    (getJob as jest.Mock).mockImplementation(mock_get_action);
+    (getJob as any).mockImplementation(mock_get_action);
   });
 
   it('should call getJob action', () => {

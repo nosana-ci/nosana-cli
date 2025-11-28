@@ -2,17 +2,17 @@ import { postJobCommand } from '../command';
 
 import { run } from '../action';
 
-jest.mock('../action', () => ({
-  run: jest.fn(),
+vi.mock('../action', () => ({
+  run: vi.fn(),
 }));
 
 describe('postJobCommand', () => {
-  const mock_run_action = jest.fn();
+  const mock_run_action = vi.fn();
   const parseArgs = ['node', 'post', '-m id', '-t 1', 'run command'];
 
   beforeEach(() => {
     mock_run_action.mockReset();
-    (run as jest.Mock).mockImplementation(mock_run_action);
+    (run as any).mockImplementation(mock_run_action);
   });
 
   it('should call run action', () => {

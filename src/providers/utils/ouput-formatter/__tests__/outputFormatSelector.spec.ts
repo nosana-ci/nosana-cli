@@ -4,8 +4,8 @@ import { outputFormatSelector } from '../outputFormatSelector.js';
 
 describe('outputFormatSelector', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    jest.resetModules();
+    vi.clearAllMocks();
+    vi.resetModules();
     (outputFormatSelector as any).instance = null;
   });
 

@@ -2,17 +2,17 @@ import { viewNodeCommand } from '../command';
 
 import { view } from '../action';
 
-jest.mock('../action', () => ({
-  view: jest.fn(),
+vi.mock('../action', () => ({
+  view: vi.fn(),
 }));
 
 describe('viewNodeCommand', () => {
-  const mock_run_job_action = jest.fn();
+  const mock_run_job_action = vi.fn();
   const parseArgs = ['node', 'run', 'job definition path'];
 
   beforeEach(() => {
     mock_run_job_action.mockReset();
-    (view as jest.Mock).mockImplementation(mock_run_job_action);
+    (view as any).mockImplementation(mock_run_job_action);
   });
 
   it('should call view action', () => {

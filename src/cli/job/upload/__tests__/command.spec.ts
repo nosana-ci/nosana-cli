@@ -2,17 +2,17 @@ import { uploadJobCommand } from '../command';
 
 import { upload } from '../action';
 
-jest.mock('../action', () => ({
-  upload: jest.fn(),
+vi.mock('../action', () => ({
+  upload: vi.fn(),
 }));
 
 describe('uploadJobCommand', () => {
-  const mock_upload_action = jest.fn();
+  const mock_upload_action = vi.fn();
   const parseArgs = ['node', 'upload', 'file path'];
 
   beforeEach(() => {
     mock_upload_action.mockReset();
-    (upload as jest.Mock).mockImplementation(mock_upload_action);
+    (upload as any).mockImplementation(mock_upload_action);
   });
 
   it('should call upload action', () => {

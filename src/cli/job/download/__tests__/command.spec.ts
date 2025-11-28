@@ -2,17 +2,17 @@ import { downloadJobCommand } from '../command';
 
 import { download } from '../action';
 
-jest.mock('../action', () => ({
-  download: jest.fn(),
+vi.mock('../action', () => ({
+  download: vi.fn(),
 }));
 
 describe('downloadJobCommand', () => {
-  const mock_download_action = jest.fn();
+  const mock_download_action = vi.fn();
   const parseArgs = ['node', 'download', 'ipfs hash', 'path to artifact'];
 
   beforeEach(() => {
     mock_download_action.mockReset();
-    (download as jest.Mock).mockImplementation(mock_download_action);
+    (download as any).mockImplementation(mock_download_action);
   });
 
   it('should call download action', () => {
