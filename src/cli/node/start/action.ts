@@ -14,6 +14,11 @@ export async function startNode(
       await nodeManager.init();
       await nodeManager.start(market);
     } catch (error: any) {
+      if (error.name === 'WSLBlockedError') {
+        await nodeManager.stop();
+        process.exit(1);
+      }
+
       const formattedError = `
       ========== ERROR ==========
       Timestamp: ${new Date().toISOString()}

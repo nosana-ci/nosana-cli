@@ -11,6 +11,7 @@ import { configs } from './configs/configs.js';
 import { getSDK } from '../sdk.js';
 import { ping } from './monitoring/ping/PingHandler.js';
 import { LogMonitoringRegistry } from './monitoring/LogMonitoringRegistry.js';
+import { checkWSLStatus } from '../../providers/utils/wslCheck.js';
 
 export default class NodeManager {
   private node: BasicNode;
@@ -120,6 +121,13 @@ export default class NodeManager {
        */
       return await this.restart(marketArg);
     }
+
+    /**
+     * WSL check
+     * - Shows warning message for all WSL hosts
+     * - Throws WSLBlockedError after December 15, 2025 to prevent queue joining
+     */
+    checkWSLStatus(this.node.getSystemEnvironment());
 
     /**
      * grid
