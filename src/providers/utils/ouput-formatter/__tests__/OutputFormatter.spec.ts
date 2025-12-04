@@ -2,8 +2,8 @@ import { OutputFormatter, OutputFormatterAdapter } from '../OutputFormatter.js';
 import { OUTPUT_EVENTS, OutputEventParams } from '../outputEvents.js';
 
 class MockOutputFormatterAdapter implements OutputFormatterAdapter {
-  public finalize = jest.fn();
-  public output = jest.fn();
+  public finalize = vi.fn();
+  public output = vi.fn();
 }
 
 describe('OutputFormatter', () => {

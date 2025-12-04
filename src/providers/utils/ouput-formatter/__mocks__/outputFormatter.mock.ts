@@ -1,20 +1,20 @@
-jest.mock('../json/JsonOutputFormatter', () => {
+vi.mock('../json/JsonOutputFormatter', () => {
   return {
-    JsonOutputFormatter: jest.fn().mockImplementation(() => {
+    JsonOutputFormatter: vi.fn().mockImplementation(() => {
       return {
-        finalize: jest.fn(),
-        output: jest.fn(),
+        finalize: vi.fn(),
+        output: vi.fn(),
       };
     }),
   };
 });
 
-jest.mock('../text/TextOutputFormatter', () => {
+vi.mock('../text/TextOutputFormatter', () => {
   return {
-    TextOutputFormatter: jest.fn().mockImplementation(() => {
+    TextOutputFormatter: vi.fn().mockImplementation(() => {
       return {
-        finalize: jest.fn(),
-        output: jest.fn(),
+        finalize: vi.fn(),
+        output: vi.fn(),
       };
     }),
   };

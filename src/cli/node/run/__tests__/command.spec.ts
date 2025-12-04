@@ -2,17 +2,17 @@ import { runNodeCommand } from '../command';
 
 import { runJob } from '../action';
 
-jest.mock('../action', () => ({
-  runJob: jest.fn(),
+vi.mock('../action', () => ({
+  runJob: vi.fn(),
 }));
 
 describe('runNodeCommand', () => {
-  const mock_run_job_action = jest.fn();
+  const mock_run_job_action = vi.fn();
   const parseArgs = ['node', 'run', 'job definition path'];
 
   beforeEach(() => {
     mock_run_job_action.mockReset();
-    (runJob as jest.Mock).mockImplementation(mock_run_job_action);
+    (runJob as any).mockImplementation(mock_run_job_action);
   });
 
   it('should call runJob action', () => {

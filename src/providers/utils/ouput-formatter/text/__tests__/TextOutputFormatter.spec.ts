@@ -3,7 +3,7 @@ import { TextOutputFormatter } from '../TextOutputFormatter.js';
 import { OUTPUT_EVENTS } from '../../outputEvents.js';
 import { textOutputEventHandlers } from '../TextOutputEventHandlers.js';
 
-jest.mock('../TextOutputEventHandlers', () => {
+vi.mock('../TextOutputEventHandlers', () => {
   return {
     textOutputEventHandlers: outputEventsMock,
   };
@@ -14,7 +14,7 @@ describe('TextOutputFormatter', () => {
 
   beforeEach(() => {
     formatter = new TextOutputFormatter();
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should handle events and call the appropriate event handlers', () => {

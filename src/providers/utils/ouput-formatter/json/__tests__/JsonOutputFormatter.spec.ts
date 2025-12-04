@@ -3,7 +3,7 @@ import { JsonOutputFormatter } from '../JsonOutputFormatter.js';
 import { OUTPUT_EVENTS } from '../../outputEvents.js';
 import { jsonOutputEventHandlers } from '../JsonOutputEventHandlers.js';
 
-jest.mock('../JsonOutputEventHandlers', () => {
+vi.mock('../JsonOutputEventHandlers', () => {
   return {
     jsonOutputEventHandlers: outputEventsMock,
   };
@@ -14,7 +14,7 @@ describe('JsonOutputFormatter', () => {
 
   beforeEach(() => {
     formatter = new JsonOutputFormatter();
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should handle events and call the appropriate event handlers', () => {
@@ -37,7 +37,7 @@ describe('JsonOutputFormatter', () => {
   });
 
   it('should finalize and print JSON response', () => {
-    console.log = jest.fn();
+    console.log = vi.fn();
     const param = { keyfile: 'test-keyfile' };
     const event = OUTPUT_EVENTS.READ_KEYFILE;
 

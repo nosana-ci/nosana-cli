@@ -2,17 +2,17 @@ import { addressCommand } from '../command';
 
 import { getAddress } from '../action';
 
-jest.mock('../action', () => ({
-  getAddress: jest.fn(),
+vi.mock('../action', () => ({
+  getAddress: vi.fn(),
 }));
 
 describe('addressCommand', () => {
-  const mock_getAddress_action = jest.fn();
+  const mock_getAddress_action = vi.fn();
   const parseArgs = ['node', 'get', 'run command'];
 
   beforeEach(() => {
     mock_getAddress_action.mockReset();
-    (getAddress as jest.Mock).mockImplementation(mock_getAddress_action);
+    (getAddress as any).mockImplementation(mock_getAddress_action);
   });
 
   it('should call run action', () => {

@@ -25,5 +25,6 @@
     "target": "ES2021",
     "module": "ESNext"
   },
-  "include": ["src/**/*", "package.json", "src/static/*.json"]
+  "include": ["src/**/*", "package.json", "src/static/*.json"],
+  "exclude": ["src/tests",  "src/**/__mocks__/**", "src/**/__tests__/**"]
 }
