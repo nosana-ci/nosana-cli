@@ -1,0 +1,146 @@
+{
+  "deployment_id": "GPUSTACK_SERVER",
+  "global": {
+    "env": {
+      "MAX_LOBBY_SIZE": "1",
+      "GPUSTACK_SERVER_TOKEN": "e723c1ae9dc40891c3a311f6800adde1",
+      "GPUSTACK_INITIAL_ADMIN_PASSWORD": "password123!",
+      "LOG_ENABLED": "true"
+    }
+  },
+  "ops": [
+    {
+      "id": "lobby",
+      "args": {
+        "image": "matthammond962/gpustack-lobby",
+        "cmd": [
+          "lobby.js"
+        ],
+        "env": {
+          "GPUSTACK_SERVER": "%%ops.inbound-proxy.deployment_endpoint%%"
+        },
+        "expose": 3000
+      },
+      "results": {
+        "gpustack_worker_1": ".*(Sogni%2520Supported%2520SDXL).*",
+        "gpustack_worker_2": "(?<=gpustack_worker_2 ).*",
+        "gpustack_outbound_aliases": "(?<=gpustack_outbound_aliases ).*"
+      },
+      "execution": {
+        "group": "lobby"
+      },
+      "type": "container/run"
+    },
+    {
+      "id": "lobby-readieness",
+      "args": {
+        "image": "matthammond962/gpustack-lobby",
+        "cmd": [
+          "lobby.js"
+        ],
+        "env": {
+          "GPUSTACK_SERVER": "%%ops.inbound-proxy.deployment_endpoint%%",
+          "gpustack_worker_1": "%%ops.lobby.results.gpustack_worker_1%%",
+          "gpustack_worker_2": "%%ops.lobby.results.gpustack_worker_2%%"
+        },
+        "expose": 3000
+      },
+      "execution": {
+        "group": "run"
+      },
+      "type": "container/run"
+    },
+    {
+      "id": "gpustack-server",
+      "args": {
+        "image": "gpustack/gpustack",
+        "cmd": [],
+        "entrypoint": [
+          "/bin/bash",
+          "./entry/Qme6mhvswXVieJ3BhVVMxFW5XWsnMceRju9fxkxwxb8oMs"
+        ],
+        "resources": [
+          {
+            "url": "https://nosana.mypinata.cloud/ipfs/",
+            "files": [
+              "Qme6mhvswXVieJ3BhVVMxFW5XWsnMceRju9fxkxwxb8oMs"
+            ],
+            "type": "S3",
+            "target": "/entry",
+            "allowWrite": true
+          }
+        ]
+      },
+      "execution": {
+        "group": "run"
+      },
+      "type": "container/run"
+    },
+    {
+      "id": "inbound-proxy",
+      "args": {
+        "image": "nginx",
+        "cmd": [
+          "--create-inbound-rule",
+          "%%ops.inbound-proxy.deployment_endpoint%%",
+          "%%ops.gpustack-server.host%%",
+          "80"
+        ],
+        "entrypoint": [
+          "bash",
+          "./entry/entrypoint.sh"
+        ],
+        "expose": 80,
+        "resources": [
+          {
+            "type": "S3",
+            "url": "https://models.nosana.io/router/nginx",
+            "target": "/entry"
+          }
+        ]
+      },
+      "execution": {
+        "group": "run",
+        "depends_on": [
+          "gpustack-server"
+        ]
+      },
+      "type": "container/run"
+    },
+    {
+      "id": "outbound-proxy",
+      "args": {
+        "aliases": "%%ops.lobby.results.gpustack_outbound_aliases%%",
+        "image": "haproxytech/haproxy-ubuntu:3.3",
+        "cmd": [
+          "--create-outbound-rule",
+          "gpustack_worker_1",
+          "%%ops.lobby.results.gpustack_worker_1%%",
+          "--create-outbound-rule",
+          "gpustack_worker_2",
+          "%%ops.lobby.results.gpustack_worker_2%%"
+        ],
+        "entrypoint": [
+          "bash",
+          "./entry/outbound-entrypoint.sh"
+        ],
+        "resources": [
+          {
+            "type": "S3",
+            "url": "https://models.nosana.io/router",
+            "target": "/entry"
+          }
+        ]
+      },
+      "execution": {
+        "group": "run",
+        "depends_on": [
+          "gpustack-server"
+        ]
+      },
+      "type": "container/run"
+    }
+  ],
+  "type": "container",
+  "version": "0.1"
+}

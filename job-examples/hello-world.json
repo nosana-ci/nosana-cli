@@ -1,15 +1,16 @@
 {
   "version": "0.1",
   "type": "container",
-  "meta": {
-    "trigger": "cli"
-  },
   "ops": [
     {
       "type": "container/run",
       "id": "hello-world",
       "args": {
-        "cmd": "echo hello world",
+        "cmd": [
+          "echo",
+          "hello",
+          "world"
+        ],
         "image": "ubuntu"
       }
     }

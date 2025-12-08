@@ -13,24 +13,24 @@ export function isWSLBlockActive(): boolean {
 
 export function displayWSLWarning(): void {
   console.log('');
+  console.log(chalk.bgYellow.black.bold(' ⚠️  WSL DEPRECATION WARNING '));
+  console.log('');
   console.log(
-    chalk.bgYellow.black.bold(' ⚠️  WSL DEPRECATION WARNING '),
+    chalk.yellow('WSL hosts are being removed from the Nosana network.'),
   );
   console.log('');
   console.log(
     chalk.yellow(
-      'WSL hosts are being removed from the Nosana network.',
-    ),
-  );
-  console.log('');
-  console.log(
-    chalk.yellow(
-      `• ${chalk.bold('December 15, 2025')}: WSL hosts will be blocked from joining the queue`,
+      `• ${chalk.bold(
+        'December 15, 2025',
+      )}: WSL hosts will be blocked from joining the queue`,
     ),
   );
   console.log(
     chalk.yellow(
-      `• ${chalk.bold('January 15, 2026')}: Premium market keys for WSL hosts will be revoked`,
+      `• ${chalk.bold(
+        'January 15, 2026',
+      )}: Premium market keys for WSL hosts will be revoked`,
     ),
   );
   console.log('');
@@ -44,18 +44,20 @@ export function displayWSLWarning(): void {
 
 export function displayWSLBlockMessage(): void {
   console.log('');
-  console.log(
-    chalk.bgRed.white.bold(' 🚫 WSL HOST BLOCKED '),
-  );
+  console.log(chalk.bgRed.white.bold(' 🚫 WSL HOST BLOCKED '));
   console.log('');
   console.log(
     chalk.red(
-      `WSL hosts have been blocked from the queue since ${chalk.bold('December 15, 2025')}.`,
+      `WSL hosts have been blocked from the queue since ${chalk.bold(
+        'December 15, 2025',
+      )}.`,
     ),
   );
   console.log(
     chalk.red(
-      `Premium market keys for WSL hosts will be revoked on ${chalk.bold('January 15, 2026')}.`,
+      `Premium market keys for WSL hosts will be revoked on ${chalk.bold(
+        'January 15, 2026',
+      )}.`,
     ),
   );
   console.log('');
@@ -76,7 +78,7 @@ export class WSLBlockedError extends Error {
 
 /**
  * Check WSL status and handle warning/blocking
- * 
+ *
  * @param systemEnvironment - The system_environment value from specs
  * @throws WSLBlockedError if WSL host and block date has passed
  */
@@ -92,4 +94,3 @@ export function checkWSLStatus(systemEnvironment: string): void {
 
   displayWSLWarning();
 }
-
