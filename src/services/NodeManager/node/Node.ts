@@ -150,6 +150,10 @@ export class BasicNode {
     return this.sdk.solana.provider!.wallet.publicKey.toString();
   }
 
+  public getSystemEnvironment(): string {
+    return this.repository.getNodeInfo().system_environment;
+  }
+
   async stop(): Promise<void> {
     await this.marketHandler.stop();
     await this.runHandler.stop();

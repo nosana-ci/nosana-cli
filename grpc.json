@@ -1,0 +1,50 @@
+{
+  "global": {
+    "env": {
+      "LOG_ENABLED": "true"
+    }
+  },
+  "ops": [
+    {
+      "id": "grpc-server",
+      "args": {
+        "image": "matthammond962/grpc-server"
+      },
+      "execution": {
+        "group": "run"
+      },
+      "type": "container/run"
+    },
+    {
+      "id": "grpc-gateway-proxy",
+      "args": {
+        "image": "docker.io/matthammond962/grpc-gateway-proxy:0.0.1",
+        "cmd": [
+          "start-grpc-proxy",
+          "--http-proxy-address",
+          "%%ops.grpc-server.host%%:50051",
+          "--proto",
+          "src/ray/protobuf/gcs_service.proto"
+        ],
+        "expose": 8080,
+        "resources": [
+          {
+            "type": "S3",
+            "url": "https://models.nosana.io/router/proto/src",
+            "target": "/src"
+          }
+        ]
+      },
+      "execution": {
+        "group": "run",
+        "depends_on": [
+          "grpc-server"
+        ]
+      },
+      "type": "container/run"
+    }
+  ],
+  "type": "container",
+  "version": "0.1",
+  "deployment_id": "grpc"
+}

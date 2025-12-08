@@ -1,0 +1,121 @@
+{
+  "deployment_id": "GPU_STACK_WORKER_2",
+  "global": {
+    "env": {
+      "LOBBY_ADDRESS": "https://MH2ZDZSrAoKdZzdfzxCVhGRjqDKZgTHFLCpUUHCdfg4Z.node.k8s.dev.nos.ci",
+      "LOBBY_READINESS_ADDRESS": "https://SmSSRzU2VgUhbyV9FmEbgSPen7V9RCkss2AEvn228J1V.node.k8s.dev.nos.ci"
+    }
+  },
+  "ops": [
+    {
+      "id": "lobby",
+      "args": {
+        "image": "matthammond962/gpustack-lobby",
+        "cmd": [
+          "worker.js",
+          "%%ops.inbound-proxy.deployment_endpoint%%"
+        ]
+      },
+      "results": {
+        "gpustack_server": "(?<=gpustack_server ).*",
+        "gpustack_server_token": "(?<=gpustack_server_token ).*",
+        "gpustack_current_worker": "(?<=worker_id ).*",
+        "gpustack_worker_1": "(?<=gpustack_worker_1 ).*",
+        "gpustack_worker_2": "(?<=gpustack_worker_2 ).*",
+        "gpustack_outbound_aliases": "(?<=gpustack_outbound_aliases ).*"
+      },
+      "execution": {
+        "group": "lobby"
+      },
+      "type": "container/run"
+    },
+    {
+      "id": "gpustack-worker",
+      "args": {
+        "aliases": "%%ops.lobby.results.gpustack_current_worker%%",
+        "image": "gpustack/gpustack",
+        "cmd": [
+          "--server-url",
+          "http://gpustack_server",
+          "--token",
+          "%%ops.lobby.results.gpustack_server_token%%",
+          "--worker-port",
+          "10150",
+          "--worker-ip",
+          "%%ops.lobby.results.gpustack_current_worker%%",
+          "--enable-ray"
+        ],
+        "gpu": true
+      },
+      "execution": {
+        "group": "run",
+        "depends_on": [
+          "inbound-proxy",
+          "outbound-proxy"
+        ]
+      },
+      "type": "container/run"
+    },
+    {
+      "id": "inbound-proxy",
+      "args": {
+        "image": "nginx",
+        "cmd": [
+          "%%ops.inbound-proxy.deployment_endpoint%%",
+          "%%ops.gpustack-worker.host%%"
+        ],
+        "entrypoint": [
+          "bash",
+          "./entry/inbound-entrypoint.sh"
+        ],
+        "expose": 80,
+        "resources": [
+          {
+            "type": "S3",
+            "url": "https://models.nosana.io/router",
+            "target": "/entry"
+          }
+        ]
+      },
+      "execution": {
+        "group": "run"
+      },
+      "type": "container/run"
+    },
+    {
+      "id": "outbound-proxy",
+      "args": {
+        "aliases": "%%ops.lobby.results.gpustack_outbound_aliases%%",
+        "image": "haproxytech/haproxy-ubuntu:3.3",
+        "cmd": [
+          "--create-outbound-rule",
+          "gpustack_server",
+          "%%ops.lobby.results.gpustack_server%%",
+          "--create-outbound-rule",
+          "gpustack_worker_1",
+          "%%ops.lobby.results.gpustack_worker_1%%",
+          "--create-outbound-rule",
+          "gpustack_worker_2",
+          "%%ops.lobby.results.gpustack_worker_2%%"
+        ],
+        "entrypoint": [
+          "bash",
+          "./entry/outbound-entrypoint.sh"
+        ],
+        "resources": [
+          {
+            "type": "S3",
+            "url": "https://models.nosana.io/router",
+            "target": "/entry"
+          }
+        ]
+      },
+      "execution": {
+        "group": "run"
+      },
+      "type": "container/run"
+    }
+  ],
+  "type": "container",
+  "version": "0.1"
+}
