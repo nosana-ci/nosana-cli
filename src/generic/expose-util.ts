@@ -95,6 +95,7 @@ export const generateProxies = (
       name: `${generatedId}-${operationId}`,
       localIp: name,
       localPorts: exposedPort.port.toString(),
+      opId: op.id,
       customDomain: generatedId + '.' + configs().frp.serverAddr,
       ...(generatedDeploymentId && {
         deploymentDomain:

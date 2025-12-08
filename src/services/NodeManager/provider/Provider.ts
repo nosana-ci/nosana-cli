@@ -29,7 +29,7 @@ import {
 import { Flow, Log, StdOptions } from '@nosana/sdk';
 
 const tunnelImage = 'registry.hub.docker.com/nosana/tunnel:0.1.0';
-const frpcImage = 'registry.hub.docker.com/nosana/frpc:multi-v0.1.3';
+const frpcImage = 'registry.hub.docker.com/nosana/frpc:multi-v0.2.0';
 
 function parseBuffer(buffer: Buffer): Log {
   const head = buffer.subarray(0, 8);
@@ -332,6 +332,8 @@ export class Provider {
                 FRP_SERVER_PORT: configs().frp.serverPort.toString(),
                 NOSANA_ID: flow.id,
                 FRP_PROXIES: JSON.stringify(proxies),
+                DEPLOYMENT_ID: flow.jobDefinition.deployment_id ?? '',
+                JOB_ID: flow.id,
                 ...(isLoadBalanced && {
                   FRP_LB_GROUP_KEY: deploymentHash,
                 }),
