@@ -51,6 +51,31 @@ export const getJobUrls = (job: JobDefinition, flowId: string): string[] => {
   return urls;
 };
 
+export function generateProxyConfig(
+  generatedId: string,
+  operationId: string | null,
+  name: string,
+  exposedPort: ExposedPort,
+  op: Operation<'container/run'>,
+  generatedDeploymentId: string | undefined,
+  proxyHTTPHealthCheckPath: undefined | string,
+) {
+  return {
+    name: `${generatedId}-${operationId}`,
+    localIp: name,
+    localPorts: exposedPort.port.toString(),
+    opId: op.id,
+    customDomain: generatedId + '.' + configs().frp.serverAddr,
+    ...(generatedDeploymentId && {
+      deploymentDomain: generatedDeploymentId + '.' + configs().frp.serverAddr,
+      deploymentLoadBalancerGroup: `${generatedDeploymentId}-${exposedPort.port}`,
+      ...(exposedPort.health_checks && {
+        deploymentHealthCheckPath: proxyHTTPHealthCheckPath,
+      }),
+    }),
+  };
+}
+
 export const generateProxies = (
   flowId: string,
   op: Operation<'container/run'>,
@@ -91,21 +116,17 @@ export const generateProxies = (
       }
     }
 
-    proxies.push({
-      name: `${generatedId}-${operationId}`,
-      localIp: name,
-      localPorts: exposedPort.port.toString(),
-      opId: op.id,
-      customDomain: generatedId + '.' + configs().frp.serverAddr,
-      ...(generatedDeploymentId && {
-        deploymentDomain:
-          generatedDeploymentId + '.' + configs().frp.serverAddr,
-        deploymentLoadBalancerGroup: `${generatedDeploymentId}-${exposedPort.port}`,
-        ...(exposedPort.health_checks && {
-          deploymentHealthCheckPath: proxyHTTPHealthCheckPath,
-        }),
-      }),
-    });
+    proxies.push(
+      generateProxyConfig(
+        generatedId,
+        operationId,
+        name,
+        exposedPort,
+        op,
+        generatedDeploymentId,
+        proxyHTTPHealthCheckPath,
+      ),
+    );
 
     idMap.set(generatedId, exposedPort);
   }
