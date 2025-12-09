@@ -1,22 +1,30 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { Provider } from '../Provider.js';
-import type { Flow } from '@nosana/sdk';
+import type { Flow, Operation } from '@nosana/sdk';
+import { isOpExposed, getExposePorts } from '@nosana/sdk';
+import {
+  generateProxies,
+  generateUrlSecretObject,
+} from '../../../../generic/expose-util.js';
+import EventEmitter from 'events';
 
 const TEST_SERVER_ADDRESS = 'test.frp.server.com';
 const TEST_SERVER_PORT = 7000;
+const TEST_FRPC_IMAGE = 'test-frpc-image:latest';
 
 vi.mock('../../configs/configs.js', () => ({
   configs: () => ({
     frp: {
       serverAddr: TEST_SERVER_ADDRESS,
       serverPort: TEST_SERVER_PORT,
+      containerImage: TEST_FRPC_IMAGE,
     },
   }),
 }));
 
 vi.mock('../../configs/NodeConfigs.js', () => ({
   NodeConfigsSingleton: {
-    getInstance: vi.fn(),
+    getInstance: vi.fn().mockReturnValue({ options: { isNodeRun: false } }),
   },
 }));
 
@@ -24,6 +32,25 @@ vi.mock('../../monitoring/proxy/loggingProxy.js', () => ({
   applyLoggingProxyToClass: vi.fn(),
 }));
 
+vi.mock('@nosana/sdk', async () => {
+  const actual = await vi.importActual('@nosana/sdk');
+  return {
+    ...actual,
+    isOpExposed: vi.fn(),
+    getExposePorts: vi.fn().mockReturnValue([]),
+  };
+});
+
+vi.mock('../../../../generic/expose-util.js', () => ({
+  generateProxies: vi.fn().mockReturnValue({ proxies: [], idMap: new Map() }),
+  generateUrlSecretObject: vi.fn().mockReturnValue({}),
+}));
+
+vi.mock('../../../../generic/timeoutPromiseWrapper.js', () => ({
+  promiseTimeoutWrapper: vi.fn((promise) => promise),
+}));
+
+const TEST_CONTAINER_ID = 'container-id';
 const TEST_CONTAINER_NAME = 'container-name';
 const TEST_FRPC_CONTAINER_NAME = `frpc-${TEST_CONTAINER_NAME}`;
 const TEST_FLOW_ID = 'flow-123';
@@ -39,13 +66,66 @@ const TEST_CONTAINER_PORT_2 = '3000';
 const TEST_CUSTOM_DOMAIN_2 = 'test2.domain.com';
 const TEST_CUSTOM_FLOW_ID = 'custom-flow-id-789';
 
+const TEST_ADDRESS = 'test-address';
+const TEST_JOB_DEFINITION_TYPE = 'container';
+const TEST_JOB_DEFINITION_VERSION = '0.1';
+const TEST_PROJECT = 'test-project';
+const TEST_STATE_RUNNING = 'running';
+const TEST_NOW = Date.now();
+const TEST_OP_ID = 'op-1';
+const TEST_OP_TYPE = 'container/run';
+const TEST_OP_CONTAINER_IMAGE = 'test-image:latest';
+
 describe('Provider', () => {
   let provider: Provider;
-  const mockContainerOrchestration = {} as any;
-  const mockRepository = {} as any;
-  const mockResourceManager = {} as any;
+  let mockContainerOrchestration: any;
+  let mockRepository: any;
+  let mockResourceManager: any;
 
   beforeEach(() => {
+    vi.clearAllMocks();
+
+    mockContainerOrchestration = {
+      pullImage: vi.fn().mockResolvedValue(undefined),
+      runFlowContainer: vi.fn().mockResolvedValue({
+        id: TEST_CONTAINER_ID,
+        logs: vi.fn().mockResolvedValue({
+          on: vi.fn(),
+          removeAllListeners: vi.fn(),
+        }),
+        wait: vi.fn().mockResolvedValue(undefined),
+        inspect: vi.fn().mockResolvedValue({ State: { ExitCode: 0 } }),
+      }),
+      doesContainerExist: vi.fn().mockResolvedValue(false),
+      isContainerExited: vi.fn().mockResolvedValue(false),
+      stopAndDeleteContainer: vi.fn().mockResolvedValue(undefined),
+      createNetwork: vi.fn().mockResolvedValue(undefined),
+      deleteNetwork: vi.fn().mockResolvedValue(undefined),
+      hasNetwork: vi.fn().mockResolvedValue(false),
+      getContainer: vi.fn().mockReturnValue({
+        id: TEST_CONTAINER_ID,
+        logs: vi.fn().mockResolvedValue({
+          on: vi.fn(),
+          removeAllListeners: vi.fn(),
+        }),
+        wait: vi.fn().mockResolvedValue(undefined),
+        inspect: vi.fn().mockResolvedValue({ State: { ExitCode: 0 } }),
+      }),
+      getContainersByName: vi.fn().mockResolvedValue([]),
+    };
+
+    mockRepository = {
+      updateflowStateSecret: vi.fn(),
+      getFlowSecret: vi.fn().mockReturnValue({}),
+    };
+
+    mockResourceManager = {
+      images: {
+        setImage: vi.fn(),
+      },
+      getResourceVolumes: vi.fn().mockResolvedValue([]),
+    };
+
     provider = new Provider(
       mockContainerOrchestration,
       mockRepository,
@@ -57,14 +137,14 @@ describe('Provider', () => {
     const baseFlow: Flow = {
       id: TEST_FLOW_ID,
       jobDefinition: {
-        version: '0.1',
-        type: 'container',
+        version: TEST_JOB_DEFINITION_VERSION,
+        type: TEST_JOB_DEFINITION_TYPE,
         ops: [],
       },
-      project: 'test-project',
+      project: TEST_PROJECT,
       state: {
-        status: 'running',
-        startTime: Date.now(),
+        status: TEST_STATE_RUNNING,
+        startTime: TEST_NOW,
         endTime: null,
         opStates: [],
       },
@@ -243,6 +323,208 @@ describe('Provider', () => {
       );
 
       expect(result.networks).toBe(customNetworks);
+    });
+  });
+
+  describe('setUpReverseProxyApi', () => {
+    const testAddress = TEST_ADDRESS;
+
+    it('should pull the frpcImage', async () => {
+      await provider.setUpReverseProxyApi(testAddress);
+
+      expect(mockContainerOrchestration.pullImage).toHaveBeenCalledWith(
+        TEST_FRPC_IMAGE,
+        undefined,
+        expect.any(AbortController),
+      );
+    });
+
+    it('should register frpcImage with resource manager', async () => {
+      await provider.setUpReverseProxyApi(testAddress);
+
+      expect(mockResourceManager.images.setImage).toHaveBeenCalledWith(
+        TEST_FRPC_IMAGE,
+      );
+    });
+
+    it('should run frpc container with frpcImage when container does not exist', async () => {
+      mockContainerOrchestration.doesContainerExist.mockResolvedValue(false);
+
+      await provider.setUpReverseProxyApi(testAddress);
+
+      const runFlowContainerCalls =
+        mockContainerOrchestration.runFlowContainer.mock.calls;
+      const frpcContainerCall = runFlowContainerCalls.find(
+        (call: any[]) => call[0] === TEST_FRPC_IMAGE,
+      );
+
+      expect(frpcContainerCall).toBeDefined();
+      expect(frpcContainerCall[0]).toBe(TEST_FRPC_IMAGE);
+    });
+
+    it('should run frpc container with frpcImage when container has exited', async () => {
+      mockContainerOrchestration.doesContainerExist
+        .mockResolvedValueOnce(false) // tunnel check
+        .mockResolvedValueOnce(true); // frpc check
+      mockContainerOrchestration.isContainerExited.mockResolvedValue(true);
+
+      await provider.setUpReverseProxyApi(testAddress);
+
+      const runFlowContainerCalls =
+        mockContainerOrchestration.runFlowContainer.mock.calls;
+      const frpcContainerCall = runFlowContainerCalls.find(
+        (call: any[]) => call[0] === TEST_FRPC_IMAGE,
+      );
+
+      expect(frpcContainerCall).toBeDefined();
+      expect(frpcContainerCall[0]).toBe(TEST_FRPC_IMAGE);
+    });
+  });
+
+  describe('taskManagerContainerRunOperation', () => {
+    const baseFlow: Flow = {
+      id: TEST_FLOW_ID,
+      jobDefinition: {
+        version: TEST_JOB_DEFINITION_VERSION,
+        type: TEST_JOB_DEFINITION_TYPE,
+        ops: [
+          {
+            id: TEST_OP_ID,
+            type: TEST_OP_TYPE,
+            args: {
+              image: TEST_OP_CONTAINER_IMAGE,
+            },
+          },
+        ],
+      },
+      project: TEST_PROJECT,
+      state: {
+        status: TEST_STATE_RUNNING,
+        startTime: TEST_NOW,
+        endTime: null,
+        opStates: [],
+      },
+    };
+
+    const baseOp: Operation<'container/run'> = {
+      id: TEST_OP_ID,
+      type: TEST_OP_TYPE,
+      args: {
+        image: TEST_OP_CONTAINER_IMAGE,
+      },
+    };
+
+    describe('when operation is exposed', () => {
+      beforeEach(() => {
+        vi.mocked(isOpExposed).mockReturnValue(true);
+        vi.mocked(getExposePorts).mockReturnValue([
+          { port: parseInt(TEST_CONTAINER_PORT_1), type: 'http' },
+        ]);
+        vi.mocked(generateProxies).mockReturnValue({
+          proxies: [],
+          idMap: new Map(),
+        });
+      });
+
+      it('should pull the frpcImage', async () => {
+        const emitter = new EventEmitter();
+        const controller = new AbortController();
+
+        const operationPromise = provider.taskManagerContainerRunOperation(
+          baseFlow,
+          baseOp,
+          controller,
+          emitter,
+        );
+
+        await operationPromise;
+
+        expect(mockContainerOrchestration.pullImage).toHaveBeenCalledWith(
+          TEST_FRPC_IMAGE,
+          undefined,
+          controller,
+        );
+      });
+
+      it('should register frpcImage with resource manager', async () => {
+        const emitter = new EventEmitter();
+        const controller = new AbortController();
+
+        const operationPromise = provider.taskManagerContainerRunOperation(
+          baseFlow,
+          baseOp,
+          controller,
+          emitter,
+        );
+
+        await operationPromise;
+
+        expect(mockResourceManager.images.setImage).toHaveBeenCalledWith(
+          TEST_FRPC_IMAGE,
+        );
+      });
+
+      it('should run frpc container with frpcImage', async () => {
+        const emitter = new EventEmitter();
+        const controller = new AbortController();
+
+        const operationPromise = provider.taskManagerContainerRunOperation(
+          baseFlow,
+          baseOp,
+          controller,
+          emitter,
+        );
+
+        await operationPromise;
+
+        const runFlowContainerCalls =
+          mockContainerOrchestration.runFlowContainer.mock.calls;
+        const frpcContainerCall = runFlowContainerCalls.find(
+          (call: any[]) => call[0] === TEST_FRPC_IMAGE,
+        );
+        expect(frpcContainerCall).toBeDefined();
+        expect(frpcContainerCall[0]).toBe(TEST_FRPC_IMAGE);
+      });
+    });
+
+    describe('when operation is NOT exposed', () => {
+      beforeEach(() => {
+        vi.mocked(isOpExposed).mockReturnValue(false);
+        vi.mocked(getExposePorts).mockReturnValue([]);
+      });
+
+      it('should NOT pull or use frpcImage', async () => {
+        const emitter = new EventEmitter();
+        const controller = new AbortController();
+
+        const operationPromise = provider.taskManagerContainerRunOperation(
+          baseFlow,
+          baseOp,
+          controller,
+          emitter,
+        );
+
+        await operationPromise;
+
+        const pullImageCalls = mockContainerOrchestration.pullImage.mock.calls;
+        const frpcPullCall = pullImageCalls.find(
+          (call: any[]) => call[0] === TEST_FRPC_IMAGE,
+        );
+        expect(frpcPullCall).toBeUndefined();
+
+        const setImageCalls = mockResourceManager.images.setImage.mock.calls;
+        const frpcSetImageCall = setImageCalls.find(
+          (call: any[]) => call[0] === TEST_FRPC_IMAGE,
+        );
+        expect(frpcSetImageCall).toBeUndefined();
+
+        const runFlowContainerCalls =
+          mockContainerOrchestration.runFlowContainer.mock.calls;
+        const frpcContainerCall = runFlowContainerCalls.find(
+          (call: any[]) => call[0] === TEST_FRPC_IMAGE,
+        );
+        expect(frpcContainerCall).toBeUndefined();
+      });
     });
   });
 });
