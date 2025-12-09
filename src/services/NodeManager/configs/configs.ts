@@ -10,6 +10,7 @@ export type configType = {
   frp: {
     serverAddr: string;
     serverPort: number;
+    containerImage: string;
   };
   api: {
     port: number;
@@ -37,6 +38,9 @@ export const configs = (options?: { [key: string]: any }): configType => {
       serverPort: process.env.FRP_SERVER_PORT
         ? parseInt(process.env.FRP_SERVER_PORT)
         : 7000,
+      containerImage:
+        process.env.FRP_SERVER_IMAGE ||
+        'registry.hub.docker.com/nosana/frpc:v1.0.33',
     },
     api: {
       port: process.env.API_PORT ? parseInt(process.env.API_PORT) : 8123,

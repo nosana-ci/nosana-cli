@@ -29,9 +29,7 @@ import {
   generateUrlSecretObject,
 } from '../../../generic/expose-util.js';
 
-
 const tunnelImage = 'registry.hub.docker.com/nosana/tunnel:0.1.0';
-const frpcImage = 'registry.hub.docker.com/nosana/frpc:v1.0.30';
 
 function parseBuffer(buffer: Buffer): Log {
   const head = buffer.subarray(0, 8);
@@ -45,6 +43,7 @@ function parseBuffer(buffer: Buffer): Log {
 }
 
 export class Provider {
+  private readonly frpcImage = configs().frp.containerImage;
   private proxyStartupAbortController: AbortController | undefined = undefined;
   constructor(
     public containerOrchestration: ContainerOrchestrationInterface,
@@ -105,12 +104,12 @@ export class Provider {
       this.proxyStartupAbortController = new AbortController();
 
       await this.containerOrchestration.pullImage(
-        frpcImage,
+        this.frpcImage,
         undefined,
         this.proxyStartupAbortController,
       );
 
-      this.resourceManager.images.setImage(frpcImage);
+      this.resourceManager.images.setImage(this.frpcImage);
 
       await this.containerOrchestration.pullImage(
         tunnelImage,
@@ -155,7 +154,7 @@ export class Provider {
         await this.containerOrchestration.doesContainerExist(frpc_name);
 
       if (!doesFrpcExist) {
-        await this.containerOrchestration.runFlowContainer(frpcImage, {
+        await this.containerOrchestration.runFlowContainer(this.frpcImage, {
           name: 'frpc-api-' + address,
           cmd: ['-c', '/etc/frp/frpc.toml'],
           networks,
@@ -187,7 +186,7 @@ export class Provider {
         if (hasFrpcExited) {
           await this.containerOrchestration.stopAndDeleteContainer(frpc_name);
 
-          await this.containerOrchestration.runFlowContainer(frpcImage, {
+          await this.containerOrchestration.runFlowContainer(this.frpcImage, {
             name: 'frpc-api-' + address,
             cmd: ['-c', '/etc/frp/frpc.toml'],
             networks,
@@ -289,12 +288,12 @@ export class Provider {
 
         if (isOpExposed(op as Operation<'container/run'>)) {
           await this.containerOrchestration.pullImage(
-            frpcImage,
+            this.frpcImage,
             undefined,
             controller,
           );
 
-          this.resourceManager.images.setImage(frpcImage);
+          this.resourceManager.images.setImage(this.frpcImage);
 
           /**
            * because of the introduction of deployment_id(load balancing key) instead of using flow.id we use deployment_id for more
@@ -323,7 +322,7 @@ export class Provider {
           );
           idMaps = idMap;
           frpcContainer = await this.containerOrchestration.runFlowContainer(
-            frpcImage,
+            this.frpcImage,
             this.generateFrpcContainerConfig(
               name,
               networks,
