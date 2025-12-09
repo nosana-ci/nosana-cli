@@ -29,7 +29,7 @@ import {
 import { Flow, Log, StdOptions } from '@nosana/sdk';
 
 const tunnelImage = 'registry.hub.docker.com/nosana/tunnel:0.1.0';
-const frpcImage = 'registry.hub.docker.com/nosana/frpc:multi-v0.1.3';
+const frpcImage = 'registry.hub.docker.com/nosana/frpc:multi-v0.2.0';
 
 function parseBuffer(buffer: Buffer): Log {
   const head = buffer.subarray(0, 8);
@@ -322,21 +322,14 @@ export class Provider {
           idMaps = idMap;
           frpcContainer = await this.containerOrchestration.runFlowContainer(
             frpcImage,
-            {
-              name: 'frpc-' + name,
-              cmd: ['/entrypoint.sh'],
+            this.generateFrpcContainerConfig(
+              name,
               networks,
-              requires_network_mode: true,
-              env: {
-                FRP_SERVER_ADDR: configs().frp.serverAddr,
-                FRP_SERVER_PORT: configs().frp.serverPort.toString(),
-                NOSANA_ID: flow.id,
-                FRP_PROXIES: JSON.stringify(proxies),
-                ...(isLoadBalanced && {
-                  FRP_LB_GROUP_KEY: deploymentHash,
-                }),
-              },
-            },
+              flow,
+              proxies,
+              isLoadBalanced,
+              deploymentHash,
+            ),
           );
           if (op.args.private) {
             this.repository.updateflowStateSecret(flow.id, {
@@ -458,6 +451,35 @@ export class Provider {
     logStream?.removeAllListeners();
 
     emitter.emit('end');
+  }
+
+  public generateFrpcContainerConfig(
+    name: string,
+    networks: {
+      [p: string]: {};
+    },
+    flow: Flow,
+    proxies: any[],
+    isLoadBalanced: boolean,
+    deploymentHash: string | undefined,
+  ) {
+    return {
+      name: 'frpc-' + name,
+      cmd: ['/entrypoint.sh'],
+      networks,
+      requires_network_mode: true,
+      env: {
+        FRP_SERVER_ADDR: configs().frp.serverAddr,
+        FRP_SERVER_PORT: configs().frp.serverPort.toString(),
+        NOSANA_ID: flow.id,
+        FRP_PROXIES: JSON.stringify(proxies),
+        DEPLOYMENT_ID: flow.jobDefinition.deployment_id ?? '',
+        JOB_ID: flow.id,
+        ...(isLoadBalanced && {
+          FRP_LB_GROUP_KEY: deploymentHash,
+        }),
+      },
+    };
   }
 
   async taskManagerContainerStopRunOperation(
