@@ -1,13 +1,16 @@
 import {
   createHash,
   ExposedPort,
+  Flow,
   getExposePorts,
   isOpExposed,
+  Log,
   Operation,
   OperationArgsMap,
   OperationType,
   Ops,
   Resource,
+  StdOptions,
 } from '@nosana/sdk';
 import EventEmitter from 'events';
 import Dockerode from 'dockerode';
@@ -26,7 +29,6 @@ import {
   generateUrlSecretObject,
 } from '../../../generic/expose-util.js';
 
-import { Flow, Log, StdOptions } from '@nosana/sdk';
 
 const tunnelImage = 'registry.hub.docker.com/nosana/tunnel:0.1.0';
 const frpcImage = 'registry.hub.docker.com/nosana/frpc:v1.0.30';
