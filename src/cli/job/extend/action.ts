@@ -56,7 +56,7 @@ export async function extendJob(
         if (options.api) {
           await nosana.api.jobs.extend({
             jobAddress,
-            extensionSeconds: options.timeout,
+            seconds: options.timeout,
           });
         } else {
           await nosana.jobs.extend(jobAddress, options.timeout);

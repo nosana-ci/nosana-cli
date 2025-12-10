@@ -4,7 +4,6 @@ import { JobDefinition, validateJobDefinition } from '../../provider/types.js';
 import { FlowState } from '@nosana/sdk';
 import { JobDefinitionStrategySelector } from './defination/JobDefinitionStrategy.js';
 import { ResultReturnStrategySelector } from './result/ResultReturnStrategy.js';
-import { IValidation } from 'typia';
 import { createInitialFlow } from '../task/helpers/createInitialFlow.js';
 
 export class JobExternalUtil {
@@ -109,8 +108,7 @@ export class JobExternalUtil {
   }
 
   async validate(id: string, jobDefinition: JobDefinition): Promise<boolean> {
-    const validation: IValidation<JobDefinition> =
-      validateJobDefinition(jobDefinition);
+    const validation = validateJobDefinition(jobDefinition);
 
     if (!validation.success) {
       this.repository.updateflowState(id, {

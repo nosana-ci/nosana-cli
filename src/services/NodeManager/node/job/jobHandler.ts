@@ -1,5 +1,4 @@
 import EventEmitter from 'events';
-import { IValidation } from 'typia';
 import { PublicKey } from '@solana/web3.js';
 import { Job, Run, Client as SDK } from '@nosana/sdk';
 import { JobDefinition, validateJobDefinition } from '../../provider/types.js';
@@ -109,8 +108,7 @@ export class JobHandler {
   }
 
   async validate(jobDefinition: JobDefinition): Promise<boolean> {
-    const validation: IValidation<JobDefinition> =
-      validateJobDefinition(jobDefinition);
+    const validation = validateJobDefinition(jobDefinition);
 
     if (!validation.success) {
       this.repository.updateflowStateError(this.jobId(), {

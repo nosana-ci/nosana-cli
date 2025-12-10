@@ -1,15 +1,12 @@
-import typia from 'typia';
 import {
   JobDefinition as JobDefinitionSDK,
   Operation,
   OperationType,
-  type OperationArgsMap,
 } from '@nosana/sdk';
 
 import { type Resource } from '@nosana/sdk/dist/types/resources';
 
-export const validateJobDefinition =
-  typia.createValidateEquals<JobDefinition>();
+export { validateJobDefinition, JobDefinition } from '@nosana/sdk';
 
 export type RequiredResource = Omit<Resource, 'target'>;
 
@@ -46,12 +43,6 @@ export interface ReceiveJobResultLogicstics {
   };
 }
 
-export type JobDefinition = JobDefinitionSDK & {
-  logistics?: JobLogistics;
-  meta?: JobDefinitionSDK['meta'] & {
-    [key: string]: unknown;
-  };
-};
 export type JobType = 'container';
 
 export type StdOptions = 'stdin' | 'stdout' | 'stderr' | 'nodeerr';

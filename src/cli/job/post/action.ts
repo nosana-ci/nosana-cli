@@ -1,5 +1,4 @@
 import { randomUUID } from 'crypto';
-import { IValidation } from 'typia';
 import { PublicKey } from '@solana/web3.js';
 import { Client, createHash, sleep } from '@nosana/sdk';
 
@@ -130,8 +129,7 @@ export async function run(
       },
     });
   }
-  const validation: IValidation<JobDefinition> =
-    validateJobDefinition(json_flow);
+  const validation = validateJobDefinition(json_flow);
   if (!validation.success) {
     return formatter.throw(OUTPUT_EVENTS.OUTPUT_JOB_VALIDATION_ERROR, {
       error: validation.errors,
@@ -238,12 +236,12 @@ export async function run(
         ipfsHash,
         timeout: options.timeout,
         market: market.address.toString(),
-        host: options.host,
+        node: options.host,
       });
 
       response = {
-        tx: res.reservationId,
-        job: res.jobAddress,
+        tx: res.tx,
+        job: res.job,
         run: '',
       };
     } else {
