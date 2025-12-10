@@ -29,7 +29,7 @@ import {
 import { Flow, Log, StdOptions } from '@nosana/sdk';
 
 const tunnelImage = 'registry.hub.docker.com/nosana/tunnel:0.1.0';
-const frpcImage = 'registry.hub.docker.com/nosana/frpc:multi-v0.2.0';
+const frpcImage = 'registry.hub.docker.com/nosana/frpc:v1.0.30';
 
 function parseBuffer(buffer: Buffer): Log {
   const head = buffer.subarray(0, 8);
