@@ -11,7 +11,7 @@ type JSONValue =
 
 interface MarkerSpec {
   key: string;
-  arrayHandler?: (raw: JSONValue) => JSONValue[];
+  arrayHandler?: (raw: JSONValue, chunked: boolean) => JSONValue[];
   objectHandler?: (raw: JSONValue) => Record<string, JSONValue>;
 }
 
@@ -44,29 +44,50 @@ const SpreadMarker: MarkerSpec = {
     return parse('__spread__', raw);
   },
 
-  arrayHandler: (raw: JSONValue): JSONValue[] => {
-    const parse = (label: string, v: JSONValue): JSONValue[] => {
-      const arr =
-        typeof v === 'string'
-          ? (() => {
-              try {
-                return JSON.parse(v) as JSONValue;
-              } catch (e) {
-                throw new Error(
-                  `${label} is not valid JSON: ${
-                    e instanceof Error ? e.message : String(e)
-                  }`,
-                );
-              }
-            })()
-          : v;
+  arrayHandler: (raw: JSONValue, chunked: boolean): JSONValue[] => {
+    const parse = (
+      label: string,
+      v: JSONValue,
+      isChunked: boolean,
+    ): JSONValue[] => {
+      let arr: JSONValue = v;
+
+      if (typeof v === 'string') {
+        // Single JSON string
+        try {
+          arr = JSON.parse(v) as JSONValue;
+        } catch (e) {
+          throw new Error(
+            `${label} is not valid JSON: ${
+              e instanceof Error ? e.message : String(e)
+            }`,
+          );
+        }
+      } else if (
+        isChunked &&
+        Array.isArray(v) &&
+        v.every((item) => typeof item === 'string')
+      ) {
+        // Chunked JSON array - join strings and parse
+        const joined = v.join('');
+        try {
+          arr = JSON.parse(joined) as JSONValue;
+        } catch (e) {
+          throw new Error(
+            `${label} chunked array is not valid JSON: ${
+              e instanceof Error ? e.message : String(e)
+            }`,
+          );
+        }
+      }
 
       if (!Array.isArray(arr)) {
         throw new Error(`${label} must be a JSON array`);
       }
+
       return arr.flat() as JSONValue[];
     };
-    return parse('__spread__', raw);
+    return parse('__spread__', raw, chunked);
   },
 };
 
@@ -145,12 +166,15 @@ export function transformCollections<T extends OperationType>(
       const out: JSONValue[] = [];
       for (const el0 of node) {
         if (el0 && typeof el0 === 'object' && !Array.isArray(el0)) {
-          const entries = Object.entries(el0 as Record<string, JSONValue>);
-          if (entries.length === 1) {
-            const [mk, raw] = entries[0];
+          const entries = Object.entries(el0);
+          const markerEntry = entries.find(([k]) => isMarkerKey(k));
+          if (markerEntry) {
+            const [mk, raw] = markerEntry;
             const spec = getMarker(mk);
             if (spec?.arrayHandler) {
-              const items = spec.arrayHandler(raw).map(visit);
+              const items = spec
+                .arrayHandler(raw, el0.chunked === true)
+                .map(visit);
               out.push(...items);
               continue;
             }
