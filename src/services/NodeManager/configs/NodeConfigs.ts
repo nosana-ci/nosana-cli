@@ -16,7 +16,12 @@ export class NodeConfigs {
     const modulePath = dirname(fileURLToPath(import.meta.url));
 
     dotenv.config({
-      path: resolve(modulePath, `../../../../.env.${env}`),
+      // Setting common config first because override is set to true
+      // and that means the last value is taken over others
+      path: [
+        resolve(modulePath, `../../../../.env`),
+        resolve(modulePath, `../../../../.env.${env}`),
+      ],
       override: true,
     });
   }

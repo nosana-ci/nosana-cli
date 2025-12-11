@@ -6,10 +6,18 @@ import { fileURLToPath } from 'url';
 const modulePath = dirname(fileURLToPath(import.meta.url));
 
 dotenv.config({
-  path: resolve(
-    modulePath,
-    `../../.env.${process.env.APP_ENV || process.env.NODE_ENV || 'production'}`,
-  ),
+  // Setting environment specific config first because override is not set
+  // and that means the first value is taken over others
+  // (starting at the actual environment before the dotenv files)
+  path: [
+    resolve(
+      modulePath,
+      `../../.env.${
+        process.env.APP_ENV || process.env.NODE_ENV || 'production'
+      }`,
+    ),
+    resolve(modulePath, '../../.env'),
+  ],
 });
 
 export type configType = {
