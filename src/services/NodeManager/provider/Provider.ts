@@ -29,8 +29,6 @@ import {
   generateUrlSecretObject,
 } from '../../../generic/expose-util.js';
 
-const tunnelImage = 'registry.hub.docker.com/nosana/tunnel:0.1.0';
-
 function parseBuffer(buffer: Buffer): Log {
   const head = buffer.subarray(0, 8);
   const chunkType = head.readUInt8(0);
@@ -44,6 +42,7 @@ function parseBuffer(buffer: Buffer): Log {
 
 export class Provider {
   private readonly frpcImage = configs().frp.containerImage;
+  private readonly tunnelImage = configs().tunnel.containerImage;
   private proxyStartupAbortController: AbortController | undefined = undefined;
   constructor(
     public containerOrchestration: ContainerOrchestrationInterface,
@@ -112,18 +111,18 @@ export class Provider {
       this.resourceManager.images.setImage(this.frpcImage);
 
       await this.containerOrchestration.pullImage(
-        tunnelImage,
+        this.tunnelImage,
         undefined,
         this.proxyStartupAbortController,
       );
 
-      this.resourceManager.images.setImage(tunnelImage);
+      this.resourceManager.images.setImage(this.tunnelImage);
 
       const doesTunnelExist =
         await this.containerOrchestration.doesContainerExist(tunnel_name);
 
       if (!doesTunnelExist) {
-        await this.containerOrchestration.runFlowContainer(tunnelImage, {
+        await this.containerOrchestration.runFlowContainer(this.tunnelImage, {
           name: tunnel_name,
           networks,
           requires_network_mode: true,
@@ -138,7 +137,7 @@ export class Provider {
 
         if (hasTunnelExited) {
           await this.containerOrchestration.stopAndDeleteContainer(tunnel_name);
-          await this.containerOrchestration.runFlowContainer(tunnelImage, {
+          await this.containerOrchestration.runFlowContainer(this.tunnelImage, {
             name: tunnel_name,
             networks,
             requires_network_mode: true,

@@ -12,6 +12,7 @@ export type configType = {
     serverPort: number;
     containerImage: string;
   };
+  tunnel: { containerImage: string };
   api: {
     port: number;
   };
@@ -41,6 +42,11 @@ export const configs = (options?: { [key: string]: any }): configType => {
       containerImage:
         process.env.FRP_SERVER_IMAGE ||
         'registry.hub.docker.com/nosana/frpc:v1.0.33',
+    },
+    tunnel: {
+      containerImage:
+        process.env.TUNNEL_CONTAINER_IMAGE ||
+        'registry.hub.docker.com/nosana/tunnel:0.1.0',
     },
     api: {
       port: process.env.API_PORT ? parseInt(process.env.API_PORT) : 8123,
