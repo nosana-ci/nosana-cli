@@ -11,6 +11,7 @@ import EventEmitter from 'events';
 const TEST_SERVER_ADDRESS = 'test.frp.server.com';
 const TEST_SERVER_PORT = 7000;
 const TEST_FRPC_IMAGE = 'test-frpc-image:latest';
+const TEST_TUNNEL_IMAGE = 'test-tunnel-image:latest';
 
 vi.mock('../../configs/configs.js', () => ({
   configs: () => ({
@@ -18,6 +19,9 @@ vi.mock('../../configs/configs.js', () => ({
       serverAddr: TEST_SERVER_ADDRESS,
       serverPort: TEST_SERVER_PORT,
       containerImage: TEST_FRPC_IMAGE,
+    },
+    tunnel: {
+      containerImage: TEST_TUNNEL_IMAGE,
     },
   }),
 }));
@@ -378,6 +382,57 @@ describe('Provider', () => {
 
       expect(frpcContainerCall).toBeDefined();
       expect(frpcContainerCall[0]).toBe(TEST_FRPC_IMAGE);
+    });
+
+    it('should pull the tunnelImage', async () => {
+      await provider.setUpReverseProxyApi(testAddress);
+
+      expect(mockContainerOrchestration.pullImage).toHaveBeenCalledWith(
+        TEST_TUNNEL_IMAGE,
+        undefined,
+        expect.any(AbortController),
+      );
+    });
+
+    it('should register tunnelImage with resource manager', async () => {
+      await provider.setUpReverseProxyApi(testAddress);
+
+      expect(mockResourceManager.images.setImage).toHaveBeenCalledWith(
+        TEST_TUNNEL_IMAGE,
+      );
+    });
+
+    it('should run tunnel container with tunnelImage when container does not exist', async () => {
+      mockContainerOrchestration.doesContainerExist.mockResolvedValue(false);
+
+      await provider.setUpReverseProxyApi(testAddress);
+
+      const runFlowContainerCalls =
+        mockContainerOrchestration.runFlowContainer.mock.calls;
+      const tunnelContainerCall = runFlowContainerCalls.find(
+        (call: any[]) => call[0] === TEST_TUNNEL_IMAGE,
+      );
+
+      expect(tunnelContainerCall).toBeDefined();
+      expect(tunnelContainerCall[0]).toBe(TEST_TUNNEL_IMAGE);
+    });
+
+    it('should run tunnel container with tunnelImage when container has exited', async () => {
+      mockContainerOrchestration.doesContainerExist
+        .mockResolvedValueOnce(true) // tunnel check
+        .mockResolvedValueOnce(false); // frpc check
+      mockContainerOrchestration.isContainerExited.mockResolvedValue(true);
+
+      await provider.setUpReverseProxyApi(testAddress);
+
+      const runFlowContainerCalls =
+        mockContainerOrchestration.runFlowContainer.mock.calls;
+      const tunnelContainerCall = runFlowContainerCalls.find(
+        (call: any[]) => call[0] === TEST_TUNNEL_IMAGE,
+      );
+
+      expect(tunnelContainerCall).toBeDefined();
+      expect(tunnelContainerCall[0]).toBe(TEST_TUNNEL_IMAGE);
     });
   });
 
