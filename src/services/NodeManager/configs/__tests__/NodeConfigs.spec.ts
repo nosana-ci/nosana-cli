@@ -13,7 +13,7 @@ const envDev = dotenv.parse(
   fs.readFileSync(path.resolve(modulePath, '../../../../../.env.dev')),
 );
 const envProd = dotenv.parse(
-  fs.readFileSync(path.resolve(modulePath, '../../../../../.env.production')),
+  fs.readFileSync(path.resolve(modulePath, '../../../../../.env.prd')),
 );
 
 // Test constants for env variable names
@@ -93,7 +93,7 @@ describe('NodeConfigs', () => {
       const nodeConfigs = new NodeConfigs({ network: MAINNET });
       nodeConfigs.loadVariablesToEnv();
 
-      // MIN_DISK_SPACE only has override in .env.dev, not in .env.production
+      // MIN_DISK_SPACE only has override in .env.dev, not in .env.prd
       // So production should use the base .env value
       expect(process.env[ENV_VAR_MIN_DISK_SPACE]).toBe(
         envBase[ENV_VAR_MIN_DISK_SPACE],
@@ -102,7 +102,7 @@ describe('NodeConfigs', () => {
   });
 
   describe('network to environment mapping', () => {
-    it('should use production environment for mainnet network', async () => {
+    it('should use prd environment for mainnet network', async () => {
       const { NodeConfigs } = await import('../NodeConfigs.js');
 
       const nodeConfigs = new NodeConfigs({ network: MAINNET });
@@ -135,7 +135,7 @@ describe('NodeConfigs', () => {
       );
     });
 
-    it('should default to mainnet (production) when network is not specified', async () => {
+    it('should default to mainnet (prd) when network is not specified', async () => {
       const { NodeConfigs } = await import('../NodeConfigs.js');
 
       const nodeConfigs = new NodeConfigs({});
@@ -175,6 +175,60 @@ describe('NodeConfigs', () => {
       expect(process.env[ENV_VAR_BACKEND_URL]).toBe(
         envDev[ENV_VAR_BACKEND_URL],
       );
+    });
+  });
+
+  describe('startup without exceptions', () => {
+    it('should load configs for mainnet without throwing when all required variables have defaults', async () => {
+      // Clear all config-related environment variables to test defaults
+      delete process.env.APP_ENV;
+      delete process.env.NODE_ENV;
+      delete process.env.BACKEND_URL;
+      delete process.env.BACKEND_SOLANA_ADDRESS;
+      delete process.env.BACKEND_AUTHORIZATION_ADDRESS;
+      delete process.env.EXPLORER_URL;
+      delete process.env.SIGN_MESSAGE;
+      delete process.env.FRP_SERVER_ADDRESS;
+      delete process.env.FRP_SERVER_PORT;
+      delete process.env.FRPC_CONTAINER_IMAGE;
+      delete process.env.FRP_SERVER_IMAGE;
+      delete process.env.TUNNEL_CONTAINER_IMAGE;
+      delete process.env.API_PORT;
+      delete process.env.MIN_DISK_SPACE;
+
+      // Attempt to load configs - should not throw
+      const { configs } = await import('../configs.js');
+
+      const config = configs({ network: MAINNET });
+      // Verify config object exists and has expected properties
+      expect(config).toBeDefined();
+      expect(config.network).toBe(MAINNET);
+    });
+
+    it('should load configs for devnet without throwing when all required variables have defaults', async () => {
+      // Clear all config-related environment variables to test defaults
+      delete process.env.APP_ENV;
+      delete process.env.NODE_ENV;
+      delete process.env.BACKEND_URL;
+      delete process.env.BACKEND_SOLANA_ADDRESS;
+      delete process.env.BACKEND_AUTHORIZATION_ADDRESS;
+      delete process.env.EXPLORER_URL;
+      delete process.env.SIGN_MESSAGE;
+      delete process.env.FRP_SERVER_ADDRESS;
+      delete process.env.FRP_SERVER_PORT;
+      delete process.env.FRPC_CONTAINER_IMAGE;
+      delete process.env.FRP_SERVER_IMAGE;
+      delete process.env.TUNNEL_CONTAINER_IMAGE;
+      delete process.env.API_PORT;
+      delete process.env.MIN_DISK_SPACE;
+
+      // Attempt to load configs - should not throw
+      const { configs } = await import('../configs.js');
+
+      const config = configs({ network: DEVNET });
+      // Verify config object exists and has expected properties
+      expect(config).toBeDefined();
+      expect(config.network).toBe(DEVNET);
     });
   });
 });

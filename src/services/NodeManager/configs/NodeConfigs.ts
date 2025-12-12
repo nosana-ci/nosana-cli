@@ -11,7 +11,7 @@ export class NodeConfigs {
 
   loadVariablesToEnv() {
     const network = this.options.network ? this.options.network : 'mainnet';
-    const env = network === 'mainnet' ? 'production' : 'dev';
+    const env = network === 'mainnet' ? 'prd' : 'dev';
 
     const modulePath = dirname(fileURLToPath(import.meta.url));
 

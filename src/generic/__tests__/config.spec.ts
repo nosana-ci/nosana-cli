@@ -13,7 +13,7 @@ const envDev = dotenv.parse(
   fs.readFileSync(path.resolve(modulePath, '../../../.env.dev')),
 );
 const envProd = dotenv.parse(
-  fs.readFileSync(path.resolve(modulePath, '../../../.env.production')),
+  fs.readFileSync(path.resolve(modulePath, '../../../.env.prd')),
 );
 
 // Test constants for env variable names
@@ -50,7 +50,7 @@ describe('config', () => {
 
   describe('dotenv file merging', () => {
     it('should load common variables from base .env file', async () => {
-      process.env.APP_ENV = 'production';
+      process.env.APP_ENV = 'prd';
 
       const { config } = await import('../config.js');
 
@@ -74,24 +74,28 @@ describe('config', () => {
 
       // MIN_DISK_SPACE exists in both .env (base) and .env.dev
       // With override:false and env-specific file loaded first, dev value should win
-      expect(config.minDiskSpace).toBe(parseInt(envDev[ENV_VAR_MIN_DISK_SPACE]));
+      expect(config.minDiskSpace).toBe(
+        parseInt(envDev[ENV_VAR_MIN_DISK_SPACE]),
+      );
     });
 
     it('should use common value when environment-specific file does not override it', async () => {
-      process.env.APP_ENV = 'production';
+      process.env.APP_ENV = 'prd';
 
       const { config } = await import('../config.js');
 
-      // MIN_DISK_SPACE only has override in .env.dev, not in .env.production
+      // MIN_DISK_SPACE only has override in .env.dev, not in .env.prd
       // So production should use the base .env value
-      expect(config.minDiskSpace).toBe(parseInt(envBase[ENV_VAR_MIN_DISK_SPACE]));
+      expect(config.minDiskSpace).toBe(
+        parseInt(envBase[ENV_VAR_MIN_DISK_SPACE]),
+      );
     });
   });
 
   describe('environment detection', () => {
     it('should use APP_ENV for environment detection when set', async () => {
       process.env.APP_ENV = 'dev';
-      process.env.NODE_ENV = 'production';
+      process.env.NODE_ENV = 'prd';
 
       const { config } = await import('../config.js');
 
@@ -101,14 +105,14 @@ describe('config', () => {
 
     it('should fall back to NODE_ENV when APP_ENV is not set', async () => {
       delete process.env.APP_ENV;
-      process.env.NODE_ENV = 'dev';
+      process.env.NODE_ENV = 'development';
 
       const { config } = await import('../config.js');
 
       expect(config.backendUrl).toBe(envDev[ENV_VAR_BACKEND_URL]);
     });
 
-    it('should default to production when neither APP_ENV nor NODE_ENV is set', async () => {
+    it('should default to prd when neither APP_ENV nor NODE_ENV is set', async () => {
       delete process.env.APP_ENV;
       delete process.env.NODE_ENV;
 
@@ -118,13 +122,38 @@ describe('config', () => {
     });
   });
 
-  describe('production environment', () => {
-    it('should load production-specific variables when APP_ENV is production', async () => {
-      process.env.APP_ENV = 'production';
+  describe('prd environment', () => {
+    it('should load production-specific variables when APP_ENV is prd', async () => {
+      process.env.APP_ENV = 'prd';
 
       const { config } = await import('../config.js');
 
       expect(config.backendUrl).toBe(envProd[ENV_VAR_BACKEND_URL]);
+    });
+  });
+
+  describe('startup without exceptions', () => {
+    it('should load configuration without throwing when all required variables have defaults', async () => {
+      // Clear all config-related environment variables to test defaults
+      delete process.env.APP_ENV;
+      delete process.env.NODE_ENV;
+      delete process.env.BACKEND_URL;
+      delete process.env.BACKEND_SOLANA_ADDRESS;
+      delete process.env.BACKEND_AUTHORIZATION_ADDRESS;
+      delete process.env.EXPLORER_URL;
+      delete process.env.SIGN_MESSAGE;
+      delete process.env.FRP_SERVER_ADDRESS;
+      delete process.env.FRP_SERVER_PORT;
+      delete process.env.FRPC_CONTAINER_IMAGE;
+      delete process.env.TUNNEL_CONTAINER_IMAGE;
+      delete process.env.API_PORT;
+      delete process.env.MIN_DISK_SPACE;
+
+      // Attempt to import config - should not throw
+      const { config } = await import('../config.js');
+
+      // Verify config object exists
+      expect(config).toBeDefined();
     });
   });
 });
