@@ -116,3 +116,19 @@ export {
   SECONDS_PER_DAY,
   isNodeOnboarded,
 };
+
+/**
+ * Loads the configuration value for a given environment variable key.
+ * Throws an error at runtime if the environment variable is not set.
+ *
+ * @param {string} key - The name of the environment variable to retrieve.
+ * @return {string} The value of the specified environment variable.
+ * @throws {Error} If the environment variable is not defined.
+ */
+export function loadConfigurationValue(key: string) {
+  let value = process.env[key];
+  if (!value) {
+    throw new Error(`Missing environment variable ${key}`);
+  }
+  return value;
+}
