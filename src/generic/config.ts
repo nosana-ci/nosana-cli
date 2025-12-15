@@ -11,10 +11,7 @@ dotenv.config({
   // and that means the first value is taken over others
   // (starting at the actual environment before the dotenv files)
   path: [
-    resolve(
-      modulePath,
-      `../../.env.${process.env.APP_ENV || process.env.NODE_ENV || 'prd'}`,
-    ),
+    resolve(modulePath, `../../.env.${process.env.APP_ENV || 'prd'}`),
     resolve(modulePath, '../../.env'),
   ],
 });

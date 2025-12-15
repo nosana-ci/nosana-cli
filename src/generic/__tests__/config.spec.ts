@@ -12,7 +12,7 @@ const envBase = dotenv.parse(
 const envDev = dotenv.parse(
   fs.readFileSync(path.resolve(modulePath, '../../../.env.dev')),
 );
-const envProd = dotenv.parse(
+const envPrd = dotenv.parse(
   fs.readFileSync(path.resolve(modulePath, '../../../.env.prd')),
 );
 
@@ -103,22 +103,12 @@ describe('config', () => {
       expect(config.backendUrl).toBe(envDev[ENV_VAR_BACKEND_URL]);
     });
 
-    it('should fall back to NODE_ENV when APP_ENV is not set', async () => {
+    it("should fall back to 'prd' when APP_ENV is not set", async () => {
       delete process.env.APP_ENV;
-      process.env.NODE_ENV = 'development';
 
       const { config } = await import('../config.js');
 
-      expect(config.backendUrl).toBe(envDev[ENV_VAR_BACKEND_URL]);
-    });
-
-    it('should default to prd when neither APP_ENV nor NODE_ENV is set', async () => {
-      delete process.env.APP_ENV;
-      delete process.env.NODE_ENV;
-
-      const { config } = await import('../config.js');
-
-      expect(config.backendUrl).toBe(envProd[ENV_VAR_BACKEND_URL]);
+      expect(config.backendUrl).toBe(envPrd[ENV_VAR_BACKEND_URL]);
     });
   });
 
@@ -128,7 +118,7 @@ describe('config', () => {
 
       const { config } = await import('../config.js');
 
-      expect(config.backendUrl).toBe(envProd[ENV_VAR_BACKEND_URL]);
+      expect(config.backendUrl).toBe(envPrd[ENV_VAR_BACKEND_URL]);
     });
   });
 
