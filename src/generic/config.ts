@@ -7,16 +7,13 @@ import { loadConfigurationValue } from './utils.js';
 const modulePath = dirname(fileURLToPath(import.meta.url));
 
 dotenv.config({
-  // Setting environment specific config first because override is not set
-  // and that means the first value is taken over others
-  // (starting at the actual environment before the dotenv files)
+  // Setting common config first because override is set to true
+  // and that means the last value is taken over others
   path: [
-    resolve(
-      modulePath,
-      `../../.env.${process.env.APP_ENV || process.env.NODE_ENV || 'prd'}`,
-    ),
     resolve(modulePath, '../../.env'),
+    resolve(modulePath, `../../.env.${process.env.APP_ENV || 'prd'}`),
   ],
+  override: true,
 });
 
 export type configType = {
