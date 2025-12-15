@@ -2,7 +2,7 @@ import { JobDefinition } from '@nosana/sdk';
 import dotenv from 'dotenv';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
-import { loadConfigurationValue } from './utils';
+import { loadConfigurationValue } from './utils.js';
 
 const modulePath = dirname(fileURLToPath(import.meta.url));
 

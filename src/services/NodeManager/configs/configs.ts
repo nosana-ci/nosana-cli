@@ -1,5 +1,5 @@
 import { NodeConfigsSingleton } from './NodeConfigs.js';
-import { loadConfigurationValue } from '../../../generic/utils';
+import { loadConfigurationValue } from '../../../generic/utils.js';
 
 export type configType = {
   isNodeRun: boolean;
