@@ -1,6 +1,6 @@
 import { NextFunction } from 'express';
 
-import { JobObject, JobRequest, JobResponse } from '../types';
+import type { JobObject, JobRequest, JobResponse } from '../types';
 
 export function getJob(
   req: JobRequest<{ id: string }>,

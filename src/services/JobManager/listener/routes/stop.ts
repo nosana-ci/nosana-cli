@@ -1,5 +1,5 @@
 import { Response, NextFunction } from 'express';
-import { JobRequest } from '../types';
+import type { JobRequest } from '../types';
 
 export async function stopJob(
   req: JobRequest<{ id: string }, {}>,
