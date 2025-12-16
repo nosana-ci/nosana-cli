@@ -1,9 +1,11 @@
-import { config } from '../generic/config.js';
+import type { Client } from '@nosana/sdk';
+
 import { getSDK } from './sdk.js';
-import { Client } from '@nosana/sdk';
+import { configs } from './NodeManager/configs/configs.js';
 
 export const createSignature = async (): Promise<Headers> => {
   const nosana: Client = getSDK();
+  const config = configs();
   const headers = await nosana.authorization.generateHeader(config.signMessage);
   return headers;
 };

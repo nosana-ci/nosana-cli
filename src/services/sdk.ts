@@ -14,10 +14,10 @@ import {
 } from '@solana/web3.js';
 
 import { colors } from '../generic/utils.js';
-import { config as envConfig } from '../generic/config.js';
 import { OptionValues } from 'commander';
 import { OUTPUT_EVENTS } from '../providers/utils/ouput-formatter/outputEvents.js';
 import { outputFormatSelector } from '../providers/utils/ouput-formatter/outputFormatSelector.js';
+import { configs } from './NodeManager/configs/configs.js';
 
 let nosana: Client;
 let nosBalance: TokenAmount | undefined, solBalance: number;
@@ -29,6 +29,7 @@ export async function setSDK(
   keyfile: string,
   options: OptionValues,
 ): Promise<Client> {
+  const envConfig = configs();
   const formatter = outputFormatSelector(options.format);
 
   const config: ClientConfig = {
