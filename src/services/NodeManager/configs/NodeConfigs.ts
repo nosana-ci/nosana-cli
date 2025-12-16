@@ -17,12 +17,10 @@ export class NodeConfigs {
 
     // Load .env.${env} first (higher priority)
     dotenv.config({
-      path: resolve(modulePath, `../../../../.env.${env}`),
-    });
-
-    // Load .env second (lower priority - only sets vars not already defined)
-    dotenv.config({
-      path: resolve(modulePath, `../../../../.env`),
+      path: [
+        resolve(modulePath, `../../../../.env.${env}`),
+        resolve(modulePath, `../../../../.env`),
+      ],
     });
 
     // System env vars have highest priority (never overwritten due to default override: false)
