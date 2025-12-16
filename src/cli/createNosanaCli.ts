@@ -9,6 +9,7 @@ import { outputFormatArgumentParser } from '../providers/utils/ouput-formatter/o
 import { outputFormatSelector } from '../providers/utils/ouput-formatter/outputFormatSelector.js';
 import { configs } from '../services/NodeManager/configs/configs.js';
 import { startNode } from './node/start/action.js';
+import { NodeConfigsSingleton } from '../services/NodeManager/configs/NodeConfigs.js';
 
 export const createNosanaCLI = (version: string) =>
   new Command()
@@ -23,6 +24,7 @@ export const createNosanaCLI = (version: string) =>
     })
     .hook('preAction', async (command, actionCommand) => {
       const opts = actionCommand.optsWithGlobals();
+      NodeConfigsSingleton.getInstance(opts);
       let market = opts.market;
       if (opts.network || opts.wallet) {
         await setSDK(

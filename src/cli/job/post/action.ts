@@ -2,7 +2,8 @@ import { randomUUID } from 'crypto';
 import { PublicKey } from '@solana/web3.js';
 import { Client, createHash, sleep } from '@nosana/sdk';
 
-import { privateBlankJobDefintion, config } from '../../../generic/config.js';
+import { privateBlankJobDefintion } from '../../../generic/config.js';
+import { configs } from '../../../services/NodeManager/configs/configs.js';
 import { getJob } from '../get/action.js';
 import { colors } from '../../../generic/utils.js';
 import { getNosBalance, getSDK, getSolBalance } from '../../../services/sdk.js';
@@ -25,6 +26,7 @@ export async function run(
     [key: string]: any;
   },
 ) {
+  const config = configs();
   // TODO: Replace this with `await new JobManager().post(market, job, formatter);`
   const formatter = outputFormatSelector(options.format);
 
@@ -302,10 +304,7 @@ export async function run(
       node: job.node,
       hash: ipfsHash,
       json_flow,
-      serverAddr:
-        options.network === 'devnet'
-          ? 'node.k8s.dev.nos.ci'
-          : config.frp.serverAddr,
+      serverAddr: config.frp.serverAddr,
     });
   }
 

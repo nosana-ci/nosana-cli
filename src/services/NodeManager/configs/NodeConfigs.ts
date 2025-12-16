@@ -15,15 +15,17 @@ export class NodeConfigs {
 
     const modulePath = dirname(fileURLToPath(import.meta.url));
 
+    // Load .env.${env} first (higher priority)
     dotenv.config({
-      // Setting common config first because override is set to true
-      // and that means the last value is taken over others
-      path: [
-        resolve(modulePath, `../../../../.env`),
-        resolve(modulePath, `../../../../.env.${env}`),
-      ],
-      override: true,
+      path: resolve(modulePath, `../../../../.env.${env}`),
     });
+
+    // Load .env second (lower priority - only sets vars not already defined)
+    dotenv.config({
+      path: resolve(modulePath, `../../../../.env`),
+    });
+
+    // System env vars have highest priority (never overwritten due to default override: false)
   }
 }
 
