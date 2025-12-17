@@ -1,6 +1,6 @@
 import { NextFunction, Response } from 'express';
 
-import { JobRequest, PostRequestBody } from '../types';
+import type { JobRequest, PostRequestBody } from '../types';
 
 export async function postJob(
   req: JobRequest<{}, PostRequestBody>,

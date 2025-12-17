@@ -1,5 +1,5 @@
 import EventEmitter from 'events';
-import { JobResult } from '../../listener/types';
+import type { JobResult } from '../../listener/types';
 
 export class StatusEmitter extends EventEmitter {
   close() {

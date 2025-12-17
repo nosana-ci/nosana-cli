@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import { JobRequest } from '../types';
+import type { JobRequest } from '../types';
 
 export function listJobs(
   req: JobRequest<{}>,

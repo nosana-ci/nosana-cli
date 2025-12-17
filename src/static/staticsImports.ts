@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { JobDefinition } from '../services/NodeManager/provider/types';
+import type { JobDefinition } from '../services/NodeManager/provider/types';
 
 const customDirname = path.dirname(fileURLToPath(import.meta.url));
 
