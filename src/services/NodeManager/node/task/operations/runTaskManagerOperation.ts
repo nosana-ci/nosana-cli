@@ -10,6 +10,7 @@ import {
 import TaskManager from '../TaskManager.js';
 import {
   Flow,
+  OpState,
   type FlowSecrets,
   type JobExposeSecrets,
   type EndpointSecret,
@@ -20,6 +21,11 @@ type OpStateError = {
   event: string;
   message: string;
   code?: number;
+};
+
+// OpState with error field (until SDK is updated)
+type OpStateWithError = OpState & {
+  error?: OpStateError[];
 };
 
 // Error with optional eventType property (set at source in Provider)
@@ -310,10 +316,11 @@ export async function runTaskManagerOperation(
 
     // Format error message and add to opState.error array
     // Validate existing errors are in correct format (defensive check for old/corrupted data)
-    const existingErrorsRaw = (opState as any).error || [];
+    const opStateWithError = opState as OpStateWithError;
+    const existingErrorsRaw = opStateWithError.error || [];
     const existingErrors: OpStateError[] = Array.isArray(existingErrorsRaw)
       ? existingErrorsRaw.filter(
-          (e: any) =>
+          (e): e is OpStateError =>
             e &&
             typeof e === 'object' &&
             typeof e.event === 'string' &&
