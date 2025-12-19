@@ -1,5 +1,6 @@
 import {
   createHash,
+  DockerAuth,
   ExposedPort,
   Flow,
   getExposePorts,
@@ -24,15 +25,16 @@ import { ResourceManager } from '../node/resource/resourceManager.js';
 import { applyLoggingProxyToClass } from '../monitoring/proxy/loggingProxy.js';
 import { promiseTimeoutWrapper } from '../../../generic/timeoutPromiseWrapper.js';
 import { ContainerOrchestrationInterface } from './containerOrchestration/interface.js';
-import {
-  generateProxies,
-  generateUrlSecretObject,
-} from '../../../generic/expose-util.js';
 
 // Error with optional eventType property (set at source)
 type ErrorWithEventType = Error & {
   eventType?: string;
 };
+import {
+  generateProxies,
+  generateUrlSecretObject,
+} from '../../../generic/expose-util.js';
+
 
 function parseBuffer(buffer: Buffer): Log {
   const head = buffer.subarray(0, 8);
@@ -55,6 +57,20 @@ export class Provider {
     private resourceManager: ResourceManager,
   ) {
     applyLoggingProxyToClass(this);
+  }
+
+  // Helper method to pull image with error formatting
+  private async pullImageWithErrorFormatting(
+    image: string,
+    auth?: DockerAuth,
+    controller?: AbortController,
+  ): Promise<void> {
+    try {
+      await this.containerOrchestration.pullImage(image, auth, controller);
+    } catch (error) {
+      (error as ErrorWithEventType).eventType = 'image-pull-error';
+      throw error;
+    }
   }
 
   public async stopReverseProxyApi(address: string): Promise<boolean> {
@@ -107,7 +123,7 @@ export class Provider {
 
       this.proxyStartupAbortController = new AbortController();
 
-      await this.containerOrchestration.pullImage(
+      await this.pullImageWithErrorFormatting(
         this.frpcImage,
         undefined,
         this.proxyStartupAbortController,
@@ -115,7 +131,7 @@ export class Provider {
 
       this.resourceManager.images.setImage(this.frpcImage);
 
-      await this.containerOrchestration.pullImage(
+      await this.pullImageWithErrorFormatting(
         this.tunnelImage,
         undefined,
         this.proxyStartupAbortController,
@@ -260,16 +276,11 @@ export class Provider {
           emitter.emit('log', log, type, 'container');
         });
       } else {
-        try {
-          await this.containerOrchestration.pullImage(
-            op.args.image,
-            op.args.authentication?.docker,
-            controller,
-          );
-        } catch (error) {
-          (error as ErrorWithEventType).eventType = 'image-pull-error';
-          throw error;
-        }
+        await this.pullImageWithErrorFormatting(
+          op.args.image,
+          op.args.authentication?.docker,
+          controller,
+        );
 
         if (!op.args.authentication?.docker) {
           this.resourceManager.images.setImage(op.args.image);
@@ -296,16 +307,11 @@ export class Provider {
         await this.containerOrchestration.createNetwork(name, controller);
 
         if (isOpExposed(op as Operation<'container/run'>)) {
-          try {
-            await this.containerOrchestration.pullImage(
-              this.frpcImage,
-              undefined,
-              controller,
-            );
-          } catch (error) {
-            (error as ErrorWithEventType).eventType = 'image-pull-error';
-            throw error;
-          }
+          await this.pullImageWithErrorFormatting(
+            this.frpcImage,
+            undefined,
+            controller,
+          );
 
           this.resourceManager.images.setImage(this.frpcImage);
 
@@ -382,16 +388,11 @@ export class Provider {
         }
 
         if (op.args.resources) {
-          try {
-            await this.containerOrchestration.pullImage(
-              s3HelperImage,
-              undefined,
-              controller,
-            );
-          } catch (error) {
-            (error as ErrorWithEventType).eventType = 'image-pull-error';
-            throw error;
-          }
+          await this.pullImageWithErrorFormatting(
+            s3HelperImage,
+            undefined,
+            controller,
+          );
           this.resourceManager.images.setImage(s3HelperImage);
 
           // transformCollections has already resolved any SpreadMarker objects by this point

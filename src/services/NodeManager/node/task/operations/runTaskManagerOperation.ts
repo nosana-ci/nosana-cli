@@ -352,7 +352,7 @@ export async function runTaskManagerOperation(
       status,
       endTime: Date.now(),
       error: errorToAdd,
-    } as Partial<OpStateWithError>);
+    } as Partial<OpState> & { error?: OpStateError[] });
 
     this.setResults(op.id, results ?? {});
   });
