@@ -35,7 +35,6 @@ import {
   generateUrlSecretObject,
 } from '../../../generic/expose-util.js';
 
-
 function parseBuffer(buffer: Buffer): Log {
   const head = buffer.subarray(0, 8);
   const chunkType = head.readUInt8(0);
