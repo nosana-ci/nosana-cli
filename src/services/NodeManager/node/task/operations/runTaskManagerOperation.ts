@@ -315,18 +315,8 @@ export async function runTaskManagerOperation(
     }
 
     // Format error message and add to opState.error array
-    // Validate existing errors are in correct format (defensive check for old/corrupted data)
     const opStateWithError = opState as OpStateWithError;
-    const existingErrorsRaw = opStateWithError.error || [];
-    const existingErrors: OpStateError[] = Array.isArray(existingErrorsRaw)
-      ? existingErrorsRaw.filter(
-          (e): e is OpStateError =>
-            e &&
-            typeof e === 'object' &&
-            typeof e.event === 'string' &&
-            typeof e.message === 'string',
-        )
-      : [];
+    const existingErrors: OpStateError[] = opStateWithError.error || [];
 
     let errorToAdd: OpStateError[] = existingErrors;
 
@@ -362,7 +352,7 @@ export async function runTaskManagerOperation(
       status,
       endTime: Date.now(),
       error: errorToAdd,
-    } as any);
+    } as Partial<OpStateWithError>);
 
     this.setResults(op.id, results ?? {});
   });
