@@ -22,6 +22,11 @@ type OpStateError = {
   code?: number;
 };
 
+// Error with optional eventType property (set at source in Provider)
+type ErrorWithEventType = Error & {
+  eventType?: string;
+};
+
 import { finalizeEnvOnOperation } from '../globalStore/finalizeEnv.js';
 import {
   createResultsObject,
@@ -269,7 +274,7 @@ export async function runTaskManagerOperation(
    * - `exitCode: 2` is used as a standard error indicator (non-zero, but distinct from process exit).
    * - The actual `err` is not persisted currently, but could be added to logs in future.
    */
-  emitter.on('error', (err: any) => {
+  emitter.on('error', (err: ErrorWithEventType | unknown) => {
     const wasAborted = abort.signal.aborted;
     const reason = wasAborted ? abort.signal.reason : undefined;
 
@@ -318,7 +323,7 @@ export async function runTaskManagerOperation(
       const errorMessage = err instanceof Error ? err.message : String(err);
       
       // Get event type from error object (set at source) or default to 'operation-error'
-      const eventType = (err as any)?.eventType || 'operation-error';
+      const eventType = (err as ErrorWithEventType)?.eventType || 'operation-error';
       
       // Extract HTTP status codes
       let errorCode: number | undefined;

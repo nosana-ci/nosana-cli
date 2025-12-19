@@ -29,6 +29,11 @@ import {
   generateUrlSecretObject,
 } from '../../../generic/expose-util.js';
 
+// Error with optional eventType property (set at source)
+type ErrorWithEventType = Error & {
+  eventType?: string;
+};
+
 function parseBuffer(buffer: Buffer): Log {
   const head = buffer.subarray(0, 8);
   const chunkType = head.readUInt8(0);
@@ -262,7 +267,7 @@ export class Provider {
             controller,
           );
         } catch (error) {
-          (error as any).eventType = 'image-pull-error';
+          (error as ErrorWithEventType).eventType = 'image-pull-error';
           throw error;
         }
 
@@ -298,7 +303,7 @@ export class Provider {
               controller,
             );
           } catch (error) {
-            (error as any).eventType = 'image-pull-error';
+            (error as ErrorWithEventType).eventType = 'image-pull-error';
             throw error;
           }
 
@@ -343,7 +348,7 @@ export class Provider {
               ),
             );
           } catch (error) {
-            (error as any).eventType = 'container-runtime-error';
+            (error as ErrorWithEventType).eventType = 'container-runtime-error';
             throw error;
           }
           if (op.args.private) {
@@ -384,7 +389,7 @@ export class Provider {
               controller,
             );
           } catch (error) {
-            (error as any).eventType = 'image-pull-error';
+            (error as ErrorWithEventType).eventType = 'image-pull-error';
             throw error;
           }
           this.resourceManager.images.setImage(s3HelperImage);
@@ -397,7 +402,7 @@ export class Provider {
             );
             volumes.push(...resourceVolumes);
           } catch (error) {
-            (error as any).eventType = 'resource-error';
+            (error as ErrorWithEventType).eventType = 'resource-error';
             throw error;
           }
         }
@@ -421,7 +426,7 @@ export class Provider {
             },
           );
         } catch (error) {
-          (error as any).eventType = 'container-runtime-error';
+          (error as ErrorWithEventType).eventType = 'container-runtime-error';
           throw error;
         }
 
@@ -632,7 +637,7 @@ export class Provider {
           emitter.emit('updateOpHost', { name });
           emitter.emit('updateOpState', { providerId: volume.Status });
         } catch (error) {
-          (error as any).eventType = 'resource-error';
+          (error as ErrorWithEventType).eventType = 'resource-error';
           throw error;
         }
       }
@@ -642,8 +647,8 @@ export class Provider {
       emitter.emit('exit', { exitCode: 0 });
     } catch (error) {
       // Ensure eventType is set if not already set
-      if (!(error as any)?.eventType) {
-        (error as any).eventType = 'resource-error';
+      if (!(error as ErrorWithEventType)?.eventType) {
+        (error as ErrorWithEventType).eventType = 'resource-error';
       }
       emitter.emit('log', error, 'error');
       emitter.emit('error', error);
