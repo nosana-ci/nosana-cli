@@ -15,6 +15,13 @@ import {
   type EndpointSecret,
 } from '@nosana/sdk';
 
+// Error format for opState.error - matches SDK spec
+type OpStateError = {
+  event: string;
+  message: string;
+  code?: number;
+};
+
 import { finalizeEnvOnOperation } from '../globalStore/finalizeEnv.js';
 import {
   createResultsObject,
@@ -296,13 +303,47 @@ export async function runTaskManagerOperation(
       }
     }
 
+    // Format error message and add to opState.error array
+    // Validate existing errors are in correct format (defensive check for old/corrupted data)
+    const existingErrorsRaw = (opState as any).error || [];
+    const existingErrors: OpStateError[] = Array.isArray(existingErrorsRaw)
+      ? existingErrorsRaw.filter((e: any) => 
+          e && typeof e === 'object' && typeof e.event === 'string' && typeof e.message === 'string'
+        )
+      : [];
+    
+    let errorToAdd: OpStateError[] = existingErrors;
+    
+    if (!wasAborted) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      
+      // Get event type from error object (set at source) or default to 'operation-error'
+      const eventType = (err as any)?.eventType || 'operation-error';
+      
+      // Extract HTTP status codes
+      let errorCode: number | undefined;
+      const httpCodeMatch = errorMessage.match(/HTTP code (\d{3})|status code (\d{3})/);
+      if (httpCodeMatch) {
+        errorCode = parseInt(httpCodeMatch[1] || httpCodeMatch[2]);
+      }
+      
+      const newError: OpStateError = {
+        event: eventType,
+        message: errorMessage,
+        ...(errorCode !== undefined && { code: errorCode }),
+      };
+      
+      errorToAdd = [...existingErrors, newError];
+    }
+
     this.repository.updateOpState(this.job, index, {
       results,
       logs: opState.logs,
       exitCode: 2,
       status,
       endTime: Date.now(),
-    });
+      error: errorToAdd,
+    } as any);
 
     this.setResults(op.id, results ?? {});
   });

@@ -255,11 +255,16 @@ export class Provider {
           emitter.emit('log', log, type, 'container');
         });
       } else {
-        await this.containerOrchestration.pullImage(
-          op.args.image,
-          op.args.authentication?.docker,
-          controller,
-        );
+        try {
+          await this.containerOrchestration.pullImage(
+            op.args.image,
+            op.args.authentication?.docker,
+            controller,
+          );
+        } catch (error) {
+          (error as any).eventType = 'image-pull-error';
+          throw error;
+        }
 
         if (!op.args.authentication?.docker) {
           this.resourceManager.images.setImage(op.args.image);
@@ -286,11 +291,16 @@ export class Provider {
         await this.containerOrchestration.createNetwork(name, controller);
 
         if (isOpExposed(op as Operation<'container/run'>)) {
-          await this.containerOrchestration.pullImage(
-            this.frpcImage,
-            undefined,
-            controller,
-          );
+          try {
+            await this.containerOrchestration.pullImage(
+              this.frpcImage,
+              undefined,
+              controller,
+            );
+          } catch (error) {
+            (error as any).eventType = 'image-pull-error';
+            throw error;
+          }
 
           this.resourceManager.images.setImage(this.frpcImage);
 
@@ -320,17 +330,22 @@ export class Provider {
             deploymentHash,
           );
           idMaps = idMap;
-          frpcContainer = await this.containerOrchestration.runFlowContainer(
-            this.frpcImage,
-            this.generateFrpcContainerConfig(
-              name,
-              networks,
-              flow,
-              proxies,
-              isLoadBalanced,
-              deploymentHash,
-            ),
-          );
+          try {
+            frpcContainer = await this.containerOrchestration.runFlowContainer(
+              this.frpcImage,
+              this.generateFrpcContainerConfig(
+                name,
+                networks,
+                flow,
+                proxies,
+                isLoadBalanced,
+                deploymentHash,
+              ),
+            );
+          } catch (error) {
+            (error as any).eventType = 'container-runtime-error';
+            throw error;
+          }
           if (op.args.private) {
             this.repository.updateflowStateSecret(flow.id, {
               [flow.id]: generateUrlSecretObject(idMap, op.id),
@@ -362,43 +377,53 @@ export class Provider {
         }
 
         if (op.args.resources) {
-          await this.containerOrchestration.pullImage(
-            s3HelperImage,
-            undefined,
-            controller,
-          );
+          try {
+            await this.containerOrchestration.pullImage(
+              s3HelperImage,
+              undefined,
+              controller,
+            );
+          } catch (error) {
+            (error as any).eventType = 'image-pull-error';
+            throw error;
+          }
           this.resourceManager.images.setImage(s3HelperImage);
 
           // transformCollections has already resolved any SpreadMarker objects by this point
-          const resourceVolumes = await this.resourceManager.getResourceVolumes(
-            (op.args.resources as Resource[]) ?? [],
-            controller,
-          );
-
           try {
+            const resourceVolumes = await this.resourceManager.getResourceVolumes(
+              (op.args.resources as Resource[]) ?? [],
+              controller,
+            );
             volumes.push(...resourceVolumes);
           } catch (error) {
+            (error as any).eventType = 'resource-error';
             throw error;
           }
         }
 
-        container = await this.containerOrchestration.runFlowContainer(
-          op.args.image ?? flow.jobDefinition.global?.image!,
-          {
-            name,
-            cmd,
-            env,
-            networks,
-            requires_network_mode: isOpExposed(
-              op as Operation<'container/run'>,
-            ),
-            gpu,
-            entrypoint,
-            work_dir,
-            volumes,
-            aliases,
-          },
-        );
+        try {
+          container = await this.containerOrchestration.runFlowContainer(
+            op.args.image ?? flow.jobDefinition.global?.image!,
+            {
+              name,
+              cmd,
+              env,
+              networks,
+              requires_network_mode: isOpExposed(
+                op as Operation<'container/run'>,
+              ),
+              gpu,
+              entrypoint,
+              work_dir,
+              volumes,
+              aliases,
+            },
+          );
+        } catch (error) {
+          (error as any).eventType = 'container-runtime-error';
+          throw error;
+        }
 
         emitter.emit('updateOpState', { providerId: container.id });
 
@@ -598,19 +623,28 @@ export class Provider {
 
       const isVolume = await this.containerOrchestration.hasVolume(name);
       if (!isVolume) {
-        const volume = await this.containerOrchestration.createVolume(
-          name,
-          controller,
-        );
+        try {
+          const volume = await this.containerOrchestration.createVolume(
+            name,
+            controller,
+          );
 
-        emitter.emit('updateOpHost', { name });
-        emitter.emit('updateOpState', { providerId: volume.Status });
+          emitter.emit('updateOpHost', { name });
+          emitter.emit('updateOpState', { providerId: volume.Status });
+        } catch (error) {
+          (error as any).eventType = 'resource-error';
+          throw error;
+        }
       }
 
       emitter.emit('healthcheck:startup:success');
 
       emitter.emit('exit', { exitCode: 0 });
     } catch (error) {
+      // Ensure eventType is set if not already set
+      if (!(error as any)?.eventType) {
+        (error as any).eventType = 'resource-error';
+      }
       emitter.emit('log', error, 'error');
       emitter.emit('error', error);
     }
