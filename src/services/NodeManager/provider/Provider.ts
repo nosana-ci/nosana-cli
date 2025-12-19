@@ -396,10 +396,11 @@ export class Provider {
 
           // transformCollections has already resolved any SpreadMarker objects by this point
           try {
-            const resourceVolumes = await this.resourceManager.getResourceVolumes(
-              (op.args.resources as Resource[]) ?? [],
-              controller,
-            );
+            const resourceVolumes =
+              await this.resourceManager.getResourceVolumes(
+                (op.args.resources as Resource[]) ?? [],
+                controller,
+              );
             volumes.push(...resourceVolumes);
           } catch (error) {
             (error as ErrorWithEventType).eventType = 'resource-error';
