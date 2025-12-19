@@ -25,11 +25,6 @@ import { ResourceManager } from '../node/resource/resourceManager.js';
 import { applyLoggingProxyToClass } from '../monitoring/proxy/loggingProxy.js';
 import { promiseTimeoutWrapper } from '../../../generic/timeoutPromiseWrapper.js';
 import { ContainerOrchestrationInterface } from './containerOrchestration/interface.js';
-
-// Error with optional eventType property (set at source)
-type ErrorWithEventType = Error & {
-  eventType?: string;
-};
 import {
   generateProxies,
   generateUrlSecretObject,
@@ -67,7 +62,9 @@ export class Provider {
     try {
       await this.containerOrchestration.pullImage(image, auth, controller);
     } catch (error) {
-      (error as ErrorWithEventType).eventType = 'image-pull-error';
+      if (error instanceof Error) {
+        error.eventType = 'image-pull-error';
+      }
       throw error;
     }
   }
@@ -353,7 +350,9 @@ export class Provider {
               ),
             );
           } catch (error) {
-            (error as ErrorWithEventType).eventType = 'container-runtime-error';
+            if (error instanceof Error) {
+              error.eventType = 'container-runtime-error';
+            }
             throw error;
           }
           if (op.args.private) {
@@ -403,7 +402,9 @@ export class Provider {
               );
             volumes.push(...resourceVolumes);
           } catch (error) {
-            (error as ErrorWithEventType).eventType = 'resource-error';
+            if (error instanceof Error) {
+              error.eventType = 'resource-error';
+            }
             throw error;
           }
         }
@@ -427,7 +428,9 @@ export class Provider {
             },
           );
         } catch (error) {
-          (error as ErrorWithEventType).eventType = 'container-runtime-error';
+          if (error instanceof Error) {
+            error.eventType = 'container-runtime-error';
+          }
           throw error;
         }
 
@@ -638,7 +641,9 @@ export class Provider {
           emitter.emit('updateOpHost', { name });
           emitter.emit('updateOpState', { providerId: volume.Status });
         } catch (error) {
-          (error as ErrorWithEventType).eventType = 'resource-error';
+          if (error instanceof Error) {
+            error.eventType = 'resource-error';
+          }
           throw error;
         }
       }
@@ -648,8 +653,8 @@ export class Provider {
       emitter.emit('exit', { exitCode: 0 });
     } catch (error) {
       // Ensure eventType is set if not already set
-      if (!(error as ErrorWithEventType)?.eventType) {
-        (error as ErrorWithEventType).eventType = 'resource-error';
+      if (error instanceof Error && !error.eventType) {
+        error.eventType = 'resource-error';
       }
       emitter.emit('log', error, 'error');
       emitter.emit('error', error);
