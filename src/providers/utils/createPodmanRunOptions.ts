@@ -1,6 +1,34 @@
 import { ifStringCastToArray } from '../../generic/utils.js';
 import { RunContainerArgs } from '../../services/NodeManager/provider/containerOrchestration/interface.js';
 
+// Todo use sdk types when they are available
+export type RestartPolicy =
+  | 'always'
+  | 'unless-stopped'
+  | 'on-failure'
+  | {
+      policy: 'on-failure';
+      restart_tries?: number;
+    };
+// These extra types are required because interface.ts
+function parseRestartPolicy(restart_policy: RestartPolicy | '' | undefined) {
+  if (typeof restart_policy === 'string') {
+    return {
+      restart_policy:
+        restart_policy === 'always' ? 'unless-stopped' : restart_policy,
+    };
+  }
+  if (typeof restart_policy === 'object' && 'policy' in restart_policy) {
+    return {
+      restart_policy: restart_policy.policy,
+      ...(restart_policy.restart_tries
+        ? { restart_tries: restart_policy.restart_tries }
+        : {}),
+    };
+  }
+  return {};
+}
+
 /**
  * Takes image and args and return podman run options
  * @param image
@@ -51,7 +79,7 @@ export function createPodmanRunOptions(
       : undefined),
     env,
     devices,
-    restart_policy,
+    ...parseRestartPolicy(restart_policy),
     hostadd: [
       'host.docker.internal:8.8.8.8',
       'host.containers.internal:8.8.8.8',
