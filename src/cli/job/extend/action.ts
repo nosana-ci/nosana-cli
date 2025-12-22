@@ -29,7 +29,7 @@ export async function extendJob(
 
   if (job) {
     formatter.output(OUTPUT_EVENTS.OUTPUT_JOB_URL, {
-      job_url: `https://dashboard.nosana.com/jobs/${jobAddress}${
+      job_url: `https://explore.nosana.com/jobs/${jobAddress}${
         nosana.solana.config.network.includes('devnet') ? '?network=devnet' : ''
       }`,
     });
