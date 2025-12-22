@@ -53,22 +53,6 @@ export class Provider {
     applyLoggingProxyToClass(this);
   }
 
-  // Helper method to pull image with error formatting
-  private async pullImageWithErrorFormatting(
-    image: string,
-    auth?: DockerAuth,
-    controller?: AbortController,
-  ): Promise<void> {
-    try {
-      await this.containerOrchestration.pullImage(image, auth, controller);
-    } catch (error) {
-      if (error instanceof Error) {
-        error.eventType = 'image-pull-error';
-      }
-      throw error;
-    }
-  }
-
   public async stopReverseProxyApi(address: string): Promise<boolean> {
     const tunnel_name = `tunnel-api-${address}`;
     const frpc_name = `frpc-api-${address}`;
@@ -119,7 +103,7 @@ export class Provider {
 
       this.proxyStartupAbortController = new AbortController();
 
-      await this.pullImageWithErrorFormatting(
+      await this.containerOrchestration.pullImage(
         this.frpcImage,
         undefined,
         this.proxyStartupAbortController,
@@ -127,7 +111,7 @@ export class Provider {
 
       this.resourceManager.images.setImage(this.frpcImage);
 
-      await this.pullImageWithErrorFormatting(
+      await this.containerOrchestration.pullImage(
         this.tunnelImage,
         undefined,
         this.proxyStartupAbortController,
@@ -272,7 +256,7 @@ export class Provider {
           emitter.emit('log', log, type, 'container');
         });
       } else {
-        await this.pullImageWithErrorFormatting(
+        await this.containerOrchestration.pullImage(
           op.args.image,
           op.args.authentication?.docker,
           controller,
@@ -303,7 +287,7 @@ export class Provider {
         await this.containerOrchestration.createNetwork(name, controller);
 
         if (isOpExposed(op as Operation<'container/run'>)) {
-          await this.pullImageWithErrorFormatting(
+          await this.containerOrchestration.pullImage(
             this.frpcImage,
             undefined,
             controller,
@@ -337,24 +321,17 @@ export class Provider {
             deploymentHash,
           );
           idMaps = idMap;
-          try {
-            frpcContainer = await this.containerOrchestration.runFlowContainer(
-              this.frpcImage,
-              this.generateFrpcContainerConfig(
-                name,
-                networks,
-                flow,
-                proxies,
-                isLoadBalanced,
-                deploymentHash,
-              ),
-            );
-          } catch (error) {
-            if (error instanceof Error) {
-              error.eventType = 'container-runtime-error';
-            }
-            throw error;
-          }
+          frpcContainer = await this.containerOrchestration.runFlowContainer(
+            this.frpcImage,
+            this.generateFrpcContainerConfig(
+              name,
+              networks,
+              flow,
+              proxies,
+              isLoadBalanced,
+              deploymentHash,
+            ),
+          );
           if (op.args.private) {
             this.repository.updateflowStateSecret(flow.id, {
               [flow.id]: generateUrlSecretObject(idMap, op.id),
@@ -386,7 +363,7 @@ export class Provider {
         }
 
         if (op.args.resources) {
-          await this.pullImageWithErrorFormatting(
+          await this.containerOrchestration.pullImage(
             s3HelperImage,
             undefined,
             controller,
@@ -394,45 +371,30 @@ export class Provider {
           this.resourceManager.images.setImage(s3HelperImage);
 
           // transformCollections has already resolved any SpreadMarker objects by this point
-          try {
-            const resourceVolumes =
-              await this.resourceManager.getResourceVolumes(
-                (op.args.resources as Resource[]) ?? [],
-                controller,
-              );
-            volumes.push(...resourceVolumes);
-          } catch (error) {
-            if (error instanceof Error) {
-              error.eventType = 'resource-error';
-            }
-            throw error;
-          }
+          const resourceVolumes = await this.resourceManager.getResourceVolumes(
+            (op.args.resources as Resource[]) ?? [],
+            controller,
+          );
+          volumes.push(...resourceVolumes);
         }
 
-        try {
-          container = await this.containerOrchestration.runFlowContainer(
-            op.args.image ?? flow.jobDefinition.global?.image!,
-            {
-              name,
-              cmd,
-              env,
-              networks,
-              requires_network_mode: isOpExposed(
-                op as Operation<'container/run'>,
-              ),
-              gpu,
-              entrypoint,
-              work_dir,
-              volumes,
-              aliases,
-            },
-          );
-        } catch (error) {
-          if (error instanceof Error) {
-            error.eventType = 'container-runtime-error';
-          }
-          throw error;
-        }
+        container = await this.containerOrchestration.runFlowContainer(
+          op.args.image ?? flow.jobDefinition.global?.image!,
+          {
+            name,
+            cmd,
+            env,
+            networks,
+            requires_network_mode: isOpExposed(
+              op as Operation<'container/run'>,
+            ),
+            gpu,
+            entrypoint,
+            work_dir,
+            volumes,
+            aliases,
+          },
+        );
 
         emitter.emit('updateOpState', { providerId: container.id });
 
@@ -632,30 +594,19 @@ export class Provider {
 
       const isVolume = await this.containerOrchestration.hasVolume(name);
       if (!isVolume) {
-        try {
-          const volume = await this.containerOrchestration.createVolume(
-            name,
-            controller,
-          );
+        const volume = await this.containerOrchestration.createVolume(
+          name,
+          controller,
+        );
 
-          emitter.emit('updateOpHost', { name });
-          emitter.emit('updateOpState', { providerId: volume.Status });
-        } catch (error) {
-          if (error instanceof Error) {
-            error.eventType = 'resource-error';
-          }
-          throw error;
-        }
+        emitter.emit('updateOpHost', { name });
+        emitter.emit('updateOpState', { providerId: volume.Status });
       }
 
       emitter.emit('healthcheck:startup:success');
 
       emitter.emit('exit', { exitCode: 0 });
     } catch (error) {
-      // Ensure eventType is set if not already set
-      if (error instanceof Error && !error.eventType) {
-        error.eventType = 'resource-error';
-      }
       emitter.emit('log', error, 'error');
       emitter.emit('error', error);
     }

@@ -89,14 +89,21 @@ export class DockerContainerOrchestration
     authorisation?: DockerAuth,
     controller?: AbortController,
   ): Promise<void> {
-    if (controller?.signal.aborted) throw controller.signal.reason;
-    if (await this.docker.hasImage(image)) return;
+    try {
+      if (controller?.signal.aborted) throw controller.signal.reason;
+      if (await this.docker.hasImage(image)) return;
 
-    await this.docker.promisePull(
-      image,
-      controller ?? new AbortController(),
-      authorisation,
-    );
+      await this.docker.promisePull(
+        image,
+        controller ?? new AbortController(),
+        authorisation,
+      );
+    } catch (error) {
+      if (error instanceof Error) {
+        error.eventType = 'image-pull-error';
+      }
+      throw error;
+    }
   }
 
   async hasImage(image: string): Promise<boolean> {
@@ -126,15 +133,22 @@ export class DockerContainerOrchestration
     name: string,
     controller?: AbortController,
   ): Promise<void> {
-    if (await this.hasNetwork('NOSANA_GATEWAY')) return;
-    await this.docker.createNetwork({
-      Name: 'NOSANA_GATEWAY',
-      IPAM: {
-        Driver: 'bridge',
-        Config: [{ Subnet: '192.168.101.0/24', Gateway: '192.168.101.1' }],
-      },
-      abortSignal: controller?.signal,
-    });
+    try {
+      if (await this.hasNetwork('NOSANA_GATEWAY')) return;
+      await this.docker.createNetwork({
+        Name: 'NOSANA_GATEWAY',
+        IPAM: {
+          Driver: 'bridge',
+          Config: [{ Subnet: '192.168.101.0/24', Gateway: '192.168.101.1' }],
+        },
+        abortSignal: controller?.signal,
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        error.eventType = 'resource-error';
+      }
+      throw error;
+    }
   }
 
   async hasNetwork(name: string): Promise<boolean> {
@@ -153,7 +167,14 @@ export class DockerContainerOrchestration
     name?: string,
     controller?: AbortController,
   ): Promise<VolumeCreateResponse> {
-    return this.docker.createVolume({ Name: name });
+    try {
+      return await this.docker.createVolume({ Name: name });
+    } catch (error) {
+      if (error instanceof Error) {
+        error.eventType = 'resource-error';
+      }
+      throw error;
+    }
   }
 
   async hasVolume(name: string): Promise<boolean> {
@@ -242,19 +263,26 @@ export class DockerContainerOrchestration
     args: ContainerCreateOptions,
     controller?: AbortController,
   ): Promise<Container> {
-    if (controller?.signal.aborted) {
-      throw controller.signal.reason;
-    }
+    try {
+      if (controller?.signal.aborted) {
+        throw controller.signal.reason;
+      }
 
-    const container = await this.docker.createContainer({
-      ...args,
-      abortSignal: controller?.signal,
-    });
-    await container.start();
-    if (controller) {
-      this.setupContainerAbortListener(container.id, controller);
+      const container = await this.docker.createContainer({
+        ...args,
+        abortSignal: controller?.signal,
+      });
+      await container.start();
+      if (controller) {
+        this.setupContainerAbortListener(container.id, controller);
+      }
+      return container;
+    } catch (error) {
+      if (error instanceof Error) {
+        error.eventType = 'container-runtime-error';
+      }
+      throw error;
     }
-    return container;
   }
 
   async runFlowContainer(
@@ -262,22 +290,29 @@ export class DockerContainerOrchestration
     args: RunContainerArgs,
     controller?: AbortController,
   ): Promise<Container> {
-    if (controller?.signal.aborted) {
-      throw controller.signal.reason;
+    try {
+      if (controller?.signal.aborted) {
+        throw controller.signal.reason;
+      }
+
+      const container = await this.docker.createContainer({
+        ...mapRunContainerArgsToContainerCreateOpts(image, args, this.gpu),
+        abortSignal: controller?.signal,
+      });
+
+      await container.start();
+
+      if (controller) {
+        this.setupContainerAbortListener(container.id, controller);
+      }
+
+      return container;
+    } catch (error) {
+      if (error instanceof Error) {
+        error.eventType = 'container-runtime-error';
+      }
+      throw error;
     }
-
-    const container = await this.docker.createContainer({
-      ...mapRunContainerArgsToContainerCreateOpts(image, args, this.gpu),
-      abortSignal: controller?.signal,
-    });
-
-    await container.start();
-
-    if (controller) {
-      this.setupContainerAbortListener(container.id, controller);
-    }
-
-    return container;
   }
 
   async stopContainer(id: string, controller?: AbortController): Promise<void> {
