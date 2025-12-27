@@ -10,23 +10,10 @@ import {
 import TaskManager from '../TaskManager.js';
 import {
   Flow,
-  OpState,
   type FlowSecrets,
   type JobExposeSecrets,
   type EndpointSecret,
 } from '@nosana/sdk';
-
-// Error format for opState.error - matches SDK spec
-type OpStateError = {
-  event: string;
-  message: string;
-  code?: number;
-};
-
-// OpState with error field (until SDK is updated)
-type OpStateWithError = OpState & {
-  error?: OpStateError[];
-};
 
 import { finalizeEnvOnOperation } from '../globalStore/finalizeEnv.js';
 import {
@@ -275,7 +262,7 @@ export async function runTaskManagerOperation(
    * - `exitCode: 2` is used as a standard error indicator (non-zero, but distinct from process exit).
    * - The actual `err` is not persisted currently, but could be added to logs in future.
    */
-  emitter.on('error', (err: unknown) => {
+  emitter.on('error', (err: Error) => {
     const wasAborted = abort.signal.aborted;
     const reason = wasAborted ? abort.signal.reason : undefined;
 
@@ -310,34 +297,25 @@ export async function runTaskManagerOperation(
     }
 
     // Format error message and add to opState.error array
-    const opStateWithError = opState as OpStateWithError;
-    const existingErrors: OpStateError[] = opStateWithError.error || [];
-
-    let errorToAdd: OpStateError[] = existingErrors;
-
     if (!wasAborted) {
-      const errorMessage = err instanceof Error ? err.message : String(err);
+      const message: string = ('message' in err && err.message) || String(err);
+      const event = ('eventType' in err && err.eventType) || 'operation-error';
 
-      // Get event type from error object (set at source) or default to 'operation-error'
-      const eventType =
-        (err instanceof Error ? err.eventType : undefined) || 'operation-error';
+      let errorCode: number | undefined = undefined;
 
-      // Extract HTTP status codes
-      let errorCode: number | undefined;
-      const httpCodeMatch = errorMessage.match(
+      const httpCodeMatch = message.match(
         /HTTP code (\d{3})|status code (\d{3})/,
       );
+
       if (httpCodeMatch) {
         errorCode = parseInt(httpCodeMatch[1] || httpCodeMatch[2]);
       }
 
-      const newError: OpStateError = {
-        event: eventType,
-        message: errorMessage,
-        ...(errorCode !== undefined && { code: errorCode }),
-      };
-
-      errorToAdd = [...existingErrors, newError];
+      this.repository.updateOpStateError(this.job, index, {
+        event,
+        message,
+        ...(errorCode ? { code: errorCode } : {}),
+      });
     }
 
     this.repository.updateOpState(this.job, index, {
@@ -346,8 +324,7 @@ export async function runTaskManagerOperation(
       exitCode: 2,
       status,
       endTime: Date.now(),
-      error: errorToAdd,
-    } as Partial<OpState> & { error?: OpStateError[] });
+    });
 
     this.setResults(op.id, results ?? {});
   });
