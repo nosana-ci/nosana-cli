@@ -13,7 +13,7 @@ type OpStateError = {
 };
 
 // OpState with error field (until SDK is updated)
-type OpStateWithError = OpState & {
+export type OpStateWithError = OpState & {
   error: OpStateError[];
 };
 

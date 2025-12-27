@@ -1,6 +1,10 @@
-import { OperationType, Operation } from '@nosana/sdk';
+import type { OperationType, Operation } from '@nosana/sdk';
 
-export function createDefaultOpState(op: Operation<OperationType>) {
+import type { OpStateWithError } from '../../../repository/NodeRepository.js';
+
+export function createDefaultOpState(
+  op: Operation<OperationType>,
+): OpStateWithError {
   return {
     operationId: op.id,
     group: op.execution?.group ?? op.id,

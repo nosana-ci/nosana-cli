@@ -59,7 +59,7 @@ export function generateProxyConfig(
   op: Operation<'container/run'>,
   generatedDeploymentId: string | undefined,
   proxyHTTPHealthCheckPath: undefined | string,
-) {
+): Object {
   return {
     name: `${generatedId}-${operationId}`,
     localIp: name,
