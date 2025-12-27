@@ -1,5 +1,6 @@
 import {
   createHash,
+  DockerAuth,
   ExposedPort,
   Flow,
   getExposePorts,
@@ -374,12 +375,7 @@ export class Provider {
             (op.args.resources as Resource[]) ?? [],
             controller,
           );
-
-          try {
-            volumes.push(...resourceVolumes);
-          } catch (error) {
-            throw error;
-          }
+          volumes.push(...resourceVolumes);
         }
 
         container = await this.containerOrchestration.runFlowContainer(

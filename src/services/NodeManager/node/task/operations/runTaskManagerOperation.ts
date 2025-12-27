@@ -262,7 +262,7 @@ export async function runTaskManagerOperation(
    * - `exitCode: 2` is used as a standard error indicator (non-zero, but distinct from process exit).
    * - The actual `err` is not persisted currently, but could be added to logs in future.
    */
-  emitter.on('error', (err: any) => {
+  emitter.on('error', (err: Error) => {
     const wasAborted = abort.signal.aborted;
     const reason = wasAborted ? abort.signal.reason : undefined;
 
@@ -294,6 +294,28 @@ export async function runTaskManagerOperation(
       for (const logObj of opState.logs) {
         extractResultFromLog(results, logObj, op.results);
       }
+    }
+
+    // Format error message and add to opState.error array
+    if (!wasAborted) {
+      const message: string = ('message' in err && err.message) || String(err);
+      const event = ('eventType' in err && err.eventType) || 'operation-error';
+
+      let errorCode: number | undefined = undefined;
+
+      const httpCodeMatch = message.match(
+        /HTTP code (\d{3})|status code (\d{3})/,
+      );
+
+      if (httpCodeMatch) {
+        errorCode = parseInt(httpCodeMatch[1] || httpCodeMatch[2]);
+      }
+
+      this.repository.updateOpStateError(this.job, index, {
+        event,
+        message,
+        ...(errorCode ? { code: errorCode } : {}),
+      });
     }
 
     this.repository.updateOpState(this.job, index, {

@@ -35,44 +35,52 @@ export class PodmanContainerOrchestration extends DockerContainerOrchestration {
     args: RunContainerArgs,
     controller?: AbortController,
   ): Promise<Container> {
-    let error: any;
-    // Incase of error, retry 3 times
-    for (let i = 0; i < 3; i++) {
-      // Sleep between retries to try and let podman image copying finalise
-      await new Promise((res) => setTimeout(res, 3000 * i));
-      const create = await this.libPodAPICall(`/containers/create`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(createPodmanRunOptions(image, args, this.gpu)),
-      });
-
-      if (create.status === 201) {
-        const createResult: any = await create.json();
-        const start = await this.libPodAPICall(
-          `/containers/${createResult.Id}/start`,
-          {
-            method: 'POST',
+    try {
+      let error: any;
+      // Incase of error, retry 3 times
+      for (let i = 0; i < 3; i++) {
+        // Sleep between retries to try and let podman image copying finalise
+        await new Promise((res) => setTimeout(res, 3000 * i));
+        const create = await this.libPodAPICall(`/containers/create`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
           },
-        );
-        if (start.status === 204) {
-          const container = this.docker.getContainer(createResult.Id);
-          if (controller) {
-            this.setupContainerAbortListener(container.id, controller);
-          }
-          return container;
-        } else {
-          throw new Error(
-            'Cannot start container: ' + ((await start.json()) as any).message,
+          body: JSON.stringify(createPodmanRunOptions(image, args, this.gpu)),
+        });
+
+        if (create.status === 201) {
+          const createResult: any = await create.json();
+          const start = await this.libPodAPICall(
+            `/containers/${createResult.Id}/start`,
+            {
+              method: 'POST',
+            },
           );
+          if (start.status === 204) {
+            const container = this.docker.getContainer(createResult.Id);
+            if (controller) {
+              this.setupContainerAbortListener(container.id, controller);
+            }
+            return container;
+          } else {
+            throw new Error(
+              'Cannot start container: ' +
+                ((await start.json()) as any).message,
+            );
+          }
         }
+
+        error = await create.json();
+        if (error.message !== `${image}: image not known`) break;
       }
 
-      error = await create.json();
-      if (error.message !== `${image}: image not known`) break;
+      throw error;
+    } catch (error) {
+      if (error instanceof Error) {
+        error.eventType = 'container-runtime-error';
+      }
+      throw error;
     }
-
-    throw error;
   }
 }

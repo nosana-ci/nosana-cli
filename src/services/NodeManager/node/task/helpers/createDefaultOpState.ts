@@ -10,5 +10,6 @@ export function createDefaultOpState(op: Operation<OperationType>) {
     endTime: null,
     exitCode: null,
     logs: [],
+    error: [], // Add error array
   };
 }
