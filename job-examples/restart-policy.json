@@ -1,0 +1,25 @@
+{
+  "version": "0.1",
+  "type": "container",
+  "meta": {
+    "trigger": "cli"
+  },
+  "ops": [
+    {
+      "type": "container/run",
+      "id": "restart-policy-test",
+      "args": {
+        "cmd": [
+          "sh",
+          "-c",
+          "trap 'echo Caught SIGTERM; exit 1' TERM; echo Starting; sleep 10; echo Natural exit; exit 1"
+        ],
+        "restart_policy": {
+          "policy": "on-failure",
+          "restart_tries": 3
+        },
+        "image": "ubuntu"
+      }
+    }
+  ]
+}

@@ -7,7 +7,7 @@ import {
   VolumeInspectInfo,
   ContainerCreateOptions,
 } from 'dockerode';
-import { DockerAuth } from '@nosana/sdk';
+import { DockerAuth, RestartPolicy } from '@nosana/sdk';
 
 import { ReturnedStatus } from '../types.js';
 
@@ -71,7 +71,7 @@ export type RunContainerArgs = {
   env?: { [key: string]: string };
   work_dir?: string;
   entrypoint?: string | string[];
-  restart_policy?: '' | 'unless-stopped' | 'always' | 'on-failure';
+  restart_policy?: RestartPolicy;
   aliases?: string[] | undefined;
 };
 

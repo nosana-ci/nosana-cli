@@ -113,7 +113,7 @@ export async function runTaskManagerOperation(
    * Logs are stored in a buffer-like array, and later parsed during the `exit` or `error` phase
    * to extract structured logs and results.
    */
-  emitter.on('log', (log, logType, type) => {
+  emitter.on('log', (log, logType, type, timestamp) => {
     // add logs to the log manager
     this.addlog({
       opId: op.id,
@@ -130,6 +130,7 @@ export async function runTaskManagerOperation(
       this.repository.updateOpStateLogs(this.job, index, {
         log,
         type: logType || 'stdout',
+        timestamp: timestamp || Date.now().toString(),
       });
       this.repository.displayLog(log);
     }
