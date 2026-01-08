@@ -84,7 +84,7 @@ export class ContainerStateManager {
         this.lastLogTimestamp = Math.floor(
           new Date(timestamp).getTime() / 1000,
         );
-        this.emitter.emit('log', log, type, 'container');
+        this.emitter.emit('log', log, type, 'container', timestamp);
       });
 
       this.currentLogStream.on('close', () => {
