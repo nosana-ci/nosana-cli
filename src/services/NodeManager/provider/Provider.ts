@@ -1,17 +1,14 @@
 import {
   createHash,
-  DockerAuth,
   ExposedPort,
   Flow,
   getExposePorts,
   isOpExposed,
-  Log,
   Operation,
   OperationArgsMap,
   OperationType,
   Ops,
   Resource,
-  StdOptions,
 } from '@nosana/sdk';
 import EventEmitter from 'events';
 import Dockerode from 'dockerode';
@@ -29,17 +26,7 @@ import {
   generateProxies,
   generateUrlSecretObject,
 } from '../../../generic/expose-util.js';
-
-function parseBuffer(buffer: Buffer): Log {
-  const head = buffer.subarray(0, 8);
-  const chunkType = head.readUInt8(0);
-  const chunkLength = head.readUInt32BE(4);
-  const content = buffer.subarray(8, 8 + chunkLength);
-  return {
-    log: content.toString('utf-8'),
-    type: chunkType === 1 ? 'stdout' : ('stderr' as StdOptions),
-  } as Log;
-}
+import { ContainerStateManager } from './ContainerStateManager.js';
 
 export class Provider {
   private readonly frpcImage = configs().frp.containerImage;
@@ -226,7 +213,7 @@ export class Provider {
     controller: AbortController,
     emitter: EventEmitter,
   ) {
-    let logStream: NodeJS.ReadableStream | undefined;
+    let stateManager: ContainerStateManager | undefined;
     let exposedPortHealthCheck: ExposedPortHealthCheck | undefined;
 
     if (controller.signal.aborted) {
@@ -244,17 +231,13 @@ export class Provider {
       const exited = await this.containerOrchestration.isContainerExited(op.id);
 
       if (exist && !exited && container.id) {
-        logStream = await container.logs({
-          stdout: true,
-          stderr: true,
-          follow: true,
-          abortSignal: controller.signal,
-        });
-
-        logStream.on('data', (data) => {
-          const { log, type } = parseBuffer(data);
-          emitter.emit('log', log, type, 'container');
-        });
+        stateManager = new ContainerStateManager(
+          container,
+          controller,
+          emitter,
+          op.args.restart_policy,
+        );
+        await stateManager.startMonitoring();
       } else {
         await this.containerOrchestration.pullImage(
           op.args.image,
@@ -393,22 +376,19 @@ export class Provider {
             work_dir,
             volumes,
             aliases,
+            restart_policy: op.args.restart_policy,
           },
         );
 
         emitter.emit('updateOpState', { providerId: container.id });
 
-        const logStream = await container.logs({
-          stdout: true,
-          stderr: true,
-          follow: true,
-          abortSignal: controller.signal,
-        });
-
-        logStream.on('data', (data) => {
-          const { log, type } = parseBuffer(data);
-          emitter.emit('log', log, type, 'container');
-        });
+        stateManager = new ContainerStateManager(
+          container,
+          controller,
+          emitter,
+          op.args.restart_policy,
+        );
+        await stateManager.startMonitoring();
 
         if (isOpExposed(op)) {
           exposedPortHealthCheck = new ExposedPortHealthCheck(
@@ -424,7 +404,7 @@ export class Provider {
           emitter.emit('healthcheck:startup:success');
         }
 
-        await container.wait({ abortSignal: controller.signal });
+        await stateManager.waitForExit();
       }
 
       const info = await promiseTimeoutWrapper(
@@ -441,10 +421,10 @@ export class Provider {
       emitter.emit('error', error);
     }
 
+    // Clean up resources
+    stateManager?.stopMonitoring();
     exposedPortHealthCheck?.stopAllHealthChecks();
     exposedPortHealthCheck = undefined;
-
-    logStream?.removeAllListeners();
 
     emitter.emit('end');
   }

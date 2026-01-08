@@ -1,3 +1,4 @@
+import { parseBuffer } from '../../services/NodeManager/provider/utils/parseBuffer.js';
 import {
   createResultsObject,
   extractResultFromLog,
@@ -25,31 +26,25 @@ export function extractLogsAndResultsFromLogBuffer(
     logs.push({
       type: 'nodeerr',
       log: 'Took too long to retrive all logs',
+      timestamp: new Date().toISOString(),
     });
   }, expiryTimeout);
 
   while (index < logBuffer.length && running) {
-    const head = logBuffer.subarray(index, (index += 8));
-    const chunkType = head.readUInt8(0);
-    const chunkLength = head.readUInt32BE(4);
-    const content = logBuffer.subarray(index, (index += chunkLength));
-    if (chunkType === 1 || chunkType === 2) {
-      const logObj = {
-        type: chunkType === 1 ? 'stdout' : ('stderr' as StdOptions),
-        log: content.toString('utf-8'),
-      };
-      logs.push(logObj);
-      if (results && operationResults) {
-        extractResultFromLog(results, logObj, operationResults);
-      }
+    const log = parseBuffer(logBuffer, index);
 
-      if (logs.length >= 25000) {
-        running = false;
-        logs.push({
-          type: 'nodeerr',
-          log: 'Found too many logs...',
-        });
-      }
+    logs.push(log);
+    if (results && operationResults) {
+      extractResultFromLog(results, log, operationResults);
+    }
+
+    if (logs.length >= 25000) {
+      running = false;
+      logs.push({
+        type: 'nodeerr',
+        log: 'Found too many logs...',
+        timestamp: new Date().toISOString(),
+      });
     }
   }
 

@@ -1,15 +1,8 @@
+import { RestartPolicy } from '@nosana/sdk';
+
 import { ifStringCastToArray } from '../../generic/utils.js';
 import { RunContainerArgs } from '../../services/NodeManager/provider/containerOrchestration/interface.js';
 
-// Todo use sdk types when they are available
-export type RestartPolicy =
-  | 'always'
-  | 'unless-stopped'
-  | 'on-failure'
-  | {
-      policy: 'on-failure';
-      restart_tries?: number;
-    };
 // These extra types are required because interface.ts
 function parseRestartPolicy(restart_policy: RestartPolicy | '' | undefined) {
   if (typeof restart_policy === 'string') {
