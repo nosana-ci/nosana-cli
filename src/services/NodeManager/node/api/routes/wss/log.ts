@@ -1,5 +1,4 @@
 import WebSocket from 'ws';
-import { parse } from 'url';
 import { logStreaming } from '../../../../monitoring/streaming/LogStreamer.js';
 import { getSDK } from '../../../../../sdk.js';
 import { TaskManagerRegistry } from '../../../task/TaskManagerRegistry.js';
@@ -46,16 +45,16 @@ export function wssTaskManagerLogRoute(
     );
   });
 
-  // Send historical logs first (optional)
-  const logs = opId
-    ? task.getLogsByOp(opId)
-    : group
-    ? task.getLogsByGroup(group)
-    : task.getAllLogs();
+  // // Send historical logs first (optional)
+  // const logs = opId
+  //   ? task.getLogsByOp(opId)
+  //   : group
+  //   ? task.getLogsByGroup(group)
+  //   : task.getAllLogs();
 
-  for (const log of logs) {
-    try {
-      ws.send(JSON.stringify({ path: 'flog', data: JSON.stringify(log) }));
-    } catch {}
-  }
+  // for (const log of logs) {
+  //   try {
+  //     ws.send(JSON.stringify({ path: 'flog', data: JSON.stringify(log) }));
+  //   } catch {}
+  // }
 }
