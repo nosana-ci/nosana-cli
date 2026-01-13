@@ -113,25 +113,24 @@ export class SpecsHandler {
   }
 
   private parseLogsIntoJSON<T extends unknown>(logs: OpState['logs']): T {
-    const combinedLogs = logs.reduce(
-      (result: string, { log, type }) => {
-        if (type === 'stdout' && log) {
-          // Strip Docker log timestamps - format: "2026-01-13T14:23:13+01:00 content"
-          const timestampMatch = log.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2} /);
-          if (timestampMatch) {
-            return result + log.slice(timestampMatch[0].length);
-          }
-          // Fallback: try to find JSON start
-          const jsonStart = log.indexOf('{');
-          if (jsonStart >= 0) {
-            return result + log.slice(jsonStart);
-          }
-          return result + log;
+    const combinedLogs = logs.reduce((result: string, { log, type }) => {
+      if (type === 'stdout' && log) {
+        // Strip Docker log timestamps - format: "2026-01-13T14:23:13+01:00 content"
+        const timestampMatch = log.match(
+          /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2} /,
+        );
+        if (timestampMatch) {
+          return result + log.slice(timestampMatch[0].length);
         }
-        return result;
-      },
-      '',
-    );
+        // Fallback: try to find JSON start
+        const jsonStart = log.indexOf('{');
+        if (jsonStart >= 0) {
+          return result + log.slice(jsonStart);
+        }
+        return result + log;
+      }
+      return result;
+    }, '');
 
     return JSON.parse(combinedLogs.trim()) as T;
   }
@@ -144,7 +143,9 @@ export class SpecsHandler {
         // Strip Docker log timestamps
         const rawLog = opStates[0].logs[0].log || '';
         let cleanLog = rawLog;
-        const timestampMatch = rawLog.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2} /);
+        const timestampMatch = rawLog.match(
+          /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2} /,
+        );
         if (timestampMatch) {
           cleanLog = rawLog.slice(timestampMatch[0].length);
         }
@@ -153,7 +154,9 @@ export class SpecsHandler {
         if (jsonStart >= 0) {
           cleanLog = cleanLog.slice(jsonStart);
         }
-        const cudaCheckResults = JSON.parse(cleanLog.trim()) as CudaCheckResponse;
+        const cudaCheckResults = JSON.parse(
+          cleanLog.trim(),
+        ) as CudaCheckResponse;
 
         if ((cudaCheckResults as CudaCheckErrorResponse).error) {
           errors.push(
