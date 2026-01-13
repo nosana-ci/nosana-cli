@@ -1,6 +1,7 @@
 import { Log, StdOptions } from '@nosana/sdk';
 
-const TIMESTAMP_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z\s/;
+const TIMESTAMP_REGEX =
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})\s/;
 
 export function parseBuffer(buffer: Buffer, index: number = 0): Log {
   const head = buffer.subarray(index, (index += 8));
