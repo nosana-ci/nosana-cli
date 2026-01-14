@@ -1,0 +1,31 @@
+{
+  "version": "0.1",
+  "meta": {
+    "trigger": "cli"
+  },
+  "type": "container",
+  "ops": [
+    {
+      "id": "test-larger-model",
+      "args": {
+        "cmd": [
+          "ls",
+          "-lh",
+          "/comfyui/models/diffusion_models/"
+        ],
+        "image": "ubuntu",
+        "resources": [
+          {
+            "type": "HF",
+            "target": "/comfyui/models/diffusion_models/",
+            "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
+            "files": [
+              "split_files/diffusion_models/wan2.2_t2v_14B_fp8_scaled.safetensors"
+            ]
+          }
+        ]
+      },
+      "type": "container/run"
+    }
+  ]
+}

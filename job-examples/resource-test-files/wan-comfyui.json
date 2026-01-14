@@ -1,0 +1,51 @@
+{
+  "version": "0.1",
+  "type": "container",
+  "ops": [
+    {
+      "type": "container/run",
+      "id": "WAN22-comfy",
+      "args": {
+        "image": "docker.io/nosana/comfyui:2.0.8",
+        "expose": 8188,
+        "gpu": true,
+        "resources": [
+          {
+            "type": "HF",
+            "target": "/comfyui/models/text_encoders/",
+            "repo": "Comfy-Org/Wan_2.1_ComfyUI_repackaged",
+            "files": [
+              "split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors"
+            ]
+          },
+          {
+            "type": "HF",
+            "target": "/comfyui/models/vae/",
+            "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
+            "files": [
+              "split_files/vae/wan_2.1_vae.safetensors"
+            ]
+          },
+          {
+            "type": "HF",
+            "target": "/comfyui/models/diffusion_models/",
+            "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
+            "files": [
+              "split_files/diffusion_models/wan2.2_t2v_low_noise_14B_fp8_scaled.safetensors",
+              "split_files/diffusion_models/wan2.2_t2v_high_noise_14B_fp8_scaled.safetensors"
+            ]
+          },
+          {
+            "type": "HF",
+            "target": "/comfyui/models/loras/",
+            "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
+            "files": [
+              "split_files/loras/wan2.2_t2v_lightx2v_4steps_lora_v1.1_high_noise.safetensors",
+              "split_files/loras/wan2.2_t2v_lightx2v_4steps_lora_v1.1_low_noise.safetensors"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

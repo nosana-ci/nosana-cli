@@ -1,0 +1,31 @@
+{
+  "version": "0.1",
+  "meta": {
+    "trigger": "cli"
+  },
+  "type": "container",
+  "ops": [
+    {
+      "id": "test-vae",
+      "args": {
+        "cmd": [
+          "ls",
+          "-lh",
+          "/comfyui/models/vae/"
+        ],
+        "image": "ubuntu",
+        "resources": [
+          {
+            "type": "HF",
+            "target": "/comfyui/models/vae/",
+            "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
+            "files": [
+              "split_files/vae/wan_2.1_vae.safetensors"
+            ]
+          }
+        ]
+      },
+      "type": "container/run"
+    }
+  ]
+}
