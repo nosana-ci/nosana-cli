@@ -1,5 +1,6 @@
 import 'rpc-websockets/dist/lib/client.js';
 import NodeManager from '../../../services/NodeManager/index.js';
+import { showSupportMessage } from '../../../generic/errors.js';
 
 export async function startNode(
   market: string,
@@ -33,6 +34,7 @@ export async function startNode(
       `;
 
       console.error(formattedError);
+      showSupportMessage();
 
       if (error.name == 'NodeAlreadyActiveError') {
         process.exit();
