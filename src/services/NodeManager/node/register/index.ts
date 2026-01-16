@@ -40,7 +40,7 @@ export class RegisterHandler {
       }),
       discord: await input({
         message:
-          "What is your Discord username? (If you don't use Discord, leave blank)",
+          'Join our Discord server for direct support from the team and community: https://nosana.com/discord. \nDiscord username:',
       }),
       twitter: await input({
         message:

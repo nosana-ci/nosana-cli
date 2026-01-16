@@ -6,4 +6,11 @@ class GenericError extends Error {
 
 class NotQueuedError extends GenericError {}
 
-export { GenericError, NotQueuedError };
+function showSupportMessage() {
+  console.error('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.error('Get support in our Discord Server. Join:');
+  console.error('https://nosana.com/discord');
+  console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+}
+
+export { GenericError, NotQueuedError, showSupportMessage };
