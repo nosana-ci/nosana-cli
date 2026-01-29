@@ -6,17 +6,6 @@ import {
 import { LowSync } from 'lowdb';
 import { Flow, OpState, FlowState } from '@nosana/sdk';
 
-type OpStateError = {
-  event: string;
-  message: string;
-  code?: number;
-};
-
-// OpState with error field (until SDK is updated)
-export type OpStateWithError = OpState & {
-  error: OpStateError[];
-};
-
 const MAX_LOGS = 24999;
 
 export class NodeRepository {
@@ -137,16 +126,15 @@ export class NodeRepository {
   public updateOpStateError(
     id: string,
     opIndex: number,
-    error: OpStateError,
+    error: {
+      event: string;
+      message: string;
+      code?: number;
+    },
   ): void {
-    const opState = this.db.data.flows[id].state.opStates[
-      opIndex
-    ] as OpStateWithError;
-    if (!opState.error) {
-      opState.error = [];
-    }
+    const opState = this.db.data.flows[id].state.opStates[opIndex];
 
-    opState.error.push(error);
+    opState.errors.push(error);
     this.db.write();
   }
 

@@ -1,10 +1,6 @@
-import type { OperationType, Operation } from '@nosana/sdk';
+import type { OperationType, Operation, OpState } from '@nosana/sdk';
 
-import type { OpStateWithError } from '../../../repository/NodeRepository.js';
-
-export function createDefaultOpState(
-  op: Operation<OperationType>,
-): OpStateWithError {
+export function createDefaultOpState(op: Operation<OperationType>): OpState {
   return {
     operationId: op.id,
     group: op.execution?.group ?? op.id,
@@ -14,6 +10,13 @@ export function createDefaultOpState(
     endTime: null,
     exitCode: null,
     logs: [],
-    error: [], // Add error array
+    errors: [],
+    diagnostics: {
+      reason: {
+        hostShutDown: false,
+        jobStopped: false,
+        expired: false,
+      },
+    },
   };
 }
