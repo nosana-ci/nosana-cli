@@ -133,9 +133,6 @@ export class NodeRepository {
     },
   ): void {
     const opState = this.db.data.flows[id].state.opStates[opIndex];
-    if (!opState.errors) {
-      opState.errors = [];
-    }
 
     opState.errors.push(error);
     this.db.write();
