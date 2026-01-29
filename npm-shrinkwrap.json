@@ -11,7 +11,7 @@
       "dependencies": {
         "@coral-xyz/anchor": "^0.28.1-beta.1",
         "@inquirer/prompts": "^4.3.0",
-        "@nosana/sdk": "0.4.75",
+        "@nosana/sdk": "^0.4.76",
         "@solana/web3.js": "^1.78.0",
         "bn.js": "^5.2.1",
         "chalk": "^5.3.0",
@@ -1580,9 +1580,9 @@
       }
     },
     "node_modules/@nosana/sdk": {
-      "version": "0.4.75",
-      "resolved": "https://registry.npmjs.org/@nosana/sdk/-/sdk-0.4.75.tgz",
-      "integrity": "sha512-TrQR5+NX+UkLKwWX8S4klzejyAMZbl8AyfPNi8aU1oh2XF9eBewijJKnwJ85vXuL5c26T5mVMWmgvfORi/vpEw==",
+      "version": "0.4.77",
+      "resolved": "https://registry.npmjs.org/@nosana/sdk/-/sdk-0.4.77.tgz",
+      "integrity": "sha512-XWwgU724+AESjwq87mIif32azY8XsxNoszeBAZH+q5JXXAt2NmftkKIUkCyM57deQYp3JK3LCQhi4MzAocabRw==",
       "license": "ISC",
       "dependencies": {
         "@coral-xyz/anchor": "^0.28.1-beta.1",
