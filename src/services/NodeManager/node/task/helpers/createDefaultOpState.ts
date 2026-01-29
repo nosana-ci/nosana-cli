@@ -1,8 +1,6 @@
 import type { OperationType, Operation, OpState } from '@nosana/sdk';
 
-export function createDefaultOpState(
-  op: Operation<OperationType>,
-): OpState {
+export function createDefaultOpState(op: Operation<OperationType>): OpState {
   return {
     operationId: op.id,
     group: op.execution?.group ?? op.id,
