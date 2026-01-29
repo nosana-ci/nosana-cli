@@ -8,6 +8,7 @@ import {
   Volume,
   VolumeCreateResponse,
   VolumeInspectInfo,
+  ContainerInspectInfo,
 } from 'dockerode';
 import { DockerAuth } from '@nosana/sdk';
 
@@ -56,6 +57,22 @@ export class DockerContainerOrchestration
       this.port = '';
       this.docker = new DockerExtended({ socketPath: this.host });
     }
+  }
+
+  async getContainerByName(name: string): Promise<Container | undefined> {
+    const containers = await this.docker
+      .listContainers({ all: true })
+      .catch((_) => {
+        throw new Error('could not get containers');
+      });
+
+    const matchedContainer = containers.find((container) =>
+      container.Names.includes(`/${name}`),
+    );
+
+    if (!matchedContainer) return undefined;
+
+    return this.docker.getContainer(matchedContainer.Id);
   }
 
   async getContainersByName(names: string[]): Promise<Container[]> {
@@ -332,23 +349,26 @@ export class DockerContainerOrchestration
   async stopAndDeleteContainer(
     id: string,
     controller?: AbortController,
-  ): Promise<void> {
+  ): Promise<ContainerInspectInfo | undefined> {
     const listeners = this.listeners.get(id) || [];
     if (controller) {
       for (const l of listeners)
         controller.signal.removeEventListener('abort', l);
     }
-    const container = this.docker.getContainer(id);
+    const container = await this.docker.getContainer(id);
     try {
-      await container.stop({ abortSignal: controller?.signal });
-    } catch {}
-    try {
+      // Need to catch in case container is already stopped
+      await container.stop({ abortSignal: controller?.signal }).catch(() => {});
+      const info = await container.inspect();
       await container.remove({
         force: true,
         v: true,
         abortSignal: controller?.signal,
       });
-    } catch {}
+      return info;
+    } catch (error) {
+      return undefined;
+    }
   }
 
   async isContainerExited(id: string): Promise<boolean> {

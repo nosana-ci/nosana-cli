@@ -15,7 +15,7 @@ export function createDefaultOpState(op: Operation<OperationType>): OpState {
       reason: {
         hostShutDown: false,
         jobStopped: false,
-        expired: false,
+        jobExpired: false,
       },
     },
   };
