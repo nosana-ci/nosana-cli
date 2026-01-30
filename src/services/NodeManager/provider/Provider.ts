@@ -467,14 +467,35 @@ export class Provider {
       const index = getOpStateIndex(flow.jobDefinition.ops, op.id);
       const name = flow.id + '-' + index;
 
-      const containers = await this.containerOrchestration.getContainersByName([
+      const opContainer = await this.containerOrchestration.getContainerByName(
         name,
-        'frpc-' + name,
-      ]);
+      );
+      const frpcContainer =
+        await this.containerOrchestration.getContainerByName('frpc-' + name);
 
-      for (let c of containers) {
-        await this.containerOrchestration.stopAndDeleteContainer(c.id);
+      if (opContainer) {
+        const info = await this.containerOrchestration.stopAndDeleteContainer(
+          opContainer.id,
+        );
+        if (info) {
+          this.repository.updateOpStateExitCode(
+            flow.id,
+            index,
+            info.State.ExitCode,
+          );
+          this.repository.setOpStateDiagnosticsState(flow.id, index, {
+            ...info.State,
+            RestartCount: info.RestartCount,
+          });
+        }
       }
+
+      if (frpcContainer) {
+        await this.containerOrchestration.stopAndDeleteContainer(
+          frpcContainer.id,
+        );
+      }
+
       await this.containerOrchestration.deleteNetwork(name);
 
       if (

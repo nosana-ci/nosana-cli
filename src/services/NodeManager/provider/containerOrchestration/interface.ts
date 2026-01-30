@@ -6,6 +6,7 @@ import {
   VolumeCreateResponse,
   VolumeInspectInfo,
   ContainerCreateOptions,
+  ContainerInspectInfo,
 } from 'dockerode';
 import { DockerAuth, RestartPolicy } from '@nosana/sdk';
 
@@ -102,6 +103,7 @@ export interface ContainerOrchestrationInterface {
   listVolumes(): Promise<VolumeInspectInfo[]>;
   deleteVolume(name: string, controller?: AbortController): Promise<void>;
 
+  getContainerByName(name: string): Promise<Container | undefined>;
   getContainersByName(names: string[]): Promise<Container[]>;
   getContainer(id: string): Promise<Container>;
 
@@ -120,7 +122,7 @@ export interface ContainerOrchestrationInterface {
   stopAndDeleteContainer(
     id: string,
     controller?: AbortController,
-  ): Promise<void>;
+  ): Promise<ContainerInspectInfo | undefined>;
   isContainerExited(id: string): Promise<boolean>;
   doesContainerExist(id: string): Promise<boolean>;
 

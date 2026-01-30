@@ -107,6 +107,15 @@ export class NodeRepository {
     this.db.write();
   }
 
+  public updateOpStateExitCode(
+    id: string,
+    opIndex: number,
+    exitCode: number,
+  ): void {
+    this.db.data.flows[id].state.opStates[opIndex].exitCode = exitCode;
+    this.db.write();
+  }
+
   public updateOpStateLogs(id: string, opIndex: number, log: any): void {
     const logs = this.db.data.flows[id].state.opStates[opIndex].logs;
 
@@ -120,6 +129,27 @@ export class NodeRepository {
       logs.push(log);
     }
 
+    this.db.write();
+  }
+
+  public setOpStateDiagnosticsReason(
+    id: string,
+    opIndex: number,
+    reason: Partial<OpState['diagnostics']['reason']>,
+  ): void {
+    Object.assign(
+      this.db.data.flows[id].state.opStates[opIndex].diagnostics.reason,
+      reason,
+    );
+    this.db.write();
+  }
+
+  public setOpStateDiagnosticsState(
+    id: string,
+    opIndex: number,
+    state: OpState['diagnostics']['state'],
+  ): void {
+    this.db.data.flows[id].state.opStates[opIndex].diagnostics.state = state;
     this.db.write();
   }
 

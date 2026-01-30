@@ -1,11 +1,11 @@
 import { EventEmitter } from 'events';
 import { Operation, OperationType } from '@nosana/sdk';
-import { extractLogsAndResultsFromLogBuffer } from '../../../../../providers/utils/extractLogsAndResultsFromLogBuffer.js';
 import {
   Statuses,
   StopReason,
   DependencyContext,
   OperationProgressStatuses,
+  StopReasons,
 } from '../TaskManager.js';
 import TaskManager from '../TaskManager.js';
 import {
@@ -83,6 +83,25 @@ export async function runTaskManagerOperation(
 
     this.operationStatus.set(op.id, OperationProgressStatuses.STOPPING);
     abort.abort(this.mainAbortController.signal.reason);
+
+    if (
+      [StopReasons.EXPIRED, StopReasons.STOPPED, StopReasons.QUIT].includes(
+        this.mainAbortController.signal.reason,
+      )
+    ) {
+      this.repository.setOpStateDiagnosticsReason(this.job, index, {
+        ...(this.mainAbortController.signal.reason === StopReasons.EXPIRED
+          ? { jobExpired: true }
+          : {}),
+        ...(this.mainAbortController.signal.reason === StopReasons.STOPPED
+          ? { jobStopped: true }
+          : {}),
+        ...(this.mainAbortController.signal.reason === StopReasons.QUIT
+          ? { hostShutDown: true }
+          : {}),
+        reason: `Operation stopped due to flow ${this.mainAbortController.signal.reason}`,
+      });
+    }
   };
 
   this.mainAbortController.signal.addEventListener('abort', handleMainAbort);
