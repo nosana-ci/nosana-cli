@@ -31,6 +31,15 @@ describe('createPodmanRunOptions', () => {
       create_working_dir: true,
       devices: [
         {
+          path: '/dev/net/tun',
+          type: 'c',
+          major: 10,
+          minor: 200,
+          fileMode: 438,
+          uid: 0,
+          gid: 0,
+        },
+        {
           path: 'nvidia.com/gpu=all',
         },
       ],
@@ -80,6 +89,15 @@ describe('createPodmanRunOptions', () => {
         '0,2',
       ).devices,
     ).toEqual([
+      {
+        path: '/dev/net/tun',
+        type: 'c',
+        major: 10,
+        minor: 200,
+        fileMode: 438,
+        uid: 0,
+        gid: 0,
+      },
       {
         path: 'nvidia.com/gpu=0',
       },
