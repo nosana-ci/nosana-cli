@@ -46,15 +46,30 @@ export function createPodmanRunOptions(
     restart_policy,
   } = args;
 
-  const devices = gpu
-    ? gpuOption === 'all'
-      ? [
-          {
-            path: 'nvidia.com/gpu=all',
-          },
-        ]
-      : gpuOption.split(',').map((id) => ({ path: `nvidia.com/gpu=${id}` }))
-    : [];
+  // Base device for network tunneling
+  const tunDevice = {
+    path: '/dev/net/tun',
+    type: 'c' as const,
+    major: 10,
+    minor: 200,
+    fileMode: 438,
+    uid: 0,
+    gid: 0,
+  };
+
+  // Build devices array starting with the TUN device
+  const devices = [tunDevice];
+
+  // Add GPU devices if requested
+  if (gpu) {
+    if (gpuOption === 'all') {
+      devices.push({ path: 'nvidia.com/gpu=all' });
+    } else {
+      devices.push(
+        ...gpuOption.split(',').map((id) => ({ path: `nvidia.com/gpu=${id}` })),
+      );
+    }
+  }
 
   return {
     image,
@@ -83,6 +98,7 @@ export function createPodmanRunOptions(
     },
     create_working_dir: true,
     cgroups_mode: 'disabled',
+    cap_add: ['NET_ADMIN'],
     work_dir,
   };
 }
