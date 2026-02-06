@@ -63,9 +63,11 @@ export function createPodmanRunOptions(
   // Add GPU devices if requested
   if (gpu) {
     if (gpuOption === 'all') {
+      // @ts-expect-error podman specific option
       devices.push({ path: 'nvidia.com/gpu=all' });
     } else {
       devices.push(
+        // @ts-expect-error podman specific option
         ...gpuOption.split(',').map((id) => ({ path: `nvidia.com/gpu=${id}` })),
       );
     }
