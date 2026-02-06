@@ -83,6 +83,7 @@ export function createPodmanRunOptions(
     },
     create_working_dir: true,
     cgroups_mode: 'disabled',
+    cap_add: ['NET_ADMIN'],
     work_dir,
   };
 }

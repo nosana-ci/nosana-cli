@@ -54,6 +54,7 @@ describe('createPodmanRunOptions', () => {
           Options: [],
         },
       ],
+      cap_add: ['NET_ADMIN'],
       work_dir: 'TEST_DIR',
     });
   });
