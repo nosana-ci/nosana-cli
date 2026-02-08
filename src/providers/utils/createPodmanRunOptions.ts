@@ -77,6 +77,7 @@ export function createPodmanRunOptions(
     image,
     name,
     command: cmd,
+    shm_size: 4294967296,
     volumes: volumes?.map((v) => {
       return {
         dest: v.dest,

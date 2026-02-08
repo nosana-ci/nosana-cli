@@ -63,6 +63,7 @@ describe('createPodmanRunOptions', () => {
           Options: [],
         },
       ],
+      shm_size: 4294967296,
       cap_add: ['NET_ADMIN'],
       work_dir: 'TEST_DIR',
     });
