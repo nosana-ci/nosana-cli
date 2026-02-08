@@ -77,6 +77,7 @@ export function createPodmanRunOptions(
     image,
     name,
     command: cmd,
+    ipcns: { nsmode: 'private' }, // Use this instead of ipc_mode
     shm_size: 4294967296,
     volumes: volumes?.map((v) => {
       return {

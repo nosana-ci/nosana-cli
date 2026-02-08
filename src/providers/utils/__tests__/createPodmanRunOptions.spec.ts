@@ -64,6 +64,7 @@ describe('createPodmanRunOptions', () => {
         },
       ],
       shm_size: 4294967296,
+      ipcns: { nsmode: 'private' },
       cap_add: ['NET_ADMIN'],
       work_dir: 'TEST_DIR',
     });
