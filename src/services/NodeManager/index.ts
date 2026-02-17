@@ -12,6 +12,7 @@ import { getSDK } from '../sdk.js';
 import { ping } from './monitoring/ping/PingHandler.js';
 import { LogMonitoringRegistry } from './monitoring/LogMonitoringRegistry.js';
 import { checkWSLStatus } from '../../providers/utils/wslCheck.js';
+import { checkContainerizedStatus } from '../../providers/utils/containerisationCheck.js';
 
 export default class NodeManager {
   private node: BasicNode;
@@ -128,6 +129,7 @@ export default class NodeManager {
      * - Throws WSLBlockedError after December 15, 2025 to prevent queue joining
      */
     checkWSLStatus(this.node.getSystemEnvironment());
+    checkContainerizedStatus();
 
     /**
      * grid
