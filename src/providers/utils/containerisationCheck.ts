@@ -29,11 +29,7 @@ export function displayContainerizedWarning(): void {
       'Please use the latest start.sh script to run the node software within a container.',
     ),
   );
-  console.log(
-    chalk.cyan(
-      'bash <(wget -qO- https://nosana.com/start.sh)',
-    ),
-  );
+  console.log(chalk.cyan('bash <(wget -qO- https://nosana.com/start.sh)'));
   console.log('');
 }
 
@@ -54,11 +50,7 @@ export function displayContainerizedBlockMessage(): void {
       'Please use the latest start.sh script to run the node software within a container.',
     ),
   );
-  console.log(
-    chalk.cyan(
-      'bash <(wget -qO- https://nosana.com/start.sh)',
-    ),
-  );
+  console.log(chalk.cyan('bash <(wget -qO- https://nosana.com/start.sh)'));
   console.log('');
 }
 
