@@ -52,7 +52,7 @@ export async function postNodeValidation(
       return;
     }
 
-    await fetch(`${configs().backendUrl}/benchmarks/submit`, {
+    await fetch(`${configs().hostManagerUrl}/benchmarks/submit`, {
       method: 'POST',
       headers: {
         Authorization: await sdk.authorization.generate(sessionId, {

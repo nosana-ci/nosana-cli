@@ -33,7 +33,7 @@ export class GridHandler {
   public async getNodeStatus(): Promise<NodeData> {
     try {
       const response = await fetch(
-        `${configs().backendUrl}/nodes/${this.address}`,
+        `${configs().hostManagerUrl}/nodes/${this.address}`,
         {
           method: 'GET',
           headers: {
@@ -79,7 +79,7 @@ export class GridHandler {
 
     try {
       const response = await fetch(
-        `${configs().backendUrl}/nodes/${this.address}/check-market`,
+        `${configs().hostManagerUrl}/nodes/${this.address}/check-market`,
         {
           method: 'POST',
           headers: {
@@ -118,7 +118,7 @@ export class GridHandler {
   private async changeMarket(): Promise<any> {
     try {
       const response = await fetch(
-        `${configs().backendUrl}/nodes/change-market`,
+        `${configs().hostManagerUrl}/nodes/change-market`,
         {
           method: 'POST',
           headers: {
@@ -213,14 +213,17 @@ export class GridHandler {
 
   private async syncNodeAfterMint(): Promise<any> {
     try {
-      const response = await fetch(`${configs().backendUrl}/nodes/sync-node`, {
-        method: 'POST',
-        headers: {
-          Authorization: `${this.address}:${await this.getAuthSignature()}`,
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        `${configs().hostManagerUrl}/nodes/sync-node`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `${this.address}:${await this.getAuthSignature()}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ address: this.address }),
         },
-        body: JSON.stringify({ address: this.address }),
-      });
+      );
       return response.json();
     } catch (error) {
       throw error;

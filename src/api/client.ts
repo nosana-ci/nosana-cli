@@ -10,7 +10,7 @@ export const clientSelector = (): QueryClient => {
 
   if (!instance) {
     instance = createClient<paths>({
-      baseUrl: configs().backendUrl?.replace('/api', '') || '',
+      baseUrl: configs().hostManagerUrl || '',
       headers: {
         'Content-Type': 'application/json',
       },

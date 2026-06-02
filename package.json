@@ -9,7 +9,9 @@
   "scripts": {
     "dev": "APP_ENV=development node --no-warnings --loader ts-node/esm src/index.ts",
     "build": "npm run prepare && tsc && cp .env ./dist/ && cp .env.prd ./dist/ && cp .env.dev ./dist/",
-    "generate": "openapi-typescript http://dashboard.k8s.prd.nos.ci/api/swagger/json -o ./src/api/schema.d.ts",
+    "generate": "node scripts/generate-schema.mjs prd",
+    "generate:dev": "node scripts/generate-schema.mjs dev",
+    "generate:local": "node scripts/generate-schema.mjs local",
     "test": "APP_ENV=development DOCKER_CERT_PATH= vitest run",
     "ci:test": "APP_ENV=development DOCKER_CERT_PATH= vitest run --coverage --reporter=junit --outputFile=./test-report.xml",
     "test:watch": "APP_ENV=development DOCKER_CERT_PATH= vitest",

@@ -351,7 +351,7 @@ const reportError = async (data: {
   error_stack: string;
 }) => {
   const nosana = getSDK();
-  const response = await fetch(`${configs().backendUrl}/errors/report`, {
+  const response = await fetch(`${configs().hostManagerUrl}/errors/report`, {
     method: 'POST',
     headers: {
       Authorization: await nosana.authorization.generate(
