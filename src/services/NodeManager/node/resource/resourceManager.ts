@@ -35,7 +35,7 @@ export class ResourceManager {
 
     try {
       const { data, error } = await clientSelector().GET(
-        '/api/markets/{id}/required-resources',
+        '/markets/{id}/required-resources',
         { params: { path: { id: market } } },
       );
 

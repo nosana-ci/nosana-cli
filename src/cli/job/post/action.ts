@@ -164,8 +164,8 @@ export async function run(
 
   if (type === 'slug') {
     try {
-      const { data: marketResponse, error } = await clientSelector().GET(
-        '/api/markets/{id}/',
+      const { data: marketResponse, error }: any = await clientSelector().GET(
+        '/markets/{id}',
         {
           params: { path: { id: nosana.solana.config.market_address } },
         },

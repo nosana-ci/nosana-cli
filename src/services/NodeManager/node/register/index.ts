@@ -106,7 +106,7 @@ export class RegisterHandler {
       headers.append('Content-Type', 'application/json');
 
       const joinTestGridResult = await fetch(
-        `${configs().backendUrl}/nodes/join-test-grid`,
+        `${configs().hostManagerUrl}/nodes/join-test-grid`,
         {
           method: 'POST',
           headers,

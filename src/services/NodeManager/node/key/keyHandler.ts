@@ -64,7 +64,7 @@ export class KeyHandler {
       // Check if node is onboarded and has received access key
       // if not call onboard endpoint to create access key tx
       const response = await fetch(
-        `${configs().backendUrl}/nodes/${this.address}`,
+        `${configs().hostManagerUrl}/nodes/${this.address}`,
         {
           method: 'GET',
           headers: {

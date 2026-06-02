@@ -47,14 +47,17 @@ export class PingHandler {
 
   private async ping() {
     try {
-      const response = await fetch(`${configs().backendUrl}/nodes/heartbeat`, {
-        method: 'POST',
-        headers: {
-          Authorization: `${this.address}:${await this.getAuthSignature()}`,
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        `${configs().hostManagerUrl}/nodes/heartbeat`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `${this.address}:${await this.getAuthSignature()}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ping: 'pong' }),
         },
-        body: JSON.stringify({ ping: 'pong' }),
-      });
+      );
 
       if (response.ok) {
         const json = await response.json();

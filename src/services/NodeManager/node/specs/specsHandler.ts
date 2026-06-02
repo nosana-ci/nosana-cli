@@ -80,7 +80,7 @@ export class SpecsHandler {
 
     await fetch(
       `${
-        configs().backendUrl
+        configs().hostManagerUrl
       }/nodes/${this.sdk.solana.provider!.wallet.publicKey.toString()}/submit-system-specs`,
       {
         method: 'POST',

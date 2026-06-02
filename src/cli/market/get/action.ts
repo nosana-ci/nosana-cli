@@ -17,7 +17,7 @@ export async function getMarket(
   let blockchainMarket;
   console.log('retrieving market...');
   const { data: market, error }: any = await clientSelector().GET(
-    '/api/markets/{id}/',
+    '/markets/{id}',
     {
       params: { path: { id: marketId } },
     },

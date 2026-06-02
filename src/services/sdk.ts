@@ -89,7 +89,7 @@ export async function setSDK(
     const base64Signature = Buffer.from(signature).toString('base64');
     const node = nosana.solana.wallet.publicKey.toString();
     try {
-      const response = await fetch(`${envConfig.backendUrl}/rpc`, {
+      const response = await fetch(`${envConfig.hostManagerUrl}/rpc`, {
         method: 'GET',
         headers: {
           Authorization: `${node}:${base64Signature}`,

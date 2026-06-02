@@ -3,7 +3,8 @@ import { loadConfigurationValue } from '../../../generic/utils.js';
 
 export type configType = {
   isNodeRun: boolean;
-  backendUrl: string;
+  hostManagerUrl: string;
+  indexerUrl: string;
   backendSolanaAddress: string;
   backendAuthorizationAddress: string;
   explorerUrl: string;
@@ -26,7 +27,8 @@ export const configs = (options?: { [key: string]: any }): configType => {
 
   return {
     isNodeRun: options?.isNodeRun,
-    backendUrl: loadConfigurationValue('BACKEND_URL'),
+    hostManagerUrl: loadConfigurationValue('HOST_MANAGER_URL'),
+    indexerUrl: loadConfigurationValue('INDEXER_URL'),
     backendSolanaAddress: loadConfigurationValue('BACKEND_SOLANA_ADDRESS'),
     backendAuthorizationAddress: loadConfigurationValue(
       'BACKEND_AUTHORIZATION_ADDRESS',
