@@ -21,6 +21,7 @@ type SshJobOptions = {
   nodeUrl?: string;
   insecureSkipHostKeyCheck?: boolean;
   network?: 'devnet' | 'mainnet';
+  proxyStdio?: boolean;
 };
 
 type SshProxyOptions = {
@@ -228,7 +229,8 @@ export function buildProxyCommand({
     ...process.execArgv,
     process.argv[1],
     'job',
-    'ssh-proxy',
+    'ssh',
+    '--proxy-stdio',
     '--proxy-host',
     proxyHost,
     '--proxy-port',

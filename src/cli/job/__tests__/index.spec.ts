@@ -1,8 +1,8 @@
 import { jobCommand } from '../';
 
 describe('jobCommand', () => {
-  it('should have eleven commands', () => {
-    expect(jobCommand.commands.length).toBe(11);
+  it('should have ten commands', () => {
+    expect(jobCommand.commands.length).toBe(10);
   });
 
   it.each([
@@ -16,7 +16,6 @@ describe('jobCommand', () => {
     ['validate'],
     ['list'],
     ['ssh'],
-    ['ssh-proxy'],
   ])('should contain %s command', (command) => {
     // @ts-ignore
     expect(jobCommand.commands.map((command) => command._name)).toContain(

@@ -9,9 +9,32 @@ import {
 import { formatOption } from '../../sharedOptions/format.js';
 import { verboseOption } from '../../sharedOptions/verbose.js';
 
+function runSshCommand(
+  jobOrHost: string,
+  port: string | undefined,
+  options: Parameters<typeof sshJob>[1],
+  command: Command,
+): Promise<void> {
+  if (options.proxyStdio) {
+    if (!port) {
+      throw new Error('Missing target SSH port for proxy mode');
+    }
+    if (!options.proxyHost) {
+      throw new Error('Missing FRP proxy host for proxy mode');
+    }
+    return sshProxy(jobOrHost, port, {
+      proxyHost: options.proxyHost,
+      proxyPort: options.proxyPort as string | number,
+    });
+  }
+
+  return sshJob(jobOrHost, options, command);
+}
+
 export const sshJobCommand = new Command('ssh')
   .description('Open an SSH shell into a running job')
   .argument('<job>', 'job address')
+  .argument('[port]', 'target SSH port for internal proxy mode')
   .addOption(new Option('--op <op>', 'operation id to connect to'))
   .addOption(
     new Option(
@@ -31,6 +54,12 @@ export const sshJobCommand = new Command('ssh')
       'FRP TCPMUX HTTP CONNECT proxy port',
     ).default('5002'),
   )
+  .addOption(
+    new Option(
+      '--proxy-stdio',
+      'internal mode used by OpenSSH ProxyCommand',
+    ),
+  )
   .addOption(new Option('--ssh-command <command>', 'SSH executable').default('ssh'))
   .addOption(new Option('--node-url <url>', 'override node API URL'))
   .addOption(
@@ -44,12 +73,4 @@ export const sshJobCommand = new Command('ssh')
   .addOption(rpcOption)
   .addOption(formatOption)
   .addOption(verboseOption)
-  .action(sshJob);
-
-export const sshProxyCommand = new Command('ssh-proxy')
-  .description('Proxy SSH through the Nosana FRP TCPMUX HTTP CONNECT endpoint')
-  .argument('<host>', 'target SSH host')
-  .argument('<port>', 'target SSH port')
-  .addOption(new Option('--proxy-host <host>', 'proxy host').makeOptionMandatory())
-  .addOption(new Option('--proxy-port <port>', 'proxy port').makeOptionMandatory())
-  .action(sshProxy);
+  .action(runSshCommand);

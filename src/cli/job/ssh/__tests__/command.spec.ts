@@ -1,6 +1,6 @@
 import { Command } from 'commander';
 
-import { sshJobCommand, sshProxyCommand } from '../command.js';
+import { sshJobCommand } from '../command.js';
 import { sshJob, sshProxy } from '../action.js';
 
 vi.mock('../action.js', () => ({
@@ -30,6 +30,7 @@ describe('sshJobCommand', () => {
     ['--ttl', undefined],
     ['--proxy-host', undefined],
     ['--proxy-port', undefined],
+    ['--proxy-stdio', undefined],
     ['--ssh-command', undefined],
     ['--node-url', undefined],
     ['--insecure-skip-host-key-check', undefined],
@@ -43,13 +44,12 @@ describe('sshJobCommand', () => {
     expect(option?.long).toBe(long);
     expect(option?.short).toBe(short);
   });
-});
 
-describe('sshProxyCommand', () => {
-  it('calls the ssh proxy action', () => {
-    sshProxyCommand.parse([
+  it('uses the ssh proxy action in internal stdio mode', () => {
+    sshJobCommand.parse([
       'node',
-      'ssh-proxy',
+      'ssh',
+      '--proxy-stdio',
       '--proxy-host',
       'node.k8s.dev.nos.ci',
       '--proxy-port',
@@ -65,7 +65,7 @@ describe('sshProxyCommand', () => {
         proxyHost: 'node.k8s.dev.nos.ci',
         proxyPort: '5002',
       }),
-      expect.any(Command),
     );
+    expect(sshJob).not.toHaveBeenCalled();
   });
 });

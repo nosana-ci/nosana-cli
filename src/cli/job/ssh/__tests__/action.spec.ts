@@ -52,7 +52,7 @@ describe('ssh action helpers', () => {
       'web',
     ]);
     expect(args.find((arg) => arg.startsWith('ProxyCommand='))).toContain(
-      'job ssh-proxy',
+      'job ssh --proxy-stdio',
     );
   });
 
@@ -62,7 +62,7 @@ describe('ssh action helpers', () => {
       proxyPort: 5002,
     });
 
-    expect(command).toContain('job ssh-proxy');
+    expect(command).toContain('job ssh --proxy-stdio');
     expect(command).toContain('--proxy-host node.k8s.dev.nos.ci');
     expect(command).toContain('--proxy-port 5002');
     expect(command).toContain('%h %p');
