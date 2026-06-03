@@ -9,6 +9,7 @@ import { stopJobCommand } from './stop/command.js';
 import { jobServeCommand } from './serve/command.js';
 import { extendJobCommand } from './extend/command.js';
 import { validateJobCommand } from './validate/command.js';
+import { sshJobCommand, sshProxyCommand } from './ssh/command.js';
 
 export const jobCommand: Command = program
   .command('job')
@@ -20,4 +21,6 @@ export const jobCommand: Command = program
   .addCommand(jobServeCommand)
   .addCommand(extendJobCommand)
   .addCommand(uploadJobCommand)
-  .addCommand(validateJobCommand);
+  .addCommand(validateJobCommand)
+  .addCommand(sshJobCommand)
+  .addCommand(sshProxyCommand);
