@@ -1,7 +1,10 @@
+import net from 'net';
+
 import {
   buildProxyCommand,
   buildSshArgs,
   buildSshAuthorizationMessage,
+  sshProxy,
 } from '../action.js';
 
 describe('ssh action helpers', () => {
@@ -66,5 +69,43 @@ describe('ssh action helpers', () => {
     expect(command).toContain('--proxy-host node.k8s.dev.nos.ci');
     expect(command).toContain('--proxy-port 5002');
     expect(command).toContain('%h %p');
+  });
+
+  it('writes proxied SSH bytes once after the CONNECT response', async () => {
+    const server = net.createServer((socket) => {
+      socket.once('data', () => {
+        socket.write('HTTP/1.1 200 OK\r\n\r\nfirst');
+        setTimeout(() => socket.end('second'), 5);
+      });
+    });
+
+    await new Promise<void>((resolve) => {
+      server.listen(0, '127.0.0.1', resolve);
+    });
+
+    const address = server.address();
+    if (!address || typeof address === 'string') {
+      throw new Error('Expected TCP server address');
+    }
+
+    const writes: Buffer[] = [];
+    const stdoutWrite = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation((chunk: string | Uint8Array) => {
+        writes.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+        return true;
+      });
+
+    try {
+      await sshProxy('target-host', '22', {
+        proxyHost: '127.0.0.1',
+        proxyPort: address.port,
+      });
+    } finally {
+      stdoutWrite.mockRestore();
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+
+    expect(Buffer.concat(writes).toString('utf8')).toBe('firstsecond');
   });
 });

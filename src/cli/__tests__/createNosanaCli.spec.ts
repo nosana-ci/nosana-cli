@@ -1,4 +1,4 @@
-import { createNosanaCLI } from '../createNosanaCli';
+import { createNosanaCLI, isSshProxyStdioInvocation } from '../createNosanaCli';
 
 describe('createNosanaCLI', () => {
   const CLI = createNosanaCLI('0.0.1');
@@ -39,4 +39,26 @@ describe('createNosanaCLI', () => {
       expect(defaultValue).toBe(defaultValue);
     },
   );
+
+  it('detects the internal SSH proxy stdio invocation', () => {
+    expect(
+      isSshProxyStdioInvocation([
+        'node',
+        'nosana',
+        'job',
+        'ssh',
+        '--proxy-stdio',
+        '--proxy-host',
+        'node.k8s.dev.nos.ci',
+        'target',
+        '22',
+      ]),
+    ).toBe(true);
+  });
+
+  it('does not treat regular SSH as proxy stdio mode', () => {
+    expect(
+      isSshProxyStdioInvocation(['node', 'nosana', 'job', 'ssh', 'job-id']),
+    ).toBe(false);
+  });
 });
