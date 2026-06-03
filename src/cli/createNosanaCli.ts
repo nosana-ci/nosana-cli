@@ -11,6 +11,13 @@ import { configs } from '../services/NodeManager/configs/configs.js';
 import { startNode } from './node/start/action.js';
 import { NodeConfigsSingleton } from '../services/NodeManager/configs/NodeConfigs.js';
 
+export function isSshProxyStdioInvocation(argv = process.argv) {
+  const proxyStdioIndex = argv.indexOf('--proxy-stdio');
+  if (proxyStdioIndex === -1) return false;
+
+  return argv.includes('job') && argv.includes('ssh');
+}
+
 export const createNosanaCLI = (version: string) =>
   new Command()
     .name('nosana')
@@ -18,11 +25,15 @@ export const createNosanaCLI = (version: string) =>
     .version(version)
     .configureHelp({ showGlobalOptions: true })
     .hook('preSubcommand', async (_, actionCommand) => {
+      if (isSshProxyStdioInvocation()) return;
+
       outputFormatSelector(
         outputFormatArgumentParser(actionCommand.parent?.args ?? []),
       ).output(OUTPUT_EVENTS.OUTPUT_HEADER_LOGO, { text: 'Nosana' });
     })
     .hook('preAction', async (command, actionCommand) => {
+      if (isSshProxyStdioInvocation()) return;
+
       const opts = actionCommand.optsWithGlobals();
       NodeConfigsSingleton.getInstance(opts);
       let market = opts.market;

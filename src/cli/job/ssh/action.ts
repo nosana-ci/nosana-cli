@@ -117,14 +117,7 @@ export async function sshProxy(
     );
 
     let response = Buffer.alloc(0);
-    let connected = false;
-
-    socket.on('data', (chunk) => {
-      if (connected) {
-        process.stdout.write(chunk);
-        return;
-      }
-
+    const onConnectResponse = (chunk: Buffer) => {
       response = Buffer.concat([response, chunk]);
       const responseEnd = response.indexOf('\r\n\r\n');
       if (responseEnd === -1) return;
@@ -138,12 +131,14 @@ export async function sshProxy(
         return;
       }
 
-      connected = true;
+      socket.off('data', onConnectResponse);
       const remainder = response.subarray(responseEnd + 4);
       if (remainder.length > 0) process.stdout.write(remainder);
       process.stdin.pipe(socket);
       socket.pipe(process.stdout);
-    });
+    };
+
+    socket.on('data', onConnectResponse);
 
     socket.on('error', reject);
     socket.on('close', () => resolve());

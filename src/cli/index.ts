@@ -4,13 +4,20 @@ import { validateCLIVersion } from '../services/versions.js';
 
 export async function startCLI(version: string) {
   const cli = createNosanaCLI(version);
+  const isProxyStdio = process.argv.includes('--proxy-stdio');
 
   try {
-    await validateCLIVersion();
+    if (!isProxyStdio) {
+      await validateCLIVersion();
+    }
     await cli.parseAsync(process.argv);
-    outputFormatSelector('').finalize();
+    if (!isProxyStdio) {
+      outputFormatSelector('').finalize();
+    }
   } catch (e: any) {
-    outputFormatSelector('').finalize();
+    if (!isProxyStdio) {
+      outputFormatSelector('').finalize();
+    }
     console.error(e);
     process.exit();
   }
