@@ -43,10 +43,7 @@ export const sshJobCommand = new Command('ssh')
     ).default('300'),
   )
   .addOption(
-    new Option(
-      '--proxy-host <host>',
-      'FRP TCPMUX HTTP CONNECT proxy host',
-    ),
+    new Option('--proxy-host <host>', 'FRP TCPMUX HTTP CONNECT proxy host'),
   )
   .addOption(
     new Option(
@@ -55,12 +52,11 @@ export const sshJobCommand = new Command('ssh')
     ).default('5002'),
   )
   .addOption(
-    new Option(
-      '--proxy-stdio',
-      'internal mode used by OpenSSH ProxyCommand',
-    ),
+    new Option('--proxy-stdio', 'internal mode used by OpenSSH ProxyCommand'),
   )
-  .addOption(new Option('--ssh-command <command>', 'SSH executable').default('ssh'))
+  .addOption(
+    new Option('--ssh-command <command>', 'SSH executable').default('ssh'),
+  )
   .addOption(new Option('--node-url <url>', 'override node API URL'))
   .addOption(
     new Option(

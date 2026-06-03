@@ -49,9 +49,7 @@ export async function sshJob(
   }
 
   const key = createEphemeralSshKey(jobAddress);
-  const expiresAt = new Date(
-    Date.now() + parseTtlSeconds(options.ttl) * 1000,
-  );
+  const expiresAt = new Date(Date.now() + parseTtlSeconds(options.ttl) * 1000);
 
   try {
     const sshUser = getSshUserForJob(jobAddress);
@@ -134,7 +132,9 @@ export async function sshProxy(
       const header = response.toString('utf8', 0, responseEnd);
       if (!/^HTTP\/\d(?:\.\d)? 2\d\d\b/.test(header)) {
         socket.destroy();
-        reject(new Error(`SSH proxy CONNECT failed: ${header.split('\r\n')[0]}`));
+        reject(
+          new Error(`SSH proxy CONNECT failed: ${header.split('\r\n')[0]}`),
+        );
         return;
       }
 
