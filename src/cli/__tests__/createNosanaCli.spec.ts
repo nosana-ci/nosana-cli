@@ -1,7 +1,4 @@
-import {
-  createNosanaCLI,
-  isSshProxyStdioInvocation,
-} from '../createNosanaCli';
+import { createNosanaCLI, isSshProxyStdioInvocation } from '../createNosanaCli';
 
 describe('createNosanaCLI', () => {
   const CLI = createNosanaCLI('0.0.1');
