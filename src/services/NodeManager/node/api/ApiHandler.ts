@@ -41,7 +41,6 @@ import {
   stopGroupOperationHandler,
   stopOperationHandler,
   wssTaskManagerLogRoute,
-  moveGroupOperationHandler,
   getJobDefinitionRoute,
   getJobInfoRoute,
 } from './routes/index.js';
@@ -242,7 +241,6 @@ export class ApiHandler {
     );
 
     this.api.post('/job/:jobId/job-definition', postJobDefinitionRoute);
-    this.api.post('/job/:jobId/group/:group/move', moveGroupOperationHandler);
     this.api.post(
       '/job/:jobId/group/:group/operation/:opId/restart',
       restartOperationHandler,

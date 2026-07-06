@@ -45,27 +45,6 @@ export async function restartGroupOperationHandler(
   }
 }
 
-export async function moveGroupOperationHandler(
-  req: NodeAPIRequest<{ jobId: string; group: string }>,
-  res: Response,
-) {
-  const { jobId, group } = req.params;
-  const task = TaskManagerRegistry.getInstance().get(jobId);
-
-  if (!task) {
-    return res.status(400).send('invalid job id');
-  }
-
-  try {
-    await task.moveTaskManagerGroupOperations(group);
-    return res.status(200).json({ message: 'Group Operation restarted' });
-  } catch (error) {
-    return res
-      .status(500)
-      .json({ error: 'Failed to restart group operations' });
-  }
-}
-
 export async function stopOperationHandler(
   req: NodeAPIRequest<{ jobId: string; opId: string; group: string }>,
   res: Response,
