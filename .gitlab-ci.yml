@@ -11,6 +11,7 @@ variables:
   DOCKERFILE_DIR: ./auto-update/
   CONTAINER_PLATFORMS: linux/amd64
   REG_REPOSITORY: nosana/nosana-cli
+  GITHUB_REPO: nosana-cli
 
 npm install:
   image: node:20.11.1
@@ -76,3 +77,13 @@ npm publish prod:
   when: manual
   rules:
     - if: $CI_COMMIT_TAG && $CI_COMMIT_TAG != "latest"
+
+# Only announce versions that went out as prod, not rc.
+github release:
+  extends: .github-release
+  stage: deploy
+  needs:
+    - job: npm publish prod
+  variables:
+    RELEASE_NPM_PACKAGES: auto
+    RELEASE_NPM_REQUIRED: "true"
